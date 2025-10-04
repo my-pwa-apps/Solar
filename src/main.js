@@ -34,7 +34,7 @@ const CONFIG = {
         maxDeltaTime: 0.1 // Prevent huge jumps
     },
     QUALITY: {
-        sphereSegments: 64,
+        sphereSegments: 128, // Increased for better normal/bump map detail
         lowPowerSegments: 32,
         particleSize: 2
     }
@@ -964,8 +964,11 @@ class SolarSystemModule {
     }
 
     createSun(scene) {
-        // HYPERREALISTIC Sun with sunspots, granulation, and flares
-        const sunGeometry = new THREE.SphereGeometry(10, 128, 128); // Higher detail
+        // HYPERREALISTIC Sun with realistic size
+        // Sun: 1,391,000 km / 12,742 km = 109.2 (should be MASSIVE)
+        // But we'll scale it down to 15 for visibility while still being impressive
+        const sunRadius = 15; // Compromise between realism and usability
+        const sunGeometry = new THREE.SphereGeometry(sunRadius, 128, 128); // Higher detail
         
         // Create advanced sun texture with sunspots and granulation
         const sunTexture = this.createSunTexture(2048);
@@ -988,7 +991,7 @@ class SolarSystemModule {
             name: 'Sun',
             type: 'Star',
             distance: 0,
-            radius: 10,
+            radius: sunRadius,
             description: '☀️ The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
             funFact: 'The Sun is so big that 1.3 million Earths could fit inside it!',
             realSize: '1,391,000 km diameter'
@@ -1063,10 +1066,11 @@ class SolarSystemModule {
     }
 
     createInnerPlanets(scene) {
-        // Mercury
+        // REALISTIC SIZES (Earth radius = 1.0 as base)
+        // Mercury: 4,879 km / 12,742 km = 0.383
         this.planets.mercury = this.createPlanet(scene, {
             name: 'Mercury',
-            radius: 0.38,
+            radius: 0.383,
             color: 0x8C7853,
             distance: 20,
             speed: 0.04,
@@ -1078,10 +1082,10 @@ class SolarSystemModule {
             moons: 0
         });
 
-        // Venus
+        // Venus: 12,104 km / 12,742 km = 0.950
         this.planets.venus = this.createPlanet(scene, {
             name: 'Venus',
-            radius: 0.95,
+            radius: 0.950,
             color: 0xFFC649,
             distance: 30,
             speed: 0.015,
@@ -1095,10 +1099,10 @@ class SolarSystemModule {
             emissiveIntensity: 0.3
         });
 
-        // Earth with Moon
+        // Earth: BASE = 1.0 (12,742 km)
         this.planets.earth = this.createPlanet(scene, {
             name: 'Earth',
-            radius: 1,
+            radius: 1.0,
             color: 0x2233FF,
             distance: 45,
             speed: 0.01,
@@ -1111,10 +1115,10 @@ class SolarSystemModule {
             atmosphere: true
         });
 
-        // Create Earth's Moon
+        // Moon: 3,474 km / 12,742 km = 0.273
         this.createMoon(this.planets.earth, {
             name: 'Moon',
-            radius: 0.27,
+            radius: 0.273,
             color: 0xAAAAAA,
             distance: 3,
             speed: 0.03,
@@ -1122,10 +1126,10 @@ class SolarSystemModule {
             funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
         });
 
-        // Mars with moons
+        // Mars: 6,779 km / 12,742 km = 0.532
         this.planets.mars = this.createPlanet(scene, {
             name: 'Mars',
-            radius: 0.53,
+            radius: 0.532,
             color: 0xCD5C5C,
             distance: 60,
             speed: 0.008,
@@ -1137,18 +1141,19 @@ class SolarSystemModule {
             moons: 2
         });
 
-        // Mars moons: Phobos and Deimos
+        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny!)
         this.createMoon(this.planets.mars, {
             name: 'Phobos',
-            radius: 0.08,
+            radius: 0.002, // Minimum visible size
             color: 0x666666,
             distance: 1.5,
             speed: 0.08,
             description: '🌑 Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
         });
+        // Deimos: ~12 km / 12,742 km = 0.0009
         this.createMoon(this.planets.mars, {
             name: 'Deimos',
-            radius: 0.06,
+            radius: 0.0015, // Minimum visible size
             color: 0x888888,
             distance: 2.5,
             speed: 0.04,
@@ -1157,10 +1162,10 @@ class SolarSystemModule {
     }
 
     createOuterPlanets(scene) {
-        // Jupiter with Great Red Spot
+        // Jupiter: 139,820 km / 12,742 km = 10.97 (MASSIVE!)
         this.planets.jupiter = this.createPlanet(scene, {
             name: 'Jupiter',
-            radius: 5,
+            radius: 10.97,
             color: 0xDAA520,
             distance: 100,
             speed: 0.002,
@@ -1173,44 +1178,48 @@ class SolarSystemModule {
             rings: true
         });
 
-        // Jupiter's Galilean moons
+        // Jupiter's Galilean moons (realistic sizes)
+        // Io: 3,643 km / 12,742 km = 0.286
         this.createMoon(this.planets.jupiter, {
             name: 'Io',
-            radius: 0.3,
+            radius: 0.286,
             color: 0xFFFF00,
             distance: 8,
             speed: 0.06,
             description: '🌋 Io is the most volcanically active body in the solar system!'
         });
+        // Europa: 3,122 km / 12,742 km = 0.245
         this.createMoon(this.planets.jupiter, {
             name: 'Europa',
-            radius: 0.25,
+            radius: 0.245,
             color: 0xCCBB99,
             distance: 10,
             speed: 0.045,
             description: '❄️ Europa has a global ocean beneath its ice - a potential place for life!'
         });
+        // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
         this.createMoon(this.planets.jupiter, {
             name: 'Ganymede',
-            radius: 0.35,
+            radius: 0.413,
             color: 0x996633,
             distance: 12,
             speed: 0.035,
             description: '🌕 Ganymede is the largest moon in the solar system, bigger than Mercury!'
         });
+        // Callisto: 4,821 km / 12,742 km = 0.378
         this.createMoon(this.planets.jupiter, {
             name: 'Callisto',
-            radius: 0.32,
+            radius: 0.378,
             color: 0x777777,
             distance: 14,
             speed: 0.025,
             description: '🌑 Callisto is the most heavily cratered object in the solar system!'
         });
 
-        // Saturn with prominent rings
+        // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
         this.planets.saturn = this.createPlanet(scene, {
             name: 'Saturn',
-            radius: 4.5,
+            radius: 9.14,
             color: 0xFAD5A5,
             distance: 150,
             speed: 0.0009,
@@ -1224,35 +1233,38 @@ class SolarSystemModule {
             prominentRings: true
         });
 
+        // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
         this.createMoon(this.planets.saturn, {
             name: 'Titan',
-            radius: 0.4,
+            radius: 0.404,
             color: 0xFFAA33,
             distance: 10,
             speed: 0.03,
             description: '🔶 Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
         });
+        // Enceladus: 504 km / 12,742 km = 0.040
         this.createMoon(this.planets.saturn, {
             name: 'Enceladus',
-            radius: 0.15,
+            radius: 0.040,
             color: 0xFFFFFF,
             distance: 7,
             speed: 0.05,
             description: '💧 Enceladus shoots water geysers into space from its subsurface ocean!'
         });
+        // Rhea: 1,527 km / 12,742 km = 0.120
         this.createMoon(this.planets.saturn, {
             name: 'Rhea',
-            radius: 0.2,
+            radius: 0.120,
             color: 0xCCCCCC,
             distance: 12,
             speed: 0.025,
             description: '🌑 Rhea may have its own ring system!'
         });
 
-        // Uranus
+        // Uranus: 50,724 km / 12,742 km = 3.98
         this.planets.uranus = this.createPlanet(scene, {
             name: 'Uranus',
-            radius: 2,
+            radius: 3.98,
             color: 0x4FD0E7,
             distance: 200,
             speed: 0.0004,
@@ -1265,27 +1277,29 @@ class SolarSystemModule {
             rings: true
         });
 
+        // Titania: 1,578 km / 12,742 km = 0.124
         this.createMoon(this.planets.uranus, {
             name: 'Titania',
-            radius: 0.2,
+            radius: 0.124,
             color: 0xAAAAAA,
             distance: 5,
             speed: 0.04,
             description: '🌑 Titania is Uranus\' largest moon with massive canyons!'
         });
+        // Miranda: 472 km / 12,742 km = 0.037
         this.createMoon(this.planets.uranus, {
             name: 'Miranda',
-            radius: 0.12,
+            radius: 0.037,
             color: 0x999999,
             distance: 3.5,
             speed: 0.06,
             description: '🎢 Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
         });
 
-        // Neptune
+        // Neptune: 49,244 km / 12,742 km = 3.86
         this.planets.neptune = this.createPlanet(scene, {
             name: 'Neptune',
-            radius: 1.9,
+            radius: 3.86,
             color: 0x4169E1,
             distance: 250,
             speed: 0.0001,
@@ -1298,19 +1312,20 @@ class SolarSystemModule {
             rings: true
         });
 
+        // Triton: 2,707 km / 12,742 km = 0.212
         this.createMoon(this.planets.neptune, {
             name: 'Triton',
-            radius: 0.25,
+            radius: 0.212,
             color: 0xFFCCCC,
             distance: 5,
             speed: -0.05,
             description: '❄️ Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
         });
 
-        // Dwarf planets
+        // Pluto: 2,377 km / 12,742 km = 0.187
         this.planets.pluto = this.createPlanet(scene, {
             name: 'Pluto',
-            radius: 0.18,
+            radius: 0.187,
             color: 0xD4A373,
             distance: 300,
             speed: 0.00004,
@@ -1323,9 +1338,10 @@ class SolarSystemModule {
             dwarf: true
         });
 
+        // Charon: 1,212 km / 12,742 km = 0.095 (half the size of Pluto!)
         this.createMoon(this.planets.pluto, {
             name: 'Charon',
-            radius: 0.09,
+            radius: 0.095,
             color: 0xAAAAAA,
             distance: 1.2,
             speed: 0.02,
@@ -1652,21 +1668,20 @@ class SolarSystemModule {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         
-        // Use advanced noise for continents
-        const noise = (x, y) => {
-            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-            return n - Math.floor(n);
+        // Enhanced Perlin-like noise with seed variations
+        const noise = (x, y, seed = 0) => {
+            const angle = Math.sin(x * 12.9898 + y * 78.233 + seed * 43.758) * 43758.5453;
+            return Math.abs(angle - Math.floor(angle));
         };
         
-        const fbm = (x, y, octaves = 6) => {
-            let value = 0, amp = 1, freq = 1, maxVal = 0;
-            for (let i = 0; i < octaves; i++) {
-                value += noise(x * freq, y * freq) * amp;
-                maxVal += amp;
-                amp *= 0.5;
-                freq *= 2;
+        // Turbulent fractal brownian motion
+        const turbulence = (x, y, size) => {
+            let value = 0, initialSize = size;
+            while (size >= 1) {
+                value += noise(x / size, y / size) * size;
+                size /= 2.0;
             }
-            return value / maxVal;
+            return value / initialSize;
         };
         
         const imageData = ctx.createImageData(size, size);
@@ -1675,65 +1690,119 @@ class SolarSystemModule {
         for (let y = 0; y < size; y++) {
             for (let x = 0; x < size; x++) {
                 const idx = (y * size + x) * 4;
-                const nx = x / size, ny = y / size;
-                const lat = Math.abs(ny - 0.5) * 2;
                 
-                // Multi-scale continent noise
-                const continentNoise = fbm(nx * 6, ny * 6, 7);
-                const detailNoise = fbm(nx * 20, ny * 20, 4) * 0.1;
-                const combined = continentNoise + detailNoise;
+                // Convert to spherical coordinates for realistic mapping
+                const lon = (x / size) * Math.PI * 2;
+                const lat = (y / size) * Math.PI - Math.PI / 2;
                 
-                // Ice caps
-                if (lat > 0.88) {
-                    data[idx] = 250; data[idx + 1] = 255; data[idx + 2] = 255;
+                // Distance from poles
+                const latNorm = Math.abs(lat) / (Math.PI / 2);
+                
+                // Multi-frequency continent generation
+                const nx = x / size * 2;
+                const ny = y / size * 2;
+                
+                // Large-scale continents
+                const continents = turbulence(nx * 4, ny * 4, 128);
+                const mountains = turbulence(nx * 8, ny * 8, 64) * 0.5;
+                const details = turbulence(nx * 16, ny * 16, 32) * 0.25;
+                
+                const elevation = (continents + mountains + details) / 200;
+                
+                // Polar ice caps
+                if (latNorm > 0.92) {
+                    const iceVariation = noise(nx * 30, ny * 30, 1) * 20;
+                    data[idx] = 240 + iceVariation;
+                    data[idx + 1] = 250 + iceVariation;
+                    data[idx + 2] = 255;
                 }
-                // Land
-                else if (combined > 0.48) {
-                    const landType = fbm(nx * 15, ny * 15, 3);
-                    const moisture = 1 - lat;
+                // Land areas
+                else if (elevation > 0.53) {
+                    const landHeight = (elevation - 0.53) * 10;
+                    const climate = (1 - latNorm) * 0.7; // Warmer at equator
+                    const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
                     
-                    if (landType > 0.6 && moisture > 0.3) {
-                        // Forest (green)
-                        data[idx] = 34 + moisture * 50;
-                        data[idx + 1] = 139 + moisture * 30;
-                        data[idx + 2] = 34;
-                    } else if (landType < 0.3) {
-                        // Desert (tan)
-                        data[idx] = 210;
-                        data[idx + 1] = 180 + noise(nx * 50, ny * 50) * 30;
-                        data[idx + 2] = 140;
-                    } else {
-                        // Plains (brown-green)
-                        data[idx] = 120 + landType * 40;
-                        data[idx + 1] = 100 + moisture * 60;
-                        data[idx + 2] = 60;
+                    // Snow-capped mountains
+                    if (landHeight > 0.7) {
+                        const snowMix = Math.min(1, (landHeight - 0.7) * 5);
+                        data[idx] = 140 + snowMix * 100;
+                        data[idx + 1] = 130 + snowMix * 110;
+                        data[idx + 2] = 120 + snowMix * 120;
+                    }
+                    // Deserts
+                    else if (precipitation < 0.3 || latNorm > 0.7) {
+                        const sandVar = noise(nx * 40, ny * 40, 2) * 30;
+                        data[idx] = 194 + sandVar;
+                        data[idx + 1] = 178 + sandVar * 0.8;
+                        data[idx + 2] = 128 + sandVar * 0.5;
+                    }
+                    // Forests
+                    else if (climate > 0.4 && precipitation > 0.5) {
+                        const forestVar = noise(nx * 25, ny * 25, 3) * 40;
+                        data[idx] = 34 + forestVar * 0.8;
+                        data[idx + 1] = 139 - forestVar * 0.3;
+                        data[idx + 2] = 34 + forestVar * 0.5;
+                    }
+                    // Grasslands/plains
+                    else {
+                        const grassVar = noise(nx * 30, ny * 30, 4) * 35;
+                        data[idx] = 107 + grassVar;
+                        data[idx + 1] = 142 - grassVar * 0.3;
+                        data[idx + 2] = 35 + grassVar * 0.8;
                     }
                 }
-                // Ocean
-                else {
-                    const depth = (0.48 - combined) * 3;
-                    data[idx] = 10 + depth * 20;
-                    data[idx + 1] = 50 + depth * 60;
-                    data[idx + 2] = 100 + depth * 100;
+                // Shallow water
+                else if (elevation > 0.49) {
+                    const shallow = (elevation - 0.49) * 25;
+                    data[idx] = 64 + shallow * 2;
+                    data[idx + 1] = 164 - shallow;
+                    data[idx + 2] = 223 - shallow * 2;
                 }
+                // Deep ocean
+                else {
+                    const depth = (0.49 - elevation) * 2;
+                    data[idx] = Math.max(0, 25 - depth * 15);
+                    data[idx + 1] = Math.max(20, 105 - depth * 40);
+                    data[idx + 2] = Math.max(50, 180 - depth * 50);
+                }
+                
                 data[idx + 3] = 255;
             }
         }
         
         ctx.putImageData(imageData, 0, 0);
         
-        // Add clouds as overlay
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = 0.3;
-        for (let i = 0; i < 1000; i++) {
-            const x = Math.random() * size;
-            const y = Math.random() * size;
-            const cloudNoise = fbm(x / size * 8, y / size * 8, 4);
-            if (cloudNoise > 0.55) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${(cloudNoise - 0.55) * 2})`;
-                ctx.fillRect(x, y, 3, 3);
+        // Add realistic cloud layer
+        ctx.globalCompositeOperation = 'screen';
+        ctx.globalAlpha = 0.4;
+        
+        const cloudData = ctx.createImageData(size, size);
+        const clouds = cloudData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size * 2;
+                const ny = y / size * 2;
+                
+                // Swirling cloud patterns
+                const cloudBase = turbulence(nx * 6 + 100, ny * 6, 128) / 180;
+                const cloudDetail = turbulence(nx * 12 + 100, ny * 12, 64) / 300;
+                const cloudTotal = cloudBase + cloudDetail;
+                
+                if (cloudTotal > 0.4) {
+                    const cloudBrightness = Math.min(255, (cloudTotal - 0.4) * 400);
+                    clouds[idx] = cloudBrightness;
+                    clouds[idx + 1] = cloudBrightness;
+                    clouds[idx + 2] = cloudBrightness;
+                    clouds[idx + 3] = Math.min(200, cloudBrightness * 0.8);
+                } else {
+                    clouds[idx + 3] = 0;
+                }
             }
         }
+        
+        ctx.putImageData(cloudData, 0, 0);
         
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
@@ -1746,9 +1815,18 @@ class SolarSystemModule {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         
-        const noise = (x, y) => {
-            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-            return n - Math.floor(n);
+        const noise = (x, y, seed = 0) => {
+            const angle = Math.sin(x * 12.9898 + y * 78.233 + seed * 43.758) * 43758.5453;
+            return Math.abs(angle - Math.floor(angle));
+        };
+        
+        const turbulence = (x, y, size) => {
+            let value = 0, initialSize = size;
+            while (size >= 1) {
+                value += noise(x / size, y / size) * size;
+                size /= 2.0;
+            }
+            return value / initialSize;
         };
         
         const imageData = ctx.createImageData(size, size);
@@ -1757,15 +1835,28 @@ class SolarSystemModule {
         for (let y = 0; y < size; y++) {
             for (let x = 0; x < size; x++) {
                 const idx = (y * size + x) * 4;
-                const nx = x / size, ny = y / size;
+                const nx = x / size * 2, ny = y / size * 2;
                 
-                // Mountains and elevation
-                const elevation = noise(nx * 30, ny * 30) * 0.7 + noise(nx * 60, ny * 60) * 0.3;
-                const gray = Math.floor(128 + elevation * 100);
+                // Match land areas from main texture
+                const continents = turbulence(nx * 4, ny * 4, 128);
+                const mountains = turbulence(nx * 8, ny * 8, 64) * 0.5;
+                const details = turbulence(nx * 16, ny * 16, 32) * 0.25;
+                const elevation = (continents + mountains + details) / 200;
                 
-                data[idx] = gray;
-                data[idx + 1] = gray;
-                data[idx + 2] = gray;
+                let gray;
+                if (elevation > 0.53) {
+                    // Land: higher elevation
+                    const landHeight = (elevation - 0.53) * 10;
+                    const mountainNoise = turbulence(nx * 12, ny * 12, 128) / 100;
+                    gray = Math.floor(140 + landHeight * 80 + mountainNoise * 60);
+                } else {
+                    // Ocean: lower elevation
+                    gray = Math.floor(100 - (0.53 - elevation) * 80);
+                }
+                
+                data[idx] = Math.max(0, Math.min(255, gray));
+                data[idx + 1] = Math.max(0, Math.min(255, gray));
+                data[idx + 2] = Math.max(0, Math.min(255, gray));
                 data[idx + 3] = 255;
             }
         }
@@ -1783,10 +1874,49 @@ class SolarSystemModule {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         
-        // Base normal (pointing up/out)
-        ctx.fillStyle = '#8080FF';
-        ctx.fillRect(0, 0, size, size);
+        const noise = (x, y, seed = 0) => {
+            const angle = Math.sin(x * 12.9898 + y * 78.233 + seed * 43.758) * 43758.5453;
+            return Math.abs(angle - Math.floor(angle));
+        };
         
+        const turbulence = (x, y, size) => {
+            let value = 0, initialSize = size;
+            while (size >= 1) {
+                value += noise(x / size, y / size) * size;
+                size /= 2.0;
+            }
+            return value / initialSize;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        // Calculate normals from height map
+        for (let y = 1; y < size - 1; y++) {
+            for (let x = 1; x < size - 1; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size * 2, ny = y / size * 2;
+                
+                // Sample height at neighboring pixels
+                const h = turbulence(nx, ny, 128) / 128;
+                const hL = turbulence((x - 1) / size * 2, ny, 128) / 128;
+                const hR = turbulence((x + 1) / size * 2, ny, 128) / 128;
+                const hU = turbulence(nx, (y - 1) / size * 2, 128) / 128;
+                const hD = turbulence(nx, (y + 1) / size * 2, 128) / 128;
+                
+                // Calculate gradients
+                const dX = (hR - hL) * 2;
+                const dY = (hD - hU) * 2;
+                
+                // Convert to normal map RGB (blue = up, red = x, green = y)
+                data[idx] = Math.floor((dX + 1) * 127.5);     // R: -1 to 1 -> 0 to 255
+                data[idx + 1] = Math.floor((dY + 1) * 127.5); // G: -1 to 1 -> 0 to 255
+                data[idx + 2] = 200;                           // B: mostly pointing up
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
         return texture;
@@ -2435,14 +2565,14 @@ class SolarSystemModule {
                 return new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     normalMap: earthNormal,
-                    normalScale: new THREE.Vector2(0.8, 0.8),
+                    normalScale: new THREE.Vector2(0.3, 0.3), // More subtle
                     bumpMap: earthBump,
-                    bumpScale: 0.05,
+                    bumpScale: 0.02, // More subtle elevation
                     roughnessMap: earthSpecular,
-                    roughness: 0.5,
-                    metalness: 0.1,
+                    roughness: 0.7, // Slightly rougher overall
+                    metalness: 0.05, // Less metallic
                     emissive: 0x0a2f4f,
-                    emissiveIntensity: 0.03
+                    emissiveIntensity: 0.02
                 });
                 
             case 'mars':
@@ -3202,13 +3332,17 @@ class SolarSystemModule {
     }
 
     createComets(scene) {
-        // Create comets with orbits
+        // Create comets with REALISTIC sizes (typically 1-60 km)
+        // Halley: ~15 km, Hale-Bopp: ~60 km, NEOWISE: ~5 km
         this.comets = [];
         
         const cometsData = [
-            { name: 'Halley\'s Comet', distance: 200, eccentricity: 0.967, speed: 0.001, size: 0.5, description: '☄️ Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
-            { name: 'Comet Hale-Bopp', distance: 250, eccentricity: 0.995, speed: 0.0008, size: 0.6, description: '☄️ Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
-            { name: 'Comet NEOWISE', distance: 180, eccentricity: 0.999, speed: 0.0012, size: 0.4, description: '☄️ Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
+            // Halley: 15 km / 12,742 km = 0.0012
+            { name: 'Halley\'s Comet', distance: 200, eccentricity: 0.967, speed: 0.001, size: 0.002, description: '☄️ Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
+            // Hale-Bopp: 60 km / 12,742 km = 0.0047
+            { name: 'Comet Hale-Bopp', distance: 250, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: '☄️ Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
+            // NEOWISE: 5 km / 12,742 km = 0.0004
+            { name: 'Comet NEOWISE', distance: 180, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: '☄️ Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
         ];
 
         cometsData.forEach((cometData, index) => {
