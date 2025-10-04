@@ -139,6 +139,36 @@ class SceneManager {
 
     setupXR() {
         try {
+            // Initialize XR controllers
+            this.controllers = [];
+            this.controllerGrips = [];
+            
+            // Setup two controllers
+            for (let i = 0; i < 2; i++) {
+                // Controller for pointing/selecting
+                const controller = this.renderer.xr.getController(i);
+                controller.addEventListener('selectstart', () => this.onSelectStart(controller));
+                controller.addEventListener('selectend', () => this.onSelectEnd(controller));
+                this.scene.add(controller);
+                this.controllers.push(controller);
+                
+                // Controller grip for models
+                const controllerGrip = this.renderer.xr.getControllerGrip(i);
+                
+                // Add a simple line to show controller direction
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(0, 0, -1)
+                ]);
+                const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x00ffff }));
+                line.name = 'line';
+                line.scale.z = 5;
+                controller.add(line);
+                
+                this.scene.add(controllerGrip);
+                this.controllerGrips.push(controllerGrip);
+            }
+            
             // VR Button
             const vrButton = VRButton.createButton(this.renderer);
             const vrContainer = document.getElementById('vr-button');
@@ -166,14 +196,78 @@ class SceneManager {
                     session.environmentBlendMode === 'alpha-blend') {
                     this.scene.background = null; // Transparent for AR
                 }
+                console.log('XR session started');
             });
 
             // Handle XR session end
             this.renderer.xr.addEventListener('sessionend', () => {
                 this.scene.background = new THREE.Color(0x000000);
+                console.log('XR session ended');
             });
         } catch (error) {
             console.warn('WebXR not supported:', error);
+        }
+    }
+    
+    onSelectStart(controller) {
+        // Handle controller trigger press
+        console.log('Controller select started');
+        controller.userData.selecting = true;
+    }
+    
+    onSelectEnd(controller) {
+        // Handle controller trigger release
+        console.log('Controller select ended');
+        controller.userData.selecting = false;
+    }
+    
+    updateXRMovement() {
+        // Only update in VR/AR mode
+        if (!this.renderer.xr.isPresenting) return;
+        
+        // Get controller inputs for movement
+        const session = this.renderer.xr.getSession();
+        if (session) {
+            const inputSources = session.inputSources;
+            
+            for (let i = 0; i < inputSources.length; i++) {
+                const inputSource = inputSources[i];
+                const gamepad = inputSource.gamepad;
+                
+                if (gamepad && gamepad.axes.length >= 2) {
+                    // Left stick: Movement (axes 0 and 1)
+                    const moveX = gamepad.axes[0];
+                    const moveZ = gamepad.axes[1];
+                    
+                    if (Math.abs(moveX) > 0.1 || Math.abs(moveZ) > 0.1) {
+                        // Move camera based on controller input
+                        const moveSpeed = 0.5;
+                        const cameraDirection = new THREE.Vector3();
+                        this.camera.getWorldDirection(cameraDirection);
+                        cameraDirection.y = 0; // Keep movement horizontal
+                        cameraDirection.normalize();
+                        
+                        const rightVector = new THREE.Vector3();
+                        rightVector.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
+                        
+                        // Apply movement
+                        const xrCamera = this.renderer.xr.getCamera();
+                        xrCamera.position.add(rightVector.multiplyScalar(moveX * moveSpeed));
+                        xrCamera.position.add(cameraDirection.multiplyScalar(-moveZ * moveSpeed));
+                    }
+                    
+                    // Right stick: Rotation (axes 2 and 3) if available
+                    if (gamepad.axes.length >= 4) {
+                        const rotateX = gamepad.axes[2];
+                        const rotateY = gamepad.axes[3];
+                        
+                        if (Math.abs(rotateX) > 0.1) {
+                            const xrCamera = this.renderer.xr.getCamera();
+                            xrCamera.rotation.y -= rotateX * 0.02;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -408,6 +502,9 @@ class SolarSystemModule {
         
         // Scale mode: false = educational (compressed), true = realistic (vast)
         this.realisticScale = false;
+        
+        // Comet tails visibility: false = hidden (better for VR/AR)
+        this.cometTailsVisible = false;
         
         // Geometry cache for reuse
         this.geometryCache = new Map();
@@ -2119,28 +2216,34 @@ class SolarSystemModule {
         if (this.sun) {
             this.sun.rotation.y += 0.001 * timeSpeed;
             
-            // Animate solar flares
-            if (this.sun.userData.flares) {
+            // Animate solar flares (optimized - update every 2 frames)
+            if (this.sun.userData.flares && (this._sunFlareFrame || 0) % 2 === 0) {
                 const time = Date.now() * 0.001;
                 const sizes = this.sun.userData.flares.geometry.attributes.size.array;
-                for (let i = 0; i < sizes.length; i++) {
-                    sizes[i] = 1 + Math.sin(time + i * 0.5) * 1.5 + Math.random() * 0.5;
+                const len = sizes.length;
+                
+                // Pre-calculate random values (less Math.random() calls)
+                for (let i = 0; i < len; i++) {
+                    sizes[i] = 1 + Math.sin(time + i * 0.5) * 1.5 + (i % 3) * 0.2;
                 }
                 this.sun.userData.flares.geometry.attributes.size.needsUpdate = true;
             }
+            this._sunFlareFrame = (this._sunFlareFrame || 0) + 1;
         }
 
-        // Twinkle stars slightly
-        if (this.starfield && Math.random() < 0.1) {
+        // Twinkle stars slightly (optimized - only every 5 frames)
+        if (this.starfield && this._starTwinkleFrame % 5 === 0 && Math.random() < 0.3) {
             const sizes = this.starfield.geometry.attributes.size.array;
-            for (let i = 0; i < 50; i++) {
+            // Reduce updates to 30 stars instead of 50
+            for (let i = 0; i < 30; i++) {
                 const idx = Math.floor(Math.random() * sizes.length);
                 sizes[idx] = 1 + Math.random() * 2;
             }
             this.starfield.geometry.attributes.size.needsUpdate = true;
         }
+        this._starTwinkleFrame = (this._starTwinkleFrame || 0) + 1;
         
-        // Update comets with elliptical orbits
+        // Update comets with elliptical orbits (optimized)
         if (this.comets) {
             this.comets.forEach(comet => {
                 const userData = comet.userData;
@@ -2148,68 +2251,91 @@ class SolarSystemModule {
                 
                 // Elliptical orbit calculation
                 const e = userData.eccentricity;
-                const a = userData.distance; // Semi-major axis
+                const a = userData.distance;
                 const angle = userData.angle;
                 
+                // Pre-calculate trig values (avoid redundant calculations)
+                const cosAngle = Math.cos(angle);
+                const sinAngle = Math.sin(angle);
+                
                 // Simplified elliptical orbit
-                const r = a * (1 - e * e) / (1 + e * Math.cos(angle));
-                comet.position.x = r * Math.cos(angle);
-                comet.position.z = r * Math.sin(angle);
-                comet.position.y = Math.sin(angle * 0.5) * 20; // Slight inclination
+                const r = a * (1 - e * e) / (1 + e * cosAngle);
+                comet.position.x = r * cosAngle;
+                comet.position.z = r * sinAngle;
+                comet.position.y = Math.sin(angle * 0.5) * 20;
                 
-                // Update both tails to point away from sun
-                const sunDirection = new THREE.Vector3(-comet.position.x, -comet.position.y, -comet.position.z).normalize();
-                const cometVelocity = new THREE.Vector3(Math.cos(angle + Math.PI/2), 0, Math.sin(angle + Math.PI/2)).normalize();
-                
-                // Dust tail - curved, follows orbit path slightly
+                // Show/hide comet tails based on toggle
                 if (userData.dustTail) {
+                    userData.dustTail.visible = this.cometTailsVisible;
+                }
+                if (userData.ionTail) {
+                    userData.ionTail.visible = this.cometTailsVisible;
+                }
+                
+                // Only update tails if they're visible
+                if (!this.cometTailsVisible) {
+                    userData.frameCount = (userData.frameCount || 0) + 1;
+                    return;
+                }
+                
+                // Cache direction vectors (reuse objects to avoid GC)
+                if (!userData._sunDir) userData._sunDir = new THREE.Vector3();
+                if (!userData._velDir) userData._velDir = new THREE.Vector3();
+                
+                userData._sunDir.set(-comet.position.x, -comet.position.y, -comet.position.z).normalize();
+                userData._velDir.set(Math.cos(angle + Math.PI/2), 0, Math.sin(angle + Math.PI/2)).normalize();
+                
+                // Update dust tail (only every 3 frames for performance)
+                if (userData.dustTail && userData.frameCount % 3 === 0) {
                     const dustPositions = userData.dustTail.geometry.attributes.position.array;
                     const dustSizes = userData.dustTail.geometry.attributes.size.array;
                     
+                    const curveFactor = 0.3;
                     for (let i = 0; i < 200; i++) {
                         const t = i / 200;
                         const length = 80 * t;
                         
-                        // Curve effect - mix sun direction with velocity direction
-                        const curveFactor = 0.3;
-                        const direction = new THREE.Vector3(
-                            sunDirection.x + cometVelocity.x * curveFactor * t,
-                            sunDirection.y + cometVelocity.y * curveFactor * t,
-                            sunDirection.z + cometVelocity.z * curveFactor * t
-                        ).normalize();
+                        // Curve effect - pre-calculated
+                        const dirX = userData._sunDir.x + userData._velDir.x * curveFactor * t;
+                        const dirY = userData._sunDir.y + userData._velDir.y * curveFactor * t;
+                        const dirZ = userData._sunDir.z + userData._velDir.z * curveFactor * t;
+                        const normFactor = 1 / Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
                         
                         // Add spread
                         const spread = (Math.random() - 0.5) * 15 * t;
                         const spreadPerpendicular = (Math.random() - 0.5) * 8 * t;
                         
-                        dustPositions[i * 3] = direction.x * length + spread;
-                        dustPositions[i * 3 + 1] = direction.y * length + spreadPerpendicular;
-                        dustPositions[i * 3 + 2] = direction.z * length + spread;
+                        dustPositions[i * 3] = dirX * normFactor * length + spread;
+                        dustPositions[i * 3 + 1] = dirY * normFactor * length + spreadPerpendicular;
+                        dustPositions[i * 3 + 2] = dirZ * normFactor * length + spread;
                         
-                        // Vary size slightly
-                        dustSizes[i] = 3 * (1 - t * 0.7) * (0.8 + Math.random() * 0.4);
+                        // Vary size (less random() calls)
+                        dustSizes[i] = 3 * (1 - t * 0.7) * (0.9 + (i % 5) * 0.05);
                     }
                     userData.dustTail.geometry.attributes.position.needsUpdate = true;
                     userData.dustTail.geometry.attributes.size.needsUpdate = true;
                 }
                 
-                // Ion tail - straight, follows sun direction exactly
-                if (userData.ionTail) {
+                // Update ion tail (only every 2 frames for performance)
+                if (userData.ionTail && userData.frameCount % 2 === 0) {
                     const ionPositions = userData.ionTail.geometry.attributes.position.array;
+                    const sunDirX = userData._sunDir.x;
+                    const sunDirY = userData._sunDir.y;
+                    const sunDirZ = userData._sunDir.z;
                     
                     for (let i = 0; i < 150; i++) {
                         const t = i / 150;
                         const length = 120 * t;
-                        
-                        // Very straight with minimal spread
                         const spread = (Math.random() - 0.5) * 3 * t;
                         
-                        ionPositions[i * 3] = sunDirection.x * length + spread;
-                        ionPositions[i * 3 + 1] = sunDirection.y * length + spread;
-                        ionPositions[i * 3 + 2] = sunDirection.z * length + spread;
+                        ionPositions[i * 3] = sunDirX * length + spread;
+                        ionPositions[i * 3 + 1] = sunDirY * length + spread;
+                        ionPositions[i * 3 + 2] = sunDirZ * length + spread;
                     }
                     userData.ionTail.geometry.attributes.position.needsUpdate = true;
                 }
+                
+                userData.frameCount = (userData.frameCount || 0) + 1;
             });
         }
         
@@ -2240,12 +2366,14 @@ class SolarSystemModule {
             });
         }
         
-        // Rotate nebulae slowly
+        // Rotate nebulae slowly (optimized - pre-calculate time)
         if (this.nebulae) {
+            const time = Date.now() * 0.0005;
+            const scale = 1 + Math.sin(time) * 0.05;
+            
             this.nebulae.forEach(nebula => {
                 nebula.rotation.y += 0.0001 * timeSpeed;
-                // Pulsing effect
-                const scale = 1 + Math.sin(Date.now() * 0.0005) * 0.05;
+                // Pulsing effect (shared calculation)
                 nebula.scale.setScalar(scale);
             });
         }
@@ -3030,6 +3158,20 @@ class TopicManager {
             }, { passive: true });
         }
         
+        // Comet tails toggle button
+        const cometTailsButton = document.getElementById('toggle-comet-tails');
+        if (cometTailsButton) {
+            cometTailsButton.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    this.solarSystemModule.cometTailsVisible = !this.solarSystemModule.cometTailsVisible;
+                    cometTailsButton.classList.toggle('toggle-on');
+                    cometTailsButton.textContent = this.solarSystemModule.cometTailsVisible ? 
+                        '☄️ Tails ON' : '☄️ Tails OFF';
+                    console.log(`Comet tails ${this.solarSystemModule.cometTailsVisible ? 'enabled' : 'disabled'}`);
+                }
+            }, { passive: true });
+        }
+        
         // Reset view button
         const resetButton = document.getElementById('reset-view');
         if (resetButton) {
@@ -3177,6 +3319,9 @@ class App {
                 const currentTime = performance.now();
                 const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
                 
+                // Update XR controller movement
+                this.sceneManager.updateXRMovement();
+                
                 // Limit to ~60 FPS and prevent huge jumps
                 if (deltaTime >= CONFIG.PERFORMANCE.frameTime / 1000) {
                     this.lastTime = currentTime;
@@ -3216,6 +3361,17 @@ class App {
                     <p>• <strong>Click Objects:</strong> Select and focus on object</p>
                     <p>• <strong>Explorer Panel:</strong> Click object names to jump to them</p>
                     
+                    <h3>⌨️ Keyboard Shortcuts</h3>
+                    <p>• <span class="keyboard-shortcut">H</span> Show this help</p>
+                    <p>• <span class="keyboard-shortcut">R</span> Reset camera view</p>
+                    <p>• <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
+                    <p>• <span class="keyboard-shortcut">D</span> Toggle object details</p>
+                    <p>• <span class="keyboard-shortcut">C</span> Toggle comet tails (off for VR/AR)</p>
+                    <p>• <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
+                    <p>• <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
+                    <p>• <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
+                    <p>• <span class="keyboard-shortcut">ESC</span> Close panels</p>
+                    
                     <h3>🔍 Object Inspection</h3>
                     <p>• <strong>After selecting an object:</strong></p>
                     <p>  - Drag to rotate camera around the object</p>
@@ -3237,6 +3393,11 @@ class App {
                     <p>• Click "Enter VR" or "Enter AR" buttons (bottom right)</p>
                     <p>• Requires WebXR-compatible device</p>
                     <p>• AR mode uses passthrough for mixed reality</p>
+                    <p>• <strong>VR Controls:</strong></p>
+                    <p>  - Left stick: Move forward/backward/strafe</p>
+                    <p>  - Right stick: Rotate camera view</p>
+                    <p>  - Trigger: Select objects</p>
+                    <p>• <strong>Tip:</strong> Turn OFF comet tails (press C) before entering VR/AR to avoid visual flicker</p>
                     
                     <h3>💡 Tips</h3>
                     <p>• Increase brightness to see dark sides of planets</p>
@@ -3249,9 +3410,108 @@ class App {
                     <p>• Optimized for 60 FPS on modern devices</p>
                     <p>• Reduced geometry for better mobile performance</p>
                     <p>• Hardware-accelerated WebGL rendering</p>
+                    <p>• Press <span class="keyboard-shortcut">F</span> to show FPS counter</p>
                 `);
             }, { passive: true });
         }
+        
+        // Setup keyboard shortcuts
+        this.setupKeyboardShortcuts();
+        
+        // Setup FPS counter
+        this.setupFPSCounter();
+    }
+    
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ignore if typing in input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            switch(e.key.toLowerCase()) {
+                case 'h':
+                    document.getElementById('help-button')?.click();
+                    break;
+                case 'r':
+                    document.getElementById('reset-view')?.click();
+                    break;
+                case 'o':
+                    document.getElementById('toggle-orbits')?.click();
+                    break;
+                case 'd':
+                    document.getElementById('toggle-details')?.click();
+                    break;
+                case 's':
+                    document.getElementById('toggle-scale')?.click();
+                    break;
+                case 'c':
+                    document.getElementById('toggle-comet-tails')?.click();
+                    break;
+                case 'f':
+                    const fpsCounter = document.getElementById('fps-counter');
+                    if (fpsCounter) {
+                        fpsCounter.classList.toggle('hidden');
+                    }
+                    break;
+                case '+':
+                case '=':
+                    const speedSlider = document.getElementById('time-speed');
+                    if (speedSlider) {
+                        speedSlider.value = Math.min(100, parseInt(speedSlider.value) + 10);
+                        speedSlider.dispatchEvent(new Event('input'));
+                    }
+                    break;
+                case '-':
+                case '_':
+                    const speedSliderDown = document.getElementById('time-speed');
+                    if (speedSliderDown) {
+                        speedSliderDown.value = Math.max(0, parseInt(speedSliderDown.value) - 10);
+                        speedSliderDown.dispatchEvent(new Event('input'));
+                    }
+                    break;
+                case 'escape':
+                    this.uiManager.closeInfoPanel();
+                    this.uiManager.closeHelpModal();
+                    break;
+            }
+        }, { passive: true });
+    }
+    
+    setupFPSCounter() {
+        let frameCount = 0;
+        let lastTime = performance.now();
+        const fpsValue = document.getElementById('fps-value');
+        const fpsCounter = document.getElementById('fps-counter');
+        
+        const updateFPS = () => {
+            frameCount++;
+            const currentTime = performance.now();
+            
+            if (currentTime >= lastTime + 1000) {
+                const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                if (fpsValue) {
+                    fpsValue.textContent = fps;
+                }
+                
+                // Update color based on FPS
+                if (fpsCounter) {
+                    fpsCounter.classList.remove('good', 'warning', 'bad');
+                    if (fps >= 55) {
+                        fpsCounter.classList.add('good');
+                    } else if (fps >= 30) {
+                        fpsCounter.classList.add('warning');
+                    } else {
+                        fpsCounter.classList.add('bad');
+                    }
+                }
+                
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+            
+            requestAnimationFrame(updateFPS);
+        };
+        
+        updateFPS();
     }
 }
 
