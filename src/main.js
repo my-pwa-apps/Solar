@@ -207,9 +207,10 @@ class SceneManager {
                     session.environmentBlendMode === 'alpha-blend') {
                     this.scene.background = null; // Transparent for AR
                 }
-                // Show VR UI panel
-                if (this.vrUIPanel) this.vrUIPanel.visible = true;
-                console.log('✅ XR session started - Use grip buttons to show/hide menu');
+                // DON'T show VR UI panel automatically - let user toggle with grip
+                if (this.vrUIPanel) this.vrUIPanel.visible = false;
+                console.log('✅ XR session started - Press GRIP buttons to show/hide menu');
+                console.log('🎮 Left stick = Move | Right stick = Rotate | Trigger = Select');
             });
 
             // Handle XR session end
@@ -328,18 +329,19 @@ class SceneManager {
     
     onSelectStart(controller, index) {
         // Handle controller trigger press
-        console.log(`Controller ${index} trigger pressed`);
+        console.log(`🎯 Controller ${index} trigger pressed`);
         controller.userData.selecting = true;
         
-        // Check for VR UI interaction
+        // Setup raycaster for pointing
+        const raycaster = new THREE.Raycaster();
+        const tempMatrix = new THREE.Matrix4();
+        tempMatrix.identity().extractRotation(controller.matrixWorld);
+        
+        raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+        raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+        
+        // First, check for VR UI interaction
         if (this.vrUIPanel && this.vrUIPanel.visible) {
-            const raycaster = new THREE.Raycaster();
-            const tempMatrix = new THREE.Matrix4();
-            tempMatrix.identity().extractRotation(controller.matrixWorld);
-            
-            raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
-            raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-            
             const intersects = raycaster.intersectObject(this.vrUIPanel);
             
             if (intersects.length > 0) {
@@ -356,7 +358,34 @@ class SceneManager {
                         this.flashVRButton(btn);
                     }
                 });
+                return; // Don't check for object selection if we clicked UI
             }
+        }
+        
+        // If UI wasn't clicked, check for object selection (planets, moons, etc.)
+        const intersects = raycaster.intersectObjects(this.scene.children, true);
+        
+        if (intersects.length > 0) {
+            const hitObject = intersects[0].object;
+            console.log('🎯 VR Selected object:', hitObject.name || hitObject.type);
+            
+            // Try to focus on the selected object
+            const app = window.app || this;
+            if (app.topicManager && app.topicManager.currentModule) {
+                const module = app.topicManager.currentModule;
+                
+                // Check if it's a planet or celestial body
+                if (hitObject.name && module.focusOnObject) {
+                    module.focusOnObject(hitObject, this.camera, this.controls);
+                    console.log('✅ Focused on:', hitObject.name);
+                    
+                    if (this.vrUIPanel) {
+                        this.updateVRStatus(`🎯 Selected: ${hitObject.name}`);
+                    }
+                }
+            }
+        } else {
+            console.log('❌ No object hit by raycast');
         }
     }
     
@@ -497,50 +526,69 @@ class SceneManager {
         if (!this.renderer.xr.isPresenting) return;
         
         // Ensure dolly exists
-        if (!this.dolly) return;
+        if (!this.dolly) {
+            console.warn('⚠️ Dolly not found!');
+            return;
+        }
         
         // Get controller inputs for movement
         const session = this.renderer.xr.getSession();
-        if (session) {
-            const inputSources = session.inputSources;
+        if (!session) return;
+        
+        const inputSources = session.inputSources;
+        
+        // Quest controllers: Left controller = index 0, Right controller = index 1
+        // Thumbsticks are typically on axes[2] and axes[3]
+        
+        for (let i = 0; i < inputSources.length; i++) {
+            const inputSource = inputSources[i];
+            const gamepad = inputSource.gamepad;
+            const handedness = inputSource.handedness; // 'left' or 'right'
             
-            for (let i = 0; i < inputSources.length; i++) {
-                const inputSource = inputSources[i];
-                const gamepad = inputSource.gamepad;
+            if (!gamepad) continue;
+            
+            // Debug: log axes values periodically
+            if (gamepad.axes.length > 0 && Math.random() < 0.01) {
+                console.log(`🎮 ${handedness} controller axes:`, gamepad.axes.map(a => a.toFixed(2)));
+            }
+            
+            // Try both axis configurations (Quest varies between devices)
+            let stickX = 0, stickY = 0;
+            
+            if (gamepad.axes.length >= 4) {
+                // Most common: axes[2] and axes[3]
+                stickX = gamepad.axes[2];
+                stickY = gamepad.axes[3];
+            } else if (gamepad.axes.length >= 2) {
+                // Fallback: axes[0] and axes[1]
+                stickX = gamepad.axes[0];
+                stickY = gamepad.axes[1];
+            }
+            
+            // Left controller: Movement (forward/back/strafe)
+            if (handedness === 'left' && (Math.abs(stickX) > 0.15 || Math.abs(stickY) > 0.15)) {
+                const moveSpeed = 0.1;
+                const xrCamera = this.renderer.xr.getCamera();
+                const cameraDirection = new THREE.Vector3();
+                xrCamera.getWorldDirection(cameraDirection);
+                cameraDirection.y = 0; // Keep movement horizontal
+                cameraDirection.normalize();
                 
-                if (gamepad && gamepad.axes.length >= 2) {
-                    // Left stick: Movement (axes 0 and 1)
-                    const moveX = gamepad.axes[0];
-                    const moveZ = gamepad.axes[1];
-                    
-                    if (Math.abs(moveX) > 0.1 || Math.abs(moveZ) > 0.1) {
-                        // FIXED: Move dolly (not XR camera directly)
-                        const moveSpeed = 0.05;
-                        const xrCamera = this.renderer.xr.getCamera();
-                        const cameraDirection = new THREE.Vector3();
-                        xrCamera.getWorldDirection(cameraDirection);
-                        cameraDirection.y = 0; // Keep movement horizontal
-                        cameraDirection.normalize();
-                        
-                        const rightVector = new THREE.Vector3();
-                        rightVector.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
-                        
-                        // Apply movement to DOLLY (this is the fix!)
-                        this.dolly.position.add(rightVector.multiplyScalar(moveX * moveSpeed));
-                        this.dolly.position.add(cameraDirection.multiplyScalar(-moveZ * moveSpeed));
-                    }
-                    
-                    // Right stick: Rotation (axes 2 and 3) if available
-                    if (gamepad.axes.length >= 4) {
-                        const rotateX = gamepad.axes[2];
-                        const rotateY = gamepad.axes[3];
-                        
-                        if (Math.abs(rotateX) > 0.1) {
-                            // FIXED: Rotate dolly (not XR camera directly)
-                            this.dolly.rotation.y -= rotateX * 0.02;
-                        }
-                    }
-                }
+                const rightVector = new THREE.Vector3();
+                rightVector.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
+                
+                // Apply movement to DOLLY
+                this.dolly.position.add(rightVector.multiplyScalar(stickX * moveSpeed));
+                this.dolly.position.add(cameraDirection.multiplyScalar(-stickY * moveSpeed));
+                
+                console.log(`🎮 LEFT Moving: X=${stickX.toFixed(2)}, Y=${stickY.toFixed(2)}, Pos=(${this.dolly.position.x.toFixed(1)}, ${this.dolly.position.z.toFixed(1)})`);
+            }
+            
+            // Right controller: Rotation (snap turning)
+            if (handedness === 'right' && Math.abs(stickX) > 0.15) {
+                // Rotate dolly for snap turning
+                this.dolly.rotation.y -= stickX * 0.03;
+                console.log(`🔄 RIGHT Rotating: ${stickX.toFixed(2)}, Angle=${(this.dolly.rotation.y * 180 / Math.PI).toFixed(1)}°`);
             }
         }
     }
