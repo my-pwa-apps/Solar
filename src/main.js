@@ -2888,33 +2888,36 @@ class SolarSystemModule {
                 });
                 
             case 'uranus':
-                // Uranus: Cyan/turquoise from methane
+                // Uranus: Hyperrealistic cyan atmosphere with methane
+                const uranusTexture = this.createUranusTexture(2048);
                 return new THREE.MeshStandardMaterial({
-                    color: 0x4fd4e8, // Cyan-blue
+                    map: uranusTexture,
                     roughness: 0.3,
                     metalness: 0.1,
                     emissive: 0x1a4d5a,
-                    emissiveIntensity: 0.1
+                    emissiveIntensity: 0.12
                 });
                 
             case 'neptune':
-                // Neptune: Deep blue from methane
+                // Neptune: Hyperrealistic deep blue with Great Dark Spot
+                const neptuneTexture = this.createNeptuneTexture(2048);
                 return new THREE.MeshStandardMaterial({
-                    color: 0x2e5fb5, // Deep blue
+                    map: neptuneTexture,
                     roughness: 0.3,
                     metalness: 0.1,
                     emissive: 0x0f1f3d,
-                    emissiveIntensity: 0.15
+                    emissiveIntensity: 0.18
                 });
                 
             case 'pluto':
-                // Pluto: Reddish-brown with bright regions
+                // Pluto: Hyperrealistic with Tombaugh Regio heart
+                const plutoTexture = this.createPlutoTexture(2048);
                 return new THREE.MeshStandardMaterial({
-                    color: 0xd4a373, // Light brown
-                    roughness: 0.9,
+                    map: plutoTexture,
+                    roughness: 0.85,
                     metalness: 0.0,
                     emissive: 0x3d2f20,
-                    emissiveIntensity: 0.02
+                    emissiveIntensity: 0.05
                 });
                 
             default:
@@ -5455,6 +5458,59 @@ class App {
                 case 'escape':
                     this.uiManager.closeInfoPanel();
                     this.uiManager.closeHelpModal();
+                    break;
+                case 'i':
+                    // Find and focus on ISS
+                    if (this.spacecraft) {
+                        const iss = this.spacecraft.find(s => s.userData.name.includes('ISS'));
+                        if (iss) {
+                            this.focusOnObject(iss, this.camera, this.controls);
+                            console.log('🛰️ Focusing on International Space Station');
+                        }
+                    }
+                    break;
+                case 'v':
+                    // Cycle through Voyager probes
+                    if (this.spacecraft) {
+                        const voyagers = this.spacecraft.filter(s => s.userData.name.includes('Voyager'));
+                        if (voyagers.length > 0) {
+                            this._voyagerIndex = ((this._voyagerIndex || 0) + 1) % voyagers.length;
+                            this.focusOnObject(voyagers[this._voyagerIndex], this.camera, this.controls);
+                            console.log(`🚀 Focusing on ${voyagers[this._voyagerIndex].userData.name}`);
+                        }
+                    }
+                    break;
+                case 'm':
+                    // Cycle through Mars rovers
+                    if (this.spacecraft) {
+                        const rovers = this.spacecraft.filter(s => s.userData.type === 'rover');
+                        if (rovers.length > 0) {
+                            this._roverIndex = ((this._roverIndex || 0) + 1) % rovers.length;
+                            this.focusOnObject(rovers[this._roverIndex], this.camera, this.controls);
+                            console.log(`🤖 Focusing on ${rovers[this._roverIndex].userData.name}`);
+                        }
+                    }
+                    break;
+                case 'p':
+                    // Cycle through deep space probes
+                    if (this.spacecraft) {
+                        const probes = this.spacecraft.filter(s => s.userData.type === 'probe');
+                        if (probes.length > 0) {
+                            this._probeIndex = ((this._probeIndex || 0) + 1) % probes.length;
+                            this.focusOnObject(probes[this._probeIndex], this.camera, this.controls);
+                            console.log(`🛰️ Focusing on ${probes[this._probeIndex].userData.name}`);
+                        }
+                    }
+                    break;
+                case 'l':
+                    // Find Apollo 11 landing site
+                    if (this.spacecraft) {
+                        const apollo = this.spacecraft.find(s => s.userData.name.includes('Apollo'));
+                        if (apollo) {
+                            this.focusOnObject(apollo, this.camera, this.controls);
+                            console.log('🌕 Focusing on Apollo 11 Landing Site');
+                        }
+                    }
                     break;
             }
         }, { passive: true });
