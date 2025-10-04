@@ -805,11 +805,11 @@ class SceneManager {
                 // Horizontal movement (X/Z plane)
                 if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
                     // Forward/Backward (push stick forward = move forward)
-                    // REVERSED: negative stickY for intuitive forward movement
+                    // FIXED: Positive stickY moves you in the direction you're looking
                     const forwardMovement = cameraDirection.clone();
                     forwardMovement.y = 0; // Keep horizontal
                     forwardMovement.normalize();
-                    this.dolly.position.add(forwardMovement.multiplyScalar(-stickY * baseSpeed));
+                    this.dolly.position.add(forwardMovement.multiplyScalar(stickY * baseSpeed));
                     
                     // Strafe Left/Right
                     const strafeMovement = cameraRight.clone();
@@ -1954,19 +1954,19 @@ class SolarSystemModule {
                         data[idx + 2] = 35 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - BRIGHTENED FOR VR
+                // Shallow water - balanced for contrast
                 else if (elevation > 0.49) {
                     const shallow = (elevation - 0.49) * 25;
-                    data[idx] = 100 + shallow * 2; // Brighter blues
-                    data[idx + 1] = 190 - shallow;
-                    data[idx + 2] = 240 - shallow * 2;
+                    data[idx] = 70 + shallow * 2;
+                    data[idx + 1] = 170 - shallow;
+                    data[idx + 2] = 220 - shallow * 2;
                 }
-                // Deep ocean - MUCH BRIGHTER FOR VR VISIBILITY
+                // Deep ocean - balanced to show day/night and continent contrast
                 else {
                     const depth = (0.49 - elevation) * 2;
-                    data[idx] = Math.max(60, 80 - depth * 10); // Much brighter base
-                    data[idx + 1] = Math.max(120, 150 - depth * 30);
-                    data[idx + 2] = Math.max(180, 220 - depth * 30);
+                    data[idx] = Math.max(15, 40 - depth * 10);
+                    data[idx + 1] = Math.max(40, 95 - depth * 30);
+                    data[idx + 2] = Math.max(100, 160 - depth * 30);
                 }
                 
                 data[idx + 3] = 255;
@@ -2927,14 +2927,14 @@ class SolarSystemModule {
                 return new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     normalMap: earthNormal,
-                    normalScale: new THREE.Vector2(0.5, 0.5), // Enhanced for visibility
+                    normalScale: new THREE.Vector2(0.5, 0.5),
                     bumpMap: earthBump,
-                    bumpScale: 0.04, // More visible elevation
+                    bumpScale: 0.04,
                     roughnessMap: earthSpecular,
-                    roughness: 0.2, // MUCH lower for better light reflection in VR
-                    metalness: 0.3, // More reflective water
-                    emissive: 0x6699ff, // MUCH brighter blue glow
-                    emissiveIntensity: 1.2 // Significantly increased for VR visibility
+                    roughness: 0.3, // Balanced for water reflection
+                    metalness: 0.2, // Slightly reflective water
+                    emissive: 0x0a1f2f, // Very subtle blue glow for night side
+                    emissiveIntensity: 0.05 // Minimal - let texture and lighting show through
                 });
                 
             case 'mars':
@@ -3085,24 +3085,24 @@ class SolarSystemModule {
 
         // Add atmosphere for Earth with clouds
         if (config.atmosphere) {
-            // Atmosphere glow
+            // Atmosphere glow - very subtle for day/night visibility
             const atmoGeometry = new THREE.SphereGeometry(config.radius * 1.05, 32, 32);
             const atmoMaterial = new THREE.MeshBasicMaterial({
-                color: 0x6699ff,
+                color: 0x4488cc,
                 transparent: true,
-                opacity: 0.15,
+                opacity: 0.03, // Much more subtle - was 0.15
                 side: THREE.BackSide
             });
             const atmosphere = new THREE.Mesh(atmoGeometry, atmoMaterial);
             planet.add(atmosphere);
             
-            // Cloud layer with procedural patterns
+            // Cloud layer with procedural patterns - reduced opacity
             const cloudGeometry = new THREE.SphereGeometry(config.radius * 1.02, 32, 32);
             const cloudTexture = this.createCloudTexture(512);
             const cloudMaterial = new THREE.MeshStandardMaterial({
                 map: cloudTexture,
                 transparent: true,
-                opacity: 0.6,
+                opacity: 0.25, // Much more subtle - was 0.6
                 roughness: 0.9,
                 metalness: 0.0,
                 side: THREE.FrontSide,
