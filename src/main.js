@@ -163,15 +163,48 @@ class SceneManager {
                 // Controller grip for models
                 const controllerGrip = this.renderer.xr.getControllerGrip(i);
                 
-                // Add a simple line to show controller direction
-                const geometry = new THREE.BufferGeometry().setFromPoints([
+                // Add a BRIGHT laser pointer to show controller direction
+                const laserGeometry = new THREE.BufferGeometry().setFromPoints([
                     new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -1)
+                    new THREE.Vector3(0, 0, -10) // Extended to 10 meters
                 ]);
-                const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x00ffff }));
-                line.name = 'line';
-                line.scale.z = 5;
-                controller.add(line);
+                
+                // Create glowing laser material
+                const laserMaterial = new THREE.LineBasicMaterial({ 
+                    color: 0x00ffff,
+                    linewidth: 3, // Note: linewidth > 1 doesn't work on all platforms
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const laser = new THREE.Line(laserGeometry, laserMaterial);
+                laser.name = 'laser';
+                controller.add(laser);
+                
+                // Add a glowing sphere at the end of the laser
+                const pointerGeometry = new THREE.SphereGeometry(0.02, 16, 16);
+                const pointerMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
+                pointer.position.set(0, 0, -10);
+                pointer.name = 'pointer';
+                controller.add(pointer);
+                
+                // Add a cone to make the laser more visible
+                const coneGeometry = new THREE.ConeGeometry(0.01, 0.3, 8);
+                const coneMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+                cone.rotation.x = Math.PI / 2; // Point forward
+                cone.position.set(0, 0, -0.15);
+                cone.name = 'cone';
+                controller.add(cone);
                 
                 this.dolly.add(controllerGrip);
                 this.controllerGrips.push(controllerGrip);
@@ -521,6 +554,50 @@ class SceneManager {
         console.log('🎮 VR Status:', message);
     }
     
+    updateLaserPointers() {
+        // Update laser pointer colors based on what they're pointing at
+        if (!this.renderer.xr.isPresenting || !this.controllers) return;
+        
+        this.controllers.forEach((controller, index) => {
+            const laser = controller.getObjectByName('laser');
+            const pointer = controller.getObjectByName('pointer');
+            const cone = controller.getObjectByName('cone');
+            
+            if (!laser) return;
+            
+            // Setup raycaster
+            const raycaster = new THREE.Raycaster();
+            const tempMatrix = new THREE.Matrix4();
+            tempMatrix.identity().extractRotation(controller.matrixWorld);
+            
+            raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+            raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+            
+            // Check what we're pointing at
+            const intersects = raycaster.intersectObjects(this.scene.children, true);
+            
+            // Change color based on what we're hitting
+            if (intersects.length > 0 && intersects[0].distance < 10) {
+                // Pointing at something - make it GREEN
+                laser.material.color.setHex(0x00ff00);
+                if (pointer) pointer.material.color.setHex(0x00ff00);
+                if (cone) cone.material.color.setHex(0x00ff00);
+                
+                // Move pointer to hit point
+                const hitDistance = Math.min(intersects[0].distance, 10);
+                if (pointer) pointer.position.set(0, 0, -hitDistance);
+            } else {
+                // Not pointing at anything - CYAN
+                laser.material.color.setHex(0x00ffff);
+                if (pointer) pointer.material.color.setHex(0x00ffff);
+                if (cone) cone.material.color.setHex(0x00ffff);
+                
+                // Reset pointer to max distance
+                if (pointer) pointer.position.set(0, 0, -10);
+            }
+        });
+    }
+    
     updateXRMovement() {
         // Only update in VR/AR mode
         if (!this.renderer.xr.isPresenting) return;
@@ -577,9 +654,9 @@ class SceneManager {
                 const rightVector = new THREE.Vector3();
                 rightVector.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
                 
-                // Apply movement to DOLLY
+                // Apply movement to DOLLY (REVERSED forward/back for intuitive control)
                 this.dolly.position.add(rightVector.multiplyScalar(stickX * moveSpeed));
-                this.dolly.position.add(cameraDirection.multiplyScalar(-stickY * moveSpeed));
+                this.dolly.position.add(cameraDirection.multiplyScalar(stickY * moveSpeed)); // CHANGED: removed negative
                 
                 console.log(`🎮 LEFT Moving: X=${stickX.toFixed(2)}, Y=${stickY.toFixed(2)}, Pos=(${this.dolly.position.x.toFixed(1)}, ${this.dolly.position.z.toFixed(1)})`);
             }
@@ -887,15 +964,25 @@ class SolarSystemModule {
     }
 
     createSun(scene) {
-        // Hyperrealistic Sun with detailed surface
-        const sunGeometry = new THREE.SphereGeometry(10, 64, 64);
+        // HYPERREALISTIC Sun with sunspots, granulation, and flares
+        const sunGeometry = new THREE.SphereGeometry(10, 128, 128); // Higher detail
+        
+        // Create advanced sun texture with sunspots and granulation
+        const sunTexture = this.createSunTexture(2048);
+        const sunBumpMap = this.createSunBumpMap(2048);
+        
         const sunMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffa500, // Bright orange
-            emissive: 0xff8800,
-            emissiveIntensity: 3.0,
+            map: sunTexture,
+            bumpMap: sunBumpMap,
+            bumpScale: 0.5,
+            emissive: 0xff6600,
+            emissiveMap: sunTexture,
+            emissiveIntensity: 2.5,
             toneMapped: false,
-            roughness: 0.9
+            roughness: 1.0,
+            metalness: 0.0
         });
+        
         this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
         this.sun.userData = {
             name: 'Sun',
@@ -1477,9 +1564,855 @@ class SolarSystemModule {
         texture.needsUpdate = true;
         return texture;
     }
+    
+    // ===== HYPERREALISTIC TEXTURE GENERATORS =====
+    
+    createSunTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Gradient from core to edge
+        const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+        gradient.addColorStop(0, '#FFFF00');
+        gradient.addColorStop(0.5, '#FFCC00');
+        gradient.addColorStop(1, '#FF8800');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        
+        // Add granulation (convection cells)
+        for (let i = 0; i < 5000; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 2 + Math.random() * 4;
+            const brightness = 0.85 + Math.random() * 0.15;
+            
+            ctx.fillStyle = `rgba(255, ${Math.floor(200 * brightness)}, 0, 0.3)`;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Add sunspots (cooler, darker regions)
+        for (let i = 0; i < 30; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 10 + Math.random() * 30;
+            
+            // Sunspot umbra (dark center)
+            const spotGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            spotGradient.addColorStop(0, 'rgba(30, 20, 0, 0.8)');
+            spotGradient.addColorStop(0.6, 'rgba(100, 60, 0, 0.4)');
+            spotGradient.addColorStop(1, 'rgba(255, 150, 0, 0)');
+            
+            ctx.fillStyle = spotGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createSunBumpMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Base gray
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Add granulation bumps
+        for (let i = 0; i < 3000; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 2 + Math.random() * 3;
+            const height = Math.random();
+            
+            const gray = Math.floor(128 + height * 80);
+            ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createEarthTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Use advanced noise for continents
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const fbm = (x, y, octaves = 6) => {
+            let value = 0, amp = 1, freq = 1, maxVal = 0;
+            for (let i = 0; i < octaves; i++) {
+                value += noise(x * freq, y * freq) * amp;
+                maxVal += amp;
+                amp *= 0.5;
+                freq *= 2;
+            }
+            return value / maxVal;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                const lat = Math.abs(ny - 0.5) * 2;
+                
+                // Multi-scale continent noise
+                const continentNoise = fbm(nx * 6, ny * 6, 7);
+                const detailNoise = fbm(nx * 20, ny * 20, 4) * 0.1;
+                const combined = continentNoise + detailNoise;
+                
+                // Ice caps
+                if (lat > 0.88) {
+                    data[idx] = 250; data[idx + 1] = 255; data[idx + 2] = 255;
+                }
+                // Land
+                else if (combined > 0.48) {
+                    const landType = fbm(nx * 15, ny * 15, 3);
+                    const moisture = 1 - lat;
+                    
+                    if (landType > 0.6 && moisture > 0.3) {
+                        // Forest (green)
+                        data[idx] = 34 + moisture * 50;
+                        data[idx + 1] = 139 + moisture * 30;
+                        data[idx + 2] = 34;
+                    } else if (landType < 0.3) {
+                        // Desert (tan)
+                        data[idx] = 210;
+                        data[idx + 1] = 180 + noise(nx * 50, ny * 50) * 30;
+                        data[idx + 2] = 140;
+                    } else {
+                        // Plains (brown-green)
+                        data[idx] = 120 + landType * 40;
+                        data[idx + 1] = 100 + moisture * 60;
+                        data[idx + 2] = 60;
+                    }
+                }
+                // Ocean
+                else {
+                    const depth = (0.48 - combined) * 3;
+                    data[idx] = 10 + depth * 20;
+                    data[idx + 1] = 50 + depth * 60;
+                    data[idx + 2] = 100 + depth * 100;
+                }
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Add clouds as overlay
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.3;
+        for (let i = 0; i < 1000; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const cloudNoise = fbm(x / size * 8, y / size * 8, 4);
+            if (cloudNoise > 0.55) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${(cloudNoise - 0.55) * 2})`;
+                ctx.fillRect(x, y, 3, 3);
+            }
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createEarthBumpMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Mountains and elevation
+                const elevation = noise(nx * 30, ny * 30) * 0.7 + noise(nx * 60, ny * 60) * 0.3;
+                const gray = Math.floor(128 + elevation * 100);
+                
+                data[idx] = gray;
+                data[idx + 1] = gray;
+                data[idx + 2] = gray;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createEarthNormalMap(size) {
+        // Normal map for mountain ranges and ocean trenches
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Base normal (pointing up/out)
+        ctx.fillStyle = '#8080FF';
+        ctx.fillRect(0, 0, size, size);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createEarthSpecularMap(size) {
+        // Oceans are shiny, land is rough
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const fbm = (x, y) => {
+            return noise(x * 6, y * 6) * 0.6 + noise(x * 12, y * 12) * 0.4;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                const continentNoise = fbm(nx, ny);
+                
+                // Ocean = dark (smooth/shiny), Land = light (rough)
+                const roughness = continentNoise > 0.48 ? 200 : 50;
+                
+                data[idx] = roughness;
+                data[idx + 1] = roughness;
+                data[idx + 2] = roughness;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMoonTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Base regolith color (gray)
+                let gray = 100 + noise(nx * 40, ny * 40) * 60;
+                
+                // Maria (dark basalt plains)
+                const maria = noise(nx * 5, ny * 5);
+                if (maria < 0.3) {
+                    gray *= 0.6; // Darker regions
+                }
+                
+                // Ray systems (bright ejecta)
+                const rays = noise(nx * 80, ny * 80);
+                if (rays > 0.9) {
+                    gray = Math.min(255, gray * 1.4);
+                }
+                
+                data[idx] = gray;
+                data[idx + 1] = gray * 0.98;
+                data[idx + 2] = gray * 0.96;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Add craters
+        for (let i = 0; i < 200; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 5 + Math.random() * 40;
+            
+            // Crater shadow
+            const craterGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            craterGradient.addColorStop(0, 'rgba(20, 20, 20, 0.8)');
+            craterGradient.addColorStop(0.3, 'rgba(80, 80, 80, 0.4)');
+            craterGradient.addColorStop(0.7, 'rgba(140, 140, 140, 0.2)');
+            craterGradient.addColorStop(1, 'rgba(160, 160, 160, 0)');
+            
+            ctx.fillStyle = craterGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMoonBumpMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Add crater depth
+        for (let i = 0; i < 200; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 5 + Math.random() * 40;
+            
+            // Dark center (depression)
+            const depthGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            depthGradient.addColorStop(0, '#202020');
+            depthGradient.addColorStop(0.5, '#606060');
+            depthGradient.addColorStop(0.9, '#A0A0A0');
+            depthGradient.addColorStop(1, '#808080');
+            
+            ctx.fillStyle = depthGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMoonNormalMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#8080FF';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Add crater rim normals
+        for (let i = 0; i < 200; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 5 + Math.random() * 40;
+            
+            // Draw crater rim with normal variation
+            ctx.strokeStyle = `rgba(255, 128, 200, 0.3)`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMarsTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const fbm = (x, y, octaves = 6) => {
+            let value = 0, amp = 1, freq = 1, maxVal = 0;
+            for (let i = 0; i < octaves; i++) {
+                value += noise(x * freq, y * freq) * amp;
+                maxVal += amp;
+                amp *= 0.5;
+                freq *= 2;
+            }
+            return value / maxVal;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                const lat = Math.abs(ny - 0.5) * 2;
+                
+                // Polar ice caps
+                if (lat > 0.9) {
+                    data[idx] = 255;
+                    data[idx + 1] = 240;
+                    data[idx + 2] = 230;
+                } else {
+                    // Rusty red surface with canyons
+                    const terrain = fbm(nx * 8, ny * 8, 7);
+                    const canyon = fbm(nx * 15, ny * 15, 3);
+                    
+                    // Olympus Mons and Valles Marineris simulation
+                    const r = 150 + terrain * 80 - (canyon < 0.3 ? 40 : 0);
+                    const g = 70 + terrain * 50 - (canyon < 0.3 ? 30 : 0);
+                    const b = 30 + terrain * 30 - (canyon < 0.3 ? 20 : 0);
+                    
+                    data[idx] = Math.max(0, Math.min(255, r));
+                    data[idx + 1] = Math.max(0, Math.min(255, g));
+                    data[idx + 2] = Math.max(0, Math.min(255, b));
+                }
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMarsBumpMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Mountains and canyons
+                const elevation = noise(nx * 20, ny * 20) * 0.5 + noise(nx * 40, ny * 40) * 0.5;
+                const gray = Math.floor(128 + elevation * 100);
+                
+                data[idx] = gray;
+                data[idx + 1] = gray;
+                data[idx + 2] = gray;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMarsNormalMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#8080FF';
+        ctx.fillRect(0, 0, size, size);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMercuryTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Base gray-brown color
+                let gray = 120 + noise(nx * 30, ny * 30) * 60;
+                
+                // Ray systems
+                if (noise(nx * 100, ny * 100) > 0.92) {
+                    gray = Math.min(255, gray * 1.3);
+                }
+                
+                data[idx] = gray;
+                data[idx + 1] = gray * 0.9;
+                data[idx + 2] = gray * 0.8;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Add craters
+        for (let i = 0; i < 300; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 3 + Math.random() * 25;
+            
+            const craterGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            craterGradient.addColorStop(0, 'rgba(30, 25, 20, 0.7)');
+            craterGradient.addColorStop(0.5, 'rgba(100, 90, 80, 0.3)');
+            craterGradient.addColorStop(1, 'rgba(140, 130, 120, 0)');
+            
+            ctx.fillStyle = craterGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createMercuryBumpMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Crater depressions
+        for (let i = 0; i < 300; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const radius = 3 + Math.random() * 25;
+            
+            const depthGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            depthGradient.addColorStop(0, '#303030');
+            depthGradient.addColorStop(0.7, '#606060');
+            depthGradient.addColorStop(1, '#808080');
+            
+            ctx.fillStyle = depthGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createVenusTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const fbm = (x, y, octaves = 5) => {
+            let value = 0, amp = 1, freq = 1, maxVal = 0;
+            for (let i = 0; i < octaves; i++) {
+                value += noise(x * freq, y * freq) * amp;
+                maxVal += amp;
+                amp *= 0.5;
+                freq *= 2;
+            }
+            return value / maxVal;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Swirling sulfuric acid clouds
+                const cloudPattern = fbm(nx * 6, ny * 8, 6);
+                const swirl = Math.sin(nx * Math.PI * 10 + cloudPattern * 3) * 0.5 + 0.5;
+                
+                const brightness = 180 + cloudPattern * 60 + swirl * 20;
+                
+                data[idx] = Math.min(255, brightness * 1.1);      // R
+                data[idx + 1] = Math.min(255, brightness * 0.85); // G
+                data[idx + 2] = Math.min(255, brightness * 0.5);  // B
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createJupiterTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const fbm = (x, y, octaves = 4) => {
+            let value = 0, amp = 1, freq = 1, maxVal = 0;
+            for (let i = 0; i < octaves; i++) {
+                value += noise(x * freq, y * freq) * amp;
+                maxVal += amp;
+                amp *= 0.5;
+                freq *= 2;
+            }
+            return value / maxVal;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Horizontal bands with turbulence
+                const bandY = ny * 12; // 12 major bands
+                const bandPattern = Math.sin(bandY * Math.PI) * 0.5 + 0.5;
+                const turbulence = fbm(nx * 8, ny * 4, 5) * 0.4;
+                const combined = bandPattern + turbulence;
+                
+                let r, g, b;
+                
+                // Great Red Spot (around 20% from top, 30% from left)
+                const spotDist = Math.sqrt(Math.pow(nx - 0.3, 2) + Math.pow(ny - 0.35, 2));
+                if (spotDist < 0.08) {
+                    const spotIntensity = 1 - (spotDist / 0.08);
+                    r = 200 + spotIntensity * 40;
+                    g = 80 + spotIntensity * 30;
+                    b = 60 + spotIntensity * 20;
+                } else if (combined > 0.6) {
+                    // Light cream bands
+                    r = 220 + turbulence * 30;
+                    g = 200 + turbulence * 25;
+                    b = 160 + turbulence * 20;
+                } else if (combined > 0.4) {
+                    // Medium orange bands
+                    r = 190 + turbulence * 40;
+                    g = 140 + turbulence * 30;
+                    b = 80 + turbulence * 25;
+                } else {
+                    // Dark brown bands
+                    r = 140 + turbulence * 30;
+                    g = 90 + turbulence * 20;
+                    b = 50 + turbulence * 15;
+                }
+                
+                data[idx] = Math.min(255, r);
+                data[idx + 1] = Math.min(255, g);
+                data[idx + 2] = Math.min(255, b);
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createJupiterBumpMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Atmospheric turbulence
+                const elevation = noise(nx * 20, ny * 8) * 0.7 + noise(nx * 40, ny * 16) * 0.3;
+                const gray = Math.floor(128 + elevation * 40);
+                
+                data[idx] = gray;
+                data[idx + 1] = gray;
+                data[idx + 2] = gray;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createSaturnTexture(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const fbm = (x, y, octaves = 4) => {
+            let value = 0, amp = 1, freq = 1, maxVal = 0;
+            for (let i = 0; i < octaves; i++) {
+                value += noise(x * freq, y * freq) * amp;
+                maxVal += amp;
+                amp *= 0.5;
+                freq *= 2;
+            }
+            return value / maxVal;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Subtle horizontal bands
+                const bandY = ny * 15;
+                const bandPattern = Math.sin(bandY * Math.PI) * 0.3 + 0.7;
+                const turbulence = fbm(nx * 6, ny * 3, 4) * 0.2;
+                const combined = bandPattern + turbulence;
+                
+                // Pale gold/cream colors
+                const r = 210 + combined * 40;
+                const g = 190 + combined * 35;
+                const b = 140 + combined * 30;
+                
+                data[idx] = Math.min(255, r);
+                data[idx + 1] = Math.min(255, g);
+                data[idx + 2] = Math.min(255, b);
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createSaturnBumpMap(size) {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size, ny = y / size;
+                
+                // Subtle atmospheric variation
+                const elevation = noise(nx * 15, ny * 6) * 0.8 + noise(nx * 30, ny * 12) * 0.2;
+                const gray = Math.floor(128 + elevation * 30);
+                
+                data[idx] = gray;
+                data[idx + 1] = gray;
+                data[idx + 2] = gray;
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
 
     createPlanetMaterial(config) {
-        // Create hyperrealistic materials based on latest planetary data
+        // Create HYPERREALISTIC materials with advanced texturing
         const name = config.name.toLowerCase();
         
         // Base material properties
@@ -1490,70 +2423,101 @@ class SolarSystemModule {
             emissiveIntensity: config.emissiveIntensity || 0
         };
 
-        // Planet-specific hyperrealistic materials with procedural textures
+        // Planet-specific hyperrealistic materials with high-quality textures
         switch(name) {
             case 'earth':
-                // Earth: Blue oceans, green/brown continents, white poles
-                const earthTexture = this.createProceduralTexture('earth', 1024);
+                // Earth: Photorealistic blue oceans, continents, clouds, city lights
+                const earthTexture = this.createEarthTexture(2048);
+                const earthBump = this.createEarthBumpMap(2048);
+                const earthSpecular = this.createEarthSpecularMap(2048);
+                const earthNormal = this.createEarthNormalMap(2048);
+                
                 return new THREE.MeshStandardMaterial({
                     map: earthTexture,
-                    roughness: 0.6,
-                    metalness: 0.2,
+                    normalMap: earthNormal,
+                    normalScale: new THREE.Vector2(0.8, 0.8),
+                    bumpMap: earthBump,
+                    bumpScale: 0.05,
+                    roughnessMap: earthSpecular,
+                    roughness: 0.5,
+                    metalness: 0.1,
                     emissive: 0x0a2f4f,
-                    emissiveIntensity: 0.05
+                    emissiveIntensity: 0.03
                 });
                 
             case 'mars':
-                // Mars: Rusty red surface with darker regions and polar caps
-                const marsTexture = this.createProceduralTexture('mars', 1024);
+                // Mars: Hyperrealistic rusty red surface with canyons, polar caps
+                const marsTexture = this.createMarsTexture(2048);
+                const marsBump = this.createMarsBumpMap(2048);
+                const marsNormal = this.createMarsNormalMap(2048);
+                
                 return new THREE.MeshStandardMaterial({
                     map: marsTexture,
+                    normalMap: marsNormal,
+                    normalScale: new THREE.Vector2(1.2, 1.2),
+                    bumpMap: marsBump,
+                    bumpScale: 0.08,
                     roughness: 0.95,
                     metalness: 0.0,
                     emissive: 0x3d1505,
-                    emissiveIntensity: 0.02
+                    emissiveIntensity: 0.01
                 });
                 
             case 'venus':
-                // Venus: Yellowish clouds with sulfuric acid
+                // Venus: Thick yellowish sulfuric acid clouds
+                const venusTexture = this.createVenusTexture(2048);
                 return new THREE.MeshStandardMaterial({
-                    color: 0xe8c468, // Pale yellow
-                    roughness: 0.4,
-                    metalness: 0.1,
+                    map: venusTexture,
+                    color: 0xe8c468,
+                    roughness: 0.3,
+                    metalness: 0.05,
                     emissive: 0xffc649,
-                    emissiveIntensity: 0.3
+                    emissiveIntensity: 0.25
                 });
                 
             case 'mercury':
-                // Mercury: Gray cratered surface like the Moon
+                // Mercury: Heavily cratered like the Moon
+                const mercuryTexture = this.createMercuryTexture(2048);
+                const mercuryBump = this.createMercuryBumpMap(2048);
+                
                 return new THREE.MeshStandardMaterial({
-                    color: 0x8c7853, // Gray-brown
+                    map: mercuryTexture,
+                    bumpMap: mercuryBump,
+                    bumpScale: 0.1,
                     roughness: 0.95,
-                    metalness: 0.05,
+                    metalness: 0.02,
                     emissive: 0x2d2520,
                     emissiveIntensity: 0.01
                 });
                 
             case 'jupiter':
-                // Jupiter: Banded atmosphere with Great Red Spot
-                const jupiterTexture = this.createProceduralTexture('jupiter', 1024);
+                // Jupiter: Hyperrealistic bands with Great Red Spot
+                const jupiterTexture = this.createJupiterTexture(2048);
+                const jupiterBump = this.createJupiterBumpMap(1024);
+                
                 return new THREE.MeshStandardMaterial({
                     map: jupiterTexture,
-                    roughness: 0.5,
+                    bumpMap: jupiterBump,
+                    bumpScale: 0.02,
+                    roughness: 0.6,
                     metalness: 0.0,
                     emissive: 0x3d2a15,
-                    emissiveIntensity: 0.05
+                    emissiveIntensity: 0.03
                 });
                 
             case 'saturn':
-                // Saturn: Pale gold with subtle banding
-                const saturnTexture = this.createProceduralTexture('saturn', 1024);
+                // Saturn: Pale gold with detailed banding
+                const saturnTexture = this.createSaturnTexture(2048);
+                const saturnBump = this.createSaturnBumpMap(1024);
+                
                 return new THREE.MeshStandardMaterial({
                     map: saturnTexture,
-                    roughness: 0.5,
+                    bumpMap: saturnBump,
+                    bumpScale: 0.015,
+                    roughness: 0.55,
                     metalness: 0.0,
                     emissive: 0x4d3820,
-                    emissiveIntensity: 0.03
+                    emissiveIntensity: 0.02
                 });
                 
             case 'uranus':
@@ -1725,12 +2689,19 @@ class SolarSystemModule {
         const moonName = config.name.toLowerCase();
         
         if (moonName === 'moon') {
-            // Earth's Moon: gray with crater-like appearance
-            const moonTexture = this.createProceduralTexture('moon', 512);
+            // Earth's Moon: HYPERREALISTIC with deep craters and maria
+            const moonTexture = this.createMoonTexture(2048);
+            const moonBump = this.createMoonBumpMap(2048);
+            const moonNormal = this.createMoonNormalMap(2048);
+            
             moonMaterial = new THREE.MeshStandardMaterial({
                 map: moonTexture,
-                roughness: 0.95,
-                metalness: 0.05
+                normalMap: moonNormal,
+                normalScale: new THREE.Vector2(2.0, 2.0), // Deep craters!
+                bumpMap: moonBump,
+                bumpScale: 0.15, // Pronounced elevation
+                roughness: 0.98,
+                metalness: 0.02
             });
         } else if (moonName === 'io') {
             // Io: Yellow/orange volcanic surface
@@ -3641,8 +4612,9 @@ class App {
                 const currentTime = performance.now();
                 const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
                 
-                // Update XR controller movement
+                // Update XR controller movement and laser pointers
                 this.sceneManager.updateXRMovement();
+                this.sceneManager.updateLaserPointers();
                 
                 // Limit to ~60 FPS and prevent huge jumps
                 if (deltaTime >= CONFIG.PERFORMANCE.frameTime / 1000) {
