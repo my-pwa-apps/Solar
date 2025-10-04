@@ -773,27 +773,46 @@ class SceneManager {
                 }
             }
             
-            // THUMBSTICK PRESS for PAUSE/PLAY (button 3 on Quest controllers)
-            if (gamepad.buttons.length > 3) {
-                const thumbstickPressed = gamepad.buttons[3].pressed;
-                const wasPressed = this.previousButtonStates[i][3] || false;
-                
-                // Detect button press (transition from not pressed to pressed)
-                if (thumbstickPressed && !wasPressed) {
-                    // Toggle pause/play
-                    if (this.topicManager && this.topicManager.timeSpeed !== undefined) {
-                        if (this.topicManager.timeSpeed === 0) {
-                            this.topicManager.timeSpeed = 1; // Play
-                            console.log('▶️ PLAY - Rotation resumed (Thumbstick click)');
+            // THUMBSTICK PRESS for PAUSE/PLAY
+            // Quest controllers: button 3 = thumbstick press
+            // Try multiple button indices in case it varies by controller
+            const thumbstickButtonIndices = [3, 4, 5]; // Try different possible indices
+            
+            for (const btnIndex of thumbstickButtonIndices) {
+                if (gamepad.buttons.length > btnIndex) {
+                    const thumbstickPressed = gamepad.buttons[btnIndex].pressed;
+                    const wasPressed = this.previousButtonStates[i][btnIndex] || false;
+                    
+                    // Detect button press (transition from not pressed to pressed)
+                    if (thumbstickPressed && !wasPressed) {
+                        console.log(`🎮 Controller ${handedness} button ${btnIndex} pressed! Total buttons: ${gamepad.buttons.length}`);
+                        
+                        // Get app reference (same pattern as VR UI buttons)
+                        const app = window.app || this;
+                        
+                        // Toggle pause/play
+                        if (app.topicManager && app.topicManager.timeSpeed !== undefined) {
+                            if (app.topicManager.timeSpeed === 0) {
+                                app.topicManager.timeSpeed = 1; // Play
+                                console.log('▶️ PLAY - Rotation resumed (Thumbstick click)');
+                                if (this.updateVRStatus) {
+                                    this.updateVRStatus('▶️ PLAYING at 1x');
+                                }
+                            } else {
+                                app.topicManager.timeSpeed = 0; // Pause
+                                console.log('⏸️ PAUSE - Rotation stopped (Thumbstick click)');
+                                if (this.updateVRStatus) {
+                                    this.updateVRStatus('⏸️ PAUSED');
+                                }
+                            }
                         } else {
-                            this.topicManager.timeSpeed = 0; // Pause
-                            console.log('⏸️ PAUSE - Rotation stopped (Thumbstick click)');
+                            console.warn('⚠️ Thumbstick pressed but topicManager not available');
                         }
                     }
+                    
+                    // Update button state for next frame
+                    this.previousButtonStates[i][btnIndex] = thumbstickPressed;
                 }
-                
-                // Update button state for next frame
-                this.previousButtonStates[i][3] = thumbstickPressed;
             }
             
             const deadzone = 0.15;
