@@ -59,6 +59,12 @@ class SceneManager {
         this.lights = {};
         this.resizeTimeout = null;
         
+        // Track previous button states for VR controllers to detect press (not hold)
+        this.previousButtonStates = [
+            {}, // Controller 0
+            {}  // Controller 1
+        ];
+        
         this.init();
     }
 
@@ -163,46 +169,55 @@ class SceneManager {
                 // Controller grip for models
                 const controllerGrip = this.renderer.xr.getControllerGrip(i);
                 
-                // Add a BRIGHT laser pointer to show controller direction
-                const laserGeometry = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, -10) // Extended to 10 meters
-                ]);
-                
-                // Create glowing laser material
-                const laserMaterial = new THREE.LineBasicMaterial({ 
+                // Add a SUPER VISIBLE laser beam - using cylinder for thickness
+                const laserGeometry = new THREE.CylinderGeometry(0.005, 0.005, 10, 8);
+                const laserMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
-                    linewidth: 3, // Note: linewidth > 1 doesn't work on all platforms
-                    transparent: true,
-                    opacity: 0.8
+                    transparent: false,
+                    opacity: 1.0,
+                    emissive: 0x00ffff,
+                    emissiveIntensity: 1.0
                 });
                 
-                const laser = new THREE.Line(laserGeometry, laserMaterial);
+                const laser = new THREE.Mesh(laserGeometry, laserMaterial);
+                laser.rotation.x = Math.PI / 2; // Rotate to point forward
+                laser.position.set(0, 0, -5); // Position at center of 10m length
                 laser.name = 'laser';
                 controller.add(laser);
                 
-                // Add a glowing sphere at the end of the laser
-                const pointerGeometry = new THREE.SphereGeometry(0.02, 16, 16);
+                // Add a BRIGHT glowing sphere at the end
+                const pointerGeometry = new THREE.SphereGeometry(0.05, 16, 16);
                 const pointerMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
-                    transparent: true,
-                    opacity: 0.9
+                    emissive: 0x00ffff,
+                    emissiveIntensity: 2.0
                 });
                 const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
                 pointer.position.set(0, 0, -10);
                 pointer.name = 'pointer';
                 controller.add(pointer);
                 
-                // Add a cone to make the laser more visible
-                const coneGeometry = new THREE.ConeGeometry(0.01, 0.3, 8);
-                const coneMaterial = new THREE.MeshBasicMaterial({ 
+                // Add outer glow to pointer
+                const glowGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
                     transparent: true,
-                    opacity: 0.6
+                    opacity: 0.3,
+                    blending: THREE.AdditiveBlending
+                });
+                const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                pointer.add(glow);
+                
+                // Add a cone at controller tip for direction indicator
+                const coneGeometry = new THREE.ConeGeometry(0.02, 0.4, 8);
+                const coneMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x00ffff,
+                    emissive: 0x00ffff,
+                    emissiveIntensity: 1.0
                 });
                 const cone = new THREE.Mesh(coneGeometry, coneMaterial);
                 cone.rotation.x = Math.PI / 2; // Point forward
-                cone.position.set(0, 0, -0.15);
+                cone.position.set(0, 0, -0.2);
                 cone.name = 'cone';
                 controller.add(cone);
                 
@@ -758,6 +773,29 @@ class SceneManager {
                 }
             }
             
+            // THUMBSTICK PRESS for PAUSE/PLAY (button 3 on Quest controllers)
+            if (gamepad.buttons.length > 3) {
+                const thumbstickPressed = gamepad.buttons[3].pressed;
+                const wasPressed = this.previousButtonStates[i][3] || false;
+                
+                // Detect button press (transition from not pressed to pressed)
+                if (thumbstickPressed && !wasPressed) {
+                    // Toggle pause/play
+                    if (this.topicManager && this.topicManager.timeSpeed !== undefined) {
+                        if (this.topicManager.timeSpeed === 0) {
+                            this.topicManager.timeSpeed = 1; // Play
+                            console.log('▶️ PLAY - Rotation resumed (Thumbstick click)');
+                        } else {
+                            this.topicManager.timeSpeed = 0; // Pause
+                            console.log('⏸️ PAUSE - Rotation stopped (Thumbstick click)');
+                        }
+                    }
+                }
+                
+                // Update button state for next frame
+                this.previousButtonStates[i][3] = thumbstickPressed;
+            }
+            
             const deadzone = 0.15;
             
             // LEFT CONTROLLER: 6DOF Movement (forward/back, strafe, up/down)
@@ -767,10 +805,11 @@ class SceneManager {
                 // Horizontal movement (X/Z plane)
                 if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
                     // Forward/Backward (push stick forward = move forward)
+                    // REVERSED: negative stickY for intuitive forward movement
                     const forwardMovement = cameraDirection.clone();
                     forwardMovement.y = 0; // Keep horizontal
                     forwardMovement.normalize();
-                    this.dolly.position.add(forwardMovement.multiplyScalar(stickY * baseSpeed));
+                    this.dolly.position.add(forwardMovement.multiplyScalar(-stickY * baseSpeed));
                     
                     // Strafe Left/Right
                     const strafeMovement = cameraRight.clone();
@@ -1915,19 +1954,19 @@ class SolarSystemModule {
                         data[idx + 2] = 35 + grassVar * 0.8;
                     }
                 }
-                // Shallow water
+                // Shallow water - BRIGHTENED FOR VR
                 else if (elevation > 0.49) {
                     const shallow = (elevation - 0.49) * 25;
-                    data[idx] = 64 + shallow * 2;
-                    data[idx + 1] = 164 - shallow;
-                    data[idx + 2] = 223 - shallow * 2;
+                    data[idx] = 100 + shallow * 2; // Brighter blues
+                    data[idx + 1] = 190 - shallow;
+                    data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean
+                // Deep ocean - MUCH BRIGHTER FOR VR VISIBILITY
                 else {
                     const depth = (0.49 - elevation) * 2;
-                    data[idx] = Math.max(0, 25 - depth * 15);
-                    data[idx + 1] = Math.max(20, 105 - depth * 40);
-                    data[idx + 2] = Math.max(50, 180 - depth * 50);
+                    data[idx] = Math.max(60, 80 - depth * 10); // Much brighter base
+                    data[idx + 1] = Math.max(120, 150 - depth * 30);
+                    data[idx + 2] = Math.max(180, 220 - depth * 30);
                 }
                 
                 data[idx + 3] = 255;
@@ -2892,10 +2931,10 @@ class SolarSystemModule {
                     bumpMap: earthBump,
                     bumpScale: 0.04, // More visible elevation
                     roughnessMap: earthSpecular,
-                    roughness: 0.5, // Reduced for better light reflection
-                    metalness: 0.1, // Slightly more reflective for water
-                    emissive: 0x1a4f6f, // Brighter blue glow
-                    emissiveIntensity: 0.15 // Much brighter for visibility
+                    roughness: 0.2, // MUCH lower for better light reflection in VR
+                    metalness: 0.3, // More reflective water
+                    emissive: 0x6699ff, // MUCH brighter blue glow
+                    emissiveIntensity: 1.2 // Significantly increased for VR visibility
                 });
                 
             case 'mars':
