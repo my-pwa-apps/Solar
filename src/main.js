@@ -404,6 +404,10 @@ class SolarSystemModule {
         this.nebulae = [];
         this.galaxies = [];
         this.comets = [];
+        this.satellites = [];
+        
+        // Scale mode: false = educational (compressed), true = realistic (vast)
+        this.realisticScale = false;
         
         // Geometry cache for reuse
         this.geometryCache = new Map();
@@ -823,6 +827,238 @@ class SolarSystemModule {
         });
     }
 
+    createProceduralTexture(type, size = 512) {
+        // Create canvas for procedural texture
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        // Simple noise function (deterministic pseudo-random)
+        const noise = (x, y, seed = 0) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        // Multi-octave noise for more natural patterns
+        const fbm = (x, y, octaves = 4) => {
+            let value = 0;
+            let amplitude = 1;
+            let frequency = 1;
+            let maxValue = 0;
+            
+            for (let i = 0; i < octaves; i++) {
+                value += noise(x * frequency, y * frequency, i) * amplitude;
+                maxValue += amplitude;
+                amplitude *= 0.5;
+                frequency *= 2;
+            }
+            return value / maxValue;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        switch(type) {
+            case 'earth':
+                // Earth: Blue oceans, green/brown continents, white poles
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const idx = (y * size + x) * 4;
+                        const nx = x / size;
+                        const ny = y / size;
+                        
+                        // Latitude effect (poles are white)
+                        const lat = Math.abs(ny - 0.5) * 2; // 0 at equator, 1 at poles
+                        
+                        // Continent noise
+                        const continentNoise = fbm(nx * 4, ny * 4, 6);
+                        
+                        // Ice caps at poles
+                        if (lat > 0.85) {
+                            // Polar ice caps
+                            const iceVariation = noise(nx * 20, ny * 20) * 30;
+                            data[idx] = 240 + iceVariation;     // R
+                            data[idx + 1] = 248 + iceVariation; // G
+                            data[idx + 2] = 255;                // B
+                        } else if (continentNoise > 0.52) {
+                            // Land (green/brown)
+                            const landVariation = noise(nx * 15, ny * 15) * 0.3;
+                            const greenness = (1 - lat) * 0.4; // More green at equator
+                            data[idx] = 100 + landVariation * 100;      // R
+                            data[idx + 1] = 80 + greenness * 100;       // G
+                            data[idx + 2] = 50 + landVariation * 50;    // B
+                        } else {
+                            // Ocean (blue with depth variation)
+                            const depth = (0.52 - continentNoise) * 2;
+                            data[idx] = 20 + depth * 30;      // R
+                            data[idx + 1] = 50 + depth * 80;  // G
+                            data[idx + 2] = 120 + depth * 100; // B
+                        }
+                        data[idx + 3] = 255; // Alpha
+                    }
+                }
+                break;
+                
+            case 'mars':
+                // Mars: Red with darker regions (ancient seas), white poles
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const idx = (y * size + x) * 4;
+                        const nx = x / size;
+                        const ny = y / size;
+                        const lat = Math.abs(ny - 0.5) * 2;
+                        
+                        const craterNoise = fbm(nx * 8, ny * 8, 5);
+                        
+                        if (lat > 0.88) {
+                            // Polar ice caps (CO2 and water ice)
+                            const iceVar = noise(nx * 25, ny * 25) * 40;
+                            data[idx] = 220 + iceVar;
+                            data[idx + 1] = 200 + iceVar;
+                            data[idx + 2] = 190 + iceVar;
+                        } else {
+                            // Rusty red surface with variation
+                            const rust = craterNoise;
+                            data[idx] = 150 + rust * 100;     // R
+                            data[idx + 1] = 70 + rust * 60;   // G
+                            data[idx + 2] = 30 + rust * 30;   // B
+                        }
+                        data[idx + 3] = 255;
+                    }
+                }
+                break;
+                
+            case 'moon':
+                // Moon: Gray with craters
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const idx = (y * size + x) * 4;
+                        const nx = x / size;
+                        const ny = y / size;
+                        
+                        // Crater patterns
+                        const craters = fbm(nx * 10, ny * 10, 6);
+                        const gray = 120 + craters * 80;
+                        
+                        data[idx] = gray;
+                        data[idx + 1] = gray;
+                        data[idx + 2] = gray * 0.95; // Slight brown tint
+                        data[idx + 3] = 255;
+                    }
+                }
+                break;
+                
+            case 'jupiter':
+                // Jupiter: Horizontal bands
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const idx = (y * size + x) * 4;
+                        const ny = y / size;
+                        
+                        // Horizontal bands with turbulence
+                        const bandPattern = Math.sin(ny * Math.PI * 8) * 0.5 + 0.5;
+                        const turbulence = fbm(x / size * 3, ny * 2, 4) * 0.3;
+                        const band = bandPattern + turbulence;
+                        
+                        if (band > 0.6) {
+                            // Light bands (tan/cream)
+                            data[idx] = 230 + turbulence * 20;
+                            data[idx + 1] = 200 + turbulence * 30;
+                            data[idx + 2] = 150 + turbulence * 20;
+                        } else {
+                            // Dark bands (orange/brown)
+                            data[idx] = 180 + turbulence * 40;
+                            data[idx + 1] = 120 + turbulence * 30;
+                            data[idx + 2] = 60 + turbulence * 20;
+                        }
+                        data[idx + 3] = 255;
+                    }
+                }
+                break;
+                
+            case 'saturn':
+                // Saturn: Subtle pale bands
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        const idx = (y * size + x) * 4;
+                        const ny = y / size;
+                        
+                        const bandPattern = Math.sin(ny * Math.PI * 6) * 0.3 + 0.7;
+                        const turbulence = fbm(x / size * 2, ny * 1.5, 3) * 0.2;
+                        
+                        data[idx] = 240 * (bandPattern + turbulence);
+                        data[idx + 1] = 210 * (bandPattern + turbulence);
+                        data[idx + 2] = 160 * (bandPattern + turbulence);
+                        data[idx + 3] = 255;
+                    }
+                }
+                break;
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    createCloudTexture(size = 512) {
+        // Create wispy cloud patterns
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y, seed = 0) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const fbm = (x, y, octaves = 4) => {
+            let value = 0;
+            let amplitude = 1;
+            let frequency = 1;
+            let maxValue = 0;
+            
+            for (let i = 0; i < octaves; i++) {
+                value += noise(x * frequency, y * frequency, i) * amplitude;
+                maxValue += amplitude;
+                amplitude *= 0.5;
+                frequency *= 2;
+            }
+            return value / maxValue;
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size;
+                const ny = y / size;
+                
+                // Wispy cloud pattern
+                const cloud = fbm(nx * 6, ny * 6, 6);
+                const cloudIntensity = Math.max(0, (cloud - 0.4) * 2);
+                
+                // White clouds
+                const brightness = 255;
+                data[idx] = brightness;
+                data[idx + 1] = brightness;
+                data[idx + 2] = brightness;
+                data[idx + 3] = cloudIntensity * 255; // Alpha channel for transparency
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
     createPlanetMaterial(config) {
         // Create hyperrealistic materials based on latest planetary data
         const name = config.name.toLowerCase();
@@ -835,22 +1071,24 @@ class SolarSystemModule {
             emissiveIntensity: config.emissiveIntensity || 0
         };
 
-        // Planet-specific hyperrealistic materials
+        // Planet-specific hyperrealistic materials with procedural textures
         switch(name) {
             case 'earth':
-                // Earth: Blue oceans, green/brown continents, white clouds
+                // Earth: Blue oceans, green/brown continents, white poles
+                const earthTexture = this.createProceduralTexture('earth', 1024);
                 return new THREE.MeshStandardMaterial({
-                    color: 0x1a5f9e, // Deep ocean blue
+                    map: earthTexture,
                     roughness: 0.6,
-                    metalness: 0.3,
+                    metalness: 0.2,
                     emissive: 0x0a2f4f,
                     emissiveIntensity: 0.05
                 });
                 
             case 'mars':
-                // Mars: Rusty red surface with darker regions
+                // Mars: Rusty red surface with darker regions and polar caps
+                const marsTexture = this.createProceduralTexture('mars', 1024);
                 return new THREE.MeshStandardMaterial({
-                    color: 0xc1440e, // Rusty red-orange
+                    map: marsTexture,
                     roughness: 0.95,
                     metalness: 0.0,
                     emissive: 0x3d1505,
@@ -879,8 +1117,9 @@ class SolarSystemModule {
                 
             case 'jupiter':
                 // Jupiter: Banded atmosphere with Great Red Spot
+                const jupiterTexture = this.createProceduralTexture('jupiter', 1024);
                 return new THREE.MeshStandardMaterial({
-                    color: 0xc88b3a, // Orange-brown bands
+                    map: jupiterTexture,
                     roughness: 0.5,
                     metalness: 0.0,
                     emissive: 0x3d2a15,
@@ -889,8 +1128,9 @@ class SolarSystemModule {
                 
             case 'saturn':
                 // Saturn: Pale gold with subtle banding
+                const saturnTexture = this.createProceduralTexture('saturn', 1024);
                 return new THREE.MeshStandardMaterial({
-                    color: 0xf4d4a0, // Pale gold
+                    map: saturnTexture,
                     roughness: 0.5,
                     metalness: 0.0,
                     emissive: 0x4d3820,
@@ -980,13 +1220,15 @@ class SolarSystemModule {
             
             // Cloud layer with procedural patterns
             const cloudGeometry = new THREE.SphereGeometry(config.radius * 1.02, 32, 32);
+            const cloudTexture = this.createCloudTexture(512);
             const cloudMaterial = new THREE.MeshStandardMaterial({
-                color: 0xffffff,
+                map: cloudTexture,
                 transparent: true,
-                opacity: 0.4,
+                opacity: 0.6,
                 roughness: 0.9,
                 metalness: 0.0,
-                side: THREE.FrontSide
+                side: THREE.FrontSide,
+                alphaMap: cloudTexture
             });
             const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
             clouds.userData.isCloud = true;
@@ -1065,8 +1307,9 @@ class SolarSystemModule {
         
         if (moonName === 'moon') {
             // Earth's Moon: gray with crater-like appearance
+            const moonTexture = this.createProceduralTexture('moon', 512);
             moonMaterial = new THREE.MeshStandardMaterial({
-                color: 0xb8b8b8,
+                map: moonTexture,
                 roughness: 0.95,
                 metalness: 0.05
             });
@@ -1579,42 +1822,95 @@ class SolarSystemModule {
         ];
 
         cometsData.forEach((cometData, index) => {
-            // Comet nucleus
-            const geometry = new THREE.SphereGeometry(cometData.size, 16, 16);
+            // Comet nucleus - icy, rocky core
+            const geometry = new THREE.SphereGeometry(cometData.size, 24, 24);
             const material = new THREE.MeshStandardMaterial({
-                color: 0xCCCCCC,
-                roughness: 0.9,
-                metalness: 0.1
+                color: 0xe8f4f8, // Icy white-blue
+                roughness: 0.8,
+                metalness: 0.2,
+                emissive: 0x4488cc,
+                emissiveIntensity: 0.2
             });
             
             const comet = new THREE.Mesh(geometry, material);
             
-            // Tail (will be updated based on position)
-            const tailGeometry = new THREE.BufferGeometry();
-            const tailPositions = new Float32Array(100 * 3);
-            tailGeometry.setAttribute('position', new THREE.BufferAttribute(tailPositions, 3));
-            
-            const tailMaterial = new THREE.PointsMaterial({
-                color: 0x88CCFF,
-                size: 2,
+            // Coma - glowing cloud of gas around nucleus
+            const comaGeo = new THREE.SphereGeometry(cometData.size * 3, 32, 32);
+            const comaMat = new THREE.MeshBasicMaterial({
+                color: 0x88ddff,
                 transparent: true,
-                opacity: 0.6,
+                opacity: 0.15,
+                side: THREE.BackSide,
                 blending: THREE.AdditiveBlending
             });
+            const coma = new THREE.Mesh(comaGeo, comaMat);
+            comet.add(coma);
             
-            const tail = new THREE.Points(tailGeometry, tailMaterial);
-            comet.add(tail);
-            
-            // Glow
-            const glowGeo = new THREE.SphereGeometry(cometData.size * 2, 16, 16);
+            // Inner glow
+            const glowGeo = new THREE.SphereGeometry(cometData.size * 1.8, 24, 24);
             const glowMat = new THREE.MeshBasicMaterial({
-                color: 0xAADDFF,
+                color: 0xccffff,
                 transparent: true,
-                opacity: 0.3,
-                side: THREE.BackSide
+                opacity: 0.4,
+                side: THREE.BackSide,
+                blending: THREE.AdditiveBlending
             });
             const glow = new THREE.Mesh(glowGeo, glowMat);
             comet.add(glow);
+            
+            // Main tail (dust tail) - curved, yellowish
+            const dustTailGeometry = new THREE.BufferGeometry();
+            const dustTailPositions = new Float32Array(200 * 3);
+            const dustTailColors = new Float32Array(200 * 3);
+            const dustTailSizes = new Float32Array(200);
+            
+            for (let i = 0; i < 200; i++) {
+                const t = i / 200;
+                dustTailSizes[i] = 3 * (1 - t * 0.7); // Decrease size along tail
+                // Color gradient from white-blue to orange-yellow
+                dustTailColors[i * 3] = 0.8 + t * 0.2;     // R
+                dustTailColors[i * 3 + 1] = 0.9 - t * 0.3; // G  
+                dustTailColors[i * 3 + 2] = 1.0 - t * 0.6; // B
+            }
+            
+            dustTailGeometry.setAttribute('position', new THREE.BufferAttribute(dustTailPositions, 3));
+            dustTailGeometry.setAttribute('color', new THREE.BufferAttribute(dustTailColors, 3));
+            dustTailGeometry.setAttribute('size', new THREE.BufferAttribute(dustTailSizes, 1));
+            
+            const dustTailMaterial = new THREE.PointsMaterial({
+                vertexColors: true,
+                sizeAttenuation: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const dustTail = new THREE.Points(dustTailGeometry, dustTailMaterial);
+            comet.add(dustTail);
+            
+            // Ion tail - straight, blue-white
+            const ionTailGeometry = new THREE.BufferGeometry();
+            const ionTailPositions = new Float32Array(150 * 3);
+            const ionTailSizes = new Float32Array(150);
+            
+            for (let i = 0; i < 150; i++) {
+                const t = i / 150;
+                ionTailSizes[i] = 2 * (1 - t * 0.8);
+            }
+            
+            ionTailGeometry.setAttribute('position', new THREE.BufferAttribute(ionTailPositions, 3));
+            ionTailGeometry.setAttribute('size', new THREE.BufferAttribute(ionTailSizes, 1));
+            
+            const ionTailMaterial = new THREE.PointsMaterial({
+                color: 0x88ccff,
+                sizeAttenuation: true,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+            
+            const ionTail = new THREE.Points(ionTailGeometry, ionTailMaterial);
+            comet.add(ionTail);
             
             comet.userData = {
                 name: cometData.name,
@@ -1626,8 +1922,9 @@ class SolarSystemModule {
                 eccentricity: cometData.eccentricity,
                 description: cometData.description,
                 realSize: '1-10 km nucleus',
-                funFact: 'Comet tails always point away from the Sun due to solar wind, not the direction of motion!',
-                tail: tail
+                funFact: 'Comets have two tails: a curved dust tail (yellowish) and a straight ion tail (blue) - both always point away from the Sun!',
+                dustTail: dustTail,
+                ionTail: ionTail
             };
             
             scene.add(comet);
@@ -1860,19 +2157,58 @@ class SolarSystemModule {
                 comet.position.z = r * Math.sin(angle);
                 comet.position.y = Math.sin(angle * 0.5) * 20; // Slight inclination
                 
-                // Update tail to point away from sun
-                if (userData.tail) {
-                    const tailPositions = userData.tail.geometry.attributes.position.array;
-                    const sunDirection = new THREE.Vector3(-comet.position.x, -comet.position.y, -comet.position.z).normalize();
+                // Update both tails to point away from sun
+                const sunDirection = new THREE.Vector3(-comet.position.x, -comet.position.y, -comet.position.z).normalize();
+                const cometVelocity = new THREE.Vector3(Math.cos(angle + Math.PI/2), 0, Math.sin(angle + Math.PI/2)).normalize();
+                
+                // Dust tail - curved, follows orbit path slightly
+                if (userData.dustTail) {
+                    const dustPositions = userData.dustTail.geometry.attributes.position.array;
+                    const dustSizes = userData.dustTail.geometry.attributes.size.array;
                     
-                    for (let i = 0; i < 100; i++) {
-                        const t = i / 100;
-                        const spread = (Math.random() - 0.5) * 10 * t;
-                        tailPositions[i * 3] = sunDirection.x * t * 50 + spread;
-                        tailPositions[i * 3 + 1] = sunDirection.y * t * 50 + spread;
-                        tailPositions[i * 3 + 2] = sunDirection.z * t * 50 + spread;
+                    for (let i = 0; i < 200; i++) {
+                        const t = i / 200;
+                        const length = 80 * t;
+                        
+                        // Curve effect - mix sun direction with velocity direction
+                        const curveFactor = 0.3;
+                        const direction = new THREE.Vector3(
+                            sunDirection.x + cometVelocity.x * curveFactor * t,
+                            sunDirection.y + cometVelocity.y * curveFactor * t,
+                            sunDirection.z + cometVelocity.z * curveFactor * t
+                        ).normalize();
+                        
+                        // Add spread
+                        const spread = (Math.random() - 0.5) * 15 * t;
+                        const spreadPerpendicular = (Math.random() - 0.5) * 8 * t;
+                        
+                        dustPositions[i * 3] = direction.x * length + spread;
+                        dustPositions[i * 3 + 1] = direction.y * length + spreadPerpendicular;
+                        dustPositions[i * 3 + 2] = direction.z * length + spread;
+                        
+                        // Vary size slightly
+                        dustSizes[i] = 3 * (1 - t * 0.7) * (0.8 + Math.random() * 0.4);
                     }
-                    userData.tail.geometry.attributes.position.needsUpdate = true;
+                    userData.dustTail.geometry.attributes.position.needsUpdate = true;
+                    userData.dustTail.geometry.attributes.size.needsUpdate = true;
+                }
+                
+                // Ion tail - straight, follows sun direction exactly
+                if (userData.ionTail) {
+                    const ionPositions = userData.ionTail.geometry.attributes.position.array;
+                    
+                    for (let i = 0; i < 150; i++) {
+                        const t = i / 150;
+                        const length = 120 * t;
+                        
+                        // Very straight with minimal spread
+                        const spread = (Math.random() - 0.5) * 3 * t;
+                        
+                        ionPositions[i * 3] = sunDirection.x * length + spread;
+                        ionPositions[i * 3 + 1] = sunDirection.y * length + spread;
+                        ionPositions[i * 3 + 2] = sunDirection.z * length + spread;
+                    }
+                    userData.ionTail.geometry.attributes.position.needsUpdate = true;
                 }
             });
         }
@@ -1979,6 +2315,45 @@ class SolarSystemModule {
 
     getSelectableObjects() {
         return this.objects;
+    }
+    
+    updateScale() {
+        // Update all planetary positions based on scale mode
+        const scaleFactors = this.realisticScale ? {
+            // Realistic scale (AU converted to scene units, 1 AU = 150 units)
+            mercury: 57.9,
+            venus: 108.2,
+            earth: 150,
+            mars: 227.9,
+            jupiter: 778.6,
+            saturn: 1433.5,
+            uranus: 2872.5,
+            neptune: 4495.1,
+            pluto: 5906.4
+        } : {
+            // Educational scale (compressed for visibility)
+            mercury: 20,
+            venus: 30,
+            earth: 45,
+            mars: 60,
+            jupiter: 100,
+            saturn: 150,
+            uranus: 200,
+            neptune: 250,
+            pluto: 300
+        };
+        
+        // Update planet distances
+        Object.entries(this.planets).forEach(([name, planet]) => {
+            if (planet && planet.userData) {
+                const newDistance = scaleFactors[name];
+                if (newDistance) {
+                    planet.userData.distance = newDistance;
+                }
+            }
+        });
+        
+        console.log(`Scale mode: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
     }
 
     getObjectInfo(object) {
@@ -2639,6 +3014,22 @@ class TopicManager {
             }, { passive: true });
         }
 
+        // Scale toggle button
+        const scaleButton = document.getElementById('toggle-scale');
+        if (scaleButton) {
+            scaleButton.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    this.solarSystemModule.realisticScale = !this.solarSystemModule.realisticScale;
+                    scaleButton.classList.toggle('active');
+                    scaleButton.textContent = this.solarSystemModule.realisticScale ? 
+                        '🔬 Realistic Scale' : '📏 Educational Scale';
+                    
+                    // Recalculate positions with new scale
+                    this.solarSystemModule.updateScale();
+                }
+            }, { passive: true });
+        }
+        
         // Reset view button
         const resetButton = document.getElementById('reset-view');
         if (resetButton) {
