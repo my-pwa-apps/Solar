@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/* ===========================
+   GLOBAL RESET & BASE STYLES
+   =========================== */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    background: #000;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#canvas-container {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    touch-action: none; /* Prevent unwanted touch gestures */
+}
+
+/* ===========================
+   UTILITY CLASSES
+   =========================== */
+.hidden {
+    display: none !important;
+}
+
+/* ===========================
+   LOADING SCREEN
+   =========================== */
+#loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-weight: 600;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.95);
+    padding: 40px 60px;
+    border-radius: 20px;
+    border: 2px solid rgba(74, 144, 226, 0.5);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+#loading h2 {
+    color: #FFD700;
+    margin-bottom: 20px;
+    font-size: 32px;
+    animation: pulse 1.5s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+
+#loading p {
+    color: #4FC3F7;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+.loading-spinner {
+    margin: 20px auto;
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #FFD700;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    will-change: transform;
+}
+
+/* ===========================
+   ANIMATIONS
+   =========================== */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.02); }
+}
+
+@keyframes borderGlow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===========================
+   RESPONSIVE DESIGN
+   =========================== */
+@media (max-width: 768px) {
+    #loading {
+        padding: 30px 40px;
+        max-width: 90vw;
+    }
+    
+    #loading h2 {
+        font-size: 24px;
+    }
+    
+    #loading p {
+        font-size: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #info-panel {
+        max-width: 90vw;
+        padding: 15px;
+    }
+    
+    #object-list {
+        max-width: 90vw;
+        top: auto;
+        bottom: 140px;
+        max-height: 40vh;
+    }
+    
+    #controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    button {
+        font-size: 13px;
+        padding: 10px 15px;
+    }
+}

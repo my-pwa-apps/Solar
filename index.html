@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Interactive 3D VR/AR Solar System and Quantum Physics Explorer for all ages">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>🌌 Scientific VR/AR Explorer - Solar System & Quantum Physics</title>
+    
+    <!-- Preload critical styles -->
+    <link rel="preload" href="/src/styles/main.css" as="style">
+    <link rel="preload" href="/src/styles/ui.css" as="style">
+    <link rel="stylesheet" href="/src/styles/main.css">
+    <link rel="stylesheet" href="/src/styles/ui.css">
+    
+    <!-- Performance optimization -->
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+</head>
+<body>
+    <header id="main-header" role="banner">
+        <div class="logo">
+            <h1>🌌 Scientific Explorer</h1>
+        </div>
+        <nav id="topic-nav" role="navigation" aria-label="Topic navigation">
+            <button class="nav-btn active" data-topic="solar-system" aria-label="Explore Solar System">
+                <span class="icon">🪐</span>
+                <span class="label">Solar System</span>
+            </button>
+            <button class="nav-btn" data-topic="quantum" aria-label="Explore Quantum Physics">
+                <span class="icon">⚛️</span>
+                <span class="label">Quantum Physics</span>
+            </button>
+            <button class="nav-btn" data-topic="relativity" aria-label="Explore Relativity">
+                <span class="icon">⏱️</span>
+                <span class="label">Relativity</span>
+            </button>
+            <button class="nav-btn" data-topic="atoms" aria-label="Explore Atomic Structure">
+                <span class="icon">🔬</span>
+                <span class="label">Atomic Structure</span>
+            </button>
+            <button class="nav-btn" data-topic="dna" aria-label="Explore DNA & Genetics">
+                <span class="icon">🧬</span>
+                <span class="label">DNA & Genetics</span>
+            </button>
+        </nav>
+    </header>
+    <main id="canvas-container" role="main" aria-label="3D visualization canvas"></main>
+    
+    <div id="loading" role="status" aria-live="polite">
+        <h2>✨ Loading Experience...</h2>
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Initializing...</p>
+    </div>
+    <aside id="info-panel" class="hidden" role="complementary" aria-labelledby="object-name">
+        <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel">✕</button>
+        <h2 id="object-name">Select an Object</h2>
+        <div class="info-content">
+            <p><strong>Type:</strong> <span id="object-type">-</span></p>
+            <p><strong>Distance:</strong> <span id="object-distance">-</span></p>
+            <p><strong>Size:</strong> <span id="object-size">-</span></p>
+            <div id="object-description" class="description-box">
+                Click on objects to explore and learn more
+            </div>
+        </div>
+    </aside>
+    <aside id="controls" class="hidden" role="complementary" aria-label="Simulation controls">
+        <div class="control-group">
+            <label for="time-speed">⏱️ Speed:</label>
+            <input type="range" id="time-speed" min="0" max="100" value="10" step="1" 
+                   aria-label="Animation speed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="10">
+            <span id="speed-value" aria-live="polite">1.0x</span>
+        </div>
+        <div class="control-group">
+            <label for="brightness">💡 Brightness:</label>
+            <input type="range" id="brightness" min="0" max="100" value="50" step="1" 
+                   aria-label="Scene brightness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+            <span id="brightness-value" aria-live="polite">50%</span>
+        </div>
+        <button id="toggle-orbits" aria-label="Toggle orbital paths">🛤️ Orbits</button>
+        <button id="toggle-details" aria-label="Toggle details">📊 Details</button>
+        <button id="reset-view" aria-label="Reset camera view">🔄 Reset</button>
+    </aside>
+    <aside id="object-list" class="hidden" role="navigation" aria-labelledby="explorer-title">
+        <h3 id="explorer-title">🔍 Explore</h3>
+        <div id="explorer-content" role="list"></div>
+    </aside>
+    
+    <div id="vr-ar-container" role="toolbar" aria-label="XR controls">
+        <button id="vr-button" class="xr-button hidden" aria-label="Enter Virtual Reality mode">
+            <span class="icon">🥽</span> Enter VR
+        </button>
+        <button id="ar-button" class="xr-button hidden" aria-label="Enter Augmented Reality mode">
+            <span class="icon">📱</span> Enter AR
+        </button>
+    </div>
+    
+    <button id="help-button" aria-label="Show help">❓ Help</button>
+    <div id="help-modal" class="modal hidden" role="dialog" aria-labelledby="help-title" aria-modal="true">
+        <div class="modal-content">
+            <button class="close-btn" onclick="window.closeHelpModal()" aria-label="Close help dialog">✕</button>
+            <h2 id="help-title">👋 Welcome to Scientific Explorer!</h2>
+            <div id="help-content" role="document"></div>
+        </div>
+    </div>
+    <!-- Import Map for Three.js from CDN -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <!-- Main Application Script -->
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
