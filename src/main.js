@@ -365,6 +365,20 @@ class SceneManager {
         console.log(`🎯 Controller ${index} trigger pressed`);
         controller.userData.selecting = true;
         
+        // Check if grip button is also held for zoom
+        const session = this.renderer.xr.getSession();
+        let gripHeld = false;
+        if (session) {
+            const inputSources = session.inputSources;
+            for (let i = 0; i < inputSources.length; i++) {
+                const gamepad = inputSources[i].gamepad;
+                if (gamepad && gamepad.buttons[1] && gamepad.buttons[1].pressed) {
+                    gripHeld = true;
+                    break;
+                }
+            }
+        }
+        
         // Setup raycaster for pointing
         const raycaster = new THREE.Raycaster();
         const tempMatrix = new THREE.Matrix4();
@@ -409,11 +423,20 @@ class SceneManager {
                 
                 // Check if it's a planet or celestial body
                 if (hitObject.name && module.focusOnObject) {
-                    module.focusOnObject(hitObject, this.camera, this.controls);
-                    console.log('✅ Focused on:', hitObject.name);
-                    
-                    if (this.vrUIPanel) {
-                        this.updateVRStatus(`🎯 Selected: ${hitObject.name}`);
+                    // If grip+trigger held, zoom VERY close for inspection
+                    if (gripHeld) {
+                        this.zoomToObject(hitObject, 'close');
+                        console.log('🔍 ZOOMING CLOSE to:', hitObject.name);
+                        if (this.vrUIPanel) {
+                            this.updateVRStatus(`🔍 Inspecting: ${hitObject.name}`);
+                        }
+                    } else {
+                        // Normal focus
+                        module.focusOnObject(hitObject, this.camera, this.controls);
+                        console.log('✅ Focused on:', hitObject.name);
+                        if (this.vrUIPanel) {
+                            this.updateVRStatus(`🎯 Selected: ${hitObject.name}`);
+                        }
                     }
                 }
             }
@@ -428,11 +451,74 @@ class SceneManager {
     }
     
     onSqueezeStart(controller, index) {
-        // Toggle VR UI with grip button
-        if (this.vrUIPanel) {
+        // Toggle VR UI with grip button (when not holding trigger)
+        const session = this.renderer.xr.getSession();
+        let triggerHeld = false;
+        if (session) {
+            const inputSources = session.inputSources;
+            for (let i = 0; i < inputSources.length; i++) {
+                const gamepad = inputSources[i].gamepad;
+                if (gamepad && gamepad.buttons[0] && gamepad.buttons[0].pressed) {
+                    triggerHeld = true;
+                    break;
+                }
+            }
+        }
+        
+        // Only toggle menu if trigger not held (grip alone = menu, grip+trigger = zoom)
+        if (!triggerHeld && this.vrUIPanel) {
             this.vrUIPanel.visible = !this.vrUIPanel.visible;
             console.log(`VR Menu ${this.vrUIPanel.visible ? 'shown' : 'hidden'}`);
         }
+    }
+    
+    zoomToObject(object, zoomLevel = 'normal') {
+        // VR zoom function - moves dolly close to object
+        if (!this.dolly || !object) return;
+        
+        const targetPosition = new THREE.Vector3();
+        object.getWorldPosition(targetPosition);
+        
+        // Calculate distance based on object size and zoom level
+        let objectRadius = 1;
+        if (object.userData && object.userData.radius) {
+            objectRadius = object.userData.radius;
+        } else if (object.geometry && object.geometry.boundingSphere) {
+            object.geometry.computeBoundingSphere();
+            objectRadius = object.geometry.boundingSphere.radius;
+        }
+        
+        // Distance multipliers
+        let distanceMultiplier;
+        switch(zoomLevel) {
+            case 'close':
+                distanceMultiplier = 2.5; // Very close for inspection
+                break;
+            case 'medium':
+                distanceMultiplier = 5;
+                break;
+            case 'far':
+            default:
+                distanceMultiplier = 10;
+                break;
+        }
+        
+        const distance = objectRadius * distanceMultiplier;
+        
+        // Get camera direction
+        const xrCamera = this.renderer.xr.getCamera();
+        const cameraDirection = new THREE.Vector3();
+        xrCamera.getWorldDirection(cameraDirection);
+        
+        // Move dolly to position behind object (from camera perspective)
+        const newPosition = targetPosition.clone().sub(
+            cameraDirection.multiplyScalar(distance)
+        );
+        
+        // Smoothly move dolly
+        this.dolly.position.copy(newPosition);
+        
+        console.log(`📍 VR Zoomed to ${object.userData?.name || 'object'} at distance ${distance.toFixed(2)}`);
     }
     
     handleVRAction(action) {
@@ -3704,58 +3790,58 @@ class SolarSystemModule {
         const satellitesData = [
             { 
                 name: 'ISS (International Space Station)', 
-                distance: 1.05,  // About 408 km above Earth scaled
-                speed: 15.5,  // ISS orbits Earth ~15.5 times per day
+                distance: 1.05,  // Orbital altitude: 408-410 km above Earth's surface (scaled)
+                speed: 15.5,  // Orbital velocity: 7.66 km/s (27,576 km/h), completes 15.5 orbits/day
                 size: 0.03,
                 color: 0xCCCCCC,
-                description: '🛰️ The ISS is a habitable space station orbiting Earth at ~408 km altitude. It travels at 27,600 km/h and completes one orbit every 90 minutes! Inhabited continuously since 2000, it\'s a collaboration of 5 space agencies.',
-                funFact: 'The ISS is as long as a football field and can be seen with the naked eye from Earth!',
-                realSize: '109m × 73m',
-                orbitTime: '90 minutes'
+                description: '🛰️ ISS orbits at 408 km altitude, traveling at 7.66 km/s (27,576 km/h). One orbit takes 92.68 minutes. Continuously inhabited since Nov 2, 2000 (25 years!). Collaboration of NASA, Roscosmos, ESA, JAXA, CSA. Completed 180,000+ orbits as of Oct 2025.',
+                funFact: 'ISS is 109m long, 73m wide, masses 419,725 kg. Pressurized volume equals a Boeing 747! Visible to naked eye as brightest "star" after Venus.',
+                realSize: '109m × 73m × 20m, 419,725 kg',
+                orbitTime: '92.68 minutes'
             },
             { 
                 name: 'Hubble Space Telescope', 
-                distance: 1.08,  // About 547 km above Earth
-                speed: 15.1,
+                distance: 1.08,  // Orbital altitude: ~535 km (varies due to atmospheric drag)
+                speed: 15.1, // Orbital velocity: 7.59 km/s (27,300 km/h)
                 size: 0.02,
                 color: 0x4169E1,
-                description: '🔭 Hubble has been observing the universe since 1990, capturing breathtaking images of distant galaxies, nebulae, and planets. It orbits at 547 km altitude and has made over 1.5 million observations!',
-                funFact: 'Hubble can see objects 13.4 billion light-years away - almost to the beginning of time!',
-                realSize: '13.2m long, 4.2m diameter',
+                description: '🔭 Launched April 24, 1990 on Space Shuttle Discovery. Orbits at ~535 km altitude. Made 1.6+ million observations as of Oct 2025. 2.4m primary mirror observes UV, visible, and near-IR. Five servicing missions (1993-2009) upgraded instruments.',
+                funFact: 'Can resolve objects 0.05 arcseconds apart - like seeing two fireflies 10,000 km away! Deepest image (eXtreme Deep Field) shows 5,500 galaxies, some 13.2 billion light-years away.',
+                realSize: '13.2m long × 4.2m diameter, 11,110 kg',
                 orbitTime: '95 minutes'
             },
             { 
                 name: 'GPS Satellites', 
-                distance: 3.5,  // ~20,200 km altitude
-                speed: 2,  // GPS satellites orbit twice per day
+                distance: 3.5,  // Medium Earth Orbit (MEO): 20,180 km altitude (26,560 km from Earth center)
+                speed: 2,  // Orbital velocity: 3.87 km/s, period: 11h 58min (2 orbits/day)
                 size: 0.025,
                 color: 0x00FF00,
-                description: '📡 The GPS constellation consists of at least 24 satellites orbiting at 20,200 km altitude. They provide positioning data to billions of devices worldwide. Each satellite contains atomic clocks accurate to nanoseconds!',
-                funFact: 'Your phone connects to at least 4 GPS satellites to determine your exact location!',
-                realSize: '5m wingspan',
-                orbitTime: '12 hours'
+                description: '📡 GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻¹⁴ seconds.',
+                funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
+                realSize: 'GPS III: 2,161 kg, 7.8m solar span',
+                orbitTime: '11h 58min'
             },
             { 
                 name: 'James Webb Space Telescope', 
-                distance: 250,  // At L2 point, ~1.5 million km from Earth (scaled)
-                speed: 0.01,  // Orbits sun at L2 point with Earth
+                distance: 250,  // At Sun-Earth L2 Lagrange point, 1.5 million km from Earth (scaled)
+                speed: 0.01,  // Halo orbit around L2, period synced with Earth (1 year)
                 size: 0.04,
                 color: 0xFFD700,
-                description: '🔬 JWST is the most powerful space telescope ever built! Launched in 2021, it orbits the Sun at the L2 Lagrange point, 1.5 million km from Earth. Its infrared vision can see the first galaxies formed after the Big Bang!',
-                funFact: 'JWST\'s mirror is 6.5m wide - about 3x larger than Hubble\'s! Its sunshield is as big as a tennis court.',
-                realSize: '6.5m mirror diameter',
-                orbitTime: 'Synced with Earth (1 year)'
+                description: '🔬 Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 μm). 6.5m segmented beryllium mirror (18 hexagons) with 25 m² collecting area - 6x Hubble! Sunshield: 21.2m × 14.2m, 5 layers.',
+                funFact: 'Operating at -233°C (-388°F)! Can detect heat signature of a bumblebee at Moon distance. Discovered earliest galaxies at z=14 (280 million years after Big Bang).',
+                realSize: '6.5m mirror, 21.2m × 14.2m sunshield, 6,161 kg',
+                orbitTime: 'L2 halo orbit: ~6 months period'
             },
             { 
                 name: 'Starlink Constellation', 
-                distance: 1.09,  // ~550 km altitude
-                speed: 15,
+                distance: 1.09,  // Multiple shells: 340 km, 550 km, 570 km, 1,150 km, 1,275 km
+                speed: 15, // Orbital velocity: ~7.6 km/s at 550 km altitude
                 size: 0.015,
                 color: 0xFF6B6B,
-                description: '🛰️ Starlink is SpaceX\'s satellite internet constellation with over 5,000 satellites in low Earth orbit! They provide high-speed internet to remote areas. Each satellite weighs about 260 kg.',
-                funFact: 'SpaceX launches up to 60 Starlink satellites at a time and plans for 42,000 total!',
-                realSize: '2.8m × 1.4m',
-                orbitTime: '95 minutes'
+                description: '🛰️ SpaceX Starlink: 5,400+ operational satellites as of Oct 2025 (largest constellation ever). Provides broadband internet globally. Ku/Ka-band phased array antennas. Ion thrusters for station-keeping and deorbit. Gen2 satellites: 1,250 kg, laser inter-satellite links.',
+                funFact: 'Launches 20-23 satellites per Falcon 9 flight. Over 300 launches! FCC approved up to 42,000 satellites. Each satellite deorbits after 5-7 years.',
+                realSize: 'V1.5: 260 kg, 2.8m × 1.4m × 0.12m flat',
+                orbitTime: '95 minutes (550 km shell)'
             }
         ];
 
@@ -3836,89 +3922,89 @@ class SolarSystemModule {
         const spacecraftData = [
             {
                 name: 'Voyager 1',
-                distance: 300, // ~24 billion km from Sun (scaled down)
-                angle: Math.PI * 0.7, // Direction of travel
-                speed: 0.0001, // Still moving away
+                distance: 300, // ~24.3 billion km from Sun as of Oct 2025 (162 AU) - scaled for visualization
+                angle: Math.PI * 0.7, // Direction: 35° north of ecliptic plane
+                speed: 0.0001, // Traveling at 17 km/s relative to Sun
                 size: 0.08,
                 color: 0xC0C0C0,
                 type: 'probe',
-                description: '🚀 Voyager 1 is the farthest human-made object from Earth! Launched in 1977, it\'s now in interstellar space, over 24 billion km away. It carries the "Golden Record" with sounds and images of Earth for any aliens who might find it.',
-                funFact: 'Voyager 1 is traveling at 61,000 km/h and takes 22 hours for its signals to reach Earth!',
-                realSize: '722 kg, 3.7m antenna',
-                launched: '1977',
-                status: 'Active in Interstellar Space'
+                description: '🚀 Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently 24.3 billion km (162 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
+                funFact: 'Voyager 1 travels at 17 km/s (61,200 km/h). Its radio signals take 22.5 hours to reach Earth!',
+                realSize: '825.5 kg, 3.7m antenna dish',
+                launched: 'September 5, 1977',
+                status: 'Active in Interstellar Space (since Aug 2012)'
             },
             {
                 name: 'Voyager 2',
-                distance: 280, // ~20 billion km from Sun
-                angle: Math.PI * 1.2,
-                speed: 0.0001,
+                distance: 280, // ~20.3 billion km from Sun as of Oct 2025 (135 AU) - scaled
+                angle: Math.PI * 1.2, // Direction: Different trajectory than V1
+                speed: 0.0001, // Traveling at 15.4 km/s relative to Sun
                 size: 0.08,
                 color: 0xB0B0B0,
                 type: 'probe',
-                description: '🚀 Voyager 2 is the only spacecraft to visit all four outer planets! It flew by Jupiter (1979), Saturn (1981), Uranus (1986), and Neptune (1989). Now in interstellar space, it\'s still sending data!',
-                funFact: 'Voyager 2 discovered 10 new moons and Neptune\'s Great Dark Spot!',
-                realSize: '722 kg, 3.7m antenna',
-                launched: '1977',
-                status: 'Active in Interstellar Space'
+                description: '🚀 Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now 20.3 billion km (135 AU) from Sun.',
+                funFact: 'Voyager 2 discovered 16 moons across the giant planets, Neptune\'s Great Dark Spot, and Triton\'s geysers!',
+                realSize: '825.5 kg, 3.7m antenna dish',
+                launched: 'August 20, 1977',
+                status: 'Active in Interstellar Space (since Nov 2018)'
             },
             {
                 name: 'New Horizons',
-                distance: 85, // Beyond Pluto, in Kuiper Belt
+                distance: 85, // ~8.9 billion km from Sun as of Oct 2025 (59 AU) - beyond Pluto orbit
                 angle: Math.PI * 0.3,
-                speed: 0.0002,
+                speed: 0.0002, // Traveling at 14.31 km/s relative to Sun
                 size: 0.06,
                 color: 0x4169E1,
                 type: 'probe',
-                description: '🪐 New Horizons gave us the first close-up images of Pluto in 2015! It revealed mountains of ice, nitrogen glaciers, and a heart-shaped region. Now exploring the Kuiper Belt, studying ancient objects from the solar system\'s formation.',
-                funFact: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto. It carries some of Clyde Tombaugh\'s (Pluto\'s discoverer) ashes!',
-                realSize: '478 kg, piano-sized',
-                launched: '2006',
+                description: '🪐 New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
+                funFact: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto at 58,536 km/h. It carries 1 oz of Clyde Tombaugh\'s ashes!',
+                realSize: '478 kg, 0.7 × 2.1 × 2.7m (piano-sized)',
+                launched: 'January 19, 2006',
                 status: 'Active in Kuiper Belt'
             },
             {
                 name: 'Parker Solar Probe',
-                distance: 12, // Orbits very close to Sun
+                distance: 12, // Highly elliptical orbit: 6.9 million km (perihelion) to 108 million km (aphelion)
                 angle: 0,
-                speed: 0.5, // Very fast orbital speed
+                speed: 0.5, // Peak velocity: 192 km/s (690,000 km/h) at perihelion - fastest human-made object
                 size: 0.05,
                 color: 0xFF6B35,
                 type: 'probe',
-                description: '☀️ Parker Solar Probe is touching the Sun! It flies through the Sun\'s corona at speeds up to 700,000 km/h - the fastest human-made object ever! Its heat shield withstands temperatures of 1,400°C while instruments stay at room temperature.',
-                funFact: 'Parker will eventually get within 6 million km of the Sun\'s surface - close enough to "touch" it!',
-                realSize: '685 kg, 2.3m heat shield',
-                launched: '2018',
-                status: 'Active, Orbiting Sun'
+                description: '☀️ Parker Solar Probe is "touching" the Sun! Launched Aug 12, 2018, it flies through the Sun\'s corona. At closest approach (6.9 million km from surface), it reaches 192 km/s (690,000 km/h)! Heat shield withstands 1,377°C while instruments stay at 30°C.',
+                funFact: 'Parker completed 21 orbits as of Oct 2025. Final perihelion in Dec 2025 will reach 6.9 million km - into the corona!',
+                realSize: '685 kg, 3m tall, 2.3m heat shield',
+                launched: 'August 12, 2018',
+                status: 'Active, 7-year mission (ends 2025)'
             },
             {
                 name: 'Perseverance Rover (Mars)',
                 orbitPlanet: 'mars',
-                distance: 1.001, // On Mars surface
+                distance: 1.001, // On Mars surface at Jezero Crater (18.38°N 77.58°E)
                 angle: 0.5,
                 speed: 0,
                 size: 0.04,
                 color: 0xFF4500,
                 type: 'rover',
-                description: '🤖 Perseverance is NASA\'s latest Mars rover, searching for signs of ancient microbial life! It landed in Jezero Crater in Feb 2021. Equipped with 23 cameras, it collects rock samples for future return to Earth and has a mini helicopter buddy named Ingenuity!',
-                funFact: 'Perseverance has a working microphone - we can hear Mars for the first time! It also makes oxygen from CO2.',
-                realSize: '1,025 kg, car-sized',
-                launched: '2020',
-                status: 'Active on Mars Surface'
+                description: '🤖 Perseverance landed in Jezero Crater on Feb 18, 2021. Searching for biosignatures of ancient microbial life in a former lake delta. Has 23 cameras, 7 instruments, collects core samples for Mars Sample Return mission. Ingenuity helicopter completed 66+ flights!',
+                funFact: 'First spacecraft to record sounds on Mars! MOXIE experiment produces oxygen from CO2 atmosphere. Has driven 28+ km as of Oct 2025.',
+                realSize: '1,025 kg, 3m long × 2.7m wide × 2.2m tall',
+                launched: 'July 30, 2020',
+                status: 'Active on Mars Surface (1,352+ sols)'
             },
             {
                 name: 'Curiosity Rover (Mars)',
                 orbitPlanet: 'mars',
-                distance: 1.001,
+                distance: 1.001, // On Mars surface at Gale Crater, climbing Mount Sharp (4.5°S 137.4°E)
                 angle: 0.8,
                 speed: 0,
                 size: 0.04,
                 color: 0xDC143C,
                 type: 'rover',
-                description: '🤖 Curiosity has been exploring Mars since 2012! This car-sized rover has driven over 30 km, studying Martian geology and climate. It confirmed Mars once had conditions suitable for life and found organic molecules!',
-                funFact: 'Curiosity has a laser that can vaporize rocks from 7m away to analyze their composition!',
-                realSize: '899 kg, car-sized',
-                launched: '2011',
-                status: 'Active on Mars Surface'
+                description: '🤖 Curiosity landed in Gale Crater on Aug 6, 2012. Climbing Mount Sharp (Aeolis Mons), studying rock layers. Confirmed ancient Mars had water, organic molecules, and habitable conditions. Has 17 cameras, 10 science instruments, plutonium power source.',
+                funFact: 'ChemCam laser can vaporize rocks from 7m away! Has driven 32+ km and climbed 625+ meters as of Oct 2025. Still going strong after 4,780+ sols!',
+                realSize: '899 kg, 3m long × 2.8m wide × 2.1m tall',
+                launched: 'November 26, 2011',
+                status: 'Active on Mars Surface (4,780+ sols)'
             },
             {
                 name: 'Apollo 11 Landing Site (Moon)',
@@ -3939,32 +4025,32 @@ class SolarSystemModule {
             {
                 name: 'Juno (Jupiter)',
                 orbitPlanet: 'jupiter',
-                distance: 11.5, // Orbiting Jupiter
+                distance: 11.5, // Highly elliptical polar orbit: 4,200 km to 8.1 million km from Jupiter's cloud tops
                 angle: 0,
-                speed: 3.0,
+                speed: 3.0, // Orbital period: 53.5 days
                 size: 0.05,
                 color: 0xFFD700,
                 type: 'orbiter',
-                description: '🪐 Juno is orbiting Jupiter, studying its composition, gravity, magnetic field, and auroras! It\'s revealed Jupiter\'s core is larger and more diffuse than expected, and captured stunning images of the planet\'s poles.',
-                funFact: 'Juno is solar-powered despite being so far from the Sun - it has three huge solar panel "wings"!',
-                realSize: '3,625 kg, 20m wingspan',
-                launched: '2011',
-                status: 'Active in Jupiter Orbit'
+                description: '🪐 Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
+                funFact: 'First solar-powered spacecraft at Jupiter! Three 9m solar panels generate 500W. Carries three LEGO figurines: Galileo, Jupiter, and Juno!',
+                realSize: '3,625 kg, 20m solar panel span',
+                launched: 'August 5, 2011',
+                status: 'Active in Jupiter Orbit (63+ orbits)'
             },
             {
                 name: 'Cassini-Huygens Legacy (Saturn)',
                 orbitPlanet: 'saturn',
-                distance: 9.6,
+                distance: 9.6, // Orbited Saturn 294 times before Grand Finale
                 angle: 0,
                 speed: 2.5,
                 size: 0.06,
                 color: 0xDAA520,
                 type: 'memorial',
-                description: '🪐 Cassini spent 13 years exploring Saturn (2004-2017) before diving into Saturn\'s atmosphere in a "Grand Finale". It discovered liquid methane lakes on Titan, geysers on Enceladus, and took over 450,000 images!',
-                funFact: 'Cassini found that Enceladus shoots water geysers into space - meaning it might have a subsurface ocean!',
-                realSize: '5,600 kg, school bus-sized',
-                launched: '1997',
-                status: 'Mission Ended 2017 (Memorial)'
+                description: '🪐 Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
+                funFact: 'Discovered Enceladus\' subsurface ocean! Water geysers shoot 250kg/s into space. Cassini flew through plumes, detected H2, organics - ingredients for life!',
+                realSize: '5,600 kg, 6.8m tall, 4m wide',
+                launched: 'October 15, 1997',
+                status: 'Mission Ended Sept 15, 2017 (Memorial)'
             }
         ];
 
@@ -5458,6 +5544,19 @@ class App {
                 case 'escape':
                     this.uiManager.closeInfoPanel();
                     this.uiManager.closeHelpModal();
+                    break;
+                case ' ':
+                case 'space':
+                    // SPACE = Pause/Play (works in VR too!)
+                    if (this.topicManager) {
+                        if (this.topicManager.timeSpeed === 0) {
+                            this.topicManager.timeSpeed = 1;
+                            console.log('▶️ PLAY');
+                        } else {
+                            this.topicManager.timeSpeed = 0;
+                            console.log('⏸️ PAUSE');
+                        }
+                    }
                     break;
                 case 'i':
                     // Find and focus on ISS

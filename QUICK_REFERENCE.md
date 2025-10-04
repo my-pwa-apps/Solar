@@ -6,6 +6,7 @@
 ┌─────────────────────────────────────────┐
 │  Press  │  Action                       │
 ├─────────┼───────────────────────────────┤
+│  SPACE  │  ⏯️  Pause/Play Toggle (VR!)  │
 │    I    │  🛰️  Focus on ISS             │
 │    V    │  🚀  Cycle Voyagers 1 & 2     │
 │    M    │  🤖  Cycle Mars Rovers        │
@@ -40,9 +41,22 @@ RIGHT CONTROLLER:
 └─ B Button: Move UP (alt)
 ```
 
+### Zoom & Pause (NEW!)
+```
+🔍 GRIP + TRIGGER = Zoom VERY close to object
+⏸️  VR Menu Pause = Freeze all rotation
+⏯️  SPACE key = Pause/Play (works in VR!)
+```
+
+### Selection
+```
+Point + TRIGGER = Select object (normal focus)
+GRIP + TRIGGER = Zoom close for inspection 🔍
+```
+
 ### Sprint Mode
 ```
-🚀 Hold ANY TRIGGER = 3x Speed Boost
+🚀 Hold TRIGGER (while moving) = 3x Speed
    Laser turns ORANGE when active
 ```
 

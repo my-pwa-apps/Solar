@@ -31,12 +31,28 @@
 - **ORANGE**: Sprint mode active (3x speed)
 
 ### INTERACTIONS
-**Trigger Button**: 
-- Select planets when pointing at them
-- Click VR UI buttons
-- Hold for sprint mode while moving
 
-**Grip Button**: Toggle VR menu panel on/off
+**🎯 Trigger Button (Pull)**: 
+- Point at planet/object + Pull trigger = **Select and focus**
+- **Hold GRIP + Pull TRIGGER** = **Zoom VERY close for inspection** 🔍
+- Point at VR menu button + Pull trigger = Activate button
+- Hold trigger while moving = Sprint mode (3x speed)
+
+**🤏 Grip Button (Squeeze)**:
+- Squeeze grip alone = Toggle VR menu panel on/off
+- **Hold GRIP + Pull TRIGGER** while pointing = **Zoom close inspection** 🔍
+
+**📋 VR Menu Controls:**
+- **⏸️ Pause** - Freeze all rotation/motion for inspection
+- **▶️ Play** - Resume motion at 1x speed
+- **⏩ Speed+** - Increase time speed (up to 10x)
+- **⏪ Speed-** - Decrease time speed (down to 0)
+- **🔆 Bright+** - Increase scene brightness
+- **🔅 Bright-** - Decrease scene brightness
+- **☄️ Tails** - Toggle comet tails on/off
+- **📏 Scale** - Toggle realistic/educational scale
+- **🔄 Reset** - Reset camera to starting position
+- **🌍 Earth** - Jump to Earth instantly
 
 ---
 
