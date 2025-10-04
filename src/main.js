@@ -558,6 +558,20 @@ class SceneManager {
         // Update laser pointer colors based on what they're pointing at
         if (!this.renderer.xr.isPresenting || !this.controllers) return;
         
+        // Check if sprint mode is active (check trigger buttons)
+        let sprintActive = false;
+        const session = this.renderer.xr.getSession();
+        if (session) {
+            const inputSources = session.inputSources;
+            for (let i = 0; i < inputSources.length; i++) {
+                const gamepad = inputSources[i].gamepad;
+                if (gamepad && gamepad.buttons.length > 0 && gamepad.buttons[0].pressed) {
+                    sprintActive = true;
+                    break;
+                }
+            }
+        }
+        
         this.controllers.forEach((controller, index) => {
             const laser = controller.getObjectByName('laser');
             const pointer = controller.getObjectByName('pointer');
@@ -576,23 +590,29 @@ class SceneManager {
             // Check what we're pointing at
             const intersects = raycaster.intersectObjects(this.scene.children, true);
             
-            // Change color based on what we're hitting
-            if (intersects.length > 0 && intersects[0].distance < 10) {
+            // Change color based on sprint mode and what we're hitting
+            if (sprintActive) {
+                // SPRINT MODE - ORANGE/RED laser
+                laser.material.color.setHex(0xff6600);
+                if (pointer) pointer.material.color.setHex(0xff6600);
+                if (cone) cone.material.color.setHex(0xff6600);
+            } else if (intersects.length > 0 && intersects[0].distance < 10) {
                 // Pointing at something - make it GREEN
                 laser.material.color.setHex(0x00ff00);
                 if (pointer) pointer.material.color.setHex(0x00ff00);
                 if (cone) cone.material.color.setHex(0x00ff00);
-                
-                // Move pointer to hit point
-                const hitDistance = Math.min(intersects[0].distance, 10);
-                if (pointer) pointer.position.set(0, 0, -hitDistance);
             } else {
                 // Not pointing at anything - CYAN
                 laser.material.color.setHex(0x00ffff);
                 if (pointer) pointer.material.color.setHex(0x00ffff);
                 if (cone) cone.material.color.setHex(0x00ffff);
-                
-                // Reset pointer to max distance
+            }
+            
+            // Update pointer position
+            if (intersects.length > 0 && intersects[0].distance < 10) {
+                const hitDistance = Math.min(intersects[0].distance, 10);
+                if (pointer) pointer.position.set(0, 0, -hitDistance);
+            } else {
                 if (pointer) pointer.position.set(0, 0, -10);
             }
         });
@@ -613,59 +633,109 @@ class SceneManager {
         if (!session) return;
         
         const inputSources = session.inputSources;
+        const xrCamera = this.renderer.xr.getCamera();
         
-        // Quest controllers: Left controller = index 0, Right controller = index 1
-        // Thumbsticks are typically on axes[2] and axes[3]
+        // Get camera direction vectors
+        const cameraDirection = new THREE.Vector3();
+        xrCamera.getWorldDirection(cameraDirection);
+        
+        const cameraRight = new THREE.Vector3();
+        cameraRight.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0)).normalize();
+        
+        const cameraUp = new THREE.Vector3(0, 1, 0);
+        
+        // Track if trigger is held for sprint
+        let sprintMultiplier = 1.0;
         
         for (let i = 0; i < inputSources.length; i++) {
             const inputSource = inputSources[i];
             const gamepad = inputSource.gamepad;
-            const handedness = inputSource.handedness; // 'left' or 'right'
+            const handedness = inputSource.handedness;
             
             if (!gamepad) continue;
             
-            // Debug: log axes values periodically
-            if (gamepad.axes.length > 0 && Math.random() < 0.01) {
-                console.log(`🎮 ${handedness} controller axes:`, gamepad.axes.map(a => a.toFixed(2)));
-            }
-            
-            // Try both axis configurations (Quest varies between devices)
+            // Get thumbstick axes
             let stickX = 0, stickY = 0;
-            
             if (gamepad.axes.length >= 4) {
-                // Most common: axes[2] and axes[3]
                 stickX = gamepad.axes[2];
                 stickY = gamepad.axes[3];
             } else if (gamepad.axes.length >= 2) {
-                // Fallback: axes[0] and axes[1]
                 stickX = gamepad.axes[0];
                 stickY = gamepad.axes[1];
             }
             
-            // Left controller: Movement (forward/back/strafe)
-            if (handedness === 'left' && (Math.abs(stickX) > 0.15 || Math.abs(stickY) > 0.15)) {
-                const moveSpeed = 0.1;
-                const xrCamera = this.renderer.xr.getCamera();
-                const cameraDirection = new THREE.Vector3();
-                xrCamera.getWorldDirection(cameraDirection);
-                cameraDirection.y = 0; // Keep movement horizontal
-                cameraDirection.normalize();
-                
-                const rightVector = new THREE.Vector3();
-                rightVector.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
-                
-                // Apply movement to DOLLY (REVERSED forward/back for intuitive control)
-                this.dolly.position.add(rightVector.multiplyScalar(stickX * moveSpeed));
-                this.dolly.position.add(cameraDirection.multiplyScalar(stickY * moveSpeed)); // CHANGED: removed negative
-                
-                console.log(`🎮 LEFT Moving: X=${stickX.toFixed(2)}, Y=${stickY.toFixed(2)}, Pos=(${this.dolly.position.x.toFixed(1)}, ${this.dolly.position.z.toFixed(1)})`);
+            // Check trigger for sprint (button 0 is usually trigger)
+            if (gamepad.buttons.length > 0 && gamepad.buttons[0].pressed) {
+                sprintMultiplier = 3.0; // 3x speed when holding trigger
+                if (Math.random() < 0.02) {
+                    console.log('🚀 SPRINT MODE ACTIVATED (3x speed)');
+                }
             }
             
-            // Right controller: Rotation (snap turning)
-            if (handedness === 'right' && Math.abs(stickX) > 0.15) {
-                // Rotate dolly for snap turning
-                this.dolly.rotation.y -= stickX * 0.03;
-                console.log(`🔄 RIGHT Rotating: ${stickX.toFixed(2)}, Angle=${(this.dolly.rotation.y * 180 / Math.PI).toFixed(1)}°`);
+            const deadzone = 0.15;
+            
+            // LEFT CONTROLLER: 6DOF Movement (forward/back, strafe, up/down)
+            if (handedness === 'left') {
+                const baseSpeed = 0.15 * sprintMultiplier;
+                
+                // Horizontal movement (X/Z plane)
+                if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
+                    // Forward/Backward (push stick forward = move forward)
+                    const forwardMovement = cameraDirection.clone();
+                    forwardMovement.y = 0; // Keep horizontal
+                    forwardMovement.normalize();
+                    this.dolly.position.add(forwardMovement.multiplyScalar(stickY * baseSpeed));
+                    
+                    // Strafe Left/Right
+                    const strafeMovement = cameraRight.clone();
+                    strafeMovement.y = 0; // Keep horizontal
+                    strafeMovement.normalize();
+                    this.dolly.position.add(strafeMovement.multiplyScalar(stickX * baseSpeed));
+                    
+                    // Log movement occasionally
+                    if (Math.random() < 0.01) {
+                        const speedMode = sprintMultiplier > 1 ? '🚀 SPRINT' : '🚶 Normal';
+                        console.log(`${speedMode} Moving: X=${this.dolly.position.x.toFixed(1)}, Y=${this.dolly.position.y.toFixed(1)}, Z=${this.dolly.position.z.toFixed(1)}`);
+                    }
+                }
+                
+                // Vertical movement (Y axis) using buttons
+                // Button 4 = X button, Button 5 = Y button on left controller
+                if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
+                    // X button: Move DOWN
+                    this.dolly.position.add(cameraUp.clone().multiplyScalar(-baseSpeed * 0.7));
+                }
+                if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
+                    // Y button: Move UP
+                    this.dolly.position.add(cameraUp.clone().multiplyScalar(baseSpeed * 0.7));
+                }
+            }
+            
+            // RIGHT CONTROLLER: Rotation + Vertical movement
+            if (handedness === 'right') {
+                const rotSpeed = 0.04;
+                
+                // Horizontal rotation with right stick X
+                if (Math.abs(stickX) > deadzone) {
+                    this.dolly.rotation.y -= stickX * rotSpeed;
+                }
+                
+                // Vertical movement with right stick Y
+                if (Math.abs(stickY) > deadzone) {
+                    const vertSpeed = 0.15 * sprintMultiplier;
+                    this.dolly.position.add(cameraUp.clone().multiplyScalar(-stickY * vertSpeed));
+                }
+                
+                // Additional: A/B buttons for fine vertical control
+                // Button 4 = A button, Button 5 = B button
+                if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
+                    // A button: Move DOWN
+                    this.dolly.position.add(cameraUp.clone().multiplyScalar(-0.1 * sprintMultiplier));
+                }
+                if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
+                    // B button: Move UP
+                    this.dolly.position.add(cameraUp.clone().multiplyScalar(0.1 * sprintMultiplier));
+                }
             }
         }
     }
@@ -960,6 +1030,9 @@ class SolarSystemModule {
         if (this.uiManager) this.uiManager.showLoading('Creating satellites...');
         this.createSatellites(scene);
         
+        if (this.uiManager) this.uiManager.showLoading('Creating spacecraft & rovers...');
+        this.createSpacecraft(scene);
+        
         return true;
     }
 
@@ -997,8 +1070,8 @@ class SolarSystemModule {
             realSize: '1,391,000 km diameter'
         };
         
-        // Add sun light
-        const sunLight = new THREE.PointLight(0xFFFFE0, 5, 0, 1.5);
+        // Add sun light (increased for educational visibility)
+        const sunLight = new THREE.PointLight(0xFFFFE0, 8, 0, 1.2); // Increased from 5 to 8
         sunLight.name = 'sunLight';
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 2048;
@@ -1006,6 +1079,11 @@ class SolarSystemModule {
         sunLight.shadow.camera.near = 1;
         sunLight.shadow.camera.far = 5000;
         scene.add(sunLight);
+        
+        // Add ambient light for better visibility of all planets
+        const ambientLight = new THREE.AmbientLight(0x404060, 0.3); // Soft blue ambient
+        ambientLight.name = 'ambientLight';
+        scene.add(ambientLight);
         
         // Multi-layer corona for realistic glow
         const coronaLayers = [
@@ -2541,6 +2619,165 @@ class SolarSystemModule {
         return texture;
     }
 
+    createUranusTexture(size) {
+        // Uranus: Featureless cyan-blue atmosphere with subtle banding
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y, seed) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size;
+                const ny = y / size;
+                
+                // Latitude-based faint banding
+                const latitude = ny;
+                const band = Math.sin(latitude * Math.PI * 12) * 0.02;
+                
+                // Very subtle atmospheric variations
+                const clouds = noise(nx * 8, ny * 8, 1) * 0.03;
+                const detail = noise(nx * 20, ny * 20, 2) * 0.015;
+                
+                // Base cyan-blue color with methane tint
+                const brightness = 0.65 + band + clouds + detail;
+                data[idx] = Math.floor(79 * brightness); // R: Cyan-blue
+                data[idx + 1] = Math.floor(212 * brightness); // G
+                data[idx + 2] = Math.floor(232 * brightness); // B
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    createNeptuneTexture(size) {
+        // Neptune: Deep blue atmosphere with Great Dark Spot and wind features
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y, seed) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size;
+                const ny = y / size;
+                
+                // Dynamic cloud bands
+                const latitude = ny;
+                const band = Math.sin(latitude * Math.PI * 15) * 0.08;
+                const wave = Math.sin((nx * 5 + ny * 2) * Math.PI) * 0.04;
+                
+                // Great Dark Spot (similar to Jupiter's Red Spot)
+                const spotX = 0.3, spotY = 0.35;
+                const distToSpot = Math.sqrt(Math.pow((nx - spotX) * 2, 2) + Math.pow(ny - spotY, 2));
+                const darkSpot = distToSpot < 0.15 ? -0.25 * (1 - distToSpot / 0.15) : 0;
+                
+                // Swirling atmospheric features
+                const swirl = noise(nx * 12 + ny * 2, ny * 10, 1) * 0.06;
+                const detail = noise(nx * 25, ny * 25, 2) * 0.03;
+                
+                // Deep blue with white clouds
+                const brightness = 0.55 + band + wave + swirl + detail + darkSpot;
+                data[idx] = Math.floor(46 * brightness); // R: Deep blue
+                data[idx + 1] = Math.floor(95 * brightness); // G
+                data[idx + 2] = Math.floor(181 * brightness); // B
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    createPlutoTexture(size) {
+        // Pluto: Heart-shaped Tombaugh Regio, nitrogen ice, reddish-brown terrain
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        
+        const noise = (x, y, seed) => {
+            const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
+            return n - Math.floor(n);
+        };
+        
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+        
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size;
+                const ny = y / size;
+                
+                // Create the famous "heart" (Tombaugh Regio)
+                const heartCenterX = 0.4, heartCenterY = 0.45;
+                const toCenter = {
+                    x: (nx - heartCenterX) * 1.8,
+                    y: (ny - heartCenterY) * 1.2
+                };
+                
+                // Heart shape equation
+                const heartDist = Math.pow(toCenter.x * toCenter.x + toCenter.y * toCenter.y - 0.04, 3) - 
+                                 toCenter.x * toCenter.x * toCenter.y * toCenter.y * toCenter.y * 200;
+                const isHeart = heartDist < 0;
+                
+                // Base terrain variations
+                const terrain = noise(nx * 15, ny * 15, 1) * 0.4;
+                const mountains = noise(nx * 30, ny * 30, 2) * 0.2;
+                const detail = noise(nx * 50, ny * 50, 3) * 0.1;
+                
+                // Tholins (reddish-brown organic compounds)
+                const tholin = terrain + mountains + detail;
+                
+                if (isHeart) {
+                    // Sputnik Planitia - bright nitrogen ice
+                    const iceBrightness = 0.9 + noise(nx * 40, ny * 40, 4) * 0.1;
+                    data[idx] = Math.floor(240 * iceBrightness);
+                    data[idx + 1] = Math.floor(235 * iceBrightness);
+                    data[idx + 2] = Math.floor(220 * iceBrightness);
+                } else {
+                    // Reddish-brown terrain with tholins
+                    const baseBrightness = 0.5 + tholin;
+                    data[idx] = Math.floor(212 * baseBrightness); // R: Reddish-brown
+                    data[idx + 1] = Math.floor(163 * baseBrightness); // G
+                    data[idx + 2] = Math.floor(115 * baseBrightness); // B
+                }
+                
+                data[idx + 3] = 255;
+            }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
     createPlanetMaterial(config) {
         // Create HYPERREALISTIC materials with advanced texturing
         const name = config.name.toLowerCase();
@@ -2565,14 +2802,14 @@ class SolarSystemModule {
                 return new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     normalMap: earthNormal,
-                    normalScale: new THREE.Vector2(0.3, 0.3), // More subtle
+                    normalScale: new THREE.Vector2(0.5, 0.5), // Enhanced for visibility
                     bumpMap: earthBump,
-                    bumpScale: 0.02, // More subtle elevation
+                    bumpScale: 0.04, // More visible elevation
                     roughnessMap: earthSpecular,
-                    roughness: 0.7, // Slightly rougher overall
-                    metalness: 0.05, // Less metallic
-                    emissive: 0x0a2f4f,
-                    emissiveIntensity: 0.02
+                    roughness: 0.5, // Reduced for better light reflection
+                    metalness: 0.1, // Slightly more reflective for water
+                    emissive: 0x1a4f6f, // Brighter blue glow
+                    emissiveIntensity: 0.15 // Much brighter for visibility
                 });
                 
             case 'mars':
@@ -3589,6 +3826,297 @@ class SolarSystemModule {
         });
     }
 
+    createSpacecraft(scene) {
+        // Deep space probes and interplanetary missions
+        this.spacecraft = [];
+        
+        const spacecraftData = [
+            {
+                name: 'Voyager 1',
+                distance: 300, // ~24 billion km from Sun (scaled down)
+                angle: Math.PI * 0.7, // Direction of travel
+                speed: 0.0001, // Still moving away
+                size: 0.08,
+                color: 0xC0C0C0,
+                type: 'probe',
+                description: '🚀 Voyager 1 is the farthest human-made object from Earth! Launched in 1977, it\'s now in interstellar space, over 24 billion km away. It carries the "Golden Record" with sounds and images of Earth for any aliens who might find it.',
+                funFact: 'Voyager 1 is traveling at 61,000 km/h and takes 22 hours for its signals to reach Earth!',
+                realSize: '722 kg, 3.7m antenna',
+                launched: '1977',
+                status: 'Active in Interstellar Space'
+            },
+            {
+                name: 'Voyager 2',
+                distance: 280, // ~20 billion km from Sun
+                angle: Math.PI * 1.2,
+                speed: 0.0001,
+                size: 0.08,
+                color: 0xB0B0B0,
+                type: 'probe',
+                description: '🚀 Voyager 2 is the only spacecraft to visit all four outer planets! It flew by Jupiter (1979), Saturn (1981), Uranus (1986), and Neptune (1989). Now in interstellar space, it\'s still sending data!',
+                funFact: 'Voyager 2 discovered 10 new moons and Neptune\'s Great Dark Spot!',
+                realSize: '722 kg, 3.7m antenna',
+                launched: '1977',
+                status: 'Active in Interstellar Space'
+            },
+            {
+                name: 'New Horizons',
+                distance: 85, // Beyond Pluto, in Kuiper Belt
+                angle: Math.PI * 0.3,
+                speed: 0.0002,
+                size: 0.06,
+                color: 0x4169E1,
+                type: 'probe',
+                description: '🪐 New Horizons gave us the first close-up images of Pluto in 2015! It revealed mountains of ice, nitrogen glaciers, and a heart-shaped region. Now exploring the Kuiper Belt, studying ancient objects from the solar system\'s formation.',
+                funFact: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto. It carries some of Clyde Tombaugh\'s (Pluto\'s discoverer) ashes!',
+                realSize: '478 kg, piano-sized',
+                launched: '2006',
+                status: 'Active in Kuiper Belt'
+            },
+            {
+                name: 'Parker Solar Probe',
+                distance: 12, // Orbits very close to Sun
+                angle: 0,
+                speed: 0.5, // Very fast orbital speed
+                size: 0.05,
+                color: 0xFF6B35,
+                type: 'probe',
+                description: '☀️ Parker Solar Probe is touching the Sun! It flies through the Sun\'s corona at speeds up to 700,000 km/h - the fastest human-made object ever! Its heat shield withstands temperatures of 1,400°C while instruments stay at room temperature.',
+                funFact: 'Parker will eventually get within 6 million km of the Sun\'s surface - close enough to "touch" it!',
+                realSize: '685 kg, 2.3m heat shield',
+                launched: '2018',
+                status: 'Active, Orbiting Sun'
+            },
+            {
+                name: 'Perseverance Rover (Mars)',
+                orbitPlanet: 'mars',
+                distance: 1.001, // On Mars surface
+                angle: 0.5,
+                speed: 0,
+                size: 0.04,
+                color: 0xFF4500,
+                type: 'rover',
+                description: '🤖 Perseverance is NASA\'s latest Mars rover, searching for signs of ancient microbial life! It landed in Jezero Crater in Feb 2021. Equipped with 23 cameras, it collects rock samples for future return to Earth and has a mini helicopter buddy named Ingenuity!',
+                funFact: 'Perseverance has a working microphone - we can hear Mars for the first time! It also makes oxygen from CO2.',
+                realSize: '1,025 kg, car-sized',
+                launched: '2020',
+                status: 'Active on Mars Surface'
+            },
+            {
+                name: 'Curiosity Rover (Mars)',
+                orbitPlanet: 'mars',
+                distance: 1.001,
+                angle: 0.8,
+                speed: 0,
+                size: 0.04,
+                color: 0xDC143C,
+                type: 'rover',
+                description: '🤖 Curiosity has been exploring Mars since 2012! This car-sized rover has driven over 30 km, studying Martian geology and climate. It confirmed Mars once had conditions suitable for life and found organic molecules!',
+                funFact: 'Curiosity has a laser that can vaporize rocks from 7m away to analyze their composition!',
+                realSize: '899 kg, car-sized',
+                launched: '2011',
+                status: 'Active on Mars Surface'
+            },
+            {
+                name: 'Apollo 11 Landing Site (Moon)',
+                orbitPlanet: 'earth',
+                isMoon: true,
+                distance: 0.273, // On Moon surface
+                angle: 1.2,
+                speed: 0,
+                size: 0.02,
+                color: 0xFFD700,
+                type: 'landing-site',
+                description: '🌕 The historic Apollo 11 landing site where Neil Armstrong took "one small step for man" on July 20, 1969! The lunar module\'s descent stage, flag, and astronaut footprints remain preserved in the Sea of Tranquility.',
+                funFact: 'The footprints will last millions of years because there\'s no wind or water on the Moon!',
+                realSize: 'Tranquility Base',
+                launched: '1969',
+                status: 'Historic Site'
+            },
+            {
+                name: 'Juno (Jupiter)',
+                orbitPlanet: 'jupiter',
+                distance: 11.5, // Orbiting Jupiter
+                angle: 0,
+                speed: 3.0,
+                size: 0.05,
+                color: 0xFFD700,
+                type: 'orbiter',
+                description: '🪐 Juno is orbiting Jupiter, studying its composition, gravity, magnetic field, and auroras! It\'s revealed Jupiter\'s core is larger and more diffuse than expected, and captured stunning images of the planet\'s poles.',
+                funFact: 'Juno is solar-powered despite being so far from the Sun - it has three huge solar panel "wings"!',
+                realSize: '3,625 kg, 20m wingspan',
+                launched: '2011',
+                status: 'Active in Jupiter Orbit'
+            },
+            {
+                name: 'Cassini-Huygens Legacy (Saturn)',
+                orbitPlanet: 'saturn',
+                distance: 9.6,
+                angle: 0,
+                speed: 2.5,
+                size: 0.06,
+                color: 0xDAA520,
+                type: 'memorial',
+                description: '🪐 Cassini spent 13 years exploring Saturn (2004-2017) before diving into Saturn\'s atmosphere in a "Grand Finale". It discovered liquid methane lakes on Titan, geysers on Enceladus, and took over 450,000 images!',
+                funFact: 'Cassini found that Enceladus shoots water geysers into space - meaning it might have a subsurface ocean!',
+                realSize: '5,600 kg, school bus-sized',
+                launched: '1997',
+                status: 'Mission Ended 2017 (Memorial)'
+            }
+        ];
+
+        spacecraftData.forEach(craft => {
+            // Create spacecraft body
+            let geometry, material;
+            
+            if (craft.type === 'probe' || craft.type === 'orbiter') {
+                // Classic probe shape with antenna
+                geometry = new THREE.SphereGeometry(craft.size * 0.5, 16, 16);
+                material = new THREE.MeshStandardMaterial({
+                    color: craft.color,
+                    roughness: 0.7,
+                    metalness: 0.6,
+                    emissive: craft.color,
+                    emissiveIntensity: 0.2
+                });
+            } else if (craft.type === 'rover') {
+                // Box shape for rovers
+                geometry = new THREE.BoxGeometry(craft.size, craft.size * 0.6, craft.size * 0.8);
+                material = new THREE.MeshStandardMaterial({
+                    color: craft.color,
+                    roughness: 0.8,
+                    metalness: 0.4,
+                    emissive: craft.color,
+                    emissiveIntensity: 0.15
+                });
+            } else if (craft.type === 'landing-site') {
+                // Marker for landing site
+                geometry = new THREE.CylinderGeometry(craft.size, craft.size * 1.5, craft.size * 2, 8);
+                material = new THREE.MeshStandardMaterial({
+                    color: craft.color,
+                    roughness: 0.3,
+                    metalness: 0.9,
+                    emissive: craft.color,
+                    emissiveIntensity: 0.5
+                });
+            } else {
+                // Memorial/generic
+                geometry = new THREE.OctahedronGeometry(craft.size * 0.6);
+                material = new THREE.MeshStandardMaterial({
+                    color: craft.color,
+                    roughness: 0.5,
+                    metalness: 0.7,
+                    emissive: craft.color,
+                    emissiveIntensity: 0.3
+                });
+            }
+            
+            const spacecraft = new THREE.Mesh(geometry, material);
+            
+            // Add antenna dish for probes
+            if (craft.type === 'probe' || craft.type === 'orbiter') {
+                const dishGeometry = new THREE.CylinderGeometry(craft.size * 1.2, craft.size * 1.5, craft.size * 0.1, 16);
+                const dishMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xE0E0E0,
+                    roughness: 0.3,
+                    metalness: 0.9
+                });
+                const dish = new THREE.Mesh(dishGeometry, dishMaterial);
+                dish.rotation.x = Math.PI / 2;
+                dish.position.y = craft.size * 0.5;
+                spacecraft.add(dish);
+                
+                // Add support boom
+                const boomGeometry = new THREE.CylinderGeometry(craft.size * 0.05, craft.size * 0.05, craft.size * 2);
+                const boomMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x808080,
+                    roughness: 0.6,
+                    metalness: 0.8
+                });
+                const boom = new THREE.Mesh(boomGeometry, boomMaterial);
+                boom.position.x = craft.size * 0.8;
+                spacecraft.add(boom);
+            }
+            
+            // Add wheels for rovers
+            if (craft.type === 'rover') {
+                for (let i = 0; i < 4; i++) {
+                    const wheelGeometry = new THREE.CylinderGeometry(craft.size * 0.2, craft.size * 0.2, craft.size * 0.15, 12);
+                    const wheelMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x404040,
+                        roughness: 0.9,
+                        metalness: 0.3
+                    });
+                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                    wheel.rotation.z = Math.PI / 2;
+                    wheel.position.x = (i % 2 === 0 ? 1 : -1) * craft.size * 0.5;
+                    wheel.position.z = (i < 2 ? 1 : -1) * craft.size * 0.4;
+                    wheel.position.y = -craft.size * 0.3;
+                    spacecraft.add(wheel);
+                }
+            }
+            
+            // Add glow marker
+            const glowGeometry = new THREE.SphereGeometry(craft.size * 1.8, 16, 16);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: craft.color,
+                transparent: true,
+                opacity: 0.15,
+                blending: THREE.AdditiveBlending
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            spacecraft.add(glow);
+            
+            spacecraft.userData = {
+                name: craft.name,
+                type: craft.type,
+                description: craft.description,
+                funFact: craft.funFact,
+                realSize: craft.realSize,
+                launched: craft.launched,
+                status: craft.status,
+                distance: craft.distance,
+                angle: craft.angle,
+                speed: craft.speed,
+                orbitPlanet: craft.orbitPlanet,
+                isMoon: craft.isMoon || false,
+                isSpacecraft: true
+            };
+            
+            // Position spacecraft
+            if (craft.orbitPlanet) {
+                // Position relative to planet
+                const planet = this.planets[craft.orbitPlanet];
+                if (planet) {
+                    if (craft.isMoon && planet.userData.moons && planet.userData.moons[0]) {
+                        // Position on Moon surface
+                        const moon = planet.userData.moons[0];
+                        const moonDist = moon.userData.distance;
+                        spacecraft.position.x = moonDist * Math.cos(craft.angle);
+                        spacecraft.position.z = moonDist * Math.sin(craft.angle);
+                        spacecraft.position.y = craft.size * 2; // Slightly above surface
+                        moon.add(spacecraft);
+                    } else {
+                        // Position relative to planet
+                        spacecraft.position.x = craft.distance * Math.cos(craft.angle);
+                        spacecraft.position.z = craft.distance * Math.sin(craft.angle);
+                        planet.add(spacecraft);
+                    }
+                }
+            } else {
+                // Deep space probe - position in solar system
+                spacecraft.position.x = craft.distance * Math.cos(craft.angle);
+                spacecraft.position.z = craft.distance * Math.sin(craft.angle);
+                scene.add(spacecraft);
+            }
+            
+            this.objects.push(spacecraft);
+            this.spacecraft.push(spacecraft);
+        });
+        
+        console.log(`✨ Created ${this.spacecraft.length} spacecraft, rovers, and landing sites!`);
+    }
+
     update(deltaTime, timeSpeed, camera, controls) {
         // Update all planets
         Object.values(this.planets).forEach(planet => {
@@ -3789,6 +4317,34 @@ class SolarSystemModule {
                     
                     // Rotate satellite to face Earth
                     satellite.lookAt(earthPosition);
+                }
+            });
+        }
+        
+        // Update spacecraft (Voyagers, probes, orbiters)
+        if (this.spacecraft) {
+            this.spacecraft.forEach(craft => {
+                const userData = craft.userData;
+                
+                // Deep space probes keep moving away
+                if (!userData.orbitPlanet && userData.speed) {
+                    userData.angle += userData.speed * timeSpeed * 0.001;
+                    craft.position.x = userData.distance * Math.cos(userData.angle);
+                    craft.position.z = userData.distance * Math.sin(userData.angle);
+                }
+                
+                // Orbiters around planets (Juno, Cassini legacy, etc)
+                if (userData.orbitPlanet && userData.speed && userData.type === 'orbiter') {
+                    userData.angle += userData.speed * timeSpeed * 0.01;
+                    const radius = userData.distance;
+                    craft.position.x = radius * Math.cos(userData.angle);
+                    craft.position.z = radius * Math.sin(userData.angle);
+                    craft.position.y = Math.sin(userData.angle * 2) * radius * 0.1; // Inclined orbit
+                }
+                
+                // Rotate spacecraft slowly
+                if (userData.type === 'probe' || userData.type === 'orbiter') {
+                    craft.rotation.y += 0.002 * timeSpeed;
                 }
             });
         }
