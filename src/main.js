@@ -139,6 +139,12 @@ class SceneManager {
 
     setupXR() {
         try {
+            // Create a dolly (rig) for VR movement
+            this.dolly = new THREE.Group();
+            this.dolly.position.set(0, 0, 0);
+            this.scene.add(this.dolly);
+            this.dolly.add(this.camera);
+            
             // Initialize XR controllers
             this.controllers = [];
             this.controllerGrips = [];
@@ -147,9 +153,11 @@ class SceneManager {
             for (let i = 0; i < 2; i++) {
                 // Controller for pointing/selecting
                 const controller = this.renderer.xr.getController(i);
-                controller.addEventListener('selectstart', () => this.onSelectStart(controller));
-                controller.addEventListener('selectend', () => this.onSelectEnd(controller));
-                this.scene.add(controller);
+                controller.addEventListener('selectstart', () => this.onSelectStart(controller, i));
+                controller.addEventListener('selectend', () => this.onSelectEnd(controller, i));
+                controller.addEventListener('squeezestart', () => this.onSqueezeStart(controller, i));
+                controller.userData.index = i;
+                this.dolly.add(controller);
                 this.controllers.push(controller);
                 
                 // Controller grip for models
@@ -165,9 +173,12 @@ class SceneManager {
                 line.scale.z = 5;
                 controller.add(line);
                 
-                this.scene.add(controllerGrip);
+                this.dolly.add(controllerGrip);
                 this.controllerGrips.push(controllerGrip);
             }
+            
+            // Setup VR UI Panel
+            this.setupVRUI();
             
             // VR Button
             const vrButton = VRButton.createButton(this.renderer);
@@ -196,12 +207,16 @@ class SceneManager {
                     session.environmentBlendMode === 'alpha-blend') {
                     this.scene.background = null; // Transparent for AR
                 }
-                console.log('XR session started');
+                // Show VR UI panel
+                if (this.vrUIPanel) this.vrUIPanel.visible = true;
+                console.log('✅ XR session started - Use grip buttons to show/hide menu');
             });
 
             // Handle XR session end
             this.renderer.xr.addEventListener('sessionend', () => {
                 this.scene.background = new THREE.Color(0x000000);
+                // Hide VR UI panel
+                if (this.vrUIPanel) this.vrUIPanel.visible = false;
                 console.log('XR session ended');
             });
         } catch (error) {
@@ -209,21 +224,280 @@ class SceneManager {
         }
     }
     
-    onSelectStart(controller) {
-        // Handle controller trigger press
-        console.log('Controller select started');
-        controller.userData.selecting = true;
+    setupVRUI() {
+        // Create a floating VR control panel
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 768;
+        const ctx = canvas.getContext('2d');
+        
+        // Background
+        ctx.fillStyle = 'rgba(10, 10, 30, 0.95)';
+        ctx.fillRect(0, 0, 1024, 768);
+        
+        // Title
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 60px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌌 Space Explorer VR', 512, 80);
+        
+        // Subtitle
+        ctx.fillStyle = '#fff';
+        ctx.font = '28px Arial';
+        ctx.fillText('Use Triggers to Select Buttons', 512, 120);
+        
+        // Define buttons
+        this.vrButtons = [
+            // Row 1: Time controls
+            { x: 50, y: 160, w: 220, h: 90, label: '⏸️ Pause', action: 'pause', color: '#e74c3c' },
+            { x: 290, y: 160, w: 220, h: 90, label: '▶️ Play', action: 'play', color: '#2ecc71' },
+            { x: 530, y: 160, w: 220, h: 90, label: '⏩ Speed+', action: 'speedup', color: '#3498db' },
+            { x: 770, y: 160, w: 220, h: 90, label: '⏪ Speed-', action: 'speeddown', color: '#9b59b6' },
+            
+            // Row 2: View controls
+            { x: 50, y: 270, w: 220, h: 90, label: '🔆 Bright+', action: 'brightup', color: '#f39c12' },
+            { x: 290, y: 270, w: 220, h: 90, label: '🔅 Bright-', action: 'brightdown', color: '#e67e22' },
+            { x: 530, y: 270, w: 220, h: 90, label: '☄️ Tails', action: 'tails', color: '#1abc9c' },
+            { x: 770, y: 270, w: 220, h: 90, label: '🔄 Reset', action: 'reset', color: '#34495e' },
+            
+            // Row 3: Scale and navigation
+            { x: 170, y: 380, w: 330, h: 90, label: '📏 Educational Scale', action: 'scale', color: '#8e44ad' },
+            { x: 520, y: 380, w: 330, h: 90, label: '🌍 Focus Earth', action: 'earth', color: '#16a085' },
+            
+            // Row 4: Topics
+            { x: 170, y: 490, w: 330, h: 90, label: '🪐 Solar System', action: 'solar', color: '#2980b9' },
+            { x: 520, y: 490, w: 330, h: 90, label: '⚛️ Quantum Physics', action: 'quantum', color: '#c0392b' },
+            
+            // Row 5: Help
+            { x: 312, y: 600, w: 400, h: 90, label: '❓ Hide Menu (Grip)', action: 'hide', color: '#7f8c8d' }
+        ];
+        
+        // Draw buttons
+        this.vrButtons.forEach(btn => {
+            // Button shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(btn.x + 5, btn.y + 5, btn.w, btn.h);
+            
+            // Button background
+            ctx.fillStyle = btn.color;
+            ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+            
+            // Button border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+            
+            // Button text
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 12);
+        });
+        
+        // Status bar
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 700, 1024, 68);
+        ctx.fillStyle = '#0f0';
+        ctx.font = 'bold 28px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Speed: 1x | Brightness: 50% | Controls Active', 512, 740);
+        
+        // Create texture
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        
+        // Create plane
+        const geometry = new THREE.PlaneGeometry(3, 2.25);
+        const material = new THREE.MeshBasicMaterial({ 
+            map: texture, 
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        
+        this.vrUIPanel = new THREE.Mesh(geometry, material);
+        this.vrUIPanel.position.set(0, 1.6, -2.5);
+        this.vrUIPanel.visible = false;
+        this.dolly.add(this.vrUIPanel);
+        
+        // Store canvas for updates
+        this.vrUICanvas = canvas;
+        this.vrUIContext = ctx;
+        
+        console.log('✅ VR UI Panel created with', this.vrButtons.length, 'buttons');
     }
     
-    onSelectEnd(controller) {
+    onSelectStart(controller, index) {
+        // Handle controller trigger press
+        console.log(`Controller ${index} trigger pressed`);
+        controller.userData.selecting = true;
+        
+        // Check for VR UI interaction
+        if (this.vrUIPanel && this.vrUIPanel.visible) {
+            const raycaster = new THREE.Raycaster();
+            const tempMatrix = new THREE.Matrix4();
+            tempMatrix.identity().extractRotation(controller.matrixWorld);
+            
+            raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+            raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+            
+            const intersects = raycaster.intersectObject(this.vrUIPanel);
+            
+            if (intersects.length > 0) {
+                const uv = intersects[0].uv;
+                const x = uv.x * 1024;
+                const y = (1 - uv.y) * 768;
+                
+                // Check which button was clicked
+                this.vrButtons.forEach(btn => {
+                    if (x >= btn.x && x <= btn.x + btn.w && 
+                        y >= btn.y && y <= btn.y + btn.h) {
+                        console.log('✅ VR Button clicked:', btn.action);
+                        this.handleVRAction(btn.action);
+                        this.flashVRButton(btn);
+                    }
+                });
+            }
+        }
+    }
+    
+    onSelectEnd(controller, index) {
         // Handle controller trigger release
-        console.log('Controller select ended');
         controller.userData.selecting = false;
+    }
+    
+    onSqueezeStart(controller, index) {
+        // Toggle VR UI with grip button
+        if (this.vrUIPanel) {
+            this.vrUIPanel.visible = !this.vrUIPanel.visible;
+            console.log(`VR Menu ${this.vrUIPanel.visible ? 'shown' : 'hidden'}`);
+        }
+    }
+    
+    handleVRAction(action) {
+        // Get current app state
+        const app = window.app || this;
+        
+        switch(action) {
+            case 'pause':
+                if (app.topicManager) {
+                    app.topicManager.timeSpeed = 0;
+                    this.updateVRStatus('⏸️ PAUSED');
+                }
+                break;
+            case 'play':
+                if (app.topicManager) {
+                    app.topicManager.timeSpeed = 1;
+                    this.updateVRStatus('▶️ PLAYING at 1x');
+                }
+                break;
+            case 'speedup':
+                if (app.topicManager) {
+                    app.topicManager.timeSpeed = Math.min(app.topicManager.timeSpeed + 1, 10);
+                    this.updateVRStatus(`⏩ Speed: ${app.topicManager.timeSpeed}x`);
+                }
+                break;
+            case 'speeddown':
+                if (app.topicManager) {
+                    app.topicManager.timeSpeed = Math.max(app.topicManager.timeSpeed - 1, 0);
+                    this.updateVRStatus(`⏪ Speed: ${app.topicManager.timeSpeed}x`);
+                }
+                break;
+            case 'brightup':
+                app.topicManager.brightness = Math.min((app.topicManager.brightness || 50) + 10, 100);
+                this.updateBrightness(app.topicManager.brightness / 100);
+                this.updateVRStatus(`🔆 Brightness: ${app.topicManager.brightness}%`);
+                break;
+            case 'brightdown':
+                app.topicManager.brightness = Math.max((app.topicManager.brightness || 50) - 10, 0);
+                this.updateBrightness(app.topicManager.brightness / 100);
+                this.updateVRStatus(`🔅 Brightness: ${app.topicManager.brightness}%`);
+                break;
+            case 'tails':
+                if (app.topicManager && app.topicManager.solarSystemModule) {
+                    const module = app.topicManager.solarSystemModule;
+                    module.cometTailsVisible = !module.cometTailsVisible;
+                    this.updateVRStatus(`☄️ Tails ${module.cometTailsVisible ? 'ON' : 'OFF'}`);
+                }
+                break;
+            case 'scale':
+                if (app.topicManager && app.topicManager.solarSystemModule) {
+                    const module = app.topicManager.solarSystemModule;
+                    module.realisticScale = !module.realisticScale;
+                    module.updateScale();
+                    this.updateVRStatus(`📏 ${module.realisticScale ? 'Realistic' : 'Educational'} Scale`);
+                }
+                break;
+            case 'reset':
+                this.resetCamera();
+                this.updateVRStatus('🔄 View Reset');
+                break;
+            case 'earth':
+                if (app.topicManager && app.topicManager.currentModule) {
+                    const earth = app.topicManager.currentModule.planets?.earth;
+                    if (earth) {
+                        app.topicManager.currentModule.focusOnObject(earth, this.camera, this.controls);
+                        this.updateVRStatus('🌍 Focused on Earth');
+                    }
+                }
+                break;
+            case 'solar':
+                if (app.topicManager) {
+                    app.topicManager.loadTopic('solar-system');
+                    this.updateVRStatus('🪐 Loading Solar System...');
+                }
+                break;
+            case 'quantum':
+                if (app.topicManager) {
+                    app.topicManager.loadTopic('quantum');
+                    this.updateVRStatus('⚛️ Loading Quantum Physics...');
+                }
+                break;
+            case 'hide':
+                if (this.vrUIPanel) {
+                    this.vrUIPanel.visible = false;
+                }
+                break;
+        }
+    }
+    
+    flashVRButton(btn) {
+        const ctx = this.vrUIContext;
+        
+        // Flash white
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+        this.vrUIPanel.material.map.needsUpdate = true;
+        
+        // Restore after 150ms
+        setTimeout(() => {
+            this.setupVRUI();
+        }, 150);
+    }
+    
+    updateVRStatus(message) {
+        const ctx = this.vrUIContext;
+        
+        // Clear status bar
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(0, 700, 1024, 68);
+        
+        // Draw status
+        ctx.fillStyle = '#0f0';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(message, 512, 740);
+        
+        this.vrUIPanel.material.map.needsUpdate = true;
+        
+        console.log('🎮 VR Status:', message);
     }
     
     updateXRMovement() {
         // Only update in VR/AR mode
         if (!this.renderer.xr.isPresenting) return;
+        
+        // Ensure dolly exists
+        if (!this.dolly) return;
         
         // Get controller inputs for movement
         const session = this.renderer.xr.getSession();
@@ -240,20 +514,20 @@ class SceneManager {
                     const moveZ = gamepad.axes[1];
                     
                     if (Math.abs(moveX) > 0.1 || Math.abs(moveZ) > 0.1) {
-                        // Move camera based on controller input
-                        const moveSpeed = 0.5;
+                        // FIXED: Move dolly (not XR camera directly)
+                        const moveSpeed = 0.05;
+                        const xrCamera = this.renderer.xr.getCamera();
                         const cameraDirection = new THREE.Vector3();
-                        this.camera.getWorldDirection(cameraDirection);
+                        xrCamera.getWorldDirection(cameraDirection);
                         cameraDirection.y = 0; // Keep movement horizontal
                         cameraDirection.normalize();
                         
                         const rightVector = new THREE.Vector3();
                         rightVector.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0));
                         
-                        // Apply movement
-                        const xrCamera = this.renderer.xr.getCamera();
-                        xrCamera.position.add(rightVector.multiplyScalar(moveX * moveSpeed));
-                        xrCamera.position.add(cameraDirection.multiplyScalar(-moveZ * moveSpeed));
+                        // Apply movement to DOLLY (this is the fix!)
+                        this.dolly.position.add(rightVector.multiplyScalar(moveX * moveSpeed));
+                        this.dolly.position.add(cameraDirection.multiplyScalar(-moveZ * moveSpeed));
                     }
                     
                     // Right stick: Rotation (axes 2 and 3) if available
@@ -262,8 +536,8 @@ class SceneManager {
                         const rotateY = gamepad.axes[3];
                         
                         if (Math.abs(rotateX) > 0.1) {
-                            const xrCamera = this.renderer.xr.getCamera();
-                            xrCamera.rotation.y -= rotateX * 0.02;
+                            // FIXED: Rotate dolly (not XR camera directly)
+                            this.dolly.rotation.y -= rotateX * 0.02;
                         }
                     }
                 }
