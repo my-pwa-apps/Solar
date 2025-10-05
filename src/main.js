@@ -2072,16 +2072,15 @@ class SolarSystemModule {
                 const nx = x / size * 2;
                 const ny = y / size * 2;
                 
-                // Large-scale continents - AMPLIFIED for better visibility
-                const continents = turbulence(nx * 4, ny * 4, 128);
-                const mountains = turbulence(nx * 8, ny * 8, 64) * 0.5;
-                const details = turbulence(nx * 16, ny * 16, 32) * 0.25;
+                // Large-scale continents - MAXIMUM AMPLIFICATION
+                // Turbulence returns 0-size, so multiply to get bigger values
+                const continents = turbulence(nx * 4, ny * 4, 128) * 3.0;  // TRIPLE IT!
+                const mountains = turbulence(nx * 8, ny * 8, 64) * 1.5;    // TRIPLE from 0.5
+                const details = turbulence(nx * 16, ny * 16, 32) * 0.75;   // TRIPLE from 0.25
                 
-                // BOOST elevation values significantly - turbulence returns 0-size range
-                // So continents is 0-128, mountains 0-32, details 0-8
-                // Total max: 168. We need most land to be > threshold
-                // Use /100 to get elevation range of ~0 to 1.68
-                const elevation = (continents + mountains + details) / 100;
+                // Now max: (128*3 + 64*1.5 + 32*0.75) = 504
+                // Divide by 80 to get range 0 to ~6.3
+                const elevation = (continents + mountains + details) / 80;
                 
                 // DEBUG: Log elevation range and raw values
                 if (x === 512 && y % 200 === 0) {
@@ -2095,16 +2094,6 @@ class SolarSystemModule {
                 window._earthElevationStats.min = Math.min(window._earthElevationStats.min, elevation);
                 window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
                 window._earthElevationStats.samples++;
-                
-                // 🎨 DEBUG TEST PATTERN - Verify texture is working
-                // Draw green stripes every 256 pixels to test if texture displays
-                if (y % 256 < 16 && x % 256 < 16) {
-                    data[idx] = 0;      // Red
-                    data[idx + 1] = 255; // Green
-                    data[idx + 2] = 0;   // Blue
-                    data[idx + 3] = 255; // Alpha
-                    continue;
-                }
                 
                 // Polar ice caps
                 if (latNorm > 0.92) {
