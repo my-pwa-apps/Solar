@@ -2215,6 +2215,40 @@ class SolarSystemModule {
             console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ${landPercent}% pixels above land threshold`);
         }
         
+        // CRITICAL TEST: Verify canvas actually has color data
+        console.log('🎨 Canvas verification:');
+        console.log('   - Canvas size:', canvas.width, 'x', canvas.height);
+        console.log('   - Canvas context:', canvas.getContext('2d') ? 'OK' : 'FAILED');
+        
+        // Sample some pixels to verify colors
+        const testCtx = canvas.getContext('2d');
+        const samples = [
+            testCtx.getImageData(512, 512, 1, 1).data,    // Center
+            testCtx.getImageData(1024, 512, 1, 1).data,   // Right
+            testCtx.getImageData(512, 100, 1, 1).data,    // Top (should be ice)
+            testCtx.getImageData(512, 1900, 1, 1).data    // Bottom (should be ice)
+        ];
+        console.log('   - Sample pixel colors:');
+        samples.forEach((pixel, i) => {
+            const locations = ['center', 'right', 'north pole', 'south pole'];
+            console.log(`     ${locations[i]}: RGB(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`);
+        });
+        
+        // ULTIMATE TEST: Create a downloadable preview
+        try {
+            const dataURL = canvas.toDataURL('image/png');
+            console.log('🖼️ TEXTURE PREVIEW: Right-click and "Open in new tab" to see the actual texture:');
+            console.log(dataURL.substring(0, 100) + '...');
+            console.log('   Copy this and paste in browser to view Earth texture:');
+            console.log('   %c[VIEW EARTH TEXTURE]', 'color: #00ff00; font-size: 16px; font-weight: bold; background: #000; padding: 5px;');
+            console.log('   Length:', dataURL.length, 'bytes');
+            // Store for inspection
+            window._earthTextureDataURL = dataURL;
+            console.log('   Stored in: window._earthTextureDataURL');
+        } catch (e) {
+            console.error('❌ Failed to create texture preview:', e);
+        }
+        
         return texture;
     }
     
@@ -3135,6 +3169,14 @@ class SolarSystemModule {
                 console.log('🌍 Earth material created with texture:', earthTexture);
                 console.log('🌍 Earth texture size:', earthTexture.image?.width, 'x', earthTexture.image?.height);
                 
+                // DIAGNOSTIC TEST: Use MeshBasicMaterial to bypass lighting issues
+                console.log('🌍 USING MeshBasicMaterial FOR TESTING - bypasses all lighting!');
+                
+                const earthMaterial = new THREE.MeshBasicMaterial({
+                    map: earthTexture
+                });
+                
+                /* ORIGINAL MeshStandardMaterial - DISABLED FOR TESTING
                 const earthMaterial = new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     normalMap: earthNormal,
@@ -3142,13 +3184,15 @@ class SolarSystemModule {
                     bumpMap: earthBump,
                     bumpScale: 0.04,
                     roughnessMap: earthSpecular,
-                    roughness: 0.25, // Lower for more reflection
-                    metalness: 0.15, // Slightly reflective water
-                    emissive: 0x111111, // SUBTLE white/gray glow - just for visibility, won't wash out colors
-                    emissiveIntensity: 0.05 // Very low - just enough to see the texture in shadow
+                    roughness: 0.25,
+                    metalness: 0.15,
+                    emissive: 0x111111,
+                    emissiveIntensity: 0.05
                 });
+                */
                 
                 console.log('🌍 Earth material map:', earthMaterial.map);
+                console.log('🌍 Earth material type:', earthMaterial.type);
                 return earthMaterial;
                 
             case 'mars':
