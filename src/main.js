@@ -2072,12 +2072,14 @@ class SolarSystemModule {
                 const nx = x / size * 2;
                 const ny = y / size * 2;
                 
-                // Large-scale continents
+                // Large-scale continents - AMPLIFIED for better visibility
                 const continents = turbulence(nx * 4, ny * 4, 128);
                 const mountains = turbulence(nx * 8, ny * 8, 64) * 0.5;
                 const details = turbulence(nx * 16, ny * 16, 32) * 0.25;
                 
-                const elevation = (continents + mountains + details) / 200;
+                // Changed from /200 to /150 to get HIGHER elevation values
+                // This makes more pixels reach the 0.48 land threshold
+                const elevation = (continents + mountains + details) / 150;
                 
                 // DEBUG: Log elevation range and raw values
                 if (x === 512 && y % 200 === 0) {
@@ -2099,9 +2101,10 @@ class SolarSystemModule {
                     data[idx + 1] = 250 + iceVariation;
                     data[idx + 2] = 255;
                 }
-                // Land areas - LOWERED THRESHOLD from 0.53 to 0.48 for more visible continents
-                else if (elevation > 0.48) {
-                    const landHeight = (elevation - 0.48) * 10;
+                // Land areas - LOWERED THRESHOLD from 0.48 to 0.42 for MORE visible continents
+                // With /150 divisor, elevation now ranges ~0.0 to ~1.5, so 0.42 = ~30% land
+                else if (elevation > 0.42) {
+                    const landHeight = (elevation - 0.42) * 10;
                     const climate = (1 - latNorm) * 0.7; // Warmer at equator
                     const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
                     
@@ -2134,16 +2137,16 @@ class SolarSystemModule {
                         data[idx + 2] = 50 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - BRIGHT for visibility (between 0.46 and 0.48)
-                else if (elevation > 0.46) {
-                    const shallow = (elevation - 0.46) * 25;
+                // Shallow water - BRIGHT for visibility (between 0.38 and 0.42)
+                else if (elevation > 0.38) {
+                    const shallow = (elevation - 0.38) * 25;
                     data[idx] = 110 + shallow * 2; // Bright aqua
                     data[idx + 1] = 200 - shallow;
                     data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean - BRIGHTER blues for visibility (below 0.46)
+                // Deep ocean - BRIGHTER blues for visibility (below 0.38)
                 else {
-                    const depth = (0.46 - elevation) * 2;
+                    const depth = (0.38 - elevation) * 2;
                     data[idx] = Math.max(40, 70 - depth * 10); // Much brighter base
                     data[idx + 1] = Math.max(80, 130 - depth * 30);
                     data[idx + 2] = Math.max(150, 200 - depth * 30);
@@ -2179,10 +2182,10 @@ class SolarSystemModule {
         // DEBUG: Log final elevation statistics
         if (window._earthElevationStats) {
             console.log(`📊 Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
-            console.log(`📊 Land threshold: 0.48, Shallow threshold: 0.46`);
+            console.log(`📊 Land threshold: 0.42, Shallow threshold: 0.38 (LOWERED for more land visibility)`);
             const range = window._earthElevationStats.max - window._earthElevationStats.min;
-            const landPercent = window._earthElevationStats.max > 0.48 ? 
-                ((window._earthElevationStats.max - 0.48) / range * 100).toFixed(1) : 0;
+            const landPercent = window._earthElevationStats.max > 0.42 ? 
+                ((window._earthElevationStats.max - 0.42) / range * 100).toFixed(1) : 0;
             console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ${landPercent}% pixels above land threshold`);
         }
         
