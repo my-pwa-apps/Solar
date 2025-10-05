@@ -2095,6 +2095,11 @@ class SolarSystemModule {
                 window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
                 window._earthElevationStats.samples++;
                 
+                // 🎨 FORCE LAND TEST: Create simple stripe pattern to verify land rendering works
+                // This will show alternating ocean/land stripes
+                const forcePattern = Math.floor(y / 100) % 2;  // Alternating every 100 rows
+                const forceLand = forcePattern === 0 && latNorm < 0.92;  // Stripes, except poles
+                
                 // Polar ice caps
                 if (latNorm > 0.92) {
                     const iceVariation = noise(nx * 30, ny * 30, 1) * 20;
@@ -2102,9 +2107,9 @@ class SolarSystemModule {
                     data[idx + 1] = 250 + iceVariation;
                     data[idx + 2] = 255;
                 }
-                // Land areas - With new amplification, elevation ranges 0-6.3
-                // Use threshold around 1.0 for realistic ~30% land coverage
-                else if (elevation > 1.0) {
+                // Land areas - FORCED TEST or elevation threshold
+                // Force land in stripes to verify land rendering works
+                else if (forceLand || elevation > 1.0) {
                     const landHeight = (elevation - 1.0) * 2;
                     const climate = (1 - latNorm) * 0.7; // Warmer at equator
                     const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
@@ -2160,19 +2165,25 @@ class SolarSystemModule {
         ctx.putImageData(imageData, 0, 0);
         
         // DEBUG: Count land vs ocean pixels
-        let landPixels = 0, oceanPixels = 0, icePixels = 0;
+        let landPixels = 0, oceanPixels = 0, icePixels = 0, forcedLandPixels = 0;
+        let greenestPixel = { r: 0, g: 0, b: 0, idx: 0 };
         for (let i = 0; i < data.length; i += 4) {
             const r = data[i], g = data[i+1], b = data[i+2];
             if (r > 200 && g > 200 && b > 200) {
                 icePixels++;
             } else if (g > b && g > 100) {
                 landPixels++;
+                // Track greenest pixel (should be forest)
+                if (g > greenestPixel.g) {
+                    greenestPixel = { r, g, b, idx: i/4 };
+                }
             } else {
                 oceanPixels++;
             }
         }
         const totalPixels = size * size;
         console.log(`🌍 Earth texture generated: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
+        console.log(`🌲 Greenest land pixel found: RGB(${greenestPixel.r}, ${greenestPixel.g}, ${greenestPixel.b}) at pixel ${greenestPixel.idx}`);
         
         // ⚠️ CRITICAL FIX: Create texture BEFORE adding clouds
         // Otherwise clouds overwrite the surface texture!
