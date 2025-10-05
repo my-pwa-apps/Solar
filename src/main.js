@@ -137,10 +137,11 @@ class SceneManager {
         this.lights.hemisphere = new THREE.HemisphereLight(0xffffee, 0x222222, 0.6);
         this.scene.add(this.lights.hemisphere);
 
-        // Camera light for viewing objects on dark side
-        this.lights.camera = new THREE.PointLight(0xffffff, 0.8, 1000);
+        // Camera light for viewing objects on dark side - INCREASED for better visibility
+        this.lights.camera = new THREE.PointLight(0xffffff, 1.5, 1000); // Increased from 0.8 to 1.5
         this.camera.add(this.lights.camera);
         this.scene.add(this.camera);
+        console.log('💡 Camera light increased to 1.5 intensity for better Earth visibility');
     }
 
     setupXR() {
@@ -1368,9 +1369,10 @@ class SolarSystemModule {
         scene.add(sunLight);
         
         // Add ambient light for better visibility of all planets
-        const ambientLight = new THREE.AmbientLight(0x404060, 0.3); // Soft blue ambient
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // INCREASED: Bright white ambient for visibility
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
+        console.log('💡 Ambient light increased to 1.2 intensity for Earth visibility');
         
         // Multi-layer corona for realistic glow
         const coronaLayers = [
@@ -3142,8 +3144,8 @@ class SolarSystemModule {
                     roughnessMap: earthSpecular,
                     roughness: 0.25, // Lower for more reflection
                     metalness: 0.15, // Slightly reflective water
-                    emissive: 0x000000, // REMOVED emissive - may be washing out texture!
-                    emissiveIntensity: 0 // DISABLED
+                    emissive: 0x111111, // SUBTLE white/gray glow - just for visibility, won't wash out colors
+                    emissiveIntensity: 0.05 // Very low - just enough to see the texture in shadow
                 });
                 
                 console.log('🌍 Earth material map:', earthMaterial.map);
