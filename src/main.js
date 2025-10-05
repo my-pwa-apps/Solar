@@ -2170,38 +2170,9 @@ class SolarSystemModule {
         const totalPixels = size * size;
         console.log(`🌍 Earth texture generated: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
         
-        // Add realistic cloud layer
-        ctx.globalCompositeOperation = 'screen';
-        ctx.globalAlpha = 0.4;
-        
-        const cloudData = ctx.createImageData(size, size);
-        const clouds = cloudData.data;
-        
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
-                const idx = (y * size + x) * 4;
-                const nx = x / size * 2;
-                const ny = y / size * 2;
-                
-                // Swirling cloud patterns
-                const cloudBase = turbulence(nx * 6 + 100, ny * 6, 128) / 180;
-                const cloudDetail = turbulence(nx * 12 + 100, ny * 12, 64) / 300;
-                const cloudTotal = cloudBase + cloudDetail;
-                
-                if (cloudTotal > 0.4) {
-                    const cloudBrightness = Math.min(255, (cloudTotal - 0.4) * 400);
-                    clouds[idx] = cloudBrightness;
-                    clouds[idx + 1] = cloudBrightness;
-                    clouds[idx + 2] = cloudBrightness;
-                    clouds[idx + 3] = Math.min(200, cloudBrightness * 0.8);
-                } else {
-                    clouds[idx + 3] = 0;
-                }
-            }
-        }
-        
-        ctx.putImageData(cloudData, 0, 0);
-        
+        // ⚠️ CRITICAL FIX: Create texture BEFORE adding clouds
+        // Otherwise clouds overwrite the surface texture!
+        console.log('🌍 Creating THREE.js texture from canvas (BEFORE clouds)...');
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
         
