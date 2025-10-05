@@ -2069,22 +2069,31 @@ class SolarSystemModule {
                 const latNorm = Math.abs(lat) / (Math.PI / 2);
                 
                 // Multi-frequency continent generation
-                const nx = x / size * 2;
-                const ny = y / size * 2;
+                const nx = x / size;
+                const ny = y / size;
                 
-                // Large-scale continents - MAXIMUM AMPLIFICATION
-                // Turbulence returns 0-size, so multiply to get bigger values
-                const continents = turbulence(nx * 4, ny * 4, 128) * 3.0;  // TRIPLE IT!
-                const mountains = turbulence(nx * 8, ny * 8, 64) * 1.5;    // TRIPLE from 0.5
-                const details = turbulence(nx * 16, ny * 16, 32) * 0.75;   // TRIPLE from 0.25
+                // REPLACE TURBULENCE WITH SIMPLE MATH-BASED TERRAIN
+                // This is GUARANTEED to produce predictable elevation values
+                // Using sine/cosine to create realistic continent-like patterns
                 
-                // Now max: (128*3 + 64*1.5 + 32*0.75) = 504
-                // Divide by 80 to get range 0 to ~6.3
-                const elevation = (continents + mountains + details) / 80;
+                // Large continental masses (3-4 major continents)
+                const continents = Math.sin(lon * 3.5 + Math.cos(lat * 2) * 0.5) * 0.6;
+                
+                // Mountain ranges following continental edges
+                const mountains = Math.sin(lon * 7 + lat * 3) * 0.3;
+                
+                // Medium-scale terrain features
+                const terrain = Math.cos(lon * 12 + lat * 8) * 0.15;
+                
+                // Fine details using noise
+                const details = noise(nx * 20, ny * 20, 0) * 0.1 - 0.05;
+                
+                // Combine all features - range approximately -1.0 to +1.0
+                const elevation = continents + mountains + terrain + details;
                 
                 // DEBUG: Log elevation range and raw values
                 if (x === 512 && y % 200 === 0) {
-                    console.log(`📊 Elevation: ${elevation.toFixed(4)} (cont:${continents.toFixed(1)}, mtn:${mountains.toFixed(1)}, det:${details.toFixed(1)}) at lat ${(lat * 180/Math.PI).toFixed(1)}°`);
+                    console.log(`📊 Elevation: ${elevation.toFixed(4)} (cont:${continents.toFixed(3)}, mtn:${mountains.toFixed(3)}, terrain:${terrain.toFixed(3)}) at lat ${(lat * 180/Math.PI).toFixed(1)}°`);
                 }
                 
                 // EXTRA DEBUG: Track min/max elevation
@@ -2095,11 +2104,6 @@ class SolarSystemModule {
                 window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
                 window._earthElevationStats.samples++;
                 
-                // 🎨 FORCE LAND TEST: Create simple stripe pattern to verify land rendering works
-                // This will show alternating ocean/land stripes
-                const forcePattern = Math.floor(y / 100) % 2;  // Alternating every 100 rows
-                const forceLand = forcePattern === 0 && latNorm < 0.92;  // Stripes, except poles
-                
                 // Polar ice caps
                 if (latNorm > 0.92) {
                     const iceVariation = noise(nx * 30, ny * 30, 1) * 20;
@@ -2107,10 +2111,10 @@ class SolarSystemModule {
                     data[idx + 1] = 250 + iceVariation;
                     data[idx + 2] = 255;
                 }
-                // Land areas - FORCED TEST or elevation threshold
-                // Force land in stripes to verify land rendering works
-                else if (forceLand || elevation > 1.0) {
-                    const landHeight = (elevation - 1.0) * 2;
+                // Land areas - elevation ranges from -1.0 to +1.0
+                // Use threshold of 0.0 for ~50% land, ~50% ocean (realistic Earth)
+                else if (elevation > 0.0) {
+                    const landHeight = Math.max(0, elevation) * 3;
                     const climate = (1 - latNorm) * 0.7; // Warmer at equator
                     const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
                     
@@ -2143,16 +2147,16 @@ class SolarSystemModule {
                         data[idx + 2] = 50 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - BRIGHT for visibility (between 0.8 and 1.0)
-                else if (elevation > 0.8) {
-                    const shallow = (elevation - 0.8) * 25;
+                // Shallow water - BRIGHT for visibility (between -0.1 and 0.0)
+                else if (elevation > -0.1) {
+                    const shallow = (elevation + 0.1) * 40;
                     data[idx] = 110 + shallow * 2; // Bright aqua
                     data[idx + 1] = 200 - shallow;
                     data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean - BRIGHTER blues for visibility (below 0.8)
+                // Deep ocean - BRIGHTER blues for visibility (below -0.1)
                 else {
-                    const depth = (0.8 - elevation) * 0.5;
+                    const depth = Math.abs(elevation + 0.1) * 0.8;
                     data[idx] = Math.max(40, 70 - depth * 10); // Much brighter base
                     data[idx + 1] = Math.max(80, 130 - depth * 30);
                     data[idx + 2] = Math.max(150, 200 - depth * 30);
@@ -2194,13 +2198,13 @@ class SolarSystemModule {
         // DEBUG: Log final elevation statistics
         if (window._earthElevationStats) {
             console.log(`📊 Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
-            console.log(`📊 AMPLIFIED CONTINENTS: 3x continents, 1.5x mountains, 0.75x details`);
-            console.log(`📊 Land threshold: 1.0, Shallow threshold: 0.8 (adjusted for new 0-6 range)`);
-            console.log(`📊 Elevation divisor: /80 with 3x amplification = MAXIMUM visibility`);
+            console.log(`📊 ✨ NEW: Math-based terrain (sin/cos) - GUARANTEED predictable values!`);
+            console.log(`📊 Land threshold: 0.0, Shallow threshold: -0.1 (elevation range: -1.0 to +1.0)`);
+            console.log(`📊 Continental pattern: sin(lon*3.5) creates 3-4 major landmasses`);
             const range = window._earthElevationStats.max - window._earthElevationStats.min;
-            const landPercent = window._earthElevationStats.max > 1.0 ? 
-                ((window._earthElevationStats.max - 1.0) / range * 100).toFixed(1) : 0;
-            console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ${landPercent}% pixels above land threshold`);
+            const landPercent = window._earthElevationStats.max > 0.0 ? 
+                ((window._earthElevationStats.max - 0.0) / range * 100).toFixed(1) : 0;
+            console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ~50% pixels above 0.0 threshold`);
         }
         
         // CRITICAL TEST: Verify canvas actually has color data
