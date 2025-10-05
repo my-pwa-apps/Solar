@@ -3172,9 +3172,22 @@ class SolarSystemModule {
                 // DIAGNOSTIC TEST: Use MeshBasicMaterial to bypass lighting issues
                 console.log('🌍 USING MeshBasicMaterial FOR TESTING - bypasses all lighting!');
                 
+                // EXTREME TEST: Try solid color first to verify material works
+                console.log('🧪 TESTING: Creating SOLID GREEN sphere first...');
+                const testMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x00ff00  // BRIGHT GREEN - should be IMPOSSIBLE to miss!
+                });
+                console.log('🧪 Test material color:', testMaterial.color);
+                
+                // If Earth is still black with this, the problem is NOT the texture!
+                // Comment this out and uncomment earthMaterial to test with texture
+                const earthMaterial = testMaterial;
+                
+                /* TEXTURE TEST - Enable after confirming green sphere works
                 const earthMaterial = new THREE.MeshBasicMaterial({
                     map: earthTexture
                 });
+                */
                 
                 /* ORIGINAL MeshStandardMaterial - DISABLED FOR TESTING
                 const earthMaterial = new THREE.MeshStandardMaterial({
@@ -3427,6 +3440,17 @@ class SolarSystemModule {
 
         scene.add(planet);
         this.objects.push(planet);
+        
+        // DIAGNOSTIC: Verify planet was added
+        console.log(`✅ Planet "${config.name}" added to scene:`);
+        console.log(`   - Position: (${planet.position.x}, ${planet.position.y}, ${planet.position.z})`);
+        console.log(`   - Radius: ${config.radius}`);
+        console.log(`   - Material type: ${planet.material.type}`);
+        console.log(`   - Material color: 0x${planet.material.color?.getHexString()}`);
+        console.log(`   - Has texture map: ${!!planet.material.map}`);
+        console.log(`   - Visible: ${planet.visible}`);
+        console.log(`   - In scene: ${planet.parent === scene}`);
+        
         return planet;
     }
 
