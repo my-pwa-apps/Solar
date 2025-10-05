@@ -2102,11 +2102,10 @@ class SolarSystemModule {
                     data[idx + 1] = 250 + iceVariation;
                     data[idx + 2] = 255;
                 }
-                // Land areas - VERY LOW THRESHOLD for maximum land visibility
-                // With /100 divisor, elevation ranges 0-1.68
-                // Threshold 0.35 should give ~50% land coverage
-                else if (elevation > 0.35) {
-                    const landHeight = (elevation - 0.35) * 10;
+                // Land areas - With new amplification, elevation ranges 0-6.3
+                // Use threshold around 1.0 for realistic ~30% land coverage
+                else if (elevation > 1.0) {
+                    const landHeight = (elevation - 1.0) * 2;
                     const climate = (1 - latNorm) * 0.7; // Warmer at equator
                     const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
                     
@@ -2139,16 +2138,16 @@ class SolarSystemModule {
                         data[idx + 2] = 50 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - BRIGHT for visibility (between 0.30 and 0.35)
-                else if (elevation > 0.30) {
-                    const shallow = (elevation - 0.30) * 25;
+                // Shallow water - BRIGHT for visibility (between 0.8 and 1.0)
+                else if (elevation > 0.8) {
+                    const shallow = (elevation - 0.8) * 25;
                     data[idx] = 110 + shallow * 2; // Bright aqua
                     data[idx + 1] = 200 - shallow;
                     data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean - BRIGHTER blues for visibility (below 0.30)
+                // Deep ocean - BRIGHTER blues for visibility (below 0.8)
                 else {
-                    const depth = (0.30 - elevation) * 2;
+                    const depth = (0.8 - elevation) * 0.5;
                     data[idx] = Math.max(40, 70 - depth * 10); // Much brighter base
                     data[idx + 1] = Math.max(80, 130 - depth * 30);
                     data[idx + 2] = Math.max(150, 200 - depth * 30);
@@ -2184,12 +2183,12 @@ class SolarSystemModule {
         // DEBUG: Log final elevation statistics
         if (window._earthElevationStats) {
             console.log(`📊 Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
-            console.log(`📊 🎨 DEBUG MODE: Green test pattern at grid intersections (256px)`);
-            console.log(`📊 Land threshold: 0.35, Shallow threshold: 0.30 (VERY LOW for maximum visibility)`);
-            console.log(`📊 Elevation divisor: /100 (was /150, then /200) - MAXIMUM amplification`);
+            console.log(`📊 AMPLIFIED CONTINENTS: 3x continents, 1.5x mountains, 0.75x details`);
+            console.log(`📊 Land threshold: 1.0, Shallow threshold: 0.8 (adjusted for new 0-6 range)`);
+            console.log(`📊 Elevation divisor: /80 with 3x amplification = MAXIMUM visibility`);
             const range = window._earthElevationStats.max - window._earthElevationStats.min;
-            const landPercent = window._earthElevationStats.max > 0.35 ? 
-                ((window._earthElevationStats.max - 0.35) / range * 100).toFixed(1) : 0;
+            const landPercent = window._earthElevationStats.max > 1.0 ? 
+                ((window._earthElevationStats.max - 1.0) / range * 100).toFixed(1) : 0;
             console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ${landPercent}% pixels above land threshold`);
         }
         
