@@ -25,30 +25,33 @@
 └─────────┴───────────────────────────────┘
 ```
 
-## VR Controls (Quest 3S)
+## VR Controls (Quest 3S) - UPDATED! ✨
 
-### Movement
+### ⏸️ PAUSE/PLAY (NEW!)
 ```
-LEFT CONTROLLER:
-├─ Thumbstick: Move forward/back/strafe
+🎮 SQUEEZE GRIP BUTTON = Pause/Play toggle
+   (Either hand - middle/ring finger button)
+   Status appears in headset!
+```
+
+### Movement (Like FPS Games)
+```
+LEFT CONTROLLER (Movement):
+├─ Thumbstick FORWARD = Move forward ⬆️
+├─ Thumbstick BACK = Move backward ⬇️
+├─ Thumbstick LEFT/RIGHT = Strafe ⬅️➡️
 ├─ X Button (hold): Move DOWN
 └─ Y Button (hold): Move UP
 
-RIGHT CONTROLLER:
-├─ Thumbstick X: Rotate view
-├─ Thumbstick Y: Move UP/DOWN
+RIGHT CONTROLLER (Turn & Fly):
+├─ Thumbstick LEFT/RIGHT = Rotate view 🔄
+├─ Thumbstick FORWARD = Fly UP ⬆️
+├─ Thumbstick BACK = Fly DOWN ⬇️
 ├─ A Button: Move DOWN (alt)
 └─ B Button: Move UP (alt)
 ```
 
-### Zoom & Pause (NEW!)
-```
-🔍 GRIP + TRIGGER = Zoom VERY close to object
-⏸️  VR Menu Pause = Freeze all rotation
-⏯️  SPACE key = Pause/Play (works in VR!)
-```
-
-### Selection
+### Zoom & Selection
 ```
 Point + TRIGGER = Select object (normal focus)
 GRIP + TRIGGER = Zoom close for inspection 🔍
@@ -56,7 +59,8 @@ GRIP + TRIGGER = Zoom close for inspection 🔍
 
 ### Sprint Mode
 ```
-🚀 Hold TRIGGER (while moving) = 3x Speed
+🚀 Hold TRIGGER (either hand) = 3x Speed
+   Works with ALL movement
    Laser turns ORANGE when active
 ```
 
@@ -65,6 +69,14 @@ GRIP + TRIGGER = Zoom close for inspection 🔍
 🔵 CYAN   = Normal (no target)
 🟢 GREEN  = Pointing at object
 🟠 ORANGE = Sprint mode active
+```
+
+### 💡 Quick Tips
+```
+✅ Push LEFT stick FORWARD to move toward what you're looking at
+✅ Use RIGHT stick to TURN left/right (like mouse in FPS)
+✅ GRIP button = easiest way to pause/play
+✅ Hold trigger while moving = zoom across space!
 ```
 
 ## All Spacecraft Locations

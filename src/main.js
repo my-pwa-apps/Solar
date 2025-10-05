@@ -736,7 +736,7 @@ class SceneManager {
         const inputSources = session.inputSources;
         const xrCamera = this.renderer.xr.getCamera();
         
-        // Get camera direction vectors
+        // Get camera direction vectors for INTUITIVE movement
         const cameraDirection = new THREE.Vector3();
         xrCamera.getWorldDirection(cameraDirection);
         
@@ -753,9 +753,55 @@ class SceneManager {
             const gamepad = inputSource.gamepad;
             const handedness = inputSource.handedness;
             
-            if (!gamepad) continue;
+            if (!gamepad) {
+                if (Math.random() < 0.01) {
+                    console.warn(`⚠️ No gamepad for controller ${i}`);
+                }
+                continue;
+            }
             
-            // Get thumbstick axes
+            // DEBUG: Log controller info occasionally
+            if (Math.random() < 0.005) {
+                console.log(`🎮 ${handedness?.toUpperCase() || 'unknown'} Controller: ${gamepad.buttons.length} buttons, ${gamepad.axes.length} axes`);
+            }
+            
+            // Check trigger for sprint (button 0 = trigger)
+            if (gamepad.buttons.length > 0 && gamepad.buttons[0].pressed) {
+                sprintMultiplier = 3.0;
+            }
+            
+            // ============================================
+            // PAUSE/PLAY - Using GRIP button (button 1)
+            // More reliable than thumbstick press
+            // ============================================
+            const gripButton = 1;
+            if (gamepad.buttons.length > gripButton) {
+                const gripPressed = gamepad.buttons[gripButton].pressed;
+                const wasGripPressed = this.previousButtonStates[i][gripButton] || false;
+                
+                if (gripPressed && !wasGripPressed) {
+                    const app = window.app || this;
+                    console.log(`🎮 ${handedness?.toUpperCase()} GRIP pressed - Toggle Pause`);
+                    
+                    if (app.topicManager) {
+                        if (app.topicManager.timeSpeed === 0) {
+                            app.topicManager.timeSpeed = 1;
+                            console.log('▶️ PLAYING');
+                            this.updateVRStatus('▶️ PLAYING');
+                        } else {
+                            app.topicManager.timeSpeed = 0;
+                            console.log('⏸️ PAUSED');
+                            this.updateVRStatus('⏸️ PAUSED');
+                        }
+                    } else {
+                        console.error('❌ topicManager not available');
+                    }
+                }
+                
+                this.previousButtonStates[i][gripButton] = gripPressed;
+            }
+            
+            // Get thumbstick axes (Quest uses axes 2 & 3)
             let stickX = 0, stickY = 0;
             if (gamepad.axes.length >= 4) {
                 stickX = gamepad.axes[2];
@@ -765,120 +811,69 @@ class SceneManager {
                 stickY = gamepad.axes[1];
             }
             
-            // Check trigger for sprint (button 0 is usually trigger)
-            if (gamepad.buttons.length > 0 && gamepad.buttons[0].pressed) {
-                sprintMultiplier = 3.0; // 3x speed when holding trigger
-                if (Math.random() < 0.02) {
-                    console.log('🚀 SPRINT MODE ACTIVATED (3x speed)');
-                }
-            }
-            
-            // THUMBSTICK PRESS for PAUSE/PLAY
-            // Quest controllers: button 3 = thumbstick press
-            // Try multiple button indices in case it varies by controller
-            const thumbstickButtonIndices = [3, 4, 5]; // Try different possible indices
-            
-            for (const btnIndex of thumbstickButtonIndices) {
-                if (gamepad.buttons.length > btnIndex) {
-                    const thumbstickPressed = gamepad.buttons[btnIndex].pressed;
-                    const wasPressed = this.previousButtonStates[i][btnIndex] || false;
-                    
-                    // Detect button press (transition from not pressed to pressed)
-                    if (thumbstickPressed && !wasPressed) {
-                        console.log(`🎮 Controller ${handedness} button ${btnIndex} pressed! Total buttons: ${gamepad.buttons.length}`);
-                        
-                        // Get app reference (same pattern as VR UI buttons)
-                        const app = window.app || this;
-                        
-                        // Toggle pause/play
-                        if (app.topicManager && app.topicManager.timeSpeed !== undefined) {
-                            if (app.topicManager.timeSpeed === 0) {
-                                app.topicManager.timeSpeed = 1; // Play
-                                console.log('▶️ PLAY - Rotation resumed (Thumbstick click)');
-                                if (this.updateVRStatus) {
-                                    this.updateVRStatus('▶️ PLAYING at 1x');
-                                }
-                            } else {
-                                app.topicManager.timeSpeed = 0; // Pause
-                                console.log('⏸️ PAUSE - Rotation stopped (Thumbstick click)');
-                                if (this.updateVRStatus) {
-                                    this.updateVRStatus('⏸️ PAUSED');
-                                }
-                            }
-                        } else {
-                            console.warn('⚠️ Thumbstick pressed but topicManager not available');
-                        }
-                    }
-                    
-                    // Update button state for next frame
-                    this.previousButtonStates[i][btnIndex] = thumbstickPressed;
-                }
-            }
-            
             const deadzone = 0.15;
             
-            // LEFT CONTROLLER: 6DOF Movement (forward/back, strafe, up/down)
+            // ============================================
+            // LEFT CONTROLLER: MOVEMENT (like FPS games)
+            // ============================================
             if (handedness === 'left') {
-                const baseSpeed = 0.15 * sprintMultiplier;
+                const baseSpeed = 0.25 * sprintMultiplier; // Increased for better feel
                 
-                // Horizontal movement (X/Z plane)
+                // Forward/Backward & Strafe
                 if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
-                    // Forward/Backward (push stick forward = move forward)
-                    // FIXED: Positive stickY moves you in the direction you're looking
+                    // FORWARD/BACKWARD: Push stick FORWARD to move FORWARD
+                    // In VR controllers, pushing stick forward gives NEGATIVE Y value
                     const forwardMovement = cameraDirection.clone();
-                    forwardMovement.y = 0; // Keep horizontal
+                    forwardMovement.y = 0; // Stay horizontal
                     forwardMovement.normalize();
-                    this.dolly.position.add(forwardMovement.multiplyScalar(stickY * baseSpeed));
                     
-                    // Strafe Left/Right
+                    // INVERTED: Negative stickY = forward (intuitive like FPS)
+                    this.dolly.position.add(forwardMovement.multiplyScalar(-stickY * baseSpeed));
+                    
+                    // STRAFE LEFT/RIGHT
                     const strafeMovement = cameraRight.clone();
-                    strafeMovement.y = 0; // Keep horizontal
+                    strafeMovement.y = 0;
                     strafeMovement.normalize();
                     this.dolly.position.add(strafeMovement.multiplyScalar(stickX * baseSpeed));
-                    
-                    // Log movement occasionally
-                    if (Math.random() < 0.01) {
-                        const speedMode = sprintMultiplier > 1 ? '🚀 SPRINT' : '🚶 Normal';
-                        console.log(`${speedMode} Moving: X=${this.dolly.position.x.toFixed(1)}, Y=${this.dolly.position.y.toFixed(1)}, Z=${this.dolly.position.z.toFixed(1)}`);
-                    }
                 }
                 
-                // Vertical movement (Y axis) using buttons
-                // Button 4 = X button, Button 5 = Y button on left controller
+                // UP/DOWN with X/Y buttons
                 if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
                     // X button: Move DOWN
-                    this.dolly.position.add(cameraUp.clone().multiplyScalar(-baseSpeed * 0.7));
+                    this.dolly.position.y -= baseSpeed * 0.8;
                 }
                 if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
                     // Y button: Move UP
-                    this.dolly.position.add(cameraUp.clone().multiplyScalar(baseSpeed * 0.7));
+                    this.dolly.position.y += baseSpeed * 0.8;
                 }
             }
             
-            // RIGHT CONTROLLER: Rotation + Vertical movement
+            // ============================================
+            // RIGHT CONTROLLER: TURN & VERTICAL
+            // ============================================
             if (handedness === 'right') {
-                const rotSpeed = 0.04;
+                const turnSpeed = 0.03;
+                const vertSpeed = 0.25 * sprintMultiplier;
                 
-                // Horizontal rotation with right stick X
+                // TURN LEFT/RIGHT
                 if (Math.abs(stickX) > deadzone) {
-                    this.dolly.rotation.y -= stickX * rotSpeed;
+                    this.dolly.rotation.y -= stickX * turnSpeed;
                 }
                 
-                // Vertical movement with right stick Y
+                // VERTICAL MOVEMENT
                 if (Math.abs(stickY) > deadzone) {
-                    const vertSpeed = 0.15 * sprintMultiplier;
-                    this.dolly.position.add(cameraUp.clone().multiplyScalar(-stickY * vertSpeed));
+                    // Negative Y = up, Positive Y = down (inverted for intuitive)
+                    this.dolly.position.y += -stickY * vertSpeed;
                 }
                 
-                // Additional: A/B buttons for fine vertical control
-                // Button 4 = A button, Button 5 = B button
+                // UP/DOWN with A/B buttons
                 if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
                     // A button: Move DOWN
-                    this.dolly.position.add(cameraUp.clone().multiplyScalar(-0.1 * sprintMultiplier));
+                    this.dolly.position.y -= 0.2 * sprintMultiplier;
                 }
                 if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
                     // B button: Move UP
-                    this.dolly.position.add(cameraUp.clone().multiplyScalar(0.1 * sprintMultiplier));
+                    this.dolly.position.y += 0.2 * sprintMultiplier;
                 }
             }
         }
