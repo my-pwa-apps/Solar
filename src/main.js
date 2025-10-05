@@ -2030,6 +2030,7 @@ class SolarSystemModule {
     }
     
     createEarthTexture(size) {
+        console.log(`🌍 Creating Earth texture at ${size}x${size} resolution...`);
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2076,10 +2077,18 @@ class SolarSystemModule {
                 
                 const elevation = (continents + mountains + details) / 200;
                 
-                // DEBUG: Log elevation range occasionally
-                if (x === 512 && y % 100 === 0) {
-                    console.log(`📊 Earth elevation sample: ${elevation.toFixed(3)} at lat ${(lat * 180/Math.PI).toFixed(1)}°`);
+                // DEBUG: Log elevation range and raw values
+                if (x === 512 && y % 200 === 0) {
+                    console.log(`📊 Elevation: ${elevation.toFixed(4)} (cont:${continents.toFixed(1)}, mtn:${mountains.toFixed(1)}, det:${details.toFixed(1)}) at lat ${(lat * 180/Math.PI).toFixed(1)}°`);
                 }
+                
+                // EXTRA DEBUG: Track min/max elevation
+                if (!window._earthElevationStats) {
+                    window._earthElevationStats = { min: Infinity, max: -Infinity, samples: 0 };
+                }
+                window._earthElevationStats.min = Math.min(window._earthElevationStats.min, elevation);
+                window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
+                window._earthElevationStats.samples++;
                 
                 // Polar ice caps
                 if (latNorm > 0.92) {
@@ -2144,6 +2153,21 @@ class SolarSystemModule {
         
         ctx.putImageData(imageData, 0, 0);
         
+        // DEBUG: Count land vs ocean pixels
+        let landPixels = 0, oceanPixels = 0, icePixels = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i], g = data[i+1], b = data[i+2];
+            if (r > 200 && g > 200 && b > 200) {
+                icePixels++;
+            } else if (g > b && g > 100) {
+                landPixels++;
+            } else {
+                oceanPixels++;
+            }
+        }
+        const totalPixels = size * size;
+        console.log(`🌍 Earth texture generated: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
+        
         // Add realistic cloud layer
         ctx.globalCompositeOperation = 'screen';
         ctx.globalAlpha = 0.4;
@@ -2178,6 +2202,17 @@ class SolarSystemModule {
         
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
+        
+        // DEBUG: Log final elevation statistics
+        if (window._earthElevationStats) {
+            console.log(`📊 Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
+            console.log(`📊 Land threshold: 0.48, Shallow threshold: 0.46`);
+            const range = window._earthElevationStats.max - window._earthElevationStats.min;
+            const landPercent = window._earthElevationStats.max > 0.48 ? 
+                ((window._earthElevationStats.max - 0.48) / range * 100).toFixed(1) : 0;
+            console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ${landPercent}% pixels above land threshold`);
+        }
+        
         return texture;
     }
     
@@ -3093,7 +3128,10 @@ class SolarSystemModule {
                 const earthSpecular = this.createEarthSpecularMap(2048);
                 const earthNormal = this.createEarthNormalMap(2048);
                 
-                return new THREE.MeshStandardMaterial({
+                console.log('🌍 Earth material created with texture:', earthTexture);
+                console.log('🌍 Earth texture size:', earthTexture.image?.width, 'x', earthTexture.image?.height);
+                
+                const earthMaterial = new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     normalMap: earthNormal,
                     normalScale: new THREE.Vector2(0.5, 0.5),
@@ -3102,9 +3140,12 @@ class SolarSystemModule {
                     roughnessMap: earthSpecular,
                     roughness: 0.25, // Lower for more reflection
                     metalness: 0.15, // Slightly reflective water
-                    emissive: 0x2a5f8f, // Brighter blue glow
-                    emissiveIntensity: 0.3 // Increased for better visibility
+                    emissive: 0x000000, // REMOVED emissive - may be washing out texture!
+                    emissiveIntensity: 0 // DISABLED
                 });
+                
+                console.log('🌍 Earth material map:', earthMaterial.map);
+                return earthMaterial;
                 
             case 'mars':
                 // Mars: Hyperrealistic rusty red surface with canyons, polar caps
