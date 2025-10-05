@@ -1254,6 +1254,7 @@ class SolarSystemModule {
         this.galaxies = [];
         this.comets = [];
         this.satellites = [];
+        this.spacecraft = [];
         
         // Scale mode: false = educational (compressed), true = realistic (vast)
         this.realisticScale = false;
@@ -4885,7 +4886,7 @@ class SolarSystemModule {
     }
 
     getExplorerContent(focusCallback) {
-        return [
+        const categories = [
             {
                 title: '⭐ The Sun',
                 items: [
@@ -4950,6 +4951,20 @@ class SolarSystemModule {
                 }))
             },
             {
+                title: '🛰️ Satellites & Space Stations',
+                items: this.satellites.map(sat => ({
+                    name: `🛰️ ${sat.userData.name}`,
+                    onClick: () => focusCallback(sat)
+                }))
+            },
+            {
+                title: '🚀 Spacecraft & Probes',
+                items: this.spacecraft.map(craft => ({
+                    name: `🚀 ${craft.userData.name}`,
+                    onClick: () => focusCallback(craft)
+                }))
+            },
+            {
                 title: '⭐ Distant Stars',
                 items: this.distantStars.map(star => ({
                     name: `⭐ ${star.userData.name}`,
@@ -4971,6 +4986,9 @@ class SolarSystemModule {
                 }))
             }
         ];
+        
+        // Filter out categories with no items (empty arrays)
+        return categories.filter(category => category.items && category.items.length > 0);
     }
 }
 
