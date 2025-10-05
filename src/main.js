@@ -455,24 +455,35 @@ class SceneManager {
         
         // First, check for VR UI interaction
         if (this.vrUIPanel && this.vrUIPanel.visible) {
+            console.log('🎨 VR UI Panel is visible - checking for button clicks');
             const intersects = raycaster.intersectObject(this.vrUIPanel);
             
             if (intersects.length > 0) {
                 const uv = intersects[0].uv;
                 const x = uv.x * 1024;
                 const y = (1 - uv.y) * 768;
+                console.log(`📍 VR UI clicked at UV (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)}) = pixel (${x.toFixed(0)}, ${y.toFixed(0)})`);
                 
                 // Check which button was clicked
+                let buttonFound = false;
                 this.vrButtons.forEach(btn => {
                     if (x >= btn.x && x <= btn.x + btn.w && 
                         y >= btn.y && y <= btn.y + btn.h) {
-                        console.log('✅ VR Button clicked:', btn.action);
+                        console.log(`✅ VR Button clicked: "${btn.label}" action="${btn.action}"`);
                         this.handleVRAction(btn.action);
                         this.flashVRButton(btn);
+                        buttonFound = true;
                     }
                 });
+                if (!buttonFound) {
+                    console.log('⚠️ Click was on UI panel but not on any button');
+                }
                 return; // Don't check for object selection if we clicked UI
+            } else {
+                console.log('❌ VR UI Panel visible but raycast missed it');
             }
+        } else {
+            console.log(`ℹ️ VR UI Panel: exists=${!!this.vrUIPanel}, visible=${this.vrUIPanel?.visible}`);
         }
         
         // If UI wasn't clicked, check for object selection (planets, moons, etc.)
@@ -534,7 +545,13 @@ class SceneManager {
         // Only toggle menu if trigger not held (grip alone = menu, grip+trigger = zoom)
         if (!triggerHeld && this.vrUIPanel) {
             this.vrUIPanel.visible = !this.vrUIPanel.visible;
-            console.log(`VR Menu ${this.vrUIPanel.visible ? 'shown' : 'hidden'}`);
+            console.log(`🎨 VR Menu toggled - now ${this.vrUIPanel.visible ? 'VISIBLE' : 'HIDDEN'}`);
+            console.log(`📍 Menu position:`, this.vrUIPanel.position);
+            console.log(`📐 Menu parent:`, this.vrUIPanel.parent?.constructor.name);
+        } else if (triggerHeld) {
+            console.log('⚠️ Grip pressed but trigger also held - no menu toggle');
+        } else if (!this.vrUIPanel) {
+            console.log('❌ Grip pressed but vrUIPanel does not exist!');
         }
     }
     
@@ -588,6 +605,8 @@ class SceneManager {
     }
     
     handleVRAction(action) {
+        console.log(`🎬 handleVRAction called with action="${action}"`);
+        
         // Get current app state
         const app = window.app || this;
         
@@ -904,9 +923,17 @@ class SceneManager {
                 continue;
             }
             
-            // DEBUG: Log controller info occasionally
-            if (Math.random() < 0.005) {
-                console.log(`🎮 ${handedness?.toUpperCase() || 'unknown'} Controller: ${gamepad.buttons.length} buttons, ${gamepad.axes.length} axes`);
+            // DEBUG: Log ALL button presses to identify Quest 3S button mapping
+            if (Math.random() < 0.01) { // 1% chance = logs frequently
+                const pressed = [];
+                for (let b = 0; b < gamepad.buttons.length; b++) {
+                    if (gamepad.buttons[b].pressed) {
+                        pressed.push(`Button ${b}`);
+                    }
+                }
+                if (pressed.length > 0) {
+                    console.log(`🎮 ${handedness?.toUpperCase() || 'UNKNOWN'} pressed:`, pressed.join(', '));
+                }
             }
             
             // Check trigger for sprint (button 0 = trigger)
@@ -915,35 +942,11 @@ class SceneManager {
             }
             
             // ============================================
-            // PAUSE/PLAY - Using GRIP button (button 1)
-            // More reliable than thumbstick press
+            // GRIP BUTTON PAUSE REMOVED
+            // Reason: Conflicts with menu toggle in onSqueezeStart()
+            // Grip (button 1) is now ONLY used for menu toggle
+            // Use VR menu buttons for time control instead
             // ============================================
-            const gripButton = 1;
-            if (gamepad.buttons.length > gripButton) {
-                const gripPressed = gamepad.buttons[gripButton].pressed;
-                const wasGripPressed = this.previousButtonStates[i][gripButton] || false;
-                
-                if (gripPressed && !wasGripPressed) {
-                    const app = window.app || this;
-                    console.log(`🎮 ${handedness?.toUpperCase()} GRIP pressed - Toggle Pause`);
-                    
-                    if (app.topicManager) {
-                        if (app.topicManager.timeSpeed === 0) {
-                            app.topicManager.timeSpeed = 1;
-                            console.log('▶️ PLAYING');
-                            this.updateVRStatus('▶️ PLAYING');
-                        } else {
-                            app.topicManager.timeSpeed = 0;
-                            console.log('⏸️ PAUSED');
-                            this.updateVRStatus('⏸️ PAUSED');
-                        }
-                    } else {
-                        console.error('❌ topicManager not available');
-                    }
-                }
-                
-                this.previousButtonStates[i][gripButton] = gripPressed;
-            }
             
             // Get thumbstick axes (Quest uses axes 2 & 3)
             let stickX = 0, stickY = 0;
@@ -2072,6 +2075,11 @@ class SolarSystemModule {
                 
                 const elevation = (continents + mountains + details) / 200;
                 
+                // DEBUG: Log elevation range occasionally
+                if (x === 512 && y % 100 === 0) {
+                    console.log(`📊 Earth elevation sample: ${elevation.toFixed(3)} at lat ${(lat * 180/Math.PI).toFixed(1)}°`);
+                }
+                
                 // Polar ice caps
                 if (latNorm > 0.92) {
                     const iceVariation = noise(nx * 30, ny * 30, 1) * 20;
@@ -2079,9 +2087,9 @@ class SolarSystemModule {
                     data[idx + 1] = 250 + iceVariation;
                     data[idx + 2] = 255;
                 }
-                // Land areas
-                else if (elevation > 0.53) {
-                    const landHeight = (elevation - 0.53) * 10;
+                // Land areas - LOWERED THRESHOLD from 0.53 to 0.48 for more visible continents
+                else if (elevation > 0.48) {
+                    const landHeight = (elevation - 0.48) * 10;
                     const climate = (1 - latNorm) * 0.7; // Warmer at equator
                     const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
                     
@@ -2114,16 +2122,16 @@ class SolarSystemModule {
                         data[idx + 2] = 50 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - BRIGHT for visibility
-                else if (elevation > 0.49) {
-                    const shallow = (elevation - 0.49) * 25;
+                // Shallow water - BRIGHT for visibility (between 0.46 and 0.48)
+                else if (elevation > 0.46) {
+                    const shallow = (elevation - 0.46) * 25;
                     data[idx] = 110 + shallow * 2; // Bright aqua
                     data[idx + 1] = 200 - shallow;
                     data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean - BRIGHTER blues for visibility
+                // Deep ocean - BRIGHTER blues for visibility (below 0.46)
                 else {
-                    const depth = (0.49 - elevation) * 2;
+                    const depth = (0.46 - elevation) * 2;
                     data[idx] = Math.max(40, 70 - depth * 10); // Much brighter base
                     data[idx + 1] = Math.max(80, 130 - depth * 30);
                     data[idx + 2] = Math.max(150, 200 - depth * 30);
@@ -2207,14 +2215,14 @@ class SolarSystemModule {
                 const elevation = (continents + mountains + details) / 200;
                 
                 let gray;
-                if (elevation > 0.53) {
-                    // Land: higher elevation
-                    const landHeight = (elevation - 0.53) * 10;
+                if (elevation > 0.48) {
+                    // Land: higher elevation (LOWERED from 0.53 to 0.48)
+                    const landHeight = (elevation - 0.48) * 10;
                     const mountainNoise = turbulence(nx * 12, ny * 12, 128) / 100;
                     gray = Math.floor(140 + landHeight * 80 + mountainNoise * 60);
                 } else {
                     // Ocean: lower elevation
-                    gray = Math.floor(100 - (0.53 - elevation) * 80);
+                    gray = Math.floor(100 - (0.48 - elevation) * 80);
                 }
                 
                 data[idx] = Math.max(0, Math.min(255, gray));
