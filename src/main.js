@@ -3110,6 +3110,7 @@ class SolarSystemModule {
     createPlanetMaterial(config) {
         // Create HYPERREALISTIC materials with advanced texturing
         const name = config.name.toLowerCase();
+        console.log(`🎨 Creating material for planet: "${name}" (original: "${config.name}")`);
         
         // Base material properties
         let materialProps = {
@@ -3122,6 +3123,7 @@ class SolarSystemModule {
         // Planet-specific hyperrealistic materials with high-quality textures
         switch(name) {
             case 'earth':
+                console.log('🌍 ✅ EARTH CASE MATCHED - Creating hyperrealistic Earth material...');
                 // Earth: Photorealistic blue oceans, continents, clouds, city lights
                 const earthTexture = this.createEarthTexture(2048);
                 const earthBump = this.createEarthBumpMap(2048);
@@ -3257,6 +3259,7 @@ class SolarSystemModule {
                 
             default:
                 // Default material
+                console.warn(`⚠️ DEFAULT MATERIAL CASE for planet "${name}" - using simple color: 0x${config.color?.toString(16)}`);
                 return new THREE.MeshStandardMaterial({
                     color: config.color,
                     ...materialProps
@@ -3295,9 +3298,10 @@ class SolarSystemModule {
 
         // Add atmosphere for Earth with clouds
         if (config.atmosphere) {
-            // DISABLED atmosphere glow - was blocking visibility
-            // Instead rely on brighter texture and emissive material
+            // TEMPORARILY DISABLED FOR DEBUGGING - Testing if clouds are causing blue sphere
+            console.log('🌍 ATMOSPHERE DISABLED FOR DEBUGGING - If Earth shows continents now, clouds were the issue!');
             
+            /* DISABLED CLOUD LAYER - TESTING
             // Cloud layer with procedural patterns - VERY subtle
             const cloudGeometry = new THREE.SphereGeometry(config.radius * 1.015, 32, 32);
             const cloudTexture = this.createCloudTexture(512);
@@ -3315,6 +3319,7 @@ class SolarSystemModule {
             clouds.userData.isCloud = true;
             planet.add(clouds);
             planet.userData.clouds = clouds;
+            */
         }
 
         // Add Great Red Spot for Jupiter
