@@ -295,30 +295,33 @@ class SceneManager {
         ctx.font = '28px Arial';
         ctx.fillText('Use Triggers to Select Buttons', 512, 120);
         
+        // Initialize pause mode state
+        this.pauseMode = 'none'; // 'none', 'orbital', 'all'
+        
         // Define buttons
         this.vrButtons = [
             // Row 1: Time controls
-            { x: 50, y: 160, w: 220, h: 90, label: '⏸️ Pause', action: 'pause', color: '#e74c3c' },
-            { x: 290, y: 160, w: 220, h: 90, label: '▶️ Play', action: 'play', color: '#2ecc71' },
-            { x: 530, y: 160, w: 220, h: 90, label: '⏩ Speed+', action: 'speedup', color: '#3498db' },
-            { x: 770, y: 160, w: 220, h: 90, label: '⏪ Speed-', action: 'speeddown', color: '#9b59b6' },
+            { x: 50, y: 160, w: 160, h: 80, label: '⏸️ All', action: 'pauseall', color: '#e74c3c' },
+            { x: 220, y: 160, w: 160, h: 80, label: '🌍 Orbit', action: 'pauseorbit', color: '#e67e22' },
+            { x: 390, y: 160, w: 160, h: 80, label: '▶️ Play', action: 'play', color: '#2ecc71' },
+            { x: 560, y: 160, w: 110, h: 80, label: '<<', action: 'speed--', color: '#9b59b6' },
+            { x: 680, y: 160, w: 110, h: 80, label: '>>', action: 'speed++', color: '#3498db' },
+            { x: 800, y: 160, w: 140, h: 80, label: '1x', action: 'speedreset', color: '#16a085' },
             
             // Row 2: View controls
-            { x: 50, y: 270, w: 220, h: 90, label: '🔆 Bright+', action: 'brightup', color: '#f39c12' },
-            { x: 290, y: 270, w: 220, h: 90, label: '🔅 Bright-', action: 'brightdown', color: '#e67e22' },
-            { x: 530, y: 270, w: 220, h: 90, label: '☄️ Tails', action: 'tails', color: '#1abc9c' },
-            { x: 770, y: 270, w: 220, h: 90, label: '🔄 Reset', action: 'reset', color: '#34495e' },
+            { x: 50, y: 260, w: 160, h: 80, label: '🔆+', action: 'brightup', color: '#f39c12' },
+            { x: 220, y: 260, w: 160, h: 80, label: '🔅-', action: 'brightdown', color: '#e67e22' },
+            { x: 390, y: 260, w: 160, h: 80, label: '☄️ Tails', action: 'tails', color: '#1abc9c' },
+            { x: 560, y: 260, w: 190, h: 80, label: '� Scale', action: 'scale', color: '#8e44ad' },
+            { x: 760, y: 260, w: 180, h: 80, label: '� Reset', action: 'reset', color: '#34495e' },
             
-            // Row 3: Scale and navigation
-            { x: 170, y: 380, w: 330, h: 90, label: '📏 Educational Scale', action: 'scale', color: '#8e44ad' },
-            { x: 520, y: 380, w: 330, h: 90, label: '🌍 Focus Earth', action: 'earth', color: '#16a085' },
+            // Row 3: Navigation
+            { x: 50, y: 360, w: 290, h: 80, label: '🌍 Focus Earth', action: 'earth', color: '#16a085' },
+            { x: 350, y: 360, w: 290, h: 80, label: '🪐 Solar System', action: 'solar', color: '#2980b9' },
+            { x: 650, y: 360, w: 290, h: 80, label: '⚛️ Quantum', action: 'quantum', color: '#c0392b' },
             
-            // Row 4: Topics
-            { x: 170, y: 490, w: 330, h: 90, label: '🪐 Solar System', action: 'solar', color: '#2980b9' },
-            { x: 520, y: 490, w: 330, h: 90, label: '⚛️ Quantum Physics', action: 'quantum', color: '#c0392b' },
-            
-            // Row 5: Help
-            { x: 312, y: 600, w: 400, h: 90, label: '❓ Hide Menu (Grip)', action: 'hide', color: '#7f8c8d' }
+            // Row 4: Help
+            { x: 312, y: 460, w: 400, h: 70, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' }
         ];
         
         // Draw buttons
@@ -343,13 +346,61 @@ class SceneManager {
             ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 12);
         });
         
+        // Time Speed Slider
+        const sliderY = 560;
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
+        
+        // Slider track
+        const sliderX = 280;
+        const sliderW = 660;
+        const sliderH = 20;
+        ctx.fillStyle = '#34495e';
+        ctx.fillRect(sliderX, sliderY - 15, sliderW, sliderH);
+        
+        // Slider markers (0, 1x, 5x, 10x)
+        ctx.fillStyle = '#7f8c8d';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('0', sliderX, sliderY + 45);
+        ctx.fillText('1x', sliderX + sliderW * 0.1, sliderY + 45);
+        ctx.fillText('5x', sliderX + sliderW * 0.5, sliderY + 45);
+        ctx.fillText('10x', sliderX + sliderW, sliderY + 45);
+        
+        // Slider handle (will update dynamically)
+        const speed = 1; // Default
+        const handleX = sliderX + (sliderW * (speed / 10));
+        ctx.fillStyle = '#3498db';
+        ctx.beginPath();
+        ctx.arc(handleX, sliderY - 5, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Store slider info for interaction
+        this.vrSlider = {
+            x: sliderX,
+            y: sliderY - 15,
+            w: sliderW,
+            h: sliderH,
+            min: 0,
+            max: 10
+        };
+        
         // Status bar
         ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 700, 1024, 68);
+        ctx.fillRect(0, 640, 1024, 128);
         ctx.fillStyle = '#0f0';
         ctx.font = 'bold 28px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Speed: 1x | Brightness: 50% | Controls Active', 512, 740);
+        ctx.fillText('Mode: ▶️ Playing | Speed: 1x | Brightness: 50%', 512, 685);
+        ctx.fillStyle = '#fff';
+        ctx.font = '22px Arial';
+        ctx.fillText('⏸️ All = Pause Everything | 🌍 Orbit = Pause Solar Orbits Only', 512, 720);
+        ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
         
         // Create texture
         const texture = new THREE.CanvasTexture(canvas);
@@ -541,28 +592,55 @@ class SceneManager {
         const app = window.app || this;
         
         switch(action) {
-            case 'pause':
+            case 'pauseall':
+                // Pause everything
+                this.pauseMode = 'all';
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = 0;
-                    this.updateVRStatus('⏸️ PAUSED');
                 }
+                this.updateVRStatus('⏸️ PAUSED - Everything Stopped');
+                this.updateVRUI();
+                break;
+            case 'pauseorbit':
+                // Pause solar orbits, but keep rotations and moon orbits
+                this.pauseMode = 'orbital';
+                if (app.topicManager && app.topicManager.timeSpeed === 0) {
+                    app.topicManager.timeSpeed = 1; // Resume if paused
+                }
+                this.updateVRStatus('🌍 ORBITAL PAUSE - Planets Frozen, Still Rotating');
+                this.updateVRUI();
                 break;
             case 'play':
+                // Play everything
+                this.pauseMode = 'none';
                 if (app.topicManager) {
-                    app.topicManager.timeSpeed = 1;
-                    this.updateVRStatus('▶️ PLAYING at 1x');
+                    app.topicManager.timeSpeed = app.topicManager.timeSpeed || 1;
                 }
+                this.updateVRStatus('▶️ PLAYING - All Motion Active');
+                this.updateVRUI();
                 break;
-            case 'speedup':
+            case 'speed++':
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = Math.min(app.topicManager.timeSpeed + 1, 10);
                     this.updateVRStatus(`⏩ Speed: ${app.topicManager.timeSpeed}x`);
+                    this.updateVRUI();
                 }
                 break;
-            case 'speeddown':
+            case 'speed--':
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = Math.max(app.topicManager.timeSpeed - 1, 0);
+                    if (app.topicManager.timeSpeed === 0) {
+                        this.pauseMode = 'all';
+                    }
                     this.updateVRStatus(`⏪ Speed: ${app.topicManager.timeSpeed}x`);
+                    this.updateVRUI();
+                }
+                break;
+            case 'speedreset':
+                if (app.topicManager) {
+                    app.topicManager.timeSpeed = 1;
+                    this.updateVRStatus('⏱️ Speed Reset to 1x');
+                    this.updateVRUI();
                 }
                 break;
             case 'brightup':
@@ -640,19 +718,85 @@ class SceneManager {
     updateVRStatus(message) {
         const ctx = this.vrUIContext;
         
-        // Clear status bar
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-        ctx.fillRect(0, 700, 1024, 68);
+        // Clear status bar area
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 640, 1024, 128);
         
-        // Draw status
+        // Get current state
+        const app = window.app || this;
+        const speed = app.topicManager?.timeSpeed || 0;
+        const brightness = app.topicManager?.brightness || 50;
+        
+        // Mode text
+        let modeText = '▶️ Playing';
+        if (this.pauseMode === 'all') modeText = '⏸️ Paused All';
+        else if (this.pauseMode === 'orbital') modeText = '🌍 Orbital Pause';
+        
+        // Status line
         ctx.fillStyle = '#0f0';
-        ctx.font = 'bold 32px Arial';
+        ctx.font = 'bold 28px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(message, 512, 740);
+        ctx.fillText(`Mode: ${modeText} | Speed: ${speed}x | Brightness: ${brightness}%`, 512, 685);
+        
+        // Info lines
+        ctx.fillStyle = '#fff';
+        ctx.font = '22px Arial';
+        ctx.fillText(message || 'Ready', 512, 720);
+        ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
         
         this.vrUIPanel.material.map.needsUpdate = true;
         
         console.log('🎮 VR Status:', message);
+    }
+    
+    updateVRUI() {
+        // Redraw slider with current speed
+        const app = window.app || this;
+        const speed = app.topicManager?.timeSpeed || 0;
+        const ctx = this.vrUIContext;
+        
+        // Clear slider area
+        const sliderY = 560;
+        const sliderX = 280;
+        const sliderW = 660;
+        const sliderH = 20;
+        
+        ctx.fillStyle = 'rgba(10, 10, 30, 0.95)';
+        ctx.fillRect(0, sliderY - 60, 1024, 120);
+        
+        // Redraw slider label
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
+        
+        // Slider track
+        ctx.fillStyle = '#34495e';
+        ctx.fillRect(sliderX, sliderY - 15, sliderW, sliderH);
+        
+        // Slider markers
+        ctx.fillStyle = '#7f8c8d';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('0', sliderX, sliderY + 45);
+        ctx.fillText('1x', sliderX + sliderW * 0.1, sliderY + 45);
+        ctx.fillText('5x', sliderX + sliderW * 0.5, sliderY + 45);
+        ctx.fillText('10x', sliderX + sliderW, sliderY + 45);
+        
+        // Slider handle at current speed
+        const handleX = sliderX + (sliderW * (speed / 10));
+        ctx.fillStyle = '#3498db';
+        ctx.beginPath();
+        ctx.arc(handleX, sliderY - 5, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Update status bar
+        this.updateVRStatus();
+        
+        this.vrUIPanel.material.map.needsUpdate = true;
     }
     
     updateLaserPointers() {
@@ -1333,12 +1477,14 @@ class SolarSystemModule {
         });
 
         // Moon: 3,474 km / 12,742 km = 0.273
+        // Real distance: 384,400 km / Earth radius (6,371 km) = ~60 Earth radii
         this.createMoon(this.planets.earth, {
             name: 'Moon',
             radius: 0.273,
             color: 0xAAAAAA,
-            distance: 3,
-            speed: 0.03,
+            distance: 4, // Increased from 3 for better visibility
+            speed: 0.05, // Increased from 0.03 for visible orbit
+            rotationSpeed: 0.004, // Moon rotates (tidally locked)
             description: '🌙 Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
             funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
         });
@@ -1953,34 +2099,34 @@ class SolarSystemModule {
                         data[idx + 1] = 178 + sandVar * 0.8;
                         data[idx + 2] = 128 + sandVar * 0.5;
                     }
-                    // Forests
+                    // Forests - BRIGHTER greens
                     else if (climate > 0.4 && precipitation > 0.5) {
                         const forestVar = noise(nx * 25, ny * 25, 3) * 40;
-                        data[idx] = 34 + forestVar * 0.8;
-                        data[idx + 1] = 139 - forestVar * 0.3;
-                        data[idx + 2] = 34 + forestVar * 0.5;
+                        data[idx] = 60 + forestVar * 0.8; // Brighter green
+                        data[idx + 1] = 180 - forestVar * 0.3; // Brighter
+                        data[idx + 2] = 60 + forestVar * 0.5;
                     }
-                    // Grasslands/plains
+                    // Grasslands/plains - BRIGHTER
                     else {
                         const grassVar = noise(nx * 30, ny * 30, 4) * 35;
-                        data[idx] = 107 + grassVar;
-                        data[idx + 1] = 142 - grassVar * 0.3;
-                        data[idx + 2] = 35 + grassVar * 0.8;
+                        data[idx] = 130 + grassVar; // Brighter base
+                        data[idx + 1] = 170 - grassVar * 0.3;
+                        data[idx + 2] = 50 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - balanced for contrast
+                // Shallow water - BRIGHT for visibility
                 else if (elevation > 0.49) {
                     const shallow = (elevation - 0.49) * 25;
-                    data[idx] = 70 + shallow * 2;
-                    data[idx + 1] = 170 - shallow;
-                    data[idx + 2] = 220 - shallow * 2;
+                    data[idx] = 110 + shallow * 2; // Bright aqua
+                    data[idx + 1] = 200 - shallow;
+                    data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean - balanced to show day/night and continent contrast
+                // Deep ocean - BRIGHTER blues for visibility
                 else {
                     const depth = (0.49 - elevation) * 2;
-                    data[idx] = Math.max(15, 40 - depth * 10);
-                    data[idx + 1] = Math.max(40, 95 - depth * 30);
-                    data[idx + 2] = Math.max(100, 160 - depth * 30);
+                    data[idx] = Math.max(40, 70 - depth * 10); // Much brighter base
+                    data[idx + 1] = Math.max(80, 130 - depth * 30);
+                    data[idx + 2] = Math.max(150, 200 - depth * 30);
                 }
                 
                 data[idx + 3] = 255;
@@ -2945,10 +3091,10 @@ class SolarSystemModule {
                     bumpMap: earthBump,
                     bumpScale: 0.04,
                     roughnessMap: earthSpecular,
-                    roughness: 0.3, // Balanced for water reflection
-                    metalness: 0.2, // Slightly reflective water
-                    emissive: 0x0a1f2f, // Very subtle blue glow for night side
-                    emissiveIntensity: 0.05 // Minimal - let texture and lighting show through
+                    roughness: 0.25, // Lower for more reflection
+                    metalness: 0.15, // Slightly reflective water
+                    emissive: 0x2a5f8f, // Brighter blue glow
+                    emissiveIntensity: 0.3 // Increased for better visibility
                 });
                 
             case 'mars':
@@ -3099,28 +3245,21 @@ class SolarSystemModule {
 
         // Add atmosphere for Earth with clouds
         if (config.atmosphere) {
-            // Atmosphere glow - very subtle for day/night visibility
-            const atmoGeometry = new THREE.SphereGeometry(config.radius * 1.05, 32, 32);
-            const atmoMaterial = new THREE.MeshBasicMaterial({
-                color: 0x4488cc,
-                transparent: true,
-                opacity: 0.03, // Much more subtle - was 0.15
-                side: THREE.BackSide
-            });
-            const atmosphere = new THREE.Mesh(atmoGeometry, atmoMaterial);
-            planet.add(atmosphere);
+            // DISABLED atmosphere glow - was blocking visibility
+            // Instead rely on brighter texture and emissive material
             
-            // Cloud layer with procedural patterns - reduced opacity
-            const cloudGeometry = new THREE.SphereGeometry(config.radius * 1.02, 32, 32);
+            // Cloud layer with procedural patterns - VERY subtle
+            const cloudGeometry = new THREE.SphereGeometry(config.radius * 1.015, 32, 32);
             const cloudTexture = this.createCloudTexture(512);
             const cloudMaterial = new THREE.MeshStandardMaterial({
                 map: cloudTexture,
                 transparent: true,
-                opacity: 0.25, // Much more subtle - was 0.6
+                opacity: 0.15, // Very subtle - was 0.25
                 roughness: 0.9,
                 metalness: 0.0,
                 side: THREE.FrontSide,
-                alphaMap: cloudTexture
+                alphaMap: cloudTexture,
+                depthWrite: false // Don't block view of surface
             });
             const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
             clouds.userData.isCloud = true;
@@ -3272,6 +3411,7 @@ class SolarSystemModule {
             radius: config.radius,
             angle: Math.random() * Math.PI * 2,
             speed: config.speed,
+            rotationSpeed: config.rotationSpeed || 0.001, // Add rotation
             description: config.description
         };
 
@@ -4260,26 +4400,64 @@ class SolarSystemModule {
     }
 
     update(deltaTime, timeSpeed, camera, controls) {
+        // Get pause mode from sceneManager
+        const app = window.app || {};
+        const sceneManager = app.sceneManager || {};
+        const pauseMode = sceneManager.pauseMode || 'none';
+        
+        // Calculate effective time speeds based on pause mode
+        let orbitalSpeed = timeSpeed; // Solar system orbits
+        let rotationSpeed = timeSpeed; // Planet rotations
+        let moonSpeed = timeSpeed; // Moon orbits
+        
+        if (pauseMode === 'all') {
+            // Pause everything
+            orbitalSpeed = 0;
+            rotationSpeed = 0;
+            moonSpeed = 0;
+        } else if (pauseMode === 'orbital') {
+            // Pause only solar orbits, keep rotations and moon orbits
+            orbitalSpeed = 0; // Freeze planets in their solar orbit
+            rotationSpeed = timeSpeed; // Keep planets rotating
+            moonSpeed = timeSpeed; // Keep moons orbiting their planets
+        }
+        // else 'none' - everything moves normally
+        
         // Update all planets
         Object.values(this.planets).forEach(planet => {
             if (planet && planet.userData) {
-                planet.userData.angle += planet.userData.speed * timeSpeed;
+                // Solar orbit (affected by orbital pause)
+                planet.userData.angle += planet.userData.speed * orbitalSpeed;
                 planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
                 planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
-                planet.rotation.y += planet.userData.rotationSpeed * timeSpeed;
+                
+                // Planet rotation (affected by rotation speed)
+                planet.rotation.y += planet.userData.rotationSpeed * rotationSpeed;
                 
                 // Rotate clouds slightly faster than planet for Earth
                 if (planet.userData.clouds) {
-                    planet.userData.clouds.rotation.y += planet.userData.rotationSpeed * timeSpeed * 1.1;
+                    planet.userData.clouds.rotation.y += planet.userData.rotationSpeed * rotationSpeed * 1.1;
                 }
 
-                // Update moons
-                if (planet.userData.moons) {
+                // Update moons - orbit around their parent planet
+                if (planet.userData.moons && planet.userData.moons.length > 0) {
                     planet.userData.moons.forEach(moon => {
                         if (moon.userData) {
-                            moon.userData.angle += moon.userData.speed * timeSpeed;
+                            // Moons orbit their planet (affected by moonSpeed)
+                            moon.userData.angle += moon.userData.speed * moonSpeed;
                             moon.position.x = moon.userData.distance * Math.cos(moon.userData.angle);
                             moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
+                            moon.position.y = 0; // Keep moons in planet's equatorial plane
+                            
+                            // Rotate moon on its axis
+                            if (moon.userData.rotationSpeed) {
+                                moon.rotation.y += moon.userData.rotationSpeed * rotationSpeed;
+                            }
+                            
+                            // Debug: Log moon position occasionally
+                            if (Math.random() < 0.001 && moon.userData.name === 'Moon') {
+                                console.log(`🌙 Moon orbiting Earth: angle=${moon.userData.angle.toFixed(2)}, x=${moon.position.x.toFixed(1)}, z=${moon.position.z.toFixed(1)}`);
+                            }
                         }
                     });
                 }
