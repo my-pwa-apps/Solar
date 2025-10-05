@@ -2077,9 +2077,11 @@ class SolarSystemModule {
                 const mountains = turbulence(nx * 8, ny * 8, 64) * 0.5;
                 const details = turbulence(nx * 16, ny * 16, 32) * 0.25;
                 
-                // Changed from /200 to /150 to get HIGHER elevation values
-                // This makes more pixels reach the 0.48 land threshold
-                const elevation = (continents + mountains + details) / 150;
+                // BOOST elevation values significantly - turbulence returns 0-size range
+                // So continents is 0-128, mountains 0-32, details 0-8
+                // Total max: 168. We need most land to be > threshold
+                // Use /100 to get elevation range of ~0 to 1.68
+                const elevation = (continents + mountains + details) / 100;
                 
                 // DEBUG: Log elevation range and raw values
                 if (x === 512 && y % 200 === 0) {
@@ -2094,6 +2096,16 @@ class SolarSystemModule {
                 window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
                 window._earthElevationStats.samples++;
                 
+                // 🎨 DEBUG TEST PATTERN - Verify texture is working
+                // Draw green stripes every 256 pixels to test if texture displays
+                if (y % 256 < 16 && x % 256 < 16) {
+                    data[idx] = 0;      // Red
+                    data[idx + 1] = 255; // Green
+                    data[idx + 2] = 0;   // Blue
+                    data[idx + 3] = 255; // Alpha
+                    continue;
+                }
+                
                 // Polar ice caps
                 if (latNorm > 0.92) {
                     const iceVariation = noise(nx * 30, ny * 30, 1) * 20;
@@ -2101,10 +2113,11 @@ class SolarSystemModule {
                     data[idx + 1] = 250 + iceVariation;
                     data[idx + 2] = 255;
                 }
-                // Land areas - LOWERED THRESHOLD from 0.48 to 0.42 for MORE visible continents
-                // With /150 divisor, elevation now ranges ~0.0 to ~1.5, so 0.42 = ~30% land
-                else if (elevation > 0.42) {
-                    const landHeight = (elevation - 0.42) * 10;
+                // Land areas - VERY LOW THRESHOLD for maximum land visibility
+                // With /100 divisor, elevation ranges 0-1.68
+                // Threshold 0.35 should give ~50% land coverage
+                else if (elevation > 0.35) {
+                    const landHeight = (elevation - 0.35) * 10;
                     const climate = (1 - latNorm) * 0.7; // Warmer at equator
                     const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
                     
@@ -2137,16 +2150,16 @@ class SolarSystemModule {
                         data[idx + 2] = 50 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - BRIGHT for visibility (between 0.38 and 0.42)
-                else if (elevation > 0.38) {
-                    const shallow = (elevation - 0.38) * 25;
+                // Shallow water - BRIGHT for visibility (between 0.30 and 0.35)
+                else if (elevation > 0.30) {
+                    const shallow = (elevation - 0.30) * 25;
                     data[idx] = 110 + shallow * 2; // Bright aqua
                     data[idx + 1] = 200 - shallow;
                     data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean - BRIGHTER blues for visibility (below 0.38)
+                // Deep ocean - BRIGHTER blues for visibility (below 0.30)
                 else {
-                    const depth = (0.38 - elevation) * 2;
+                    const depth = (0.30 - elevation) * 2;
                     data[idx] = Math.max(40, 70 - depth * 10); // Much brighter base
                     data[idx + 1] = Math.max(80, 130 - depth * 30);
                     data[idx + 2] = Math.max(150, 200 - depth * 30);
@@ -2182,10 +2195,12 @@ class SolarSystemModule {
         // DEBUG: Log final elevation statistics
         if (window._earthElevationStats) {
             console.log(`📊 Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
-            console.log(`📊 Land threshold: 0.42, Shallow threshold: 0.38 (LOWERED for more land visibility)`);
+            console.log(`📊 🎨 DEBUG MODE: Green test pattern at grid intersections (256px)`);
+            console.log(`📊 Land threshold: 0.35, Shallow threshold: 0.30 (VERY LOW for maximum visibility)`);
+            console.log(`📊 Elevation divisor: /100 (was /150, then /200) - MAXIMUM amplification`);
             const range = window._earthElevationStats.max - window._earthElevationStats.min;
-            const landPercent = window._earthElevationStats.max > 0.42 ? 
-                ((window._earthElevationStats.max - 0.42) / range * 100).toFixed(1) : 0;
+            const landPercent = window._earthElevationStats.max > 0.35 ? 
+                ((window._earthElevationStats.max - 0.35) / range * 100).toFixed(1) : 0;
             console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ${landPercent}% pixels above land threshold`);
         }
         
