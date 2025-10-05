@@ -3169,25 +3169,12 @@ class SolarSystemModule {
                 console.log('🌍 Earth material created with texture:', earthTexture);
                 console.log('🌍 Earth texture size:', earthTexture.image?.width, 'x', earthTexture.image?.height);
                 
-                // DIAGNOSTIC TEST: Use MeshBasicMaterial to bypass lighting issues
-                console.log('🌍 USING MeshBasicMaterial FOR TESTING - bypasses all lighting!');
+                // Use MeshBasicMaterial with texture - always visible, ignores lighting
+                console.log('🌍 Using MeshBasicMaterial with texture - always visible!');
                 
-                // EXTREME TEST: Try solid color first to verify material works
-                console.log('🧪 TESTING: Creating SOLID GREEN sphere first...');
-                const testMaterial = new THREE.MeshBasicMaterial({
-                    color: 0x00ff00  // BRIGHT GREEN - should be IMPOSSIBLE to miss!
-                });
-                console.log('🧪 Test material color:', testMaterial.color);
-                
-                // If Earth is still black with this, the problem is NOT the texture!
-                // Comment this out and uncomment earthMaterial to test with texture
-                const earthMaterial = testMaterial;
-                
-                /* TEXTURE TEST - Enable after confirming green sphere works
                 const earthMaterial = new THREE.MeshBasicMaterial({
                     map: earthTexture
                 });
-                */
                 
                 /* ORIGINAL MeshStandardMaterial - DISABLED FOR TESTING
                 const earthMaterial = new THREE.MeshStandardMaterial({
@@ -4463,12 +4450,19 @@ class SolarSystemModule {
                 }
             }
             
-            // Add glow marker
-            const glowGeometry = new THREE.SphereGeometry(craft.size * 1.8, 16, 16);
+            // Add glow marker - MUCH BIGGER for distant spacecraft!
+            // For distant probes (distance > 100), make glow proportional to distance so they're visible
+            const glowSize = craft.distance > 100 ? 
+                Math.max(craft.size * 1.8, craft.distance * 0.03) : // Min 3% of distance for far objects
+                craft.size * 1.8; // Normal size for nearby objects
+            
+            console.log(`🔆 ${craft.name} glow size: ${glowSize.toFixed(2)} (distance: ${craft.distance}, base size: ${craft.size})`);
+            
+            const glowGeometry = new THREE.SphereGeometry(glowSize, 16, 16);
             const glowMaterial = new THREE.MeshBasicMaterial({
                 color: craft.color,
                 transparent: true,
-                opacity: 0.15,
+                opacity: 0.25, // Increased from 0.15 for better visibility
                 blending: THREE.AdditiveBlending
             });
             const glow = new THREE.Mesh(glowGeometry, glowMaterial);
