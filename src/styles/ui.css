@@ -344,6 +344,7 @@
     margin-bottom: 5px;
     font-size: 12px;
     font-weight: 600;
+    font-family: 'Poppins', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
     padding: 5px 8px;
     background: rgba(255, 107, 107, 0.2);
     border-radius: 6px;
@@ -357,6 +358,7 @@
     cursor: pointer;
     border-radius: 8px;
     font-size: 12px;
+    font-family: 'Poppins', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
     background: rgba(255, 255, 255, 0.05);
     border-left: 3px solid transparent;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -403,29 +405,36 @@
 }
 
 .xr-button {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    border: none;
-    padding: 14px 24px;
-    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 18px 20px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 16px;
-    font-weight: 700;
-    font-family: 'Poppins', sans-serif;
-    box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
-    transition: all 0.3s ease;
+    font-size: 32px;
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    line-height: 1;
 }
 
 .xr-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(56, 239, 125, 0.6);
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.7);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.xr-button:active {
+    transform: translateY(-2px) scale(1.05);
 }
 
 .xr-button .icon {
-    font-size: 20px;
+    display: none; /* Hide icon span since we're using emoji directly */
 }
 
 /* Help Button */

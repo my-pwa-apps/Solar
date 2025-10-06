@@ -5152,6 +5152,10 @@ class SolarSystemModule {
                         if (moon.userData) {
                             // Moons orbit their planet (affected by moonSpeed)
                             moon.userData.angle += moon.userData.speed * moonSpeed;
+                            
+                            // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
+                            // these positions are RELATIVE to the planet's position, not world coordinates!
+                            // This keeps the moon orbiting around its parent planet correctly.
                             moon.position.x = moon.userData.distance * Math.cos(moon.userData.angle);
                             moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
                             moon.position.y = 0; // Keep moons in planet's equatorial plane
@@ -5178,9 +5182,13 @@ class SolarSystemModule {
                                 moon.rotation.z = (moon.userData.axialTilt || 0) * Math.PI / 180;
                             }
                             
-                            // Debug: Log moon position occasionally
-                            if (Math.random() < 0.001 && moon.userData.name === 'Moon') {
-                                console.log(`?? Moon orbiting Earth: angle=${moon.userData.angle.toFixed(2)}, x=${moon.position.x.toFixed(1)}, z=${moon.position.z.toFixed(1)}`);
+                            // Debug: Log moon position occasionally (Moon and Io)
+                            if (DEBUG.enabled && Math.random() < 0.001) {
+                                if (moon.userData.name === 'Moon' || moon.userData.name === 'Io') {
+                                    const worldPos = new THREE.Vector3();
+                                    moon.getWorldPosition(worldPos);
+                                    console.log(`🌙 ${moon.userData.name} orbiting ${planet.userData.name}: angle=${moon.userData.angle.toFixed(2)}, local=(${moon.position.x.toFixed(1)}, ${moon.position.y.toFixed(1)}, ${moon.position.z.toFixed(1)}), world=(${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)}, ${worldPos.z.toFixed(1)}), planet at=(${planet.position.x.toFixed(1)}, ${planet.position.y.toFixed(1)}, ${planet.position.z.toFixed(1)})`);
+                                }
                             }
                         }
                     });
@@ -5358,6 +5366,13 @@ class SolarSystemModule {
                     satellite.position.x = earthPosition.x + userData.distance * cosAngle;
                     satellite.position.y = earthPosition.y + userData.distance * sinAngle * sinIncl;
                     satellite.position.z = earthPosition.z + userData.distance * sinAngle * cosIncl;
+                    
+                    // Debug: Log satellite positions for yellow/gold satellites
+                    if (DEBUG.enabled && (satellite.material.color.getHex() === 0xFFFF00 || satellite.material.color.getHex() === 0xFFD700)) {
+                        if (Math.random() < 0.001) {
+                            console.log(`🛰️ ${userData.name}: Earth at (${earthPosition.x.toFixed(1)}, ${earthPosition.y.toFixed(1)}, ${earthPosition.z.toFixed(1)}), Satellite at (${satellite.position.x.toFixed(1)}, ${satellite.position.y.toFixed(1)}, ${satellite.position.z.toFixed(1)}), distance=${userData.distance}`);
+                        }
+                    }
                     
                     // Rotate satellite to face Earth
                     satellite.lookAt(earthPosition);
@@ -5634,7 +5649,7 @@ class SolarSystemModule {
             labelDiv.textContent = text || object.userData.name;
             labelDiv.style.color = 'white';
             labelDiv.style.fontSize = '14px';
-            labelDiv.style.fontFamily = 'Arial, sans-serif';
+            labelDiv.style.fontFamily = "'Poppins', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif";
             labelDiv.style.padding = '2px 6px';
             labelDiv.style.background = 'rgba(0, 0, 0, 0.7)';
             labelDiv.style.borderRadius = '4px';
@@ -5652,22 +5667,22 @@ class SolarSystemModule {
         
         // Add labels to Sun
         if (this.sun) {
-            createLabel(this.sun, '?? Sun');
+            createLabel(this.sun, '☀️ Sun');
         }
         
         // Add labels to planets
         Object.entries(this.planets).forEach(([name, planet]) => {
             if (planet) {
                 const emoji = {
-                    'mercury': '??', 'venus': '??', 'earth': '??', 'mars': '??',
-                    'jupiter': '?', 'saturn': '?', 'uranus': '?', 'neptune': '?'
-                }[name.toLowerCase()] || '??';
+                    'mercury': '☿️', 'venus': '♀️', 'earth': '🌍', 'mars': '🔴',
+                    'jupiter': '🪐', 'saturn': '🪐', 'uranus': '💙', 'neptune': '💙'
+                }[name.toLowerCase()] || '🌑';
                 createLabel(planet, `${emoji} ${planet.userData.name}`);
                 
                 // Add labels to moons
                 if (planet.userData.moons) {
                     planet.userData.moons.forEach(moon => {
-                        createLabel(moon, `?? ${moon.userData.name}`);
+                        createLabel(moon, `🌙 ${moon.userData.name}`);
                     });
                 }
             }
@@ -5676,53 +5691,59 @@ class SolarSystemModule {
         // Add labels to spacecraft
         if (this.spacecraft) {
             this.spacecraft.forEach(craft => {
-                createLabel(craft, `?? ${craft.userData.name}`);
+                createLabel(craft, `🛰️ ${craft.userData.name}`);
             });
         }
         
         // Add labels to satellites
         if (this.satellites) {
             this.satellites.forEach(sat => {
-                createLabel(sat, `??? ${sat.userData.name}`);
+                createLabel(sat, `🛰️ ${sat.userData.name}`);
             });
         }
         
         // Add labels to distant stars
         if (this.distantStars) {
             this.distantStars.forEach(star => {
-                createLabel(star, `? ${star.userData.name}`);
+                createLabel(star, `⭐ ${star.userData.name}`);
             });
         }
         
         // Add labels to nebulae
         if (this.nebulae) {
             this.nebulae.forEach(nebula => {
-                createLabel(nebula, `?? ${nebula.userData.name}`);
+                createLabel(nebula, `🌌 ${nebula.userData.name}`);
             });
         }
         
         // Add labels to constellations
         if (this.constellations) {
             this.constellations.forEach(constellation => {
-                createLabel(constellation, `? ${constellation.userData.name}`);
+                createLabel(constellation, `✨ ${constellation.userData.name}`);
             });
         }
     }
 
     toggleLabels(visible) {
+        console.log(`🏷️ toggleLabels called with visible=${visible}, labels.length=${this.labels?.length || 0}`);
+        
         if (!this.labels || this.labels.length === 0) {
-            console.warn('⚠️ No labels to toggle');
+            console.warn('⚠️ No labels to toggle - labels array is empty or undefined');
+            console.log('   this.labels:', this.labels);
             return;
         }
         
         // Use the passed visibility state, or toggle based on first label's current state
         const newVisibility = visible !== undefined ? visible : !this.labels[0].visible;
         
-        this.labels.forEach(label => {
+        this.labels.forEach((label, index) => {
             label.visible = newVisibility;
+            if (index < 3 && DEBUG.enabled) {
+                console.log(`   Label ${index}: ${label.element?.textContent || 'no text'} -> visible=${newVisibility}`);
+            }
         });
         
-        console.log(`🏷️ Labels now: ${newVisibility ? 'VISIBLE' : 'HIDDEN'} (${this.labels.length} labels)`);
+        console.log(`🏷️ Labels now: ${newVisibility ? 'VISIBLE ✅' : 'HIDDEN ❌'} (${this.labels.length} labels toggled)`);
     }
 
     getExplorerContent(focusCallback) {
