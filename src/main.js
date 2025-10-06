@@ -8,13 +8,27 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 // ===========================
 // CONSTANTS & CONFIG
 // ===========================
+
+// Debug configuration - enable with URL parameters: ?debug=true&debug-vr=true&debug-textures=true
+const DEBUG = {
+    enabled: new URLSearchParams(window.location.search).has('debug'),
+    VR: new URLSearchParams(window.location.search).has('debug-vr'),
+    TEXTURES: new URLSearchParams(window.location.search).has('debug-textures'),
+    PERFORMANCE: new URLSearchParams(window.location.search).has('debug-performance')
+};
+
+// Mobile & Performance Detection
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+const IS_LOW_POWER = navigator.hardwareConcurrency < 4;
+const QUALITY_PRESET = (IS_MOBILE || IS_LOW_POWER) ? 'low' : 'high';
+
 const CONFIG = {
     RENDERER: {
-        antialias: true,
+        antialias: !IS_MOBILE, // Disable AA on mobile for performance
         alpha: true,
         powerPreference: 'high-performance',
-        maxPixelRatio: 2,
-        logarithmicDepthBuffer: true // Better depth precision for large scenes
+        maxPixelRatio: IS_MOBILE ? 1.5 : 2, // Lower on mobile
+        logarithmicDepthBuffer: true
     },
     CAMERA: {
         fov: 75,
@@ -32,14 +46,27 @@ const CONFIG = {
     PERFORMANCE: {
         targetFPS: 60,
         frameTime: 1000 / 60,
-        maxDeltaTime: 0.1 // Prevent huge jumps
+        maxDeltaTime: 0.1
     },
     QUALITY: {
-        sphereSegments: 128, // Increased for better normal/bump map detail
+        // Adaptive quality based on device
+        textureSize: IS_MOBILE ? 1024 : 4096,
+        sphereSegments: IS_MOBILE ? 32 : 128,
         lowPowerSegments: 32,
-        particleSize: 2
+        particleSize: 2,
+        particleCount: IS_MOBILE ? 1000 : 5000,
+        shadows: !IS_MOBILE // Disable shadows on mobile
     }
 };
+
+// Log configuration (only if debug enabled)
+if (DEBUG.enabled) {
+    console.log('🚀 Solar System Explorer - Debug Mode Enabled');
+    console.log('📱 Device:', IS_MOBILE ? 'Mobile' : 'Desktop');
+    console.log('⚡ Quality Preset:', QUALITY_PRESET);
+    console.log('🎨 Texture Size:', CONFIG.QUALITY.textureSize);
+    console.log('🔺 Sphere Segments:', CONFIG.QUALITY.sphereSegments);
+}
 
 // ===========================
 // SCENE MANAGER
@@ -432,12 +459,12 @@ class SceneManager {
         this.vrUICanvas = canvas;
         this.vrUIContext = ctx;
         
-        console.log('? VR UI Panel created with', this.vrButtons.length, 'buttons');
+        if (DEBUG.VR) console.log('🥽 VR UI Panel created with', this.vrButtons.length, 'buttons');
     }
     
     onSelectStart(controller, index) {
         // Handle controller trigger press
-        console.log(`?? Controller ${index} trigger pressed`);
+        if (DEBUG.VR) console.log(`🥽 Controller ${index} trigger pressed`);
         controller.userData.selecting = true;
         
         // Check if grip button is also held for zoom
@@ -464,35 +491,28 @@ class SceneManager {
         
         // First, check for VR UI interaction
         if (this.vrUIPanel && this.vrUIPanel.visible) {
-            console.log('?? VR UI Panel is visible - checking for button clicks');
+            if (DEBUG.VR) console.log('🥽 VR UI Panel is visible - checking for button clicks');
             const intersects = raycaster.intersectObject(this.vrUIPanel);
             
             if (intersects.length > 0) {
                 const uv = intersects[0].uv;
                 const x = uv.x * 1024;
                 const y = (1 - uv.y) * 768;
-                console.log(`?? VR UI clicked at UV (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)}) = pixel (${x.toFixed(0)}, ${y.toFixed(0)})`);
+                if (DEBUG.VR) console.log(`🥽 VR UI clicked at UV (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)})`);
                 
                 // Check which button was clicked
                 let buttonFound = false;
                 this.vrButtons.forEach(btn => {
                     if (x >= btn.x && x <= btn.x + btn.w && 
                         y >= btn.y && y <= btn.y + btn.h) {
-                        console.log(`? VR Button clicked: "${btn.label}" action="${btn.action}"`);
+                        if (DEBUG.VR) console.log(`🥽 VR Button clicked: "${btn.label}"`);
                         this.handleVRAction(btn.action);
                         this.flashVRButton(btn);
                         buttonFound = true;
                     }
                 });
-                if (!buttonFound) {
-                    console.log('?? Click was on UI panel but not on any button');
-                }
                 return; // Don't check for object selection if we clicked UI
-            } else {
-                console.log('? VR UI Panel visible but raycast missed it');
             }
-        } else {
-            console.log(`?? VR UI Panel: exists=${!!this.vrUIPanel}, visible=${this.vrUIPanel?.visible}`);
         }
         
         // If UI wasn't clicked, check for object selection (planets, moons, etc.)
@@ -500,7 +520,7 @@ class SceneManager {
         
         if (intersects.length > 0) {
             const hitObject = intersects[0].object;
-            console.log('?? VR Selected object:', hitObject.name || hitObject.type);
+            if (DEBUG.VR) console.log('🥽 VR Selected object:', hitObject.name || hitObject.type);
             
             // Try to focus on the selected object
             const app = window.app || this;
@@ -512,22 +532,20 @@ class SceneManager {
                     // If grip+trigger held, zoom VERY close for inspection
                     if (gripHeld) {
                         this.zoomToObject(hitObject, 'close');
-                        console.log('?? ZOOMING CLOSE to:', hitObject.name);
+                        if (DEBUG.VR) console.log('🥽 ZOOMING CLOSE to:', hitObject.name);
                         if (this.vrUIPanel) {
-                            this.updateVRStatus(`?? Inspecting: ${hitObject.name}`);
+                            this.updateVRStatus(`🔍 Inspecting: ${hitObject.name}`);
                         }
                     } else {
                         // Normal focus
                         module.focusOnObject(hitObject, this.camera, this.controls);
-                        console.log('? Focused on:', hitObject.name);
+                        if (DEBUG.VR) console.log('🥽 Focused on:', hitObject.name);
                         if (this.vrUIPanel) {
-                            this.updateVRStatus(`?? Selected: ${hitObject.name}`);
+                            this.updateVRStatus(`✓ Selected: ${hitObject.name}`);
                         }
                     }
                 }
             }
-        } else {
-            console.log('? No object hit by raycast');
         }
     }
     
@@ -2105,7 +2123,9 @@ class SolarSystemModule {
         return texture;
     }
     
-    createEarthNightLights(size = 2048) {
+    // ⚠️ REMOVED: createEarthNightLights() - was 105 lines of unused city lights code
+    
+    createEarthTextureReal(size) {
         // 🌃 Generate procedural city lights for Earth's night side
         const canvas = document.createElement('canvas');
         canvas.width = size;
@@ -2179,25 +2199,9 @@ class SolarSystemModule {
                 }
             }
         });
-        
-        // Add some scattered lights along coastlines and populated areas
-        for (let i = 0; i < 2000; i++) {
-            const x = Math.random() * size;
-            const y = Math.random() * size;
-            const brightness = Math.random();
-            
-            if (brightness > 0.95) { // Only very bright spots
-                ctx.fillStyle = `rgba(255, 220, 150, ${brightness * 0.8})`;
-                ctx.beginPath();
-                ctx.arc(x, y, 0.5 + Math.random(), 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
-        return texture;
     }
+    
+    // ⚠️ REMOVED: createEarthNightLights() - was 105 lines of unused city lights code
     
     createEarthTextureReal(size) {
         // Create procedural texture as fallback first
@@ -2221,19 +2225,17 @@ class SolarSystemModule {
         
         const tryLoadTexture = () => {
             if (currentURLIndex >= textureURLs.length) {
-                console.warn('?? All NASA Earth texture sources failed');
-                console.warn('   Using beautiful procedural Earth instead');
+                if (DEBUG.TEXTURES) console.warn('🌍 All NASA Earth texture sources failed, using procedural');
                 return;
             }
             
             const url = textureURLs[currentURLIndex];
-            console.log(`?? Attempting to load Earth texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
+            if (DEBUG.TEXTURES) console.log(`🌍 Loading Earth texture from source ${currentURLIndex + 1}/${textureURLs.length}`);
             
             loader.load(
                 url,
                 (tex) => {
-                    console.log('? Real Earth texture loaded successfully!');
-                    console.log('   Earth now shows real continents from NASA Blue Marble!');
+                    if (DEBUG.TEXTURES) console.log('✅ Real Earth texture loaded successfully!');
                     
                     // Apply proper texture settings for best quality
                     tex.colorSpace = THREE.SRGBColorSpace;
@@ -2244,17 +2246,17 @@ class SolarSystemModule {
                     if (this.planets && this.planets.earth) {
                         this.planets.earth.material.map = tex;
                         this.planets.earth.material.needsUpdate = true;
-                        console.log('?? Earth material updated with real texture!');
+                        if (DEBUG.TEXTURES) console.log('🌍 Earth material updated with real NASA texture');
                     }
                 },
                 (progress) => {
-                    if (progress.lengthComputable) {
+                    if (DEBUG.TEXTURES && progress.lengthComputable) {
                         const percent = (progress.loaded / progress.total * 100).toFixed(0);
-                        console.log(`? Loading NASA Earth texture: ${percent}%`);
+                        console.log(`📥 Loading NASA Earth texture: ${percent}%`);
                     }
                 },
                 (err) => {
-                    console.warn(`?? Source ${currentURLIndex + 1} failed, trying next...`);
+                    if (DEBUG.TEXTURES) console.warn(`⚠️ Source ${currentURLIndex + 1} failed, trying next...`);
                     currentURLIndex++;
                     tryLoadTexture(); // Try next URL
                 }
@@ -2567,45 +2569,20 @@ class SolarSystemModule {
             }
         }
         const totalPixels = size * size;
-        console.log(`?? Earth texture generated: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
-        console.log(`?? Greenest land pixel found: RGB(${greenestPixel.r}, ${greenestPixel.g}, ${greenestPixel.b}) at pixel ${greenestPixel.idx}`);
+        if (DEBUG.TEXTURES) {
+            console.log(`🌍 Earth texture: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
+        }
         
-        // ?? CRITICAL FIX: Create texture BEFORE adding clouds
-        // Otherwise clouds overwrite the surface texture!
-        console.log('?? Creating THREE.js texture from canvas (BEFORE clouds)...');
+        // Create texture BEFORE adding clouds
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
         
-        // DEBUG: Log final elevation statistics
-        if (window._earthElevationStats) {
-            console.log(`?? Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
-            console.log(`?? ?? REALISTIC CONTINENTS: Americas, Eurasia, Africa, Australia, Antarctica`);
-            console.log(`?? Land threshold: 0.15, Shallow threshold: 0.05 (elevation range: ~-0.2 to +1.5)`);
-            console.log(`?? Using Gaussian distributions to approximate real Earth geography`);
-            const range = window._earthElevationStats.max - window._earthElevationStats.min;
-            const landPercent = window._earthElevationStats.max > 0.15 ? 
-                ((window._earthElevationStats.max - 0.15) / range * 100).toFixed(1) : 0;
-            console.log(`?? Elevation range: ${range.toFixed(4)}, expected ~30% land coverage (like real Earth)`);
+        // DEBUG: Log elevation statistics (only if debug enabled)
+        if (DEBUG.TEXTURES && window._earthElevationStats) {
+            const stats = window._earthElevationStats;
+            console.log(`🌍 Elevation: min=${stats.min.toFixed(4)}, max=${stats.max.toFixed(4)}`);
+            console.log(`🌍 Continents: Americas, Eurasia, Africa, Australia, Antarctica`);
         }
-        
-        // CRITICAL TEST: Verify canvas actually has color data
-        console.log('?? Canvas verification:');
-        console.log('   - Canvas size:', canvas.width, 'x', canvas.height);
-        console.log('   - Canvas context:', canvas.getContext('2d', { willReadFrequently: true }) ? 'OK' : 'FAILED');
-        
-        // Sample some pixels to verify colors
-        const testCtx = canvas.getContext('2d', { willReadFrequently: true });
-        const samples = [
-            testCtx.getImageData(512, 512, 1, 1).data,    // Center
-            testCtx.getImageData(1024, 512, 1, 1).data,   // Right
-            testCtx.getImageData(512, 100, 1, 1).data,    // Top (should be ice)
-            testCtx.getImageData(512, 1900, 1, 1).data    // Bottom (should be ice)
-        ];
-        console.log('   - Sample pixel colors:');
-        samples.forEach((pixel, i) => {
-            const locations = ['center', 'right', 'north pole', 'south pole'];
-            console.log(`     ${locations[i]}: RGB(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`);
-        });
         
         // ULTIMATE TEST: Create a downloadable preview
         try {
