@@ -5177,10 +5177,6 @@ class SolarSystemModule {
         };
         
         animate();
-        
-        // Store original limits to restore later if needed
-        object.userData._originalMinDistance = originalMinDistance;
-        object.userData._originalMaxDistance = originalMaxDistance;
     }
 
     createLabels() {
@@ -5782,10 +5778,6 @@ class QuantumModule {
         };
         
         animate();
-        
-        // Store original limits to restore later if needed
-        object.userData._originalMinDistance = originalMinDistance;
-        object.userData._originalMaxDistance = originalMaxDistance;
     }
 
     getExplorerContent(focusCallback) {
