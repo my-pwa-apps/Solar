@@ -1326,7 +1326,7 @@ class UIManager {
         if (solarSystemModule && typeof solarSystemModule.getExplorerContent === 'function') {
             const explorerContent = solarSystemModule.getExplorerContent(focusCallback);
             if (explorerContent && Array.isArray(explorerContent)) {
-                this.updateExplorer(explorerContent);
+                this.updateExplorer('🚀 Explore the Solar System', explorerContent);
             } else {
                 console.error('❌ getExplorerContent returned invalid data:', explorerContent);
             }
