@@ -5904,17 +5904,19 @@ class TopicManager {
             let labelsVisible = false; // Start with labels hidden
             
             labelsButton.addEventListener('click', () => {
-                const currentModule = this.solarSystemModule || this.quantumModule;
-                if (currentModule && currentModule.labels && currentModule.labels.length > 0) {
+                // Access the current module from TopicManager
+                if (this.currentModule && this.currentModule.labels && this.currentModule.labels.length > 0) {
                     // Toggle state
                     labelsVisible = !labelsVisible;
                     
                     // Update all labels
-                    currentModule.toggleLabels(labelsVisible);
+                    this.currentModule.toggleLabels(labelsVisible);
                     
                     // Update button
                     labelsButton.classList.toggle('toggle-on', labelsVisible);
                     labelsButton.textContent = labelsVisible ? '📊 Labels ON' : '📊 Labels OFF';
+                } else {
+                    console.warn('⚠️ No labels available in current module');
                 }
             }, { passive: true });
         }
@@ -5923,12 +5925,9 @@ class TopicManager {
         const resetButton = document.getElementById('reset-view');
         if (resetButton) {
             resetButton.addEventListener('click', () => {
-                // Clear focus from any object
-                if (this.solarSystemModule) {
-                    this.solarSystemModule.focusedObject = null;
-                }
-                if (this.quantumModule) {
-                    this.quantumModule.focusedObject = null;
+                // Clear focus from current module
+                if (this.currentModule && this.currentModule.focusedObject) {
+                    this.currentModule.focusedObject = null;
                 }
                 this.sceneManager.resetCamera();
             }, { passive: true });
