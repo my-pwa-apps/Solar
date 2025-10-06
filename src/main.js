@@ -1323,8 +1323,16 @@ class UIManager {
             }
         };
         
-        const explorerContent = solarSystemModule.getExplorerContent(focusCallback);
-        this.updateExplorer(explorerContent);
+        if (solarSystemModule && typeof solarSystemModule.getExplorerContent === 'function') {
+            const explorerContent = solarSystemModule.getExplorerContent(focusCallback);
+            if (explorerContent && Array.isArray(explorerContent)) {
+                this.updateExplorer(explorerContent);
+            } else {
+                console.error('❌ getExplorerContent returned invalid data:', explorerContent);
+            }
+        } else {
+            console.error('❌ solarSystemModule or getExplorerContent method not found');
+        }
         
         // Hide loading
         this.hideLoading();
