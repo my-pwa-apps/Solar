@@ -1279,6 +1279,59 @@ class SolarSystemModule {
         
         // Geometry cache for reuse
         this.geometryCache = new Map();
+        
+        // Real astronomical data for day/night cycles
+        this.ASTRONOMICAL_DATA = {
+            mercury: {
+                rotationPeriod: 1407.6,      // hours (58.6 Earth days)
+                axialTilt: 0.034,            // degrees
+                retrograde: false
+            },
+            venus: {
+                rotationPeriod: 5832.5,      // hours (243 Earth days)
+                axialTilt: 177.4,            // degrees (almost upside down)
+                retrograde: true             // rotates backwards!
+            },
+            earth: {
+                rotationPeriod: 23.93,       // hours
+                axialTilt: 23.44,            // degrees
+                retrograde: false
+            },
+            mars: {
+                rotationPeriod: 24.62,       // hours
+                axialTilt: 25.19,            // degrees
+                retrograde: false
+            },
+            jupiter: {
+                rotationPeriod: 9.93,        // hours (fastest rotation!)
+                axialTilt: 3.13,             // degrees
+                retrograde: false
+            },
+            saturn: {
+                rotationPeriod: 10.66,       // hours
+                axialTilt: 26.73,            // degrees
+                retrograde: false
+            },
+            uranus: {
+                rotationPeriod: 17.24,       // hours
+                axialTilt: 97.77,            // degrees (rotates on its side!)
+                retrograde: true
+            },
+            neptune: {
+                rotationPeriod: 16.11,       // hours
+                axialTilt: 28.32,            // degrees
+                retrograde: false
+            },
+            moon: {
+                rotationPeriod: 655.7,       // hours (27.3 Earth days - tidally locked)
+                axialTilt: 6.68,             // degrees
+                retrograde: false
+            }
+        };
+        
+        // Time acceleration factor (1 = real-time, higher = faster)
+        this.timeAcceleration = 360;  // 360x faster = 1 Earth day in 4 minutes
+        this.realTimeStart = Date.now();
     }
     
     getGeometry(type, ...params) {
@@ -1378,21 +1431,35 @@ class SolarSystemModule {
             realSize: '1,391,000 km diameter'
         };
         
-        // Add sun light (increased for educational visibility)
-        const sunLight = new THREE.PointLight(0xFFFFE0, 8, 0, 1.2); // Increased from 5 to 8
+        // 🌅 DAG/NACHT GRENS SYSTEEM - Directional light from sun
+        // Use DirectionalLight instead of PointLight for better day/night boundary
+        const sunLight = new THREE.DirectionalLight(0xFFFFE0, 2.5); // Bright daylight
         sunLight.name = 'sunLight';
+        sunLight.position.set(0, 0, 0); // At sun's position
         sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        sunLight.shadow.camera.near = 1;
-        sunLight.shadow.camera.far = 5000;
-        scene.add(sunLight);
         
-        // Add ambient light for better visibility of all planets
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // INCREASED: Bright white ambient for visibility
+        // Enhanced shadow quality for sharp day/night terminator
+        sunLight.shadow.mapSize.width = 4096;  // Increased from 2048 for sharper shadows
+        sunLight.shadow.mapSize.height = 4096;
+        sunLight.shadow.camera.near = 1;
+        sunLight.shadow.camera.far = 1000;
+        sunLight.shadow.camera.left = -500;
+        sunLight.shadow.camera.right = 500;
+        sunLight.shadow.camera.top = 500;
+        sunLight.shadow.camera.bottom = -500;
+        sunLight.shadow.bias = -0.0001; // Prevent shadow acne
+        
+        scene.add(sunLight);
+        this.sun.userData.sunLight = sunLight; // Store reference
+        
+        // Reduced ambient light to make day/night contrast visible
+        const ambientLight = new THREE.AmbientLight(0x404060, 0.15); // Much lower: dark blue ambient for space
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
-        console.log('?? Ambient light increased to 1.2 intensity for Earth visibility');
+        
+        console.log('🌅 Day/Night boundary lighting system initialized');
+        console.log('   ☀️ Directional light intensity: 2.5');
+        console.log('   🌌 Ambient light intensity: 0.15 (low for contrast)');
         
         // Multi-layer corona for realistic glow
         const coronaLayers = [
@@ -2044,6 +2111,100 @@ class SolarSystemModule {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
             ctx.fill();
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    createEarthNightLights(size = 2048) {
+        // 🌃 Generate procedural city lights for Earth's night side
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Start with black (space/ocean)
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Major populated regions (approximate coordinates on texture)
+        const cityRegions = [
+            // North America
+            { x: 0.15, y: 0.35, w: 0.20, h: 0.15, density: 0.8, color: '#ffcc66' },
+            // Europe
+            { x: 0.52, y: 0.30, w: 0.12, h: 0.10, density: 0.9, color: '#ffdd77' },
+            // East Asia (China, Japan, Korea)
+            { x: 0.75, y: 0.35, w: 0.15, h: 0.12, density: 1.0, color: '#ffee88' },
+            // India
+            { x: 0.68, y: 0.42, w: 0.08, h: 0.08, density: 0.85, color: '#ffdd77' },
+            // South America (Brazil)
+            { x: 0.28, y: 0.62, w: 0.08, h: 0.12, density: 0.6, color: '#ffcc66' },
+            // Australia (East Coast)
+            { x: 0.82, y: 0.68, w: 0.08, h: 0.08, density: 0.5, color: '#ffcc66' },
+            // Middle East
+            { x: 0.58, y: 0.42, w: 0.08, h: 0.06, density: 0.5, color: '#ffcc66' },
+            // Southeast Asia
+            { x: 0.73, y: 0.50, w: 0.08, h: 0.08, density: 0.7, color: '#ffdd77' },
+            // Africa (North)
+            { x: 0.52, y: 0.50, w: 0.10, h: 0.08, density: 0.3, color: '#ffbb55' },
+            // Southern Africa
+            { x: 0.54, y: 0.68, w: 0.06, h: 0.06, density: 0.4, color: '#ffcc66' }
+        ];
+        
+        // Draw city lights for each region
+        cityRegions.forEach(region => {
+            const centerX = region.x * size;
+            const centerY = region.y * size;
+            const width = region.w * size;
+            const height = region.h * size;
+            
+            // Number of light clusters based on density
+            const numClusters = Math.floor(width * height * region.density * 0.01);
+            
+            for (let i = 0; i < numClusters; i++) {
+                // Random position within region
+                const x = centerX + (Math.random() - 0.5) * width;
+                const y = centerY + (Math.random() - 0.5) * height;
+                
+                // City cluster size
+                const clusterSize = 2 + Math.random() * 6;
+                const intensity = 0.5 + Math.random() * 0.5;
+                
+                // Create glow effect
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, clusterSize);
+                gradient.addColorStop(0, region.color);
+                gradient.addColorStop(0.5, `rgba(255, 204, 102, ${intensity * 0.5})`);
+                gradient.addColorStop(1, 'rgba(255, 204, 102, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, clusterSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add some individual bright spots (major cities)
+                if (Math.random() < 0.1) {
+                    ctx.fillStyle = '#ffffdd';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        });
+        
+        // Add some scattered lights along coastlines and populated areas
+        for (let i = 0; i < 2000; i++) {
+            const x = Math.random() * size;
+            const y = Math.random() * size;
+            const brightness = Math.random();
+            
+            if (brightness > 0.95) { // Only very bright spots
+                ctx.fillStyle = `rgba(255, 220, 150, ${brightness * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 0.5 + Math.random(), 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         
         const texture = new THREE.CanvasTexture(canvas);
@@ -3384,42 +3545,49 @@ class SolarSystemModule {
         // Planet-specific hyperrealistic materials with high-quality textures
         switch(name) {
             case 'earth':
-                // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
+                // Earth: ULTRA HYPER-REALISTIC with real NASA textures + DAY/NIGHT CYCLE
                 const earthTexture = this.createEarthTextureReal(4096);  // 4K resolution!
                 const earthBump = this.createEarthBumpMap(4096);
                 const earthSpecular = this.createEarthSpecularMap(4096);
                 const earthNormal = this.createEarthNormalMap(4096);
+                const earthNightLights = this.createEarthNightLights(2048); // 🌃 City lights!
                 
-                // ULTRA realistic material with PBR (Physically Based Rendering)
+                // ULTRA realistic material with PBR + Night Lights
                 const earthMaterial = new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     
                     // Normal map for surface detail (mountains, valleys)
                     normalMap: earthNormal,
-                    normalScale: new THREE.Vector2(1.2, 1.2), // Increased for more detail
+                    normalScale: new THREE.Vector2(1.2, 1.2),
                     
                     // Bump map for elevation
                     bumpMap: earthBump,
-                    bumpScale: 0.08, // Doubled for realistic terrain
+                    bumpScale: 0.08,
                     
                     // Roughness map (water = smooth/shiny, land = rough)
                     roughnessMap: earthSpecular,
-                    roughness: 0.35, // Slightly rougher for realistic continents
+                    roughness: 0.35,
                     
                     // Metalness (oceans have slight reflection)
-                    metalness: 0.2, // Increased for water reflections
+                    metalness: 0.2,
                     
-                    // Subtle emissive for atmospheric glow
-                    emissive: 0x0a0a0f,
-                    emissiveIntensity: 0.08,
+                    // 🌃 NIGHT SIDE: City lights glow in the dark!
+                    emissive: 0xffffaa,              // Warm yellow-white city lights
+                    emissiveIntensity: 0.8,          // Bright enough to see clearly
+                    emissiveMap: earthNightLights,   // City lights texture
                     
                     // Advanced rendering
-                    envMapIntensity: 1.5, // Environment reflections
+                    envMapIntensity: 1.5,
                     transparent: false,
                     side: THREE.FrontSide,
                     flatShading: false,
                     toneMapped: true
                 });
+                
+                console.log('🌍 Earth material created with:');
+                console.log('   ☀️ Day side: Real NASA Blue Marble texture');
+                console.log('   🌃 Night side: Procedural city lights');
+                console.log('   🌅 Automatic day/night transition via directional lighting');
                 
                 return earthMaterial;
                 
@@ -3555,6 +3723,10 @@ class SolarSystemModule {
         planet.receiveShadow = true;
         planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 
+        // Get real astronomical data for this planet
+        const planetKey = config.name.toLowerCase();
+        const astroData = this.ASTRONOMICAL_DATA[planetKey] || {};
+        
         planet.userData = {
             name: config.name,
             type: config.dwarf ? 'Dwarf Planet' : 'Planet',
@@ -3567,7 +3739,13 @@ class SolarSystemModule {
             funFact: config.funFact,
             realSize: config.realSize,
             moonCount: config.moons || 0,
-            moons: []
+            moons: [],
+            
+            // Real astronomical data for day/night cycle
+            realRotationPeriod: astroData.rotationPeriod || 24, // hours
+            axialTilt: astroData.axialTilt || 0,                // degrees
+            retrograde: astroData.retrograde || false,          // rotation direction
+            rotationPhase: Math.random() * Math.PI * 2          // starting rotation angle
         };
 
         // Add atmosphere for Earth with clouds
@@ -3743,6 +3921,10 @@ class SolarSystemModule {
         moon.castShadow = true;
         moon.receiveShadow = true;
 
+        // Get real astronomical data for this moon
+        const moonKey = config.name.toLowerCase();
+        const astroData = this.ASTRONOMICAL_DATA[moonKey] || {};
+        
         moon.userData = {
             name: config.name,
             type: 'Moon',
@@ -3752,7 +3934,13 @@ class SolarSystemModule {
             angle: Math.random() * Math.PI * 2,
             speed: config.speed,
             rotationSpeed: config.rotationSpeed || 0.001, // Add rotation
-            description: config.description
+            description: config.description,
+            
+            // Real astronomical data for day/night cycle
+            realRotationPeriod: astroData.rotationPeriod || 655.7, // hours (default: Moon's period)
+            axialTilt: astroData.axialTilt || 0,
+            retrograde: astroData.retrograde || false,
+            rotationPhase: Math.random() * Math.PI * 2
         };
 
         // Store moon reference
@@ -4927,12 +5115,31 @@ class SolarSystemModule {
                 planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
                 planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
                 
-                // Planet rotation (affected by rotation speed)
-                planet.rotation.y += planet.userData.rotationSpeed * rotationSpeed;
+                // REALISTIC PLANET ROTATION based on real astronomical data
+                if (planet.userData.realRotationPeriod && rotationSpeed > 0) {
+                    // Calculate elapsed real time in hours
+                    const elapsedMs = Date.now() - this.realTimeStart;
+                    const elapsedHours = (elapsedMs / 1000 / 3600) * this.timeAcceleration;
+                    
+                    // Calculate rotation angle based on real rotation period
+                    const rotationsComplete = elapsedHours / planet.userData.realRotationPeriod;
+                    let rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
+                    
+                    // Reverse rotation for retrograde planets (Venus, Uranus)
+                    if (planet.userData.retrograde) {
+                        rotationAngle = -rotationAngle;
+                    }
+                    
+                    // Apply rotation
+                    planet.rotation.y = rotationAngle;
+                    
+                    // Apply axial tilt (already set during creation, but ensure it stays)
+                    planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
+                }
                 
                 // Rotate clouds slightly faster than planet for Earth
-                if (planet.userData.clouds) {
-                    planet.userData.clouds.rotation.y += planet.userData.rotationSpeed * rotationSpeed * 1.1;
+                if (planet.userData.clouds && rotationSpeed > 0) {
+                    planet.userData.clouds.rotation.y = planet.rotation.y * 1.05; // 5% faster
                 }
 
                 // Update moons - orbit around their parent planet
@@ -4945,9 +5152,26 @@ class SolarSystemModule {
                             moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
                             moon.position.y = 0; // Keep moons in planet's equatorial plane
                             
-                            // Rotate moon on its axis
-                            if (moon.userData.rotationSpeed) {
-                                moon.rotation.y += moon.userData.rotationSpeed * rotationSpeed;
+                            // REALISTIC MOON ROTATION based on real astronomical data
+                            if (moon.userData.realRotationPeriod && rotationSpeed > 0) {
+                                // Calculate elapsed real time in hours
+                                const elapsedMs = Date.now() - this.realTimeStart;
+                                const elapsedHours = (elapsedMs / 1000 / 3600) * this.timeAcceleration;
+                                
+                                // Calculate rotation angle based on real rotation period
+                                const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
+                                let rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
+                                
+                                // Reverse rotation for retrograde moons
+                                if (moon.userData.retrograde) {
+                                    rotationAngle = -rotationAngle;
+                                }
+                                
+                                // Apply rotation
+                                moon.rotation.y = rotationAngle;
+                                
+                                // Apply axial tilt
+                                moon.rotation.z = (moon.userData.axialTilt || 0) * Math.PI / 180;
                             }
                             
                             // Debug: Log moon position occasionally
@@ -5482,11 +5706,19 @@ class SolarSystemModule {
     }
 
     toggleLabels(visible) {
-        if (!this.labels) return;
+        if (!this.labels || this.labels.length === 0) {
+            console.warn('⚠️ No labels to toggle');
+            return;
+        }
+        
+        // Use the passed visibility state, or toggle based on first label's current state
+        const newVisibility = visible !== undefined ? visible : !this.labels[0].visible;
         
         this.labels.forEach(label => {
-            label.visible = visible !== undefined ? visible : !label.visible;
+            label.visible = newVisibility;
         });
+        
+        console.log(`🏷️ Labels now: ${newVisibility ? 'VISIBLE' : 'HIDDEN'} (${this.labels.length} labels)`);
     }
 
     getExplorerContent(focusCallback) {

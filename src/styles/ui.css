@@ -5,16 +5,16 @@
     left: 0;
     right: 0;
     z-index: 100;
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.98), rgba(20, 20, 40, 0.98));
-    backdrop-filter: blur(15px);
-    padding: 15px 30px;
-    border-bottom: 3px solid rgba(74, 144, 226, 0.7);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.7);
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.92), rgba(20, 20, 40, 0.92));
+    backdrop-filter: blur(10px);
+    padding: 8px 20px;
+    border-bottom: 2px solid rgba(74, 144, 226, 0.5);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    animation: slideDown 0.5s ease-out;
+    animation: slideDown 0.4s ease-out;
 }
 
 @keyframes slideDown {
@@ -29,10 +29,11 @@
 }
 
 .logo h1 {
-    font-size: 26px;
+    font-size: 18px;
     color: #FFD700;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 215, 0, 0.4);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
     animation: glow 2s ease-in-out infinite alternate;
+    margin: 0;
 }
 
 @keyframes glow {
@@ -46,18 +47,18 @@
 
 #topic-nav {
     display: flex;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .nav-btn {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
     color: white;
-    border: 2px solid rgba(102, 126, 234, 0.5);
-    padding: 10px 20px;
-    border-radius: 12px;
+    border: 1.5px solid rgba(102, 126, 234, 0.4);
+    padding: 6px 12px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
     transition: all 0.3s ease;
@@ -89,18 +90,19 @@
 /* Info Panel */
 #info-panel {
     position: fixed;
-    top: 100px;
-    left: 20px;
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95), rgba(20, 20, 40, 0.95));
-    padding: 25px;
-    border-radius: 20px;
-    max-width: 350px;
-    border: 3px solid transparent;
+    top: 80px;
+    left: 10px;
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.9), rgba(20, 20, 40, 0.9));
+    padding: 15px;
+    border-radius: 12px;
+    max-width: 280px;
+    border: 2px solid transparent;
     background-clip: padding-box;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(100, 150, 255, 0.1);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(100, 150, 255, 0.08);
+    backdrop-filter: blur(8px);
     transition: all 0.3s ease;
     z-index: 50;
+    font-size: 14px;
 }
 
 #info-panel::before {
@@ -117,17 +119,17 @@
 }
 
 #info-panel h2 {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     color: #FFD700;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 700;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
 .info-content p {
-    margin: 10px 0;
-    font-size: 16px;
-    line-height: 1.6;
+    margin: 6px 0;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .info-content strong {
@@ -139,26 +141,27 @@
 }
 
 .description-box {
-    margin-top: 15px;
-    padding: 12px;
+    margin-top: 10px;
+    padding: 8px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    border-left: 4px solid #4a90e2;
+    border-radius: 8px;
+    border-left: 3px solid #4a90e2;
     font-style: italic;
+    font-size: 12px;
 }
 
 .close-btn {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 8px;
+    right: 8px;
     background: rgba(255, 0, 0, 0.3);
     border: none;
     color: white;
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -173,41 +176,41 @@
 /* Control Panel */
 #controls {
     position: fixed;
-    bottom: 20px;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95), rgba(20, 20, 40, 0.95));
-    padding: 20px 30px;
-    border-radius: 25px;
-    border: 2px solid rgba(74, 144, 226, 0.5);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.88), rgba(20, 20, 40, 0.88));
+    padding: 10px 15px;
+    border-radius: 18px;
+    border: 1.5px solid rgba(74, 144, 226, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
-    max-width: 90vw;
+    max-width: 95vw;
     z-index: 50;
 }
 
 .control-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
 }
 
 .control-group label {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
     color: #4FC3F7;
     white-space: nowrap;
 }
 
 .control-group input[type="range"] {
-    width: 150px;
-    height: 8px;
-    border-radius: 5px;
+    width: 100px;
+    height: 6px;
+    border-radius: 4px;
     background: rgba(255, 255, 255, 0.2);
     outline: none;
     -webkit-appearance: none;
@@ -219,22 +222,22 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: linear-gradient(135deg, #4a90e2, #9b59b6);
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(74, 144, 226, 0.8);
+    box-shadow: 0 0 8px rgba(74, 144, 226, 0.7);
 }
 
 .control-group input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: linear-gradient(135deg, #4a90e2, #9b59b6);
     cursor: pointer;
     border: none;
-    box-shadow: 0 0 10px rgba(74, 144, 226, 0.8);
+    box-shadow: 0 0 8px rgba(74, 144, 226, 0.7);
 }
 
 #controls button,
@@ -243,14 +246,14 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    padding: 12px 20px;
+    padding: 6px 12px;
     margin: 0;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 12px;
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
     transition: all 0.3s ease;
     text-transform: capitalize;
 }
@@ -281,21 +284,21 @@
 /* Object Explorer List */
 #object-list {
     position: fixed;
-    top: 100px;
-    right: 20px;
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.98), rgba(20, 20, 40, 0.98));
-    padding: 25px;
-    border-radius: 20px;
-    max-height: 75vh;
+    top: 80px;
+    right: 10px;
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.9), rgba(20, 20, 40, 0.9));
+    padding: 12px;
+    border-radius: 12px;
+    max-height: 70vh;
     overflow-y: auto;
-    border: 3px solid rgba(74, 144, 226, 0.7);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(100, 150, 255, 0.1);
-    backdrop-filter: blur(15px);
-    max-width: 320px;
+    border: 2px solid rgba(74, 144, 226, 0.5);
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(100, 150, 255, 0.08);
+    backdrop-filter: blur(10px);
+    max-width: 240px;
     scrollbar-width: thin;
     scrollbar-color: #4a90e2 rgba(255, 255, 255, 0.1);
     z-index: 50;
-    animation: slideInRight 0.5s ease-out;
+    animation: slideInRight 0.4s ease-out;
 }
 
 @keyframes slideInRight {
@@ -325,37 +328,37 @@
 
 #object-list h3 {
     color: #FFD700;
-    margin-bottom: 15px;
-    font-size: 22px;
+    margin-bottom: 10px;
+    font-size: 16px;
     font-weight: 700;
     text-align: center;
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
 .object-category {
-    margin: 20px 0;
+    margin: 12px 0;
 }
 
 .object-category h4 {
     color: #FF6B6B;
-    margin-bottom: 8px;
-    font-size: 16px;
+    margin-bottom: 5px;
+    font-size: 12px;
     font-weight: 600;
-    padding: 8px;
+    padding: 5px 8px;
     background: rgba(255, 107, 107, 0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 }
 
 .object-item {
-    padding: 12px 15px;
-    margin: 6px 0;
+    padding: 8px 10px;
+    margin: 4px 0;
     cursor: pointer;
-    border-radius: 12px;
-    font-size: 15px;
+    border-radius: 8px;
+    font-size: 12px;
     background: rgba(255, 255, 255, 0.05);
-    border-left: 4px solid transparent;
+    border-left: 3px solid transparent;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -428,26 +431,28 @@
 /* Help Button */
 #help-button {
     position: fixed;
-    top: 100px;
+    top: 80px;
     left: 50%;
     transform: translateX(-50%);
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 25px;
-    font-size: 16px;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 12px;
     font-weight: 700;
     font-family: 'Poppins', sans-serif;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    box-shadow: 0 2px 10px rgba(245, 87, 108, 0.3);
     transition: all 0.3s ease;
     z-index: 51;
+    opacity: 0.85;
 }
 
 #help-button:hover {
     transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.5);
+    opacity: 1;
 }
 
 /* Tooltip */
