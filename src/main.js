@@ -2072,28 +2072,49 @@ class SolarSystemModule {
                 const nx = x / size;
                 const ny = y / size;
                 
-                // REPLACE TURBULENCE WITH SIMPLE MATH-BASED TERRAIN
-                // This is GUARANTEED to produce predictable elevation values
-                // Using sine/cosine to create realistic continent-like patterns
+                // REALISTIC EARTH-LIKE CONTINENTS
+                // Approximate major landmasses using mathematical patterns
                 
-                // Large continental masses (3-4 major continents)
-                const continents = Math.sin(lon * 3.5 + Math.cos(lat * 2) * 0.5) * 0.6;
+                // Convert to normalized coordinates (0-1)
+                const lonNorm = lon / (Math.PI * 2);  // 0 to 1
+                const latNorm01 = (lat + Math.PI / 2) / Math.PI;  // 0 to 1
                 
-                // Mountain ranges following continental edges
-                const mountains = Math.sin(lon * 7 + lat * 3) * 0.3;
+                // Americas (Western Hemisphere, lon ~0.75-0.95)
+                const americas = Math.exp(-Math.pow((lonNorm - 0.85) * 6, 2)) * 
+                                (1 - Math.abs(latNorm01 - 0.5) * 1.5);
                 
-                // Medium-scale terrain features
-                const terrain = Math.cos(lon * 12 + lat * 8) * 0.15;
+                // Eurasia-Africa (Eastern Hemisphere, lon ~0-0.4)
+                const eurasia = Math.exp(-Math.pow(lonNorm * 4, 2)) * 
+                               (1 - Math.abs(latNorm01 - 0.55) * 1.2) * 1.2;
+                const africa = Math.exp(-Math.pow((lonNorm - 0.15) * 8, 2)) * 
+                              Math.exp(-Math.pow((latNorm01 - 0.35) * 4, 2)) * 1.5;
                 
-                // Fine details using noise
-                const details = noise(nx * 20, ny * 20, 0) * 0.1 - 0.05;
+                // Australia (lon ~0.55-0.65, lat ~0.2-0.3)
+                const australia = Math.exp(-Math.pow((lonNorm - 0.6) * 12, 2)) * 
+                                 Math.exp(-Math.pow((latNorm01 - 0.25) * 8, 2)) * 0.8;
                 
-                // Combine all features - range approximately -1.0 to +1.0
-                const elevation = continents + mountains + terrain + details;
+                // Antarctica (bottom, all longitudes)
+                const antarctica = Math.exp(-Math.pow((latNorm01 - 0.05) * 8, 2)) * 0.9;
+                
+                // Greenland (lon ~0.95-1.0, lat ~0.75-0.85)
+                const greenland = Math.exp(-Math.pow((lonNorm - 0.97) * 20, 2)) * 
+                                 Math.exp(-Math.pow((latNorm01 - 0.8) * 10, 2)) * 0.7;
+                
+                // Combine all continents
+                const continents = Math.max(americas, eurasia, africa, australia, antarctica, greenland);
+                
+                // Add mountain ranges and terrain detail
+                const mountains = Math.sin(lon * 15 + lat * 8) * 0.15 * continents;
+                const terrain = noise(nx * 10, ny * 10, 0) * 0.2 * continents;
+                const details = noise(nx * 30, ny * 30, 1) * 0.1;
+                
+                // Final elevation: continents provide base, details add variation
+                // Range: approximately -0.2 to +1.5
+                const elevation = continents * 0.8 + mountains + terrain + details - 0.2;
                 
                 // DEBUG: Log elevation range and raw values
                 if (x === 512 && y % 200 === 0) {
-                    console.log(`📊 Elevation: ${elevation.toFixed(4)} (cont:${continents.toFixed(3)}, mtn:${mountains.toFixed(3)}, terrain:${terrain.toFixed(3)}) at lat ${(lat * 180/Math.PI).toFixed(1)}°`);
+                    console.log(`📊 Elevation: ${elevation.toFixed(4)} (continents:${continents.toFixed(3)}, details:${details.toFixed(3)}) at lat ${(lat * 180/Math.PI).toFixed(1)}° lon ${(lon * 180/Math.PI).toFixed(1)}°`);
                 }
                 
                 // EXTRA DEBUG: Track min/max elevation
@@ -2104,17 +2125,17 @@ class SolarSystemModule {
                 window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
                 window._earthElevationStats.samples++;
                 
-                // Polar ice caps
-                if (latNorm > 0.92) {
+                // Polar ice caps - Arctic and Antarctic
+                if (latNorm > 0.92 || latNorm01 < 0.08) {
                     const iceVariation = noise(nx * 30, ny * 30, 1) * 20;
                     data[idx] = 240 + iceVariation;
                     data[idx + 1] = 250 + iceVariation;
                     data[idx + 2] = 255;
                 }
-                // Land areas - elevation ranges from -1.0 to +1.0
-                // Use threshold of 0.0 for ~50% land, ~50% ocean (realistic Earth)
-                else if (elevation > 0.0) {
-                    const landHeight = Math.max(0, elevation) * 3;
+                // Land areas - elevation ranges from -0.2 to +1.5
+                // Use threshold of 0.15 for realistic ~30% land coverage
+                else if (elevation > 0.15) {
+                    const landHeight = (elevation - 0.15) * 2;
                     const climate = (1 - latNorm) * 0.7; // Warmer at equator
                     const precipitation = turbulence(nx * 6, ny * 6, 64) / 100;
                     
@@ -2147,16 +2168,16 @@ class SolarSystemModule {
                         data[idx + 2] = 50 + grassVar * 0.8;
                     }
                 }
-                // Shallow water - BRIGHT for visibility (between -0.1 and 0.0)
-                else if (elevation > -0.1) {
-                    const shallow = (elevation + 0.1) * 40;
-                    data[idx] = 110 + shallow * 2; // Bright aqua
+                // Shallow water - BRIGHT for visibility (between 0.05 and 0.15)
+                else if (elevation > 0.05) {
+                    const shallow = (elevation - 0.05) * 30;
+                    data[idx] = 100 + shallow * 3; // Bright aqua
                     data[idx + 1] = 200 - shallow;
                     data[idx + 2] = 240 - shallow * 2;
                 }
-                // Deep ocean - BRIGHTER blues for visibility (below -0.1)
+                // Deep ocean - BRIGHTER blues for visibility (below 0.05)
                 else {
-                    const depth = Math.abs(elevation + 0.1) * 0.8;
+                    const depth = Math.max(0, 0.05 - elevation) * 2;
                     data[idx] = Math.max(40, 70 - depth * 10); // Much brighter base
                     data[idx + 1] = Math.max(80, 130 - depth * 30);
                     data[idx + 2] = Math.max(150, 200 - depth * 30);
@@ -2198,13 +2219,13 @@ class SolarSystemModule {
         // DEBUG: Log final elevation statistics
         if (window._earthElevationStats) {
             console.log(`📊 Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
-            console.log(`📊 ✨ NEW: Math-based terrain (sin/cos) - GUARANTEED predictable values!`);
-            console.log(`📊 Land threshold: 0.0, Shallow threshold: -0.1 (elevation range: -1.0 to +1.0)`);
-            console.log(`📊 Continental pattern: sin(lon*3.5) creates 3-4 major landmasses`);
+            console.log(`📊 🌍 REALISTIC CONTINENTS: Americas, Eurasia, Africa, Australia, Antarctica`);
+            console.log(`📊 Land threshold: 0.15, Shallow threshold: 0.05 (elevation range: ~-0.2 to +1.5)`);
+            console.log(`📊 Using Gaussian distributions to approximate real Earth geography`);
             const range = window._earthElevationStats.max - window._earthElevationStats.min;
-            const landPercent = window._earthElevationStats.max > 0.0 ? 
-                ((window._earthElevationStats.max - 0.0) / range * 100).toFixed(1) : 0;
-            console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ~50% pixels above 0.0 threshold`);
+            const landPercent = window._earthElevationStats.max > 0.15 ? 
+                ((window._earthElevationStats.max - 0.15) / range * 100).toFixed(1) : 0;
+            console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ~30% land coverage (like real Earth)`);
         }
         
         // CRITICAL TEST: Verify canvas actually has color data
