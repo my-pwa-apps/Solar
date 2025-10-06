@@ -1070,6 +1070,12 @@ class SceneManager {
         const { x, y, z } = CONFIG.CAMERA.startPos;
         this.camera.position.set(x, y, z);
         this.controls.target.set(0, 0, 0);
+        
+        // CRITICAL FIX: Reset control limits to defaults
+        // Prevents issues after focusing on distant objects
+        this.controls.minDistance = CONFIG.CONTROLS.minDistance;
+        this.controls.maxDistance = CONFIG.CONTROLS.maxDistance;
+        
         this.controls.update();
     }
 
@@ -5108,6 +5114,12 @@ class SolarSystemModule {
     }
 
     focusOnObject(object, camera, controls) {
+        // CRITICAL FIX: Reset controls to defaults FIRST to prevent broken state
+        // After focusing on distant objects (asteroid belt, Voyager), limits become huge
+        // This prevents focusing on smaller objects afterward
+        controls.minDistance = CONFIG.CONTROLS.minDistance;
+        controls.maxDistance = CONFIG.CONTROLS.maxDistance;
+        
         const distance = Math.max(object.userData.radius * 5, 10);
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
@@ -5115,13 +5127,13 @@ class SolarSystemModule {
         // Store reference for tracking
         this.focusedObject = object;
         
-        // Configure controls for focused object inspection
-        const originalMinDistance = controls.minDistance;
-        const originalMaxDistance = controls.maxDistance;
+        // Set REASONABLE dynamic zoom limits based on object size
+        // Cap maxDistance to prevent excessive values from large objects
+        const minLimit = Math.max(object.userData.radius * 1.5, 1);
+        const maxLimit = Math.min(object.userData.radius * 50, 5000);
         
-        // Set dynamic zoom limits based on object size
-        controls.minDistance = object.userData.radius * 1.5; // Can zoom in close
-        controls.maxDistance = object.userData.radius * 50;  // Can zoom out far
+        controls.minDistance = minLimit;
+        controls.maxDistance = maxLimit;
         
         // Enable full rotation around object
         controls.enableRotate = true;
@@ -5712,6 +5724,10 @@ class QuantumModule {
     }
 
     focusOnObject(object, camera, controls) {
+        // CRITICAL FIX: Reset controls to defaults FIRST
+        controls.minDistance = CONFIG.CONTROLS.minDistance;
+        controls.maxDistance = CONFIG.CONTROLS.maxDistance;
+        
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
         
@@ -5720,13 +5736,12 @@ class QuantumModule {
         
         const distance = Math.max(object.userData.radius * 6, 8);
         
-        // Configure controls for focused object inspection
-        const originalMinDistance = controls.minDistance;
-        const originalMaxDistance = controls.maxDistance;
+        // Set REASONABLE dynamic zoom limits
+        const minLimit = Math.max(object.userData.radius * 1.5, 1);
+        const maxLimit = Math.min(object.userData.radius * 50, 5000);
         
-        // Set dynamic zoom limits based on object size
-        controls.minDistance = object.userData.radius * 1.5; // Can zoom in close
-        controls.maxDistance = object.userData.radius * 50;  // Can zoom out far
+        controls.minDistance = minLimit;
+        controls.maxDistance = maxLimit;
         
         // Enable full rotation around object
         controls.enableRotate = true;
