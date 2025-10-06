@@ -1312,6 +1312,23 @@ class UIManager {
             this.elements.helpModal.classList.add('hidden');
         }
     }
+    
+    setupSolarSystemUI(solarSystemModule, sceneManager) {
+        // Setup explorer panel with Solar System content
+        const focusCallback = (obj) => {
+            if (obj) {
+                const info = solarSystemModule.getObjectInfo(obj);
+                this.updateInfoPanel(info);
+                solarSystemModule.focusOnObject(obj, sceneManager.camera, sceneManager.controls);
+            }
+        };
+        
+        const explorerContent = solarSystemModule.getExplorerContent(focusCallback);
+        this.updateExplorer(explorerContent);
+        
+        // Hide loading
+        this.hideLoading();
+    }
 }
 
 // ===========================
@@ -6502,8 +6519,9 @@ class App {
     constructor() {
         this.sceneManager = null;
         this.uiManager = null;
-        this.topicManager = null;
+        this.solarSystemModule = null;
         this.lastTime = 0;
+        this.timeSpeed = 1.0;
         
         this.init();
     }
@@ -6513,9 +6531,8 @@ class App {
             // Initialize managers
             this.sceneManager = new SceneManager();
             this.uiManager = new UIManager();
-            this.topicManager = new TopicManager(this.sceneManager, this.uiManager);
-
-            this.uiManager.showLoading('Initializing application...');
+            
+            this.uiManager.showLoading('Initializing Space Explorer...');
             
             // Setup global UI functions
             this.setupGlobalFunctions();
@@ -6523,8 +6540,15 @@ class App {
             // Setup help button
             this.setupHelpButton();
 
-            // Load initial topic
-            await this.topicManager.loadTopic('solar-system');
+            // Load Solar System module directly
+            this.solarSystemModule = new SolarSystemModule(this.uiManager);
+            await this.solarSystemModule.init(this.sceneManager);
+            
+            // Setup UI for Solar System
+            this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
+            
+            // Setup controls
+            this.setupControls();
 
             // Start animation loop with frame limiting
             this.sceneManager.animate(() => {
@@ -6538,15 +6562,20 @@ class App {
                 // Limit to ~60 FPS and prevent huge jumps
                 if (deltaTime >= CONFIG.PERFORMANCE.frameTime / 1000) {
                     this.lastTime = currentTime;
-                    this.topicManager.update(deltaTime);
+                    
+                    // Update Solar System module
+                    if (this.solarSystemModule) {
+                        this.solarSystemModule.update(deltaTime, this.timeSpeed, 
+                            this.sceneManager.camera, this.sceneManager.controls);
+                    }
                 }
             });
 
-            console.log('? Scientific Explorer initialized successfully!');
-            console.log(`?? Performance: ${this.sceneManager.renderer.info.memory.geometries} geometries, ${this.sceneManager.renderer.info.memory.textures} textures`);
+            console.log('🚀 Space Explorer initialized successfully!');
+            console.log(`📊 Performance: ${this.sceneManager.renderer.info.memory.geometries} geometries, ${this.sceneManager.renderer.info.memory.textures} textures`);
         } catch (error) {
-            console.error('? Failed to initialize application:', error);
-            this.sceneManager?.showError('Failed to start application. Please refresh the page.');
+            console.error('❌ Failed to initialize Space Explorer:', error);
+            this.sceneManager?.showError('Failed to start Space Explorer. Please refresh the page.');
         }
     }
 
@@ -6567,63 +6596,62 @@ class App {
         if (helpButton) {
             helpButton.addEventListener('click', () => {
                 this.uiManager.showHelp(`
-                    <h3>?? Controls</h3>
-                    <p>� <strong>Click & Drag:</strong> Rotate view around selected object</p>
-                    <p>� <strong>Scroll:</strong> Zoom in/out (closer or farther from object)</p>
-                    <p>� <strong>Right Click & Drag:</strong> Pan camera position</p>
-                    <p>� <strong>Click Objects:</strong> Select and focus on object</p>
-                    <p>� <strong>Explorer Panel:</strong> Click object names to jump to them</p>
+                    <h3>🎮 Controls</h3>
+                    <p>🖱️ <strong>Click & Drag:</strong> Rotate view around selected object</p>
+                    <p>🖱️ <strong>Scroll:</strong> Zoom in/out (closer or farther from object)</p>
+                    <p>🖱️ <strong>Right Click & Drag:</strong> Pan camera position</p>
+                    <p>🖱️ <strong>Click Objects:</strong> Select and focus on object</p>
+                    <p>🖱️ <strong>Explorer Panel:</strong> Click object names to jump to them</p>
                     
-                    <h3>?? Keyboard Shortcuts</h3>
-                    <p>� <span class="keyboard-shortcut">H</span> Show this help</p>
-                    <p>� <span class="keyboard-shortcut">R</span> Reset camera view</p>
-                    <p>� <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
-                    <p>� <span class="keyboard-shortcut">D</span> Toggle object details</p>
-                    <p>� <span class="keyboard-shortcut">C</span> Toggle comet tails (off for VR/AR)</p>
-                    <p>� <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
-                    <p>� <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
-                    <p>� <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
-                    <p>� <span class="keyboard-shortcut">ESC</span> Close panels</p>
+                    <h3>⌨️ Keyboard Shortcuts</h3>
+                    <p>⌨️ <span class="keyboard-shortcut">H</span> Show this help</p>
+                    <p>⌨️ <span class="keyboard-shortcut">R</span> Reset camera view</p>
+                    <p>⌨️ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
+                    <p>⌨️ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
+                    <p>⌨️ <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
+                    <p>⌨️ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
+                    <p>⌨️ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
+                    <p>⌨️ <span class="keyboard-shortcut">ESC</span> Close panels</p>
                     
-                    <h3>?? Object Inspection</h3>
-                    <p>� <strong>After selecting an object:</strong></p>
+                    <h3>🔍 Object Inspection</h3>
+                    <p>👁️ <strong>After selecting an object:</strong></p>
                     <p>  - Drag to rotate camera around the object</p>
                     <p>  - Scroll to zoom in for close-up views</p>
                     <p>  - View object from all sides and angles</p>
                     <p>  - Camera stays focused as object moves in orbit</p>
                     
-                    <h3>?? Settings</h3>
-                    <p>� <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
-                    <p>� <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
-                    <p>� <strong>Reset Button:</strong> Return camera to starting position</p>
+                    <h3>⚙️ Settings</h3>
+                    <p>⏱️ <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
+                    <p>💡 <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
+                    <p>🔄 <strong>Reset Button:</strong> Return camera to starting position</p>
                     
-                    <h3>?? Topics</h3>
-                    <p>� <strong>Solar System:</strong> Explore our solar system</p>
-                    <p>� <strong>Quantum Physics:</strong> Visualize particle-wave duality</p>
-                    <p>� <strong>More topics:</strong> Coming soon!</p>
-                    
-                    <h3>?? VR/AR Mode</h3>
-                    <p>� Click "Enter VR" or "Enter AR" buttons (bottom right)</p>
-                    <p>� Requires WebXR-compatible device</p>
-                    <p>� AR mode uses passthrough for mixed reality</p>
-                    <p>� <strong>VR Controls:</strong></p>
+                    <h3>🥽 VR Mode</h3>
+                    <p>🥽 Click "Enter VR" button (bottom right)</p>
+                    <p>🥽 Requires WebXR-compatible VR headset</p>
+                    <p>🥽 <strong>VR Controls:</strong></p>
                     <p>  - Left stick: Move forward/backward/strafe</p>
-                    <p>  - Right stick: Rotate camera view</p>
-                    <p>  - Trigger: Select objects</p>
-                    <p>� <strong>Tip:</strong> Turn OFF comet tails (press C) before entering VR/AR to avoid visual flicker</p>
+                    <p>  - Right stick: Turn left/right, move up/down</p>
+                    <p>  - Trigger (hold): Sprint mode while moving</p>
+                    <p>  - Grip button: Toggle VR menu (pause, controls, etc.)</p>
+                    <p>  - Point + Trigger: Select planets</p>
                     
-                    <h3>?? Tips</h3>
-                    <p>� Increase brightness to see dark sides of planets</p>
-                    <p>� Use speed slider to watch orbits in fast-forward</p>
-                    <p>� Click objects directly or use the explorer panel</p>
-                    <p>� Zoom in close to see surface details</p>
-                    <p>� Rotate around objects to view from all angles</p>
+                    <h3>💡 Tips</h3>
+                    <p>💡 Increase brightness to see dark sides of planets</p>
+                    <p>💡 Use speed slider to watch orbits in fast-forward</p>
+                    <p>💡 Click objects directly or use the explorer panel</p>
+                    <p>💡 Zoom in close to see surface details and textures</p>
+                    <p>💡 Rotate around objects to view from all angles</p>
                     
-                    <h3>? Performance</h3>
-                    <p>� Optimized for 60 FPS on modern devices</p>
-                    <p>� Reduced geometry for better mobile performance</p>
-                    <p>� Hardware-accelerated WebGL rendering</p>
-                    <p>� Press <span class="keyboard-shortcut">F</span> to show FPS counter</p>
+                    <h3>⚡ Performance</h3>
+                    <p>⚡ Optimized for 60 FPS on modern devices</p>
+                    <p>⚡ Adaptive quality for mobile devices</p>
+                    <p>⚡ Hardware-accelerated WebGL rendering</p>
+                    <p>⚡ Press <span class="keyboard-shortcut">F</span> to show FPS counter</p>
+                    
+                    <h3>🚀 Explore the Solar System!</h3>
+                    <p>🪐 Navigate through our solar system</p>
+                    <p>☀️ Learn about the Sun, planets, moons, and more</p>
+                    <p>🌍 Discover fascinating facts about each celestial body</p>
                 `);
             }, { passive: true });
         }
@@ -6633,6 +6661,107 @@ class App {
         
         // Setup FPS counter
         this.setupFPSCounter();
+    }
+    
+    setupControls() {
+        // Time speed slider
+        const timeSpeedSlider = document.getElementById('time-speed');
+        const speedValue = document.getElementById('speed-value');
+        if (timeSpeedSlider && speedValue) {
+            timeSpeedSlider.addEventListener('input', (e) => {
+                this.timeSpeed = parseFloat(e.target.value) / 10;
+                speedValue.textContent = `${this.timeSpeed.toFixed(1)}x`;
+            }, { passive: true });
+        }
+
+        // Brightness control
+        const brightnessSlider = document.getElementById('brightness');
+        const brightnessValue = document.getElementById('brightness-value');
+        if (brightnessSlider && brightnessValue) {
+            brightnessSlider.addEventListener('input', (e) => {
+                const brightnessMultiplier = parseFloat(e.target.value) / 100;
+                brightnessValue.textContent = `${e.target.value}%`;
+                this.sceneManager.updateBrightness(brightnessMultiplier);
+            }, { passive: true });
+        }
+
+        // Scale toggle button
+        const scaleButton = document.getElementById('toggle-scale');
+        if (scaleButton) {
+            scaleButton.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    this.solarSystemModule.realisticScale = !this.solarSystemModule.realisticScale;
+                    scaleButton.classList.toggle('active');
+                    scaleButton.textContent = this.solarSystemModule.realisticScale ? 
+                        '📏 Realistic Scale' : '📏 Educational Scale';
+                    
+                    // Recalculate positions with new scale
+                    this.solarSystemModule.updateScale();
+                }
+            }, { passive: true });
+        }
+        
+        // Labels toggle button
+        const labelsButton = document.getElementById('toggle-details');
+        if (labelsButton) {
+            labelsButton.textContent = '📊 Labels OFF';
+            labelsButton.classList.remove('toggle-on');
+            
+            labelsButton.addEventListener('click', () => {
+                if (this.solarSystemModule && this.solarSystemModule.toggleLabels) {
+                    if (this.sceneManager) {
+                        this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
+                        this.solarSystemModule.toggleLabels(this.sceneManager.labelsVisible);
+                        labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
+                        labelsButton.textContent = this.sceneManager.labelsVisible ? 
+                            '📊 Labels ON' : '📊 Labels OFF';
+                        if (DEBUG.enabled) console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+                    }
+                }
+            }, { passive: true });
+        }
+        
+        // Reset view button
+        const resetButton = document.getElementById('reset-view');
+        if (resetButton) {
+            resetButton.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    this.solarSystemModule.focusedObject = null;
+                }
+                this.sceneManager.resetCamera();
+            }, { passive: true });
+        }
+
+        // Canvas click for object selection
+        this.sceneManager.renderer.domElement.addEventListener('click', (e) => {
+            this.handleCanvasClick(e);
+        });
+    }
+    
+    handleCanvasClick(event) {
+        if (!this.solarSystemModule) return;
+        
+        const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
+        const mouse = new THREE.Vector2(
+            ((event.clientX - rect.left) / rect.width) * 2 - 1,
+            -((event.clientY - rect.top) / rect.height) * 2 + 1
+        );
+
+        this.sceneManager.raycaster.setFromCamera(mouse, this.sceneManager.camera);
+        const intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
+
+        if (intersects.length > 0) {
+            let target = intersects[0].object;
+            while (target.parent && !target.userData.name) {
+                target = target.parent;
+            }
+
+            if (target.userData && target.userData.name) {
+                const info = this.solarSystemModule.getObjectInfo(target);
+                this.uiManager.updateInfoPanel(info);
+                this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
+            }
+        }
     }
     
     setupKeyboardShortcuts() {

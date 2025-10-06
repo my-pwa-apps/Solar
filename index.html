@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Interactive 3D VR/AR Solar System and Quantum Physics Explorer for all ages">
-    <meta name="theme-color" content="#1a1a2e">
-    <title>🌌 Scientific VR/AR Explorer - Solar System & Quantum Physics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive 3D VR Space Explorer - Explore our Solar System in stunning detail">
+    <title>🚀 Space Explorer - Interactive 3D Solar System</title>
     
     <!-- Favicon (using data URI to prevent 404) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🌌</text></svg>">
@@ -23,30 +22,8 @@
 <body>
     <header id="main-header" role="banner">
         <div class="logo">
-            <h1>🌌 Scientific Explorer</h1>
+            <h1>🚀 Space Explorer</h1>
         </div>
-        <nav id="topic-nav" role="navigation" aria-label="Topic navigation">
-            <button class="nav-btn active" data-topic="solar-system" aria-label="Explore Solar System">
-                <span class="icon">🪐</span>
-                <span class="label">Solar System</span>
-            </button>
-            <button class="nav-btn" data-topic="quantum" aria-label="Explore Quantum Physics">
-                <span class="icon">⚛️</span>
-                <span class="label">Quantum Physics</span>
-            </button>
-            <button class="nav-btn" data-topic="relativity" aria-label="Explore Relativity">
-                <span class="icon">⏱️</span>
-                <span class="label">Relativity</span>
-            </button>
-            <button class="nav-btn" data-topic="atoms" aria-label="Explore Atomic Structure">
-                <span class="icon">🔬</span>
-                <span class="label">Atomic Structure</span>
-            </button>
-            <button class="nav-btn" data-topic="dna" aria-label="Explore DNA & Genetics">
-                <span class="icon">🧬</span>
-                <span class="label">DNA & Genetics</span>
-            </button>
-        </nav>
     </header>
     <main id="canvas-container" role="main" aria-label="3D visualization canvas"></main>
     
@@ -105,7 +82,7 @@
     <div id="help-modal" class="modal hidden" role="dialog" aria-labelledby="help-title" aria-modal="true">
         <div class="modal-content">
             <button class="close-btn" onclick="window.closeHelpModal()" aria-label="Close help dialog">✕</button>
-            <h2 id="help-title">👋 Welcome to Scientific Explorer!</h2>
+            <h2 id="help-title">👋 Welcome to Space Explorer!</h2>
             <div id="help-content" role="document"></div>
         </div>
     </div>
