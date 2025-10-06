@@ -295,8 +295,22 @@ class SceneManager {
                     session.environmentBlendMode === 'alpha-blend') {
                     this.scene.background = null; // Transparent for AR
                 }
-                // DON'T show VR UI panel automatically - let user toggle with grip
-                if (this.vrUIPanel) this.vrUIPanel.visible = false;
+                
+                // Show welcome message and instructions
+                console.log('🥽 VR SESSION STARTED');
+                console.log('📋 CONTROLS:');
+                console.log('   🕹️ Left Stick: Move forward/back/strafe');
+                console.log('   🕹️ Right Stick: Turn left/right, move up/down');
+                console.log('   🎯 Trigger: Sprint mode (hold while moving)');
+                console.log('   🤏 Grip Button: Toggle VR menu (pause, controls, etc.)');
+                console.log('   👉 Point + Trigger: Select planets');
+                console.log('');
+                console.log('💡 TIP: Press GRIP BUTTON to open VR menu!');
+                
+                // Hide VR UI panel initially - let user toggle with grip
+                if (this.vrUIPanel) {
+                    this.vrUIPanel.visible = false;
+                }
             });
 
             // Handle XR session end
@@ -573,13 +587,31 @@ class SceneManager {
         // Only toggle menu if trigger not held (grip alone = menu, grip+trigger = zoom)
         if (!triggerHeld && this.vrUIPanel) {
             this.vrUIPanel.visible = !this.vrUIPanel.visible;
-            console.log(`?? VR Menu toggled - now ${this.vrUIPanel.visible ? 'VISIBLE' : 'HIDDEN'}`);
-            console.log(`?? Menu position:`, this.vrUIPanel.position);
-            console.log(`?? Menu parent:`, this.vrUIPanel.parent?.constructor.name);
+            
+            // Position panel in front of user when showing
+            if (this.vrUIPanel.visible) {
+                // Place 2.5 meters in front, at eye level
+                this.vrUIPanel.position.set(0, 1.6, -2.5);
+                // Face the user (rotate to face +Z direction)
+                this.vrUIPanel.rotation.set(0, 0, 0);
+                
+                if (DEBUG.VR) {
+                    console.log('🥽 VR Menu OPENED');
+                    console.log('   Position:', this.vrUIPanel.position);
+                    console.log('   Press grip button again to close');
+                }
+            } else {
+                if (DEBUG.VR) console.log('🥽 VR Menu CLOSED');
+            }
+            
+            // Update status text on panel
+            if (this.vrUIPanel.visible) {
+                this.updateVRStatus('VR Menu Active - Use laser to interact');
+            }
         } else if (triggerHeld) {
-            console.log('?? Grip pressed but trigger also held - no menu toggle');
+            if (DEBUG.VR) console.log('🥽 Grip+Trigger held - zoom mode (menu disabled)');
         } else if (!this.vrUIPanel) {
-            console.log('? Grip pressed but vrUIPanel does not exist!');
+            console.warn('⚠️ VR UI Panel not initialized!');
         }
     }
     
@@ -633,61 +665,75 @@ class SceneManager {
     }
     
     handleVRAction(action) {
-        console.log(`?? handleVRAction called with action="${action}"`);
+        if (DEBUG.VR) console.log(`🥽 VR Action: ${action}`);
         
         // Get current app state
         const app = window.app || this;
         
         switch(action) {
             case 'pauseall':
-                // Pause everything
-                this.pauseMode = 'all';
+                // Pause everything - set timeSpeed to 0
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = 0;
+                    this.updateVRStatus('⏸️ PAUSED - Everything Stopped');
+                    this.updateVRUI();
+                    console.log('⏸️ VR: Paused all motion');
                 }
-                this.updateVRStatus('?? PAUSED - Everything Stopped');
-                this.updateVRUI();
                 break;
+                
             case 'pauseorbit':
-                // Pause solar orbits, but keep rotations and moon orbits
-                this.pauseMode = 'orbital';
-                if (app.topicManager && app.topicManager.timeSpeed === 0) {
-                    app.topicManager.timeSpeed = 1; // Resume if paused
+                // Pause solar orbits only (planets stop moving but keep rotating)
+                if (app.topicManager && app.topicManager.currentModule) {
+                    const module = app.topicManager.currentModule;
+                    if (module.pauseOrbits !== undefined) {
+                        module.pauseOrbits = true;
+                        this.updateVRStatus('⏸️ ORBITAL PAUSE - Planets Frozen in Orbit');
+                        this.updateVRUI();
+                        console.log('⏸️ VR: Paused orbital motion only');
+                    }
                 }
-                this.updateVRStatus('?? ORBITAL PAUSE - Planets Frozen, Still Rotating');
-                this.updateVRUI();
                 break;
+                
             case 'play':
-                // Play everything
-                this.pauseMode = 'none';
+                // Resume everything
                 if (app.topicManager) {
-                    app.topicManager.timeSpeed = app.topicManager.timeSpeed || 1;
+                    if (app.topicManager.timeSpeed === 0) {
+                        app.topicManager.timeSpeed = 1;
+                    }
+                    if (app.topicManager.currentModule) {
+                        app.topicManager.currentModule.pauseOrbits = false;
+                    }
+                    this.updateVRStatus('▶️ PLAYING - All Motion Active');
+                    this.updateVRUI();
+                    console.log('▶️ VR: Resumed motion');
                 }
-                this.updateVRStatus('?? PLAYING - All Motion Active');
-                this.updateVRUI();
                 break;
             case 'speed++':
                 if (app.topicManager) {
-                    app.topicManager.timeSpeed = Math.min(app.topicManager.timeSpeed + 1, 10);
-                    this.updateVRStatus(`? Speed: ${app.topicManager.timeSpeed}x`);
+                    const currentSpeed = app.topicManager.timeSpeed;
+                    app.topicManager.timeSpeed = Math.min(currentSpeed + 1, 10);
+                    this.updateVRStatus(`⚡ Speed: ${app.topicManager.timeSpeed.toFixed(1)}x`);
                     this.updateVRUI();
+                    console.log(`⚡ VR: Speed increased to ${app.topicManager.timeSpeed}x`);
                 }
                 break;
+                
             case 'speed--':
                 if (app.topicManager) {
-                    app.topicManager.timeSpeed = Math.max(app.topicManager.timeSpeed - 1, 0);
-                    if (app.topicManager.timeSpeed === 0) {
-                        this.pauseMode = 'all';
-                    }
-                    this.updateVRStatus(`? Speed: ${app.topicManager.timeSpeed}x`);
+                    const currentSpeed = app.topicManager.timeSpeed;
+                    app.topicManager.timeSpeed = Math.max(currentSpeed - 1, 0);
+                    this.updateVRStatus(`⚡ Speed: ${app.topicManager.timeSpeed.toFixed(1)}x`);
                     this.updateVRUI();
+                    console.log(`⚡ VR: Speed decreased to ${app.topicManager.timeSpeed}x`);
                 }
                 break;
+                
             case 'speedreset':
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = 1;
-                    this.updateVRStatus('?? Speed Reset to 1x');
+                    this.updateVRStatus('⚡ Speed Reset to 1.0x');
                     this.updateVRUI();
+                    console.log('⚡ VR: Speed reset to 1x');
                 }
                 break;
             case 'brightup':
@@ -925,16 +971,17 @@ class SceneManager {
         if (!session) return;
         
         const inputSources = session.inputSources;
-        const xrCamera = this.renderer.xr.getCamera();
         
-        // Get camera direction vectors for INTUITIVE movement
-        const cameraDirection = new THREE.Vector3();
-        xrCamera.getWorldDirection(cameraDirection);
+        // FIX: Use DOLLY rotation for consistent movement direction
+        // Get dolly's forward direction (based on its rotation)
+        const dollyForward = new THREE.Vector3(0, 0, -1);
+        dollyForward.applyQuaternion(this.dolly.quaternion);
+        dollyForward.y = 0; // Keep horizontal
+        dollyForward.normalize();
         
-        const cameraRight = new THREE.Vector3();
-        cameraRight.crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0)).normalize();
-        
-        const cameraUp = new THREE.Vector3(0, 1, 0);
+        // Get dolly's right direction (perpendicular to forward)
+        const dollyRight = new THREE.Vector3();
+        dollyRight.crossVectors(dollyForward, new THREE.Vector3(0, 1, 0)).normalize();
         
         // Track if trigger is held for sprint
         let sprintMultiplier = 1.0;
@@ -992,24 +1039,17 @@ class SceneManager {
             // LEFT CONTROLLER: MOVEMENT (like FPS games)
             // ============================================
             if (handedness === 'left') {
-                const baseSpeed = 0.25 * sprintMultiplier; // Increased for better feel
+                const baseSpeed = 0.25 * sprintMultiplier;
                 
                 // Forward/Backward & Strafe
                 if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
                     // FORWARD/BACKWARD: Push stick FORWARD to move FORWARD
+                    // Use dolly's forward direction (not camera) for consistent movement
                     // In VR controllers, pushing stick forward gives NEGATIVE Y value
-                    const forwardMovement = cameraDirection.clone();
-                    forwardMovement.y = 0; // Stay horizontal
-                    forwardMovement.normalize();
+                    this.dolly.position.add(dollyForward.clone().multiplyScalar(-stickY * baseSpeed));
                     
-                    // INVERTED: Negative stickY = forward (intuitive like FPS)
-                    this.dolly.position.add(forwardMovement.multiplyScalar(-stickY * baseSpeed));
-                    
-                    // STRAFE LEFT/RIGHT
-                    const strafeMovement = cameraRight.clone();
-                    strafeMovement.y = 0;
-                    strafeMovement.normalize();
-                    this.dolly.position.add(strafeMovement.multiplyScalar(stickX * baseSpeed));
+                    // STRAFE LEFT/RIGHT: Use dolly's right direction
+                    this.dolly.position.add(dollyRight.clone().multiplyScalar(stickX * baseSpeed));
                 }
                 
                 // UP/DOWN with X/Y buttons
