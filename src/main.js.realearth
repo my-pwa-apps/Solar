@@ -181,55 +181,59 @@ class SceneManager {
                 // Controller grip for models
                 const controllerGrip = this.renderer.xr.getControllerGrip(i);
                 
-                // Add a SUPER VISIBLE laser beam - using cylinder for thickness
-                const laserGeometry = new THREE.CylinderGeometry(0.005, 0.005, 10, 8);
+                // Add a SUPER VISIBLE laser beam - MUCH LONGER for visibility in space
+                const laserLength = 500; // 500m long laser for visibility
+                const laserGeometry = new THREE.CylinderGeometry(0.02, 0.02, laserLength, 8);
                 const laserMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0x00ffff,
-                    transparent: false,
-                    opacity: 1.0,
-                    emissive: 0x00ffff,
-                    emissiveIntensity: 1.0
+                    color: 0xff0000, // Bright red for visibility
+                    transparent: true,
+                    opacity: 0.8,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 2.0,
+                    toneMapped: false // Always visible
                 });
                 
                 const laser = new THREE.Mesh(laserGeometry, laserMaterial);
                 laser.rotation.x = Math.PI / 2; // Rotate to point forward
-                laser.position.set(0, 0, -5); // Position at center of 10m length
+                laser.position.set(0, 0, -laserLength/2); // Position at center
                 laser.name = 'laser';
                 controller.add(laser);
                 
                 // Add a BRIGHT glowing sphere at the end
-                const pointerGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+                const pointerGeometry = new THREE.SphereGeometry(0.2, 16, 16);
                 const pointerMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0x00ffff,
-                    emissive: 0x00ffff,
-                    emissiveIntensity: 2.0
+                    color: 0xffff00, // Yellow for visibility
+                    emissive: 0xffff00,
+                    emissiveIntensity: 3.0,
+                    toneMapped: false
                 });
                 const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
-                pointer.position.set(0, 0, -10);
+                pointer.position.set(0, 0, -laserLength);
                 pointer.name = 'pointer';
                 controller.add(pointer);
                 
-                // Add outer glow to pointer
-                const glowGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+                // Add outer glow to pointer - BIGGER
+                const glowGeometry = new THREE.SphereGeometry(0.4, 16, 16);
                 const glowMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0x00ffff,
+                    color: 0xffff00,
                     transparent: true,
-                    opacity: 0.3,
+                    opacity: 0.5,
                     blending: THREE.AdditiveBlending
                 });
                 const glow = new THREE.Mesh(glowGeometry, glowMaterial);
                 pointer.add(glow);
                 
-                // Add a cone at controller tip for direction indicator
-                const coneGeometry = new THREE.ConeGeometry(0.02, 0.4, 8);
+                // Add a cone at controller tip for direction indicator - BIGGER
+                const coneGeometry = new THREE.ConeGeometry(0.05, 0.8, 8);
                 const coneMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0x00ffff,
-                    emissive: 0x00ffff,
-                    emissiveIntensity: 1.0
+                    color: 0xff0000,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 2.0,
+                    toneMapped: false
                 });
                 const cone = new THREE.Mesh(coneGeometry, coneMaterial);
                 cone.rotation.x = Math.PI / 2; // Point forward
-                cone.position.set(0, 0, -0.2);
+                cone.position.set(0, 0, -0.4);
                 cone.name = 'cone';
                 controller.add(cone);
                 
@@ -267,8 +271,11 @@ class SceneManager {
                     session.environmentBlendMode === 'alpha-blend') {
                     this.scene.background = null; // Transparent for AR
                 }
-                // DON'T show VR UI panel automatically - let user toggle with grip
-                if (this.vrUIPanel) this.vrUIPanel.visible = false;
+                // SHOW VR UI panel by default with helpful message
+                if (this.vrUIPanel) {
+                    this.vrUIPanel.visible = true;
+                    this.updateVRStatus('🎮 VR Mode Active! Use GRIP button to toggle menu');
+                }
             });
 
             // Handle XR session end
@@ -431,13 +438,10 @@ class SceneManager {
         // Store canvas for updates
         this.vrUICanvas = canvas;
         this.vrUIContext = ctx;
-        
-        console.log('✅ VR UI Panel created with', this.vrButtons.length, 'buttons');
     }
     
     onSelectStart(controller, index) {
         // Handle controller trigger press
-        console.log(`🎯 Controller ${index} trigger pressed`);
         controller.userData.selecting = true;
         
         // Check if grip button is also held for zoom
@@ -464,35 +468,23 @@ class SceneManager {
         
         // First, check for VR UI interaction
         if (this.vrUIPanel && this.vrUIPanel.visible) {
-            console.log('🎨 VR UI Panel is visible - checking for button clicks');
             const intersects = raycaster.intersectObject(this.vrUIPanel);
             
             if (intersects.length > 0) {
                 const uv = intersects[0].uv;
                 const x = uv.x * 1024;
                 const y = (1 - uv.y) * 768;
-                console.log(`📍 VR UI clicked at UV (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)}) = pixel (${x.toFixed(0)}, ${y.toFixed(0)})`);
                 
                 // Check which button was clicked
-                let buttonFound = false;
                 this.vrButtons.forEach(btn => {
                     if (x >= btn.x && x <= btn.x + btn.w && 
                         y >= btn.y && y <= btn.y + btn.h) {
-                        console.log(`✅ VR Button clicked: "${btn.label}" action="${btn.action}"`);
                         this.handleVRAction(btn.action);
                         this.flashVRButton(btn);
-                        buttonFound = true;
                     }
                 });
-                if (!buttonFound) {
-                    console.log('⚠️ Click was on UI panel but not on any button');
-                }
                 return; // Don't check for object selection if we clicked UI
-            } else {
-                console.log('❌ VR UI Panel visible but raycast missed it');
             }
-        } else {
-            console.log(`ℹ️ VR UI Panel: exists=${!!this.vrUIPanel}, visible=${this.vrUIPanel?.visible}`);
         }
         
         // If UI wasn't clicked, check for object selection (planets, moons, etc.)
@@ -500,7 +492,6 @@ class SceneManager {
         
         if (intersects.length > 0) {
             const hitObject = intersects[0].object;
-            console.log('🎯 VR Selected object:', hitObject.name || hitObject.type);
             
             // Try to focus on the selected object
             const app = window.app || this;
@@ -512,22 +503,18 @@ class SceneManager {
                     // If grip+trigger held, zoom VERY close for inspection
                     if (gripHeld) {
                         this.zoomToObject(hitObject, 'close');
-                        console.log('🔍 ZOOMING CLOSE to:', hitObject.name);
                         if (this.vrUIPanel) {
                             this.updateVRStatus(`🔍 Inspecting: ${hitObject.name}`);
                         }
                     } else {
                         // Normal focus
                         module.focusOnObject(hitObject, this.camera, this.controls);
-                        console.log('✅ Focused on:', hitObject.name);
                         if (this.vrUIPanel) {
                             this.updateVRStatus(`🎯 Selected: ${hitObject.name}`);
                         }
                     }
                 }
             }
-        } else {
-            console.log('❌ No object hit by raycast');
         }
     }
     
@@ -554,13 +541,6 @@ class SceneManager {
         // Only toggle menu if trigger not held (grip alone = menu, grip+trigger = zoom)
         if (!triggerHeld && this.vrUIPanel) {
             this.vrUIPanel.visible = !this.vrUIPanel.visible;
-            console.log(`🎨 VR Menu toggled - now ${this.vrUIPanel.visible ? 'VISIBLE' : 'HIDDEN'}`);
-            console.log(`📍 Menu position:`, this.vrUIPanel.position);
-            console.log(`📐 Menu parent:`, this.vrUIPanel.parent?.constructor.name);
-        } else if (triggerHeld) {
-            console.log('⚠️ Grip pressed but trigger also held - no menu toggle');
-        } else if (!this.vrUIPanel) {
-            console.log('❌ Grip pressed but vrUIPanel does not exist!');
         }
     }
     
@@ -609,13 +589,9 @@ class SceneManager {
         
         // Smoothly move dolly
         this.dolly.position.copy(newPosition);
-        
-        console.log(`📍 VR Zoomed to ${object.userData?.name || 'object'} at distance ${distance.toFixed(2)}`);
     }
     
     handleVRAction(action) {
-        console.log(`🎬 handleVRAction called with action="${action}"`);
-        
         // Get current app state
         const app = window.app || this;
         
@@ -696,6 +672,13 @@ class SceneManager {
                     this.updateVRStatus(`📏 ${module.realisticScale ? 'Realistic' : 'Educational'} Scale`);
                 }
                 break;
+            case 'speedmode':
+                if (app.topicManager && app.topicManager.solarSystemModule) {
+                    const module = app.topicManager.solarSystemModule;
+                    const newMode = module.toggleSpeedMode();
+                    this.updateVRStatus(`🚀 ${newMode === 'realistic' ? 'Real-time' : 'Educational'} Speed`);
+                }
+                break;
             case 'reset':
                 this.resetCamera();
                 this.updateVRStatus('🔄 View Reset');
@@ -773,8 +756,6 @@ class SceneManager {
         ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
         
         this.vrUIPanel.material.map.needsUpdate = true;
-        
-        console.log('🎮 VR Status:', message);
     }
     
     updateVRUI() {
@@ -935,14 +916,6 @@ class SceneManager {
             // DEBUG: Log ALL button presses to identify Quest 3S button mapping
             if (Math.random() < 0.01) { // 1% chance = logs frequently
                 const pressed = [];
-                for (let b = 0; b < gamepad.buttons.length; b++) {
-                    if (gamepad.buttons[b].pressed) {
-                        pressed.push(`Button ${b}`);
-                    }
-                }
-                if (pressed.length > 0) {
-                    console.log(`🎮 ${handedness?.toUpperCase() || 'UNKNOWN'} pressed:`, pressed.join(', '));
-                }
             }
             
             // Check trigger for sprint (button 0 = trigger)
@@ -971,24 +944,25 @@ class SceneManager {
             
             // ============================================
             // LEFT CONTROLLER: MOVEMENT (like FPS games)
+            // Always moves toward WHERE YOU'RE LOOKING (head-relative)
             // ============================================
             if (handedness === 'left') {
-                const baseSpeed = 0.25 * sprintMultiplier; // Increased for better feel
+                const baseSpeed = 0.5 * sprintMultiplier; // Increased for space scale
                 
                 // Forward/Backward & Strafe
                 if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
-                    // FORWARD/BACKWARD: Push stick FORWARD to move FORWARD
-                    // In VR controllers, pushing stick forward gives NEGATIVE Y value
+                    // FORWARD/BACKWARD: Push stick FORWARD to move toward where you're looking
+                    // Use camera direction (where HMD is facing), not dolly rotation
                     const forwardMovement = cameraDirection.clone();
-                    forwardMovement.y = 0; // Stay horizontal
+                    forwardMovement.y = 0; // Stay horizontal (no flying up/down)
                     forwardMovement.normalize();
                     
-                    // INVERTED: Negative stickY = forward (intuitive like FPS)
+                    // Negative stickY = push forward = move forward (intuitive!)
                     this.dolly.position.add(forwardMovement.multiplyScalar(-stickY * baseSpeed));
                     
-                    // STRAFE LEFT/RIGHT
+                    // STRAFE LEFT/RIGHT relative to where you're looking
                     const strafeMovement = cameraRight.clone();
-                    strafeMovement.y = 0;
+                    strafeMovement.y = 0; // Keep horizontal
                     strafeMovement.normalize();
                     this.dolly.position.add(strafeMovement.multiplyScalar(stickX * baseSpeed));
                 }
@@ -1070,6 +1044,12 @@ class SceneManager {
         const { x, y, z } = CONFIG.CAMERA.startPos;
         this.camera.position.set(x, y, z);
         this.controls.target.set(0, 0, 0);
+        
+        // CRITICAL FIX: Reset control limits to defaults
+        // Prevents issues after focusing on distant objects
+        this.controls.minDistance = CONFIG.CONTROLS.minDistance;
+        this.controls.maxDistance = CONFIG.CONTROLS.maxDistance;
+        
         this.controls.update();
     }
 
@@ -1252,6 +1232,66 @@ class UIManager {
 // ===========================
 // SOLAR SYSTEM MODULE
 // ===========================
+
+// Solar System Configuration
+const SOLAR_SYSTEM_CONFIG = {
+    PERFORMANCE: {
+        updateIntervals: {
+            solarFlares: 2,          // Update sun flares every N frames
+            starTwinkling: 5,        // Update stars every N frames
+            cometDustTail: 3,        // Update comet dust tail every N frames
+            cometIonTail: 2,         // Update comet ion tail every N frames
+            moonDebugLog: 1000       // Log moon position 1 in N updates
+        },
+        cullingDistance: 5000,       // Don't update objects beyond this distance
+        starTwinkleCount: 30,        // How many stars to twinkle per update
+        lodDistances: {              // Level of Detail distances
+            high: 100,               // Within 100 units = high detail
+            medium: 500,             // 100-500 units = medium detail  
+            low: 2000                // 500-2000 units = low detail
+        }
+    },
+    OBJECTS: {
+        sun: { radius: 15, segments: 128, textureSize: 2048, flareCount: 200 },
+        starfield: { count: 5000, spread: 8000, size: 2 },
+        asteroidBelt: { count: 2000, innerRadius: 75, outerRadius: 90, height: 3 },
+        kuiperBelt: { count: 3000, innerRadius: 280, outerRadius: 380, height: 30 }
+    },
+    ANIMATION: {
+        sunRotation: 0.001,
+        asteroidBeltRotation: 0.0001,
+        kuiperBeltRotation: 0.00005,
+        cloudRotationMultiplier: 1.1,
+        moonOrbitMultiplier: 1.0
+    },
+    SPEED_MODES: {
+        // REALISTIC: Real-time orbital periods (will appear very slow)
+        realistic: {
+            mercury: 0.00416,   // 88 Earth days
+            venus: 0.00162,     // 225 Earth days
+            earth: 0.001,       // 365.25 days
+            moon: 0.0367,       // 27.3 days around Earth
+            mars: 0.000531,     // 687 days
+            jupiter: 0.0000843, // 4,333 days (11.86 years)
+            saturn: 0.0000339,  // 10,759 days (29.46 years)
+            uranus: 0.0000119,  // 30,687 days (84.02 years)
+            neptune: 0.00000606 // 60,190 days (164.79 years)
+        },
+        // EDUCATIONAL: Visible orbits for learning (default)
+        educational: {
+            mercury: 0.02,      // Visible in minutes
+            venus: 0.015,       // Medium speed
+            earth: 0.01,        // Good reference
+            moon: 0.05,         // Visible orbit around Earth
+            mars: 0.008,        // Slower than Earth
+            jupiter: 0.005,     // Slow giant
+            saturn: 0.004,      // Very slow
+            uranus: 0.003,      // Extremely slow
+            neptune: 0.002      // Slowest planet
+        }
+    }
+};
+
 class SolarSystemModule {
     constructor(uiManager) {
         this.uiManager = uiManager;
@@ -1274,11 +1314,18 @@ class SolarSystemModule {
         // Scale mode: false = educational (compressed), true = realistic (vast)
         this.realisticScale = false;
         
+        // Speed mode: 'educational' = visible orbits, 'realistic' = real-time
+        this.speedMode = 'educational'; // Default to educational for visibility
+        
         // Comet tails visibility: false = hidden (better for VR/AR)
         this.cometTailsVisible = false;
         
         // Geometry cache for reuse
         this.geometryCache = new Map();
+        
+        // Frame counters for optimized updates
+        this._sunFlareFrame = 0;
+        this._starTwinkleFrame = 0;
     }
     
     getGeometry(type, ...params) {
@@ -1351,14 +1398,20 @@ class SolarSystemModule {
         const sunRadius = 15; // Compromise between realism and usability
         const sunGeometry = new THREE.SphereGeometry(sunRadius, 128, 128); // Higher detail
         
-        // Create advanced sun texture with sunspots and granulation
-        const sunTexture = this.createSunTexture(2048);
-        const sunBumpMap = this.createSunBumpMap(2048);
+        // REAL NASA Sun texture with sunspots and solar surface detail
+        const sunTexture = new THREE.TextureLoader().load(
+            'https://www.solarsystemscope.com/textures/download/2k_sun.jpg',
+            undefined,
+            undefined,
+            () => {
+                console.warn('Sun texture failed, using fallback');
+                return this.createSunTexture(2048);
+            }
+        );
         
         const sunMaterial = new THREE.MeshStandardMaterial({
             map: sunTexture,
-            bumpMap: sunBumpMap,
-            bumpScale: 0.5,
+            bumpScale: 0.3,
             emissive: 0xff6600,
             emissiveMap: sunTexture,
             emissiveIntensity: 2.5,
@@ -2051,32 +2104,37 @@ class SolarSystemModule {
         return texture;
     }
     
-    createEarthTextureReal(size) {
-        // Try to load real NASA Earth texture first
-        const loader = new THREE.TextureLoader();
-        let texture = null;
-        let loadedReal = false;
+    createEarthTexture(size) {
+        // 🌍 ULTRA REALISTIC: Load actual NASA Earth texture
+        // Using NASA's Blue Marble Next Generation (high-res Earth imagery)
+        const textureLoader = new THREE.TextureLoader();
         
-        loader.load(
-            'https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73909/world.topo.bathy.200412.3x5400x2700.jpg',
-            (tex) => {
-                console.log('✅ Real NASA Earth texture loaded!');
-                texture = tex;
-                texture.needsUpdate = true;
-                loadedReal = true;
+        // Try to load real Earth texture from CDN
+        const earthTextureURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg';
+        
+        console.log('🌍 Loading REAL Earth texture from NASA imagery...');
+        
+        const texture = textureLoader.load(
+            earthTextureURL,
+            (loadedTexture) => {
+                console.log('✅ Real Earth texture loaded successfully!');
+                loadedTexture.needsUpdate = true;
             },
             undefined,
-            (err) => {
-                console.warn('⚠️ NASA Earth texture failed, using procedural fallback');
-                texture = this.createEarthTexture(size);
+            (error) => {
+                console.warn('⚠️ Failed to load real Earth texture, using fallback');
             }
         );
         
-        // Return procedural immediately (will update when real loads)
-        return texture || this.createEarthTexture(size);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = 16; // Max quality filtering
+        
+        return texture;
     }
     
-    createEarthTexture(size) {
+    // OLD PROCEDURAL createEarthTexture REMOVED
+    _createEarthTextureProceduralBackup(size) {
+        // Backup of old procedural generation (not used)
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2307,9 +2365,28 @@ class SolarSystemModule {
         }
         
         return texture;
-    }
+    } // End of backup procedural function
     
     createEarthBumpMap(size) {
+        // 🏔️ ULTRA REALISTIC: Load real Earth elevation/bump map
+        const textureLoader = new THREE.TextureLoader();
+        const bumpMapURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/elev_bump_4k.jpg';
+        
+        console.log('🏔️ Loading REAL Earth bump map (elevation data)...');
+        
+        const texture = textureLoader.load(
+            bumpMapURL,
+            () => console.log('✅ Real Earth bump map loaded!'),
+            undefined,
+            () => console.warn('⚠️ Failed to load real bump map')
+        );
+        
+        texture.anisotropy = 16;
+        return texture;
+    }
+    
+    // OLD PROCEDURAL createEarthBumpMap REMOVED
+    _createEarthBumpMapProceduralBackup(size) {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2368,7 +2445,26 @@ class SolarSystemModule {
     }
     
     createEarthNormalMap(size) {
-        // Normal map for mountain ranges and ocean trenches
+        // 🗻 ULTRA REALISTIC: Load real Earth normal map (surface details)
+        const textureLoader = new THREE.TextureLoader();
+        const normalMapURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/normal.jpg';
+        
+        console.log('🗻 Loading REAL Earth normal map (surface normals)...');
+        
+        const texture = textureLoader.load(
+            normalMapURL,
+            () => console.log('✅ Real Earth normal map loaded!'),
+            undefined,
+            () => console.warn('⚠️ Failed to load real normal map')
+        );
+        
+        texture.anisotropy = 16;
+        return texture;
+    }
+    
+    // OLD PROCEDURAL createEarthNormalMap REMOVED
+    _createEarthNormalMapProceduralBackup(size) {
+        // Backup of old procedural generation (not used)
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2423,7 +2519,26 @@ class SolarSystemModule {
     }
     
     createEarthSpecularMap(size) {
-        // Oceans are shiny, land is rough
+        // 🌊 ULTRA REALISTIC: Load real Earth specular map (water vs land)
+        const textureLoader = new THREE.TextureLoader();
+        const specularMapURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/water_4k.png';
+        
+        console.log('🌊 Loading REAL Earth specular map (ocean reflectivity)...');
+        
+        const texture = textureLoader.load(
+            specularMapURL,
+            () => console.log('✅ Real Earth specular map loaded!'),
+            undefined,
+            () => console.warn('⚠️ Failed to load real specular map')
+        );
+        
+        texture.anisotropy = 16;
+        return texture;
+    }
+    
+    // OLD PROCEDURAL createEarthSpecularMap REMOVED
+    _createEarthSpecularMapProceduralBackup(size) {
+        // Backup of old procedural generation (not used)
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -3216,11 +3331,11 @@ class SolarSystemModule {
         // Planet-specific hyperrealistic materials with high-quality textures
         switch(name) {
             case 'earth':
-                // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
-                const earthTexture = this.createEarthTextureReal(4096);  // 4K resolution!
-                const earthBump = this.createEarthBumpMap(4096);
-                const earthSpecular = this.createEarthSpecularMap(4096);
-                const earthNormal = this.createEarthNormalMap(4096);
+                // Earth: ULTRA HYPER-REALISTIC with 4K textures and advanced materials
+                const earthTexture = this.createEarthTexture(4096);  // 4K resolution!
+                const earthBump = this.createEarthBumpMap(4096);     // 4K bump map
+                const earthSpecular = this.createEarthSpecularMap(4096); // 4K specular
+                const earthNormal = this.createEarthNormalMap(4096); // 4K normal map
                 
                 // ULTRA realistic material with PBR (Physically Based Rendering)
                 const earthMaterial = new THREE.MeshStandardMaterial({
@@ -3249,24 +3364,32 @@ class SolarSystemModule {
                     envMapIntensity: 1.5, // Environment reflections
                     transparent: false,
                     side: THREE.FrontSide,
+                    
+                    // Lighting response
                     flatShading: false,
+                    
+                    // Color space for accurate rendering
                     toneMapped: true
                 });
                 
                 return earthMaterial;
                 
             case 'mars':
-                // Mars: Hyperrealistic rusty red surface with canyons, polar caps
-                const marsTexture = this.createMarsTexture(2048);
-                const marsBump = this.createMarsBumpMap(2048);
-                const marsNormal = this.createMarsNormalMap(2048);
+                // Mars: REAL NASA texture - rusty red surface with Valles Marineris, polar caps
+                const marsTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_mars.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Mars texture failed, using fallback');
+                        return this.createMarsTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: marsTexture,
-                    normalMap: marsNormal,
-                    normalScale: new THREE.Vector2(1.2, 1.2),
-                    bumpMap: marsBump,
-                    bumpScale: 0.08,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    bumpScale: 0.05,
                     roughness: 0.95,
                     metalness: 0.0,
                     emissive: 0x3d1505,
@@ -3274,11 +3397,18 @@ class SolarSystemModule {
                 });
                 
             case 'venus':
-                // Venus: Thick yellowish sulfuric acid clouds
-                const venusTexture = this.createVenusTexture(2048);
+                // Venus: REAL NASA texture - thick yellowish sulfuric acid cloud atmosphere
+                const venusTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_venus_atmosphere.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Venus texture failed, using fallback');
+                        return this.createVenusTexture(2048);
+                    }
+                );
                 return new THREE.MeshStandardMaterial({
                     map: venusTexture,
-                    color: 0xe8c468,
                     roughness: 0.3,
                     metalness: 0.05,
                     emissive: 0xffc649,
@@ -3286,14 +3416,20 @@ class SolarSystemModule {
                 });
                 
             case 'mercury':
-                // Mercury: Heavily cratered like the Moon
-                const mercuryTexture = this.createMercuryTexture(2048);
-                const mercuryBump = this.createMercuryBumpMap(2048);
+                // Mercury: REAL NASA texture - heavily cratered surface like the Moon
+                const mercuryTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_mercury.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Mercury texture failed, using fallback');
+                        return this.createMercuryTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: mercuryTexture,
-                    bumpMap: mercuryBump,
-                    bumpScale: 0.1,
+                    bumpScale: 0.08,
                     roughness: 0.95,
                     metalness: 0.02,
                     emissive: 0x2d2520,
@@ -3301,13 +3437,19 @@ class SolarSystemModule {
                 });
                 
             case 'jupiter':
-                // Jupiter: Hyperrealistic bands with Great Red Spot
-                const jupiterTexture = this.createJupiterTexture(2048);
-                const jupiterBump = this.createJupiterBumpMap(1024);
+                // Jupiter: REAL NASA texture - bands with Great Red Spot
+                const jupiterTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_jupiter.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Jupiter texture failed, using fallback');
+                        return this.createJupiterTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: jupiterTexture,
-                    bumpMap: jupiterBump,
                     bumpScale: 0.02,
                     roughness: 0.6,
                     metalness: 0.0,
@@ -3316,13 +3458,19 @@ class SolarSystemModule {
                 });
                 
             case 'saturn':
-                // Saturn: Pale gold with detailed banding
-                const saturnTexture = this.createSaturnTexture(2048);
-                const saturnBump = this.createSaturnBumpMap(1024);
+                // Saturn: REAL NASA texture - pale gold with detailed banding
+                const saturnTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_saturn.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Saturn texture failed, using fallback');
+                        return this.createSaturnTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: saturnTexture,
-                    bumpMap: saturnBump,
                     bumpScale: 0.015,
                     roughness: 0.55,
                     metalness: 0.0,
@@ -3331,8 +3479,16 @@ class SolarSystemModule {
                 });
                 
             case 'uranus':
-                // Uranus: Hyperrealistic cyan atmosphere with methane
-                const uranusTexture = this.createUranusTexture(2048);
+                // Uranus: REAL NASA texture - cyan atmosphere with methane
+                const uranusTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_uranus.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Uranus texture failed, using fallback');
+                        return this.createUranusTexture(2048);
+                    }
+                );
                 return new THREE.MeshStandardMaterial({
                     map: uranusTexture,
                     roughness: 0.3,
@@ -3342,8 +3498,16 @@ class SolarSystemModule {
                 });
                 
             case 'neptune':
-                // Neptune: Hyperrealistic deep blue with Great Dark Spot
-                const neptuneTexture = this.createNeptuneTexture(2048);
+                // Neptune: REAL NASA texture - deep blue with Great Dark Spot
+                const neptuneTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_neptune.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Neptune texture failed, using fallback');
+                        return this.createNeptuneTexture(2048);
+                    }
+                );
                 return new THREE.MeshStandardMaterial({
                     map: neptuneTexture,
                     roughness: 0.3,
@@ -3374,8 +3538,8 @@ class SolarSystemModule {
     }
 
     createPlanet(scene, config) {
-        // Use cached geometry or create new
-        const segments = CONFIG.QUALITY.sphereSegments;
+        // ULTRA HIGH DETAIL for Earth, normal detail for others
+        const segments = config.name === 'earth' ? 256 : CONFIG.QUALITY.sphereSegments;
         const geometry = this.getGeometry('sphere', config.radius, segments, segments);
         
         // Create hyperrealistic material based on planet type
@@ -3509,17 +3673,21 @@ class SolarSystemModule {
         const moonName = config.name.toLowerCase();
         
         if (moonName === 'moon') {
-            // Earth's Moon: HYPERREALISTIC with deep craters and maria
-            const moonTexture = this.createMoonTexture(2048);
-            const moonBump = this.createMoonBumpMap(2048);
-            const moonNormal = this.createMoonNormalMap(2048);
+            // Earth's Moon: REAL NASA texture with deep craters and maria (dark seas)
+            const moonTexture = new THREE.TextureLoader().load(
+                'https://www.solarsystemscope.com/textures/download/2k_moon.jpg',
+                undefined,
+                undefined,
+                () => {
+                    console.warn('Moon texture failed, using fallback');
+                    return this.createMoonTexture(2048);
+                }
+            );
             
             moonMaterial = new THREE.MeshStandardMaterial({
                 map: moonTexture,
-                normalMap: moonNormal,
-                normalScale: new THREE.Vector2(2.0, 2.0), // Deep craters!
-                bumpMap: moonBump,
-                bumpScale: 0.15, // Pronounced elevation
+                normalScale: new THREE.Vector2(1.5, 1.5), // Crater detail
+                bumpScale: 0.12, // Elevation
                 roughness: 0.98,
                 metalness: 0.02
             });
@@ -3632,7 +3800,8 @@ class SolarSystemModule {
             type: 'Asteroid Belt',
             description: '☄️ The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
             funFact: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
-            count: asteroidCount
+            count: asteroidCount,
+            radius: 82.5  // Average radius of belt (75-90 range, centered at 82.5)
         };
         scene.add(this.asteroidBelt);
         this.objects.push(this.asteroidBelt);
@@ -3676,7 +3845,8 @@ class SolarSystemModule {
             type: 'Kuiper Belt',
             description: '🧊 The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
             funFact: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
-            count: kuiperCount
+            count: kuiperCount,
+            radius: 330  // Average radius of belt (280-380 range, centered at 330)
         };
         scene.add(this.kuiperBelt);
         this.objects.push(this.kuiperBelt);
@@ -4762,7 +4932,7 @@ class SolarSystemModule {
                 
                 // Rotate clouds slightly faster than planet for Earth
                 if (planet.userData.clouds) {
-                    planet.userData.clouds.rotation.y += planet.userData.rotationSpeed * rotationSpeed * 1.1;
+                    planet.userData.clouds.rotation.y += planet.userData.rotationSpeed * rotationSpeed * SOLAR_SYSTEM_CONFIG.ANIMATION.cloudRotationMultiplier;
                 }
 
                 // Update moons - orbit around their parent planet
@@ -4778,11 +4948,6 @@ class SolarSystemModule {
                             // Rotate moon on its axis
                             if (moon.userData.rotationSpeed) {
                                 moon.rotation.y += moon.userData.rotationSpeed * rotationSpeed;
-                            }
-                            
-                            // Debug: Log moon position occasionally
-                            if (Math.random() < 0.001 && moon.userData.name === 'Moon') {
-                                console.log(`🌙 Moon orbiting Earth: angle=${moon.userData.angle.toFixed(2)}, x=${moon.position.x.toFixed(1)}, z=${moon.position.z.toFixed(1)}`);
                             }
                         }
                     });
@@ -4810,15 +4975,16 @@ class SolarSystemModule {
             this.asteroidBelt.rotation.y += 0.0001 * timeSpeed;
         }
         if (this.kuiperBelt) {
-            this.kuiperBelt.rotation.y += 0.00005 * timeSpeed;
+            this.kuiperBelt.rotation.y += SOLAR_SYSTEM_CONFIG.ANIMATION.kuiperBeltRotation * timeSpeed;
         }
 
         // Rotate sun and animate surface activity
         if (this.sun) {
-            this.sun.rotation.y += 0.001 * timeSpeed;
+            this.sun.rotation.y += SOLAR_SYSTEM_CONFIG.ANIMATION.sunRotation * timeSpeed;
             
-            // Animate solar flares (optimized - update every 2 frames)
-            if (this.sun.userData.flares && (this._sunFlareFrame || 0) % 2 === 0) {
+            // Animate solar flares (optimized - update every N frames)
+            const flareInterval = SOLAR_SYSTEM_CONFIG.PERFORMANCE.updateIntervals.solarFlares;
+            if (this.sun.userData.flares && this._sunFlareFrame % flareInterval === 0) {
                 const time = Date.now() * 0.001;
                 const sizes = this.sun.userData.flares.geometry.attributes.size.array;
                 const len = sizes.length;
@@ -4829,20 +4995,23 @@ class SolarSystemModule {
                 }
                 this.sun.userData.flares.geometry.attributes.size.needsUpdate = true;
             }
-            this._sunFlareFrame = (this._sunFlareFrame || 0) + 1;
+            this._sunFlareFrame++;
         }
 
-        // Twinkle stars slightly (optimized - only every 5 frames)
-        if (this.starfield && this._starTwinkleFrame % 5 === 0 && Math.random() < 0.3) {
+        // Twinkle stars slightly (optimized - only every N frames)
+        const starInterval = SOLAR_SYSTEM_CONFIG.PERFORMANCE.updateIntervals.starTwinkling;
+        if (this.starfield && this._starTwinkleFrame % starInterval === 0 && Math.random() < 0.3) {
             const sizes = this.starfield.geometry.attributes.size.array;
-            // Reduce updates to 30 stars instead of 50
-            for (let i = 0; i < 30; i++) {
+            const twinkleCount = SOLAR_SYSTEM_CONFIG.PERFORMANCE.starTwinkleCount;
+            
+            // Update only a subset of stars for performance
+            for (let i = 0; i < twinkleCount; i++) {
                 const idx = Math.floor(Math.random() * sizes.length);
                 sizes[idx] = 1 + Math.random() * 2;
             }
             this.starfield.geometry.attributes.size.needsUpdate = true;
         }
-        this._starTwinkleFrame = (this._starTwinkleFrame || 0) + 1;
+        this._starTwinkleFrame++;
         
         // Update comets with elliptical orbits (optimized)
         if (this.comets) {
@@ -5113,6 +5282,30 @@ class SolarSystemModule {
         console.log(`Scale mode: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
     }
 
+    toggleSpeedMode() {
+        // Toggle between educational and realistic speed
+        this.speedMode = this.speedMode === 'educational' ? 'realistic' : 'educational';
+        console.log(`🚀 Speed mode: ${this.speedMode.toUpperCase()}`);
+        
+        // Update all planet speeds
+        const speeds = SOLAR_SYSTEM_CONFIG.SPEED_MODES[this.speedMode];
+        Object.entries(this.planets).forEach(([name, planet]) => {
+            if (planet && planet.userData && speeds[name]) {
+                planet.userData.baseSpeed = speeds[name];
+            }
+        });
+        
+        // Update moon speed (relative to its planet)
+        Object.values(this.moons).forEach(moon => {
+            if (moon && moon.userData) {
+                // Moon speed is stored separately
+                moon.userData.baseSpeed = speeds.moon || 0.05;
+            }
+        });
+        
+        return this.speedMode;
+    }
+
     getObjectInfo(object) {
         const userData = object.userData;
         
@@ -5150,20 +5343,30 @@ class SolarSystemModule {
     }
 
     focusOnObject(object, camera, controls) {
-        const distance = Math.max(object.userData.radius * 5, 10);
+        // CRITICAL FIX: Reset controls to defaults FIRST to prevent broken state
+        // After focusing on distant objects (asteroid belt, Voyager), limits become huge
+        // This prevents focusing on smaller objects afterward
+        controls.minDistance = CONFIG.CONTROLS.minDistance;
+        controls.maxDistance = CONFIG.CONTROLS.maxDistance;
+        
+        // Safe fallback for objects without radius (spacecraft, asteroid belt, etc.)
+        // Use the object's distance from origin or a reasonable default
+        const objectRadius = object.userData.radius || object.userData.distance || 10;
+        
+        const distance = Math.max(objectRadius * 5, 10);
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
         
         // Store reference for tracking
         this.focusedObject = object;
         
-        // Configure controls for focused object inspection
-        const originalMinDistance = controls.minDistance;
-        const originalMaxDistance = controls.maxDistance;
+        // Set REASONABLE dynamic zoom limits based on object size
+        // Cap maxDistance to prevent excessive values from large objects
+        const minLimit = Math.max(objectRadius * 1.5, 1);
+        const maxLimit = Math.min(objectRadius * 50, 5000);
         
-        // Set dynamic zoom limits based on object size
-        controls.minDistance = object.userData.radius * 1.5; // Can zoom in close
-        controls.maxDistance = object.userData.radius * 50;  // Can zoom out far
+        controls.minDistance = minLimit;
+        controls.maxDistance = maxLimit;
         
         // Enable full rotation around object
         controls.enableRotate = true;
@@ -5207,10 +5410,6 @@ class SolarSystemModule {
         };
         
         animate();
-        
-        // Store original limits to restore later if needed
-        object.userData._originalMinDistance = originalMinDistance;
-        object.userData._originalMaxDistance = originalMaxDistance;
     }
 
     createLabels() {
@@ -5754,21 +5953,27 @@ class QuantumModule {
     }
 
     focusOnObject(object, camera, controls) {
+        // CRITICAL FIX: Reset controls to defaults FIRST
+        controls.minDistance = CONFIG.CONTROLS.minDistance;
+        controls.maxDistance = CONFIG.CONTROLS.maxDistance;
+        
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
         
         // Store reference for tracking
         this.focusedObject = object;
         
-        const distance = Math.max(object.userData.radius * 6, 8);
+        // Safe fallback for objects without radius
+        const objectRadius = object.userData.radius || object.userData.distance || 8;
         
-        // Configure controls for focused object inspection
-        const originalMinDistance = controls.minDistance;
-        const originalMaxDistance = controls.maxDistance;
+        const distance = Math.max(objectRadius * 6, 8);
         
-        // Set dynamic zoom limits based on object size
-        controls.minDistance = object.userData.radius * 1.5; // Can zoom in close
-        controls.maxDistance = object.userData.radius * 50;  // Can zoom out far
+        // Set REASONABLE dynamic zoom limits
+        const minLimit = Math.max(objectRadius * 1.5, 1);
+        const maxLimit = Math.min(objectRadius * 50, 5000);
+        
+        controls.minDistance = minLimit;
+        controls.maxDistance = maxLimit;
         
         // Enable full rotation around object
         controls.enableRotate = true;
@@ -5809,10 +6014,6 @@ class QuantumModule {
         };
         
         animate();
-        
-        // Store original limits to restore later if needed
-        object.userData._originalMinDistance = originalMinDistance;
-        object.userData._originalMaxDistance = originalMaxDistance;
     }
 
     getExplorerContent(focusCallback) {
@@ -5925,21 +6126,47 @@ class TopicManager {
             }, { passive: true });
         }
         
+        // Speed mode toggle button (NEW!)
+        const speedModeButton = document.getElementById('toggle-speed-mode');
+        if (speedModeButton) {
+            speedModeButton.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    const newMode = this.solarSystemModule.toggleSpeedMode();
+                    speedModeButton.classList.toggle('toggle-on', newMode === 'realistic');
+                    speedModeButton.textContent = newMode === 'realistic' ? 
+                        '🕐 Realistic Speed' : '🚀 Educational Speed';
+                    
+                    // Show notification
+                    if (this.uiManager) {
+                        this.uiManager.showNotification(
+                            newMode === 'realistic' ? 
+                            '🕐 Real-time orbital speeds (very slow!)' : 
+                            '🚀 Educational speeds (visible orbits)'
+                        );
+                    }
+                }
+            }, { passive: true });
+        }
+        
         // Labels toggle button
         const labelsButton = document.getElementById('toggle-details');
         if (labelsButton) {
+            let labelsVisible = false; // Start with labels hidden
+            
             labelsButton.addEventListener('click', () => {
-                const currentModule = this.solarSystemModule || this.quantumModule;
-                if (currentModule && currentModule.toggleLabels) {
-                    // Toggle visibility using SceneManager's labelsVisible state
-                    if (this.sceneManager) {
-                        this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
-                        currentModule.toggleLabels(this.sceneManager.labelsVisible);
-                        labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
-                        labelsButton.textContent = this.sceneManager.labelsVisible ? 
-                            '📊 Labels ON' : '📊 Labels OFF';
-                        console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
-                    }
+                // Access the current module from TopicManager
+                if (this.currentModule && this.currentModule.labels && this.currentModule.labels.length > 0) {
+                    // Toggle state
+                    labelsVisible = !labelsVisible;
+                    
+                    // Update all labels
+                    this.currentModule.toggleLabels(labelsVisible);
+                    
+                    // Update button
+                    labelsButton.classList.toggle('toggle-on', labelsVisible);
+                    labelsButton.textContent = labelsVisible ? '📊 Labels ON' : '📊 Labels OFF';
+                } else {
+                    console.warn('⚠️ No labels available in current module');
                 }
             }, { passive: true });
         }
@@ -5948,12 +6175,9 @@ class TopicManager {
         const resetButton = document.getElementById('reset-view');
         if (resetButton) {
             resetButton.addEventListener('click', () => {
-                // Clear focus from any object
-                if (this.solarSystemModule) {
-                    this.solarSystemModule.focusedObject = null;
-                }
-                if (this.quantumModule) {
-                    this.quantumModule.focusedObject = null;
+                // Clear focus from current module
+                if (this.currentModule && this.currentModule.focusedObject) {
+                    this.currentModule.focusedObject = null;
                 }
                 this.sceneManager.resetCamera();
             }, { passive: true });
@@ -5964,7 +6188,7 @@ class TopicManager {
             if (this.clickTimeout) return;
             this.clickTimeout = setTimeout(() => {
                 this.clickTimeout = null;
-            }, 300);
+            }, 100);  // Reduced from 300ms to 100ms for better responsiveness
             this.handleCanvasClick(e);
         });
     }
@@ -6037,7 +6261,7 @@ class TopicManager {
         this.sceneManager.raycaster.setFromCamera(this.sceneManager.mouse, this.sceneManager.camera);
         const intersects = this.sceneManager.raycaster.intersectObjects(
             this.currentModule.getSelectableObjects(), 
-            false
+            true  // Check children too (clouds, rings, etc.)
         );
 
         if (intersects.length > 0) {
