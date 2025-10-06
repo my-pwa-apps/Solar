@@ -5900,20 +5900,18 @@ class TopicManager {
         // Labels toggle button
         const labelsButton = document.getElementById('toggle-details');
         if (labelsButton) {
-            let labelsVisible = false; // Start with labels hidden
-            
             labelsButton.addEventListener('click', () => {
                 const currentModule = this.solarSystemModule || this.quantumModule;
-                if (currentModule && currentModule.labels && currentModule.labels.length > 0) {
-                    // Toggle state
-                    labelsVisible = !labelsVisible;
-                    
-                    // Update all labels
-                    currentModule.toggleLabels(labelsVisible);
-                    
-                    // Update button
-                    labelsButton.classList.toggle('toggle-on', labelsVisible);
-                    labelsButton.textContent = labelsVisible ? '📊 Labels ON' : '📊 Labels OFF';
+                if (currentModule && currentModule.toggleLabels) {
+                    // Toggle visibility using SceneManager's labelsVisible state
+                    if (this.sceneManager) {
+                        this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
+                        currentModule.toggleLabels(this.sceneManager.labelsVisible);
+                        labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
+                        labelsButton.textContent = this.sceneManager.labelsVisible ? 
+                            '📊 Labels ON' : '📊 Labels OFF';
+                        console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+                    }
                 }
             }, { passive: true });
         }
