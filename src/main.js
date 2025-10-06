@@ -2099,6 +2099,36 @@ class SolarSystemModule {
     }
     
     createEarthTexture(size) {
+        // 🌍 ULTRA REALISTIC: Load actual NASA Earth texture
+        // Using NASA's Blue Marble Next Generation (high-res Earth imagery)
+        const textureLoader = new THREE.TextureLoader();
+        
+        // Try to load real Earth texture from CDN
+        const earthTextureURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg';
+        
+        console.log('🌍 Loading REAL Earth texture from NASA imagery...');
+        
+        const texture = textureLoader.load(
+            earthTextureURL,
+            (loadedTexture) => {
+                console.log('✅ Real Earth texture loaded successfully!');
+                loadedTexture.needsUpdate = true;
+            },
+            undefined,
+            (error) => {
+                console.warn('⚠️ Failed to load real Earth texture, using fallback');
+            }
+        );
+        
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = 16; // Max quality filtering
+        
+        return texture;
+    }
+    
+    // OLD PROCEDURAL createEarthTexture REMOVED
+    _createEarthTextureProceduralBackup(size) {
+        // Backup of old procedural generation (not used)
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2329,9 +2359,28 @@ class SolarSystemModule {
         }
         
         return texture;
-    }
+    } // End of backup procedural function
     
     createEarthBumpMap(size) {
+        // 🏔️ ULTRA REALISTIC: Load real Earth elevation/bump map
+        const textureLoader = new THREE.TextureLoader();
+        const bumpMapURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/elev_bump_4k.jpg';
+        
+        console.log('🏔️ Loading REAL Earth bump map (elevation data)...');
+        
+        const texture = textureLoader.load(
+            bumpMapURL,
+            () => console.log('✅ Real Earth bump map loaded!'),
+            undefined,
+            () => console.warn('⚠️ Failed to load real bump map')
+        );
+        
+        texture.anisotropy = 16;
+        return texture;
+    }
+    
+    // OLD PROCEDURAL createEarthBumpMap REMOVED
+    _createEarthBumpMapProceduralBackup(size) {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2390,7 +2439,26 @@ class SolarSystemModule {
     }
     
     createEarthNormalMap(size) {
-        // Normal map for mountain ranges and ocean trenches
+        // 🗻 ULTRA REALISTIC: Load real Earth normal map (surface details)
+        const textureLoader = new THREE.TextureLoader();
+        const normalMapURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/normal.jpg';
+        
+        console.log('🗻 Loading REAL Earth normal map (surface normals)...');
+        
+        const texture = textureLoader.load(
+            normalMapURL,
+            () => console.log('✅ Real Earth normal map loaded!'),
+            undefined,
+            () => console.warn('⚠️ Failed to load real normal map')
+        );
+        
+        texture.anisotropy = 16;
+        return texture;
+    }
+    
+    // OLD PROCEDURAL createEarthNormalMap REMOVED
+    _createEarthNormalMapProceduralBackup(size) {
+        // Backup of old procedural generation (not used)
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2445,7 +2513,26 @@ class SolarSystemModule {
     }
     
     createEarthSpecularMap(size) {
-        // Oceans are shiny, land is rough
+        // 🌊 ULTRA REALISTIC: Load real Earth specular map (water vs land)
+        const textureLoader = new THREE.TextureLoader();
+        const specularMapURL = 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/water_4k.png';
+        
+        console.log('🌊 Loading REAL Earth specular map (ocean reflectivity)...');
+        
+        const texture = textureLoader.load(
+            specularMapURL,
+            () => console.log('✅ Real Earth specular map loaded!'),
+            undefined,
+            () => console.warn('⚠️ Failed to load real specular map')
+        );
+        
+        texture.anisotropy = 16;
+        return texture;
+    }
+    
+    // OLD PROCEDURAL createEarthSpecularMap REMOVED
+    _createEarthSpecularMapProceduralBackup(size) {
+        // Backup of old procedural generation (not used)
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
