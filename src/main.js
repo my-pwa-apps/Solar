@@ -1351,8 +1351,8 @@ class SolarSystemModule {
         const sunRadius = 15; // Compromise between realism and usability
         const sunGeometry = new THREE.SphereGeometry(sunRadius, 128, 128); // Higher detail
         
-        // Create advanced sun texture with sunspots and granulation
-        const sunTexture = this.createSunTexture(2048);
+        // Load real NASA Sun texture (with procedural fallback)
+        const sunTexture = this.createSunTextureReal(2048);
         const sunBumpMap = this.createSunBumpMap(2048);
         
         const sunMaterial = new THREE.MeshStandardMaterial({
@@ -2117,6 +2117,131 @@ class SolarSystemModule {
         
         // Return procedural texture immediately (real texture will swap in when loaded)
         return proceduralTexture;
+    }
+    
+    // Generic planet texture loader with fallback
+    loadPlanetTextureReal(planetName, textureURLs, proceduralFunction, size = 2048) {
+        // Create procedural texture as fallback first
+        const proceduralTexture = proceduralFunction.call(this, size);
+        
+        // Try to load real NASA texture and swap it in when ready
+        const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
+        
+        let currentURLIndex = 0;
+        
+        const tryLoadTexture = () => {
+            if (currentURLIndex >= textureURLs.length) {
+                console.warn(`⚠️ All ${planetName} texture sources failed`);
+                console.warn(`   Using beautiful procedural ${planetName} instead`);
+                return;
+            }
+            
+            const url = textureURLs[currentURLIndex];
+            console.log(`🪐 Loading ${planetName} texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
+            
+            loader.load(
+                url,
+                (tex) => {
+                    console.log(`✅ Real ${planetName} texture loaded successfully!`);
+                    
+                    // Apply proper texture settings
+                    tex.colorSpace = THREE.SRGBColorSpace;
+                    tex.anisotropy = 16;
+                    tex.needsUpdate = true;
+                    
+                    // Update the material's map to use the real texture
+                    const planet = this.planets[planetName.toLowerCase()];
+                    if (planet && planet.material) {
+                        planet.material.map = tex;
+                        planet.material.needsUpdate = true;
+                        console.log(`🪐 ${planetName} material updated with real NASA texture!`);
+                    }
+                },
+                undefined,
+                (err) => {
+                    console.warn(`⚠️ ${planetName} source ${currentURLIndex + 1} failed, trying next...`);
+                    currentURLIndex++;
+                    tryLoadTexture();
+                }
+            );
+        };
+        
+        tryLoadTexture();
+        return proceduralTexture;
+    }
+    
+    // Sun real texture loader
+    createSunTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/sunmap.jpg'
+        ];
+        return this.loadPlanetTextureReal('Sun', textureURLs, this.createSunTexture, size);
+    }
+    
+    // Mercury real texture loader
+    createMercuryTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/mercurymap.jpg'
+        ];
+        return this.loadPlanetTextureReal('Mercury', textureURLs, this.createMercuryTexture, size);
+    }
+    
+    // Venus real texture loader
+    createVenusTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/venusmap.jpg'
+        ];
+        return this.loadPlanetTextureReal('Venus', textureURLs, this.createVenusTexture, size);
+    }
+    
+    // Mars real texture loader
+    createMarsTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/marsmap1k.jpg'
+        ];
+        return this.loadPlanetTextureReal('Mars', textureURLs, this.createMarsTexture, size);
+    }
+    
+    // Jupiter real texture loader
+    createJupiterTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/jupitermap.jpg'
+        ];
+        return this.loadPlanetTextureReal('Jupiter', textureURLs, this.createJupiterTexture, size);
+    }
+    
+    // Saturn real texture loader
+    createSaturnTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/saturnmap.jpg'
+        ];
+        return this.loadPlanetTextureReal('Saturn', textureURLs, this.createSaturnTexture, size);
+    }
+    
+    // Uranus real texture loader
+    createUranusTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/uranusmap.jpg'
+        ];
+        return this.loadPlanetTextureReal('Uranus', textureURLs, this.createUranusTexture, size);
+    }
+    
+    // Neptune real texture loader
+    createNeptuneTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/neptunemap.jpg'
+        ];
+        return this.loadPlanetTextureReal('Neptune', textureURLs, this.createNeptuneTexture, size);
+    }
+    
+    // Moon real texture loader
+    createMoonTextureReal(size) {
+        const textureURLs = [
+            'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg',
+            'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg'
+        ];
+        return this.loadPlanetTextureReal('Moon', textureURLs, this.createMoonTexture, size);
     }
     
     createEarthTexture(size) {
@@ -3299,8 +3424,8 @@ class SolarSystemModule {
                 return earthMaterial;
                 
             case 'mars':
-                // Mars: Hyperrealistic rusty red surface with canyons, polar caps
-                const marsTexture = this.createMarsTexture(2048);
+                // Mars: REAL NASA texture with rusty red surface with canyons, polar caps
+                const marsTexture = this.createMarsTextureReal(2048);
                 const marsBump = this.createMarsBumpMap(2048);
                 const marsNormal = this.createMarsNormalMap(2048);
                 
@@ -3317,8 +3442,8 @@ class SolarSystemModule {
                 });
                 
             case 'venus':
-                // Venus: Thick yellowish sulfuric acid clouds
-                const venusTexture = this.createVenusTexture(2048);
+                // Venus: REAL NASA texture with thick yellowish sulfuric acid clouds
+                const venusTexture = this.createVenusTextureReal(2048);
                 return new THREE.MeshStandardMaterial({
                     map: venusTexture,
                     color: 0xe8c468,
@@ -3329,8 +3454,8 @@ class SolarSystemModule {
                 });
                 
             case 'mercury':
-                // Mercury: Heavily cratered like the Moon
-                const mercuryTexture = this.createMercuryTexture(2048);
+                // Mercury: REAL NASA texture heavily cratered surface
+                const mercuryTexture = this.createMercuryTextureReal(2048);
                 const mercuryBump = this.createMercuryBumpMap(2048);
                 
                 return new THREE.MeshStandardMaterial({
@@ -3344,8 +3469,8 @@ class SolarSystemModule {
                 });
                 
             case 'jupiter':
-                // Jupiter: Hyperrealistic bands with Great Red Spot
-                const jupiterTexture = this.createJupiterTexture(2048);
+                // Jupiter: REAL NASA texture with hyperrealistic bands and Great Red Spot
+                const jupiterTexture = this.createJupiterTextureReal(2048);
                 const jupiterBump = this.createJupiterBumpMap(1024);
                 
                 return new THREE.MeshStandardMaterial({
@@ -3359,8 +3484,8 @@ class SolarSystemModule {
                 });
                 
             case 'saturn':
-                // Saturn: Pale gold with detailed banding
-                const saturnTexture = this.createSaturnTexture(2048);
+                // Saturn: REAL NASA texture with pale gold and detailed banding
+                const saturnTexture = this.createSaturnTextureReal(2048);
                 const saturnBump = this.createSaturnBumpMap(1024);
                 
                 return new THREE.MeshStandardMaterial({
@@ -3374,8 +3499,8 @@ class SolarSystemModule {
                 });
                 
             case 'uranus':
-                // Uranus: Hyperrealistic cyan atmosphere with methane
-                const uranusTexture = this.createUranusTexture(2048);
+                // Uranus: REAL NASA texture with cyan atmosphere and methane
+                const uranusTexture = this.createUranusTextureReal(2048);
                 return new THREE.MeshStandardMaterial({
                     map: uranusTexture,
                     roughness: 0.3,
@@ -3385,8 +3510,8 @@ class SolarSystemModule {
                 });
                 
             case 'neptune':
-                // Neptune: Hyperrealistic deep blue with Great Dark Spot
-                const neptuneTexture = this.createNeptuneTexture(2048);
+                // Neptune: REAL NASA texture with deep blue and Great Dark Spot
+                const neptuneTexture = this.createNeptuneTextureReal(2048);
                 return new THREE.MeshStandardMaterial({
                     map: neptuneTexture,
                     roughness: 0.3,
@@ -3552,8 +3677,8 @@ class SolarSystemModule {
         const moonName = config.name.toLowerCase();
         
         if (moonName === 'moon') {
-            // Earth's Moon: HYPERREALISTIC with deep craters and maria
-            const moonTexture = this.createMoonTexture(2048);
+            // Earth's Moon: REAL NASA texture with deep craters and maria
+            const moonTexture = this.createMoonTextureReal(2048);
             const moonBump = this.createMoonBumpMap(2048);
             const moonNormal = this.createMoonNormalMap(2048);
             
