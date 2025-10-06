@@ -3238,24 +3238,45 @@ class SolarSystemModule {
         // Planet-specific hyperrealistic materials with high-quality textures
         switch(name) {
             case 'earth':
-                // Earth: Photorealistic blue oceans, continents, clouds with day/night cycle
-                const earthTexture = this.createEarthTexture(2048);
-                const earthBump = this.createEarthBumpMap(2048);
-                const earthSpecular = this.createEarthSpecularMap(2048);
-                const earthNormal = this.createEarthNormalMap(2048);
+                // Earth: ULTRA HYPER-REALISTIC with 4K textures and advanced materials
+                const earthTexture = this.createEarthTexture(4096);  // 4K resolution!
+                const earthBump = this.createEarthBumpMap(4096);     // 4K bump map
+                const earthSpecular = this.createEarthSpecularMap(4096); // 4K specular
+                const earthNormal = this.createEarthNormalMap(4096); // 4K normal map
                 
-                // Use MeshStandardMaterial for realistic lighting and day/night cycle
+                // ULTRA realistic material with PBR (Physically Based Rendering)
                 const earthMaterial = new THREE.MeshStandardMaterial({
                     map: earthTexture,
+                    
+                    // Normal map for surface detail (mountains, valleys)
                     normalMap: earthNormal,
-                    normalScale: new THREE.Vector2(0.5, 0.5),
+                    normalScale: new THREE.Vector2(1.2, 1.2), // Increased for more detail
+                    
+                    // Bump map for elevation
                     bumpMap: earthBump,
-                    bumpScale: 0.04,
+                    bumpScale: 0.08, // Doubled for realistic terrain
+                    
+                    // Roughness map (water = smooth/shiny, land = rough)
                     roughnessMap: earthSpecular,
-                    roughness: 0.25,
-                    metalness: 0.15,
-                    emissive: 0x111111,
-                    emissiveIntensity: 0.05
+                    roughness: 0.35, // Slightly rougher for realistic continents
+                    
+                    // Metalness (oceans have slight reflection)
+                    metalness: 0.2, // Increased for water reflections
+                    
+                    // Subtle emissive for atmospheric glow
+                    emissive: 0x0a0a0f,
+                    emissiveIntensity: 0.08,
+                    
+                    // Advanced rendering
+                    envMapIntensity: 1.5, // Environment reflections
+                    transparent: false,
+                    side: THREE.FrontSide,
+                    
+                    // Lighting response
+                    flatShading: false,
+                    
+                    // Color space for accurate rendering
+                    toneMapped: true
                 });
                 
                 return earthMaterial;
@@ -3379,8 +3400,8 @@ class SolarSystemModule {
     }
 
     createPlanet(scene, config) {
-        // Use cached geometry or create new
-        const segments = CONFIG.QUALITY.sphereSegments;
+        // ULTRA HIGH DETAIL for Earth, normal detail for others
+        const segments = config.name === 'earth' ? 256 : CONFIG.QUALITY.sphereSegments;
         const geometry = this.getGeometry('sphere', config.radius, segments, segments);
         
         // Create hyperrealistic material based on planet type
