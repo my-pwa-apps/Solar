@@ -2059,14 +2059,14 @@ class SolarSystemModule {
         const loader = new THREE.TextureLoader();
         loader.setCrossOrigin('anonymous');
         
-        // Try multiple NASA Earth texture sources (in case one fails)
+        // Try multiple Earth texture sources (CORS-friendly, in order of quality)
         const textureURLs = [
-            // NASA Earth Observatory (high quality, often works)
-            'https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73909/world.topo.bathy.200412.3x5400x2700.jpg',
-            // Alternative: NASA Visible Earth
-            'https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg',
-            // Alternative: Blue Marble 2048
-            'https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57735/land_ocean_ice_2048.jpg'
+            // GitHub CDN - Blue Marble 4K (WORKS! No CORS issues)
+            'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg',
+            // Alternative: 8K version (higher quality but larger)
+            'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_8k.jpg',
+            // Fallback: Another GitHub source
+            'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg'
         ];
         
         let currentURLIndex = 0;
@@ -2084,15 +2084,19 @@ class SolarSystemModule {
             loader.load(
                 url,
                 (tex) => {
-                    console.log('✅ Real NASA Earth texture loaded successfully!');
-                    console.log('   Earth now shows real continents!');
+                    console.log('✅ Real Earth texture loaded successfully!');
+                    console.log('   Earth now shows real continents from NASA Blue Marble!');
+                    
+                    // Apply proper texture settings for best quality
+                    tex.colorSpace = THREE.SRGBColorSpace;
+                    tex.anisotropy = 16; // Maximum quality filtering
                     tex.needsUpdate = true;
                     
                     // Update the material's map to use the real texture
                     if (this.planets && this.planets.earth) {
                         this.planets.earth.material.map = tex;
                         this.planets.earth.material.needsUpdate = true;
-                        console.log('🌍 Earth material updated with real NASA texture!');
+                        console.log('🌍 Earth material updated with real texture!');
                     }
                 },
                 (progress) => {
