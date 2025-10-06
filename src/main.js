@@ -3191,24 +3191,13 @@ class SolarSystemModule {
         // Planet-specific hyperrealistic materials with high-quality textures
         switch(name) {
             case 'earth':
-                console.log('🌍 ✅ EARTH CASE MATCHED - Creating hyperrealistic Earth material...');
-                // Earth: Photorealistic blue oceans, continents, clouds, city lights
+                // Earth: Photorealistic blue oceans, continents, clouds with day/night cycle
                 const earthTexture = this.createEarthTexture(2048);
                 const earthBump = this.createEarthBumpMap(2048);
                 const earthSpecular = this.createEarthSpecularMap(2048);
                 const earthNormal = this.createEarthNormalMap(2048);
                 
-                console.log('🌍 Earth material created with texture:', earthTexture);
-                console.log('🌍 Earth texture size:', earthTexture.image?.width, 'x', earthTexture.image?.height);
-                
-                // Use MeshBasicMaterial with texture - always visible, ignores lighting
-                console.log('🌍 Using MeshBasicMaterial with texture - always visible!');
-                
-                const earthMaterial = new THREE.MeshBasicMaterial({
-                    map: earthTexture
-                });
-                
-                /* ORIGINAL MeshStandardMaterial - DISABLED FOR TESTING
+                // Use MeshStandardMaterial for realistic lighting and day/night cycle
                 const earthMaterial = new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     normalMap: earthNormal,
@@ -3221,10 +3210,7 @@ class SolarSystemModule {
                     emissive: 0x111111,
                     emissiveIntensity: 0.05
                 });
-                */
                 
-                console.log('🌍 Earth material map:', earthMaterial.map);
-                console.log('🌍 Earth material type:', earthMaterial.type);
                 return earthMaterial;
                 
             case 'mars':
@@ -5938,7 +5924,7 @@ class TopicManager {
             if (this.clickTimeout) return;
             this.clickTimeout = setTimeout(() => {
                 this.clickTimeout = null;
-            }, 300);
+            }, 100);  // Reduced from 300ms to 100ms for better responsiveness
             this.handleCanvasClick(e);
         });
     }
@@ -6011,7 +5997,7 @@ class TopicManager {
         this.sceneManager.raycaster.setFromCamera(this.sceneManager.mouse, this.sceneManager.camera);
         const intersects = this.sceneManager.raycaster.intersectObjects(
             this.currentModule.getSelectableObjects(), 
-            false
+            true  // Check children too (clouds, rings, etc.)
         );
 
         if (intersects.length > 0) {
