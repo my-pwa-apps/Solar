@@ -86,6 +86,7 @@ class SceneManager {
         this.mouse = new THREE.Vector2();
         this.lights = {};
         this.resizeTimeout = null;
+        this.labelsVisible = false; // Initialize labels as hidden
         
         // Track previous button states for VR controllers to detect press (not hold)
         this.previousButtonStates = [
@@ -1449,22 +1450,27 @@ class SolarSystemModule {
             realSize: '1,391,000 km diameter'
         };
         
-        // Sun lighting - PointLight from center
-        const sunLight = new THREE.PointLight(0xFFFFE0, 8, 0, 1); // Bright warm light
+        // Sun lighting - PointLight from center (increased intensity for better day/night contrast)
+        const sunLight = new THREE.PointLight(0xFFFFE0, 12, 0, 1.2); // Higher intensity, faster decay
         sunLight.name = 'sunLight';
         sunLight.position.set(0, 0, 0);
-        sunLight.castShadow = true;
+        sunLight.castShadow = CONFIG.QUALITY.shadows;
         sunLight.shadow.mapSize.width = 2048;
         sunLight.shadow.mapSize.height = 2048;
         sunLight.shadow.camera.near = 1;
         sunLight.shadow.camera.far = 1000;
+        sunLight.shadow.bias = -0.001; // Reduce shadow artifacts
         scene.add(sunLight);
         this.sun.userData.sunLight = sunLight;
         
-        // Ambient light for general scene illumination
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        // Reduced ambient light for better day/night contrast
+        const ambientLight = new THREE.AmbientLight(0x202040, 0.3); // Much darker ambient for contrast
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
+        
+        if (DEBUG.enabled) {
+            console.log('💡 Lighting: Sun intensity 12, Ambient 0.3 (enhanced day/night contrast)');
+        }
         
         // Multi-layer corona for realistic glow
         const coronaLayers = [
@@ -3516,30 +3522,31 @@ class SolarSystemModule {
                 const earthNormal = this.createEarthNormalMap(4096);
                 
                 // ULTRA realistic material with PBR (Physically Based Rendering)
+                // NO emissive - planets don't emit light, they only reflect it
                 const earthMaterial = new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     
                     // Normal map for surface detail (mountains, valleys)
                     normalMap: earthNormal,
-                    normalScale: new THREE.Vector2(1.2, 1.2), // Increased for more detail
+                    normalScale: new THREE.Vector2(1.2, 1.2),
                     
                     // Bump map for elevation
                     bumpMap: earthBump,
-                    bumpScale: 0.08, // Doubled for realistic terrain
+                    bumpScale: 0.08,
                     
                     // Roughness map (water = smooth/shiny, land = rough)
                     roughnessMap: earthSpecular,
-                    roughness: 0.35, // Slightly rougher for realistic continents
+                    roughness: 0.4, // Increased for better light response
                     
                     // Metalness (oceans have slight reflection)
-                    metalness: 0.2, // Increased for water reflections
+                    metalness: 0.1, // Reduced - Earth is not metallic
                     
-                    // Subtle emissive for atmospheric glow
-                    emissive: 0x0a0a0f,
-                    emissiveIntensity: 0.08,
+                    // NO emissive - let the sun's light create day/night naturally
+                    emissive: 0x000000,
+                    emissiveIntensity: 0,
                     
                     // Advanced rendering
-                    envMapIntensity: 1.5, // Environment reflections
+                    envMapIntensity: 1.2,
                     transparent: false,
                     side: THREE.FrontSide,
                     flatShading: false,
@@ -6280,23 +6287,13 @@ class TopicManager {
             }, { passive: true });
         }
         
-        // Comet tails toggle button
-        const cometTailsButton = document.getElementById('toggle-comet-tails');
-        if (cometTailsButton) {
-            cometTailsButton.addEventListener('click', () => {
-                if (this.solarSystemModule) {
-                    this.solarSystemModule.cometTailsVisible = !this.solarSystemModule.cometTailsVisible;
-                    cometTailsButton.classList.toggle('toggle-on');
-                    cometTailsButton.textContent = this.solarSystemModule.cometTailsVisible ? 
-                        '?? Tails ON' : '?? Tails OFF';
-                    console.log(`Comet tails ${this.solarSystemModule.cometTailsVisible ? 'enabled' : 'disabled'}`);
-                }
-            }, { passive: true });
-        }
-        
         // Labels toggle button
         const labelsButton = document.getElementById('toggle-details');
         if (labelsButton) {
+            // Set initial button state
+            labelsButton.textContent = '📊 Labels OFF';
+            labelsButton.classList.remove('toggle-on');
+            
             labelsButton.addEventListener('click', () => {
                 const currentModule = this.solarSystemModule || this.quantumModule;
                 if (currentModule && currentModule.toggleLabels) {
@@ -6306,8 +6303,8 @@ class TopicManager {
                         currentModule.toggleLabels(this.sceneManager.labelsVisible);
                         labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
                         labelsButton.textContent = this.sceneManager.labelsVisible ? 
-                            '?? Labels ON' : '?? Labels OFF';
-                        console.log(`??? Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+                            '📊 Labels ON' : '📊 Labels OFF';
+                        if (DEBUG.enabled) console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
                     }
                 }
             }, { passive: true });
@@ -6584,9 +6581,6 @@ class App {
                     break;
                 case 's':
                     document.getElementById('toggle-scale')?.click();
-                    break;
-                case 'c':
-                    document.getElementById('toggle-comet-tails')?.click();
                     break;
                 case 'f':
                     const fpsCounter = document.getElementById('fps-counter');
