@@ -112,8 +112,8 @@ class SceneManager {
         this.labelRenderer.domElement.style.pointerEvents = 'none';
         container.appendChild(this.labelRenderer.domElement);
         
-        // Label visibility state
-        this.labelsVisible = true;
+        // Label visibility state - start hidden
+        this.labelsVisible = false;
         
         console.log('🏷️ Label system initialized');
     }
@@ -5196,6 +5196,8 @@ class SolarSystemModule {
         // Create CSS2D labels for all major objects
         this.labels = [];
         
+        console.log('🏷️ Creating labels... CSS2DObject available:', typeof CSS2DObject !== 'undefined');
+        
         // Helper function to create a label
         const createLabel = (object, text) => {
             if (!object || !object.userData) return;
@@ -5214,6 +5216,7 @@ class SolarSystemModule {
             
             const label = new CSS2DObject(labelDiv);
             label.position.set(0, object.userData.radius * 1.5 || 5, 0);
+            label.visible = false; // Start hidden
             object.add(label);
             
             object.userData.label = label;
@@ -5913,13 +5916,16 @@ class TopicManager {
         if (labelsButton) {
             labelsButton.addEventListener('click', () => {
                 const currentModule = this.solarSystemModule || this.quantumModule;
-                if (currentModule && currentModule.labels) {
-                    // Toggle visibility
-                    const firstLabel = currentModule.labels[0];
-                    const newState = firstLabel ? !firstLabel.visible : true;
-                    currentModule.toggleLabels(newState);
-                    labelsButton.classList.toggle('toggle-on', newState);
-                    labelsButton.textContent = newState ? '📊 Labels ON' : '📊 Labels OFF';
+                if (currentModule && currentModule.toggleLabels) {
+                    // Toggle visibility using SceneManager's labelsVisible state
+                    if (this.sceneManager) {
+                        this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
+                        currentModule.toggleLabels(this.sceneManager.labelsVisible);
+                        labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
+                        labelsButton.textContent = this.sceneManager.labelsVisible ? 
+                            '📊 Labels ON' : '📊 Labels OFF';
+                        console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+                    }
                 }
             }, { passive: true });
         }
