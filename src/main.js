@@ -1,4 +1,4 @@
-﻿// Scientific VR/AR Explorer - Optimized No-Build Version
+// Scientific VR/AR Explorer - Optimized No-Build Version
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
@@ -287,7 +287,7 @@ class SceneManager {
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
         canvas.height = 768;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         // Background
         ctx.fillStyle = 'rgba(10, 10, 30, 0.95)';
@@ -297,7 +297,7 @@ class SceneManager {
         ctx.fillStyle = '#FFD700';
         ctx.font = 'bold 60px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('🌌 Space Explorer VR', 512, 80);
+        ctx.fillText('?? Space Explorer VR', 512, 80);
         
         // Subtitle
         ctx.fillStyle = '#fff';
@@ -310,27 +310,27 @@ class SceneManager {
         // Define buttons
         this.vrButtons = [
             // Row 1: Time controls
-            { x: 50, y: 160, w: 160, h: 80, label: '⏸️ All', action: 'pauseall', color: '#e74c3c' },
-            { x: 220, y: 160, w: 160, h: 80, label: '🌍 Orbit', action: 'pauseorbit', color: '#e67e22' },
-            { x: 390, y: 160, w: 160, h: 80, label: '▶️ Play', action: 'play', color: '#2ecc71' },
+            { x: 50, y: 160, w: 160, h: 80, label: '?? All', action: 'pauseall', color: '#e74c3c' },
+            { x: 220, y: 160, w: 160, h: 80, label: '?? Orbit', action: 'pauseorbit', color: '#e67e22' },
+            { x: 390, y: 160, w: 160, h: 80, label: '?? Play', action: 'play', color: '#2ecc71' },
             { x: 560, y: 160, w: 110, h: 80, label: '<<', action: 'speed--', color: '#9b59b6' },
             { x: 680, y: 160, w: 110, h: 80, label: '>>', action: 'speed++', color: '#3498db' },
             { x: 800, y: 160, w: 140, h: 80, label: '1x', action: 'speedreset', color: '#16a085' },
             
             // Row 2: View controls
-            { x: 50, y: 260, w: 160, h: 80, label: '🔆+', action: 'brightup', color: '#f39c12' },
-            { x: 220, y: 260, w: 160, h: 80, label: '🔅-', action: 'brightdown', color: '#e67e22' },
-            { x: 390, y: 260, w: 160, h: 80, label: '☄️ Tails', action: 'tails', color: '#1abc9c' },
-            { x: 560, y: 260, w: 190, h: 80, label: '� Scale', action: 'scale', color: '#8e44ad' },
-            { x: 760, y: 260, w: 180, h: 80, label: '� Reset', action: 'reset', color: '#34495e' },
+            { x: 50, y: 260, w: 160, h: 80, label: '??+', action: 'brightup', color: '#f39c12' },
+            { x: 220, y: 260, w: 160, h: 80, label: '??-', action: 'brightdown', color: '#e67e22' },
+            { x: 390, y: 260, w: 160, h: 80, label: '?? Tails', action: 'tails', color: '#1abc9c' },
+            { x: 560, y: 260, w: 190, h: 80, label: '? Scale', action: 'scale', color: '#8e44ad' },
+            { x: 760, y: 260, w: 180, h: 80, label: '? Reset', action: 'reset', color: '#34495e' },
             
             // Row 3: Navigation
-            { x: 50, y: 360, w: 290, h: 80, label: '🌍 Focus Earth', action: 'earth', color: '#16a085' },
-            { x: 350, y: 360, w: 290, h: 80, label: '🪐 Solar System', action: 'solar', color: '#2980b9' },
-            { x: 650, y: 360, w: 290, h: 80, label: '⚛️ Quantum', action: 'quantum', color: '#c0392b' },
+            { x: 50, y: 360, w: 290, h: 80, label: '?? Focus Earth', action: 'earth', color: '#16a085' },
+            { x: 350, y: 360, w: 290, h: 80, label: '?? Solar System', action: 'solar', color: '#2980b9' },
+            { x: 650, y: 360, w: 290, h: 80, label: '?? Quantum', action: 'quantum', color: '#c0392b' },
             
             // Row 4: Help
-            { x: 312, y: 460, w: 400, h: 70, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' }
+            { x: 312, y: 460, w: 400, h: 70, label: '? Close Menu', action: 'hide', color: '#7f8c8d' }
         ];
         
         // Draw buttons
@@ -360,7 +360,7 @@ class SceneManager {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
+        ctx.fillText('?? Time Speed:', 50, sliderY);
         
         // Slider track
         const sliderX = 280;
@@ -405,10 +405,10 @@ class SceneManager {
         ctx.fillStyle = '#0f0';
         ctx.font = 'bold 28px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Mode: ▶️ Playing | Speed: 1x | Brightness: 50%', 512, 685);
+        ctx.fillText('Mode: ?? Playing | Speed: 1x | Brightness: 50%', 512, 685);
         ctx.fillStyle = '#fff';
         ctx.font = '22px Arial';
-        ctx.fillText('⏸️ All = Pause Everything | 🌍 Orbit = Pause Solar Orbits Only', 512, 720);
+        ctx.fillText('?? All = Pause Everything | ?? Orbit = Pause Solar Orbits Only', 512, 720);
         ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
         
         // Create texture
@@ -432,12 +432,12 @@ class SceneManager {
         this.vrUICanvas = canvas;
         this.vrUIContext = ctx;
         
-        console.log('✅ VR UI Panel created with', this.vrButtons.length, 'buttons');
+        console.log('? VR UI Panel created with', this.vrButtons.length, 'buttons');
     }
     
     onSelectStart(controller, index) {
         // Handle controller trigger press
-        console.log(`🎯 Controller ${index} trigger pressed`);
+        console.log(`?? Controller ${index} trigger pressed`);
         controller.userData.selecting = true;
         
         // Check if grip button is also held for zoom
@@ -464,35 +464,35 @@ class SceneManager {
         
         // First, check for VR UI interaction
         if (this.vrUIPanel && this.vrUIPanel.visible) {
-            console.log('🎨 VR UI Panel is visible - checking for button clicks');
+            console.log('?? VR UI Panel is visible - checking for button clicks');
             const intersects = raycaster.intersectObject(this.vrUIPanel);
             
             if (intersects.length > 0) {
                 const uv = intersects[0].uv;
                 const x = uv.x * 1024;
                 const y = (1 - uv.y) * 768;
-                console.log(`📍 VR UI clicked at UV (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)}) = pixel (${x.toFixed(0)}, ${y.toFixed(0)})`);
+                console.log(`?? VR UI clicked at UV (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)}) = pixel (${x.toFixed(0)}, ${y.toFixed(0)})`);
                 
                 // Check which button was clicked
                 let buttonFound = false;
                 this.vrButtons.forEach(btn => {
                     if (x >= btn.x && x <= btn.x + btn.w && 
                         y >= btn.y && y <= btn.y + btn.h) {
-                        console.log(`✅ VR Button clicked: "${btn.label}" action="${btn.action}"`);
+                        console.log(`? VR Button clicked: "${btn.label}" action="${btn.action}"`);
                         this.handleVRAction(btn.action);
                         this.flashVRButton(btn);
                         buttonFound = true;
                     }
                 });
                 if (!buttonFound) {
-                    console.log('⚠️ Click was on UI panel but not on any button');
+                    console.log('?? Click was on UI panel but not on any button');
                 }
                 return; // Don't check for object selection if we clicked UI
             } else {
-                console.log('❌ VR UI Panel visible but raycast missed it');
+                console.log('? VR UI Panel visible but raycast missed it');
             }
         } else {
-            console.log(`ℹ️ VR UI Panel: exists=${!!this.vrUIPanel}, visible=${this.vrUIPanel?.visible}`);
+            console.log(`?? VR UI Panel: exists=${!!this.vrUIPanel}, visible=${this.vrUIPanel?.visible}`);
         }
         
         // If UI wasn't clicked, check for object selection (planets, moons, etc.)
@@ -500,7 +500,7 @@ class SceneManager {
         
         if (intersects.length > 0) {
             const hitObject = intersects[0].object;
-            console.log('🎯 VR Selected object:', hitObject.name || hitObject.type);
+            console.log('?? VR Selected object:', hitObject.name || hitObject.type);
             
             // Try to focus on the selected object
             const app = window.app || this;
@@ -512,22 +512,22 @@ class SceneManager {
                     // If grip+trigger held, zoom VERY close for inspection
                     if (gripHeld) {
                         this.zoomToObject(hitObject, 'close');
-                        console.log('🔍 ZOOMING CLOSE to:', hitObject.name);
+                        console.log('?? ZOOMING CLOSE to:', hitObject.name);
                         if (this.vrUIPanel) {
-                            this.updateVRStatus(`🔍 Inspecting: ${hitObject.name}`);
+                            this.updateVRStatus(`?? Inspecting: ${hitObject.name}`);
                         }
                     } else {
                         // Normal focus
                         module.focusOnObject(hitObject, this.camera, this.controls);
-                        console.log('✅ Focused on:', hitObject.name);
+                        console.log('? Focused on:', hitObject.name);
                         if (this.vrUIPanel) {
-                            this.updateVRStatus(`🎯 Selected: ${hitObject.name}`);
+                            this.updateVRStatus(`?? Selected: ${hitObject.name}`);
                         }
                     }
                 }
             }
         } else {
-            console.log('❌ No object hit by raycast');
+            console.log('? No object hit by raycast');
         }
     }
     
@@ -554,13 +554,13 @@ class SceneManager {
         // Only toggle menu if trigger not held (grip alone = menu, grip+trigger = zoom)
         if (!triggerHeld && this.vrUIPanel) {
             this.vrUIPanel.visible = !this.vrUIPanel.visible;
-            console.log(`🎨 VR Menu toggled - now ${this.vrUIPanel.visible ? 'VISIBLE' : 'HIDDEN'}`);
-            console.log(`📍 Menu position:`, this.vrUIPanel.position);
-            console.log(`📐 Menu parent:`, this.vrUIPanel.parent?.constructor.name);
+            console.log(`?? VR Menu toggled - now ${this.vrUIPanel.visible ? 'VISIBLE' : 'HIDDEN'}`);
+            console.log(`?? Menu position:`, this.vrUIPanel.position);
+            console.log(`?? Menu parent:`, this.vrUIPanel.parent?.constructor.name);
         } else if (triggerHeld) {
-            console.log('⚠️ Grip pressed but trigger also held - no menu toggle');
+            console.log('?? Grip pressed but trigger also held - no menu toggle');
         } else if (!this.vrUIPanel) {
-            console.log('❌ Grip pressed but vrUIPanel does not exist!');
+            console.log('? Grip pressed but vrUIPanel does not exist!');
         }
     }
     
@@ -610,11 +610,11 @@ class SceneManager {
         // Smoothly move dolly
         this.dolly.position.copy(newPosition);
         
-        console.log(`📍 VR Zoomed to ${object.userData?.name || 'object'} at distance ${distance.toFixed(2)}`);
+        console.log(`?? VR Zoomed to ${object.userData?.name || 'object'} at distance ${distance.toFixed(2)}`);
     }
     
     handleVRAction(action) {
-        console.log(`🎬 handleVRAction called with action="${action}"`);
+        console.log(`?? handleVRAction called with action="${action}"`);
         
         // Get current app state
         const app = window.app || this;
@@ -626,7 +626,7 @@ class SceneManager {
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = 0;
                 }
-                this.updateVRStatus('⏸️ PAUSED - Everything Stopped');
+                this.updateVRStatus('?? PAUSED - Everything Stopped');
                 this.updateVRUI();
                 break;
             case 'pauseorbit':
@@ -635,7 +635,7 @@ class SceneManager {
                 if (app.topicManager && app.topicManager.timeSpeed === 0) {
                     app.topicManager.timeSpeed = 1; // Resume if paused
                 }
-                this.updateVRStatus('🌍 ORBITAL PAUSE - Planets Frozen, Still Rotating');
+                this.updateVRStatus('?? ORBITAL PAUSE - Planets Frozen, Still Rotating');
                 this.updateVRUI();
                 break;
             case 'play':
@@ -644,13 +644,13 @@ class SceneManager {
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = app.topicManager.timeSpeed || 1;
                 }
-                this.updateVRStatus('▶️ PLAYING - All Motion Active');
+                this.updateVRStatus('?? PLAYING - All Motion Active');
                 this.updateVRUI();
                 break;
             case 'speed++':
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = Math.min(app.topicManager.timeSpeed + 1, 10);
-                    this.updateVRStatus(`⏩ Speed: ${app.topicManager.timeSpeed}x`);
+                    this.updateVRStatus(`? Speed: ${app.topicManager.timeSpeed}x`);
                     this.updateVRUI();
                 }
                 break;
@@ -660,32 +660,32 @@ class SceneManager {
                     if (app.topicManager.timeSpeed === 0) {
                         this.pauseMode = 'all';
                     }
-                    this.updateVRStatus(`⏪ Speed: ${app.topicManager.timeSpeed}x`);
+                    this.updateVRStatus(`? Speed: ${app.topicManager.timeSpeed}x`);
                     this.updateVRUI();
                 }
                 break;
             case 'speedreset':
                 if (app.topicManager) {
                     app.topicManager.timeSpeed = 1;
-                    this.updateVRStatus('⏱️ Speed Reset to 1x');
+                    this.updateVRStatus('?? Speed Reset to 1x');
                     this.updateVRUI();
                 }
                 break;
             case 'brightup':
                 app.topicManager.brightness = Math.min((app.topicManager.brightness || 50) + 10, 100);
                 this.updateBrightness(app.topicManager.brightness / 100);
-                this.updateVRStatus(`🔆 Brightness: ${app.topicManager.brightness}%`);
+                this.updateVRStatus(`?? Brightness: ${app.topicManager.brightness}%`);
                 break;
             case 'brightdown':
                 app.topicManager.brightness = Math.max((app.topicManager.brightness || 50) - 10, 0);
                 this.updateBrightness(app.topicManager.brightness / 100);
-                this.updateVRStatus(`🔅 Brightness: ${app.topicManager.brightness}%`);
+                this.updateVRStatus(`?? Brightness: ${app.topicManager.brightness}%`);
                 break;
             case 'tails':
                 if (app.topicManager && app.topicManager.solarSystemModule) {
                     const module = app.topicManager.solarSystemModule;
                     module.cometTailsVisible = !module.cometTailsVisible;
-                    this.updateVRStatus(`☄️ Tails ${module.cometTailsVisible ? 'ON' : 'OFF'}`);
+                    this.updateVRStatus(`?? Tails ${module.cometTailsVisible ? 'ON' : 'OFF'}`);
                 }
                 break;
             case 'scale':
@@ -693,32 +693,32 @@ class SceneManager {
                     const module = app.topicManager.solarSystemModule;
                     module.realisticScale = !module.realisticScale;
                     module.updateScale();
-                    this.updateVRStatus(`📏 ${module.realisticScale ? 'Realistic' : 'Educational'} Scale`);
+                    this.updateVRStatus(`?? ${module.realisticScale ? 'Realistic' : 'Educational'} Scale`);
                 }
                 break;
             case 'reset':
                 this.resetCamera();
-                this.updateVRStatus('🔄 View Reset');
+                this.updateVRStatus('?? View Reset');
                 break;
             case 'earth':
                 if (app.topicManager && app.topicManager.currentModule) {
                     const earth = app.topicManager.currentModule.planets?.earth;
                     if (earth) {
                         app.topicManager.currentModule.focusOnObject(earth, this.camera, this.controls);
-                        this.updateVRStatus('🌍 Focused on Earth');
+                        this.updateVRStatus('?? Focused on Earth');
                     }
                 }
                 break;
             case 'solar':
                 if (app.topicManager) {
                     app.topicManager.loadTopic('solar-system');
-                    this.updateVRStatus('🪐 Loading Solar System...');
+                    this.updateVRStatus('?? Loading Solar System...');
                 }
                 break;
             case 'quantum':
                 if (app.topicManager) {
                     app.topicManager.loadTopic('quantum');
-                    this.updateVRStatus('⚛️ Loading Quantum Physics...');
+                    this.updateVRStatus('?? Loading Quantum Physics...');
                 }
                 break;
             case 'hide':
@@ -756,9 +756,9 @@ class SceneManager {
         const brightness = app.topicManager?.brightness || 50;
         
         // Mode text
-        let modeText = '▶️ Playing';
-        if (this.pauseMode === 'all') modeText = '⏸️ Paused All';
-        else if (this.pauseMode === 'orbital') modeText = '🌍 Orbital Pause';
+        let modeText = '?? Playing';
+        if (this.pauseMode === 'all') modeText = '?? Paused All';
+        else if (this.pauseMode === 'orbital') modeText = '?? Orbital Pause';
         
         // Status line
         ctx.fillStyle = '#0f0';
@@ -774,7 +774,7 @@ class SceneManager {
         
         this.vrUIPanel.material.map.needsUpdate = true;
         
-        console.log('🎮 VR Status:', message);
+        console.log('?? VR Status:', message);
     }
     
     updateVRUI() {
@@ -796,7 +796,7 @@ class SceneManager {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
+        ctx.fillText('?? Time Speed:', 50, sliderY);
         
         // Slider track
         ctx.fillStyle = '#34495e';
@@ -897,7 +897,7 @@ class SceneManager {
         
         // Ensure dolly exists
         if (!this.dolly) {
-            console.warn('⚠️ Dolly not found!');
+            console.warn('?? Dolly not found!');
             return;
         }
         
@@ -927,7 +927,7 @@ class SceneManager {
             
             if (!gamepad) {
                 if (Math.random() < 0.01) {
-                    console.warn(`⚠️ No gamepad for controller ${i}`);
+                    console.warn(`?? No gamepad for controller ${i}`);
                 }
                 continue;
             }
@@ -941,7 +941,7 @@ class SceneManager {
                     }
                 }
                 if (pressed.length > 0) {
-                    console.log(`🎮 ${handedness?.toUpperCase() || 'UNKNOWN'} pressed:`, pressed.join(', '));
+                    console.log(`?? ${handedness?.toUpperCase() || 'UNKNOWN'} pressed:`, pressed.join(', '));
                 }
             }
             
@@ -1099,7 +1099,7 @@ class SceneManager {
     showError(message) {
         const loading = document.getElementById('loading');
         if (loading) {
-            loading.querySelector('h2').textContent = '⚠️ Error';
+            loading.querySelector('h2').textContent = '?? Error';
             loading.querySelector('#loading-text').textContent = message;
             loading.classList.remove('hidden');
         }
@@ -1373,7 +1373,7 @@ class SolarSystemModule {
             type: 'Star',
             distance: 0,
             radius: sunRadius,
-            description: '☀️ The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
+            description: '?? The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
             funFact: 'The Sun is so big that 1.3 million Earths could fit inside it!',
             realSize: '1,391,000 km diameter'
         };
@@ -1392,7 +1392,7 @@ class SolarSystemModule {
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // INCREASED: Bright white ambient for visibility
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
-        console.log('💡 Ambient light increased to 1.2 intensity for Earth visibility');
+        console.log('?? Ambient light increased to 1.2 intensity for Earth visibility');
         
         // Multi-layer corona for realistic glow
         const coronaLayers = [
@@ -1463,7 +1463,7 @@ class SolarSystemModule {
             speed: 0.04,
             rotationSpeed: 0.004,
             tilt: 0.034,
-            description: '☿️ Mercury is the smallest planet and closest to the Sun. Its surface is covered with craters like our Moon. Temperature ranges from -180°C at night to 430°C during the day - the largest temperature swing in the solar system!',
+            description: '?? Mercury is the smallest planet and closest to the Sun. Its surface is covered with craters like our Moon. Temperature ranges from -180�C at night to 430�C during the day - the largest temperature swing in the solar system!',
             funFact: 'A year on Mercury (88 Earth days) is shorter than its day (176 Earth days)!',
             realSize: '4,879 km diameter',
             moons: 0
@@ -1478,7 +1478,7 @@ class SolarSystemModule {
             speed: 0.015,
             rotationSpeed: -0.001,
             tilt: 2.64,
-            description: '♀️ Venus is the hottest planet with surface temperature of 465°C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards compared to most planets!',
+            description: '?? Venus is the hottest planet with surface temperature of 465�C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards compared to most planets!',
             funFact: 'Venus is the brightest planet in our sky and is often called Earth\'s "evil twin"',
             realSize: '12,104 km diameter',
             moons: 0,
@@ -1495,7 +1495,7 @@ class SolarSystemModule {
             speed: 0.01,
             rotationSpeed: 0.02,
             tilt: 23.44,
-            description: '🌍 Earth is our home, the only known planet with life! 71% is covered by water, creating the blue color visible from space. The atmosphere protects us from harmful radiation and meteors.',
+            description: '?? Earth is our home, the only known planet with life! 71% is covered by water, creating the blue color visible from space. The atmosphere protects us from harmful radiation and meteors.',
             funFact: 'Earth is the only planet not named after a god. It travels at 107,000 km/h around the Sun!',
             realSize: '12,742 km diameter',
             moons: 1,
@@ -1511,7 +1511,7 @@ class SolarSystemModule {
             distance: 4, // Increased from 3 for better visibility
             speed: 0.05, // Increased from 0.03 for visible orbit
             rotationSpeed: 0.004, // Moon rotates (tidally locked)
-            description: '🌙 Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
+            description: '?? Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
             funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
         });
 
@@ -1524,7 +1524,7 @@ class SolarSystemModule {
             speed: 0.008,
             rotationSpeed: 0.018,
             tilt: 25.19,
-            description: '♂️ Mars, the Red Planet, gets its color from iron oxide (rust). It has the largest volcano (Olympus Mons - 22 km high) and canyon (Valles Marineris - 4,000 km long) in the solar system. Water ice exists at its poles!',
+            description: '?? Mars, the Red Planet, gets its color from iron oxide (rust). It has the largest volcano (Olympus Mons - 22 km high) and canyon (Valles Marineris - 4,000 km long) in the solar system. Water ice exists at its poles!',
             funFact: 'Mars has seasons like Earth, and its day is only 37 minutes longer than ours!',
             realSize: '6,779 km diameter',
             moons: 2
@@ -1537,7 +1537,7 @@ class SolarSystemModule {
             color: 0x666666,
             distance: 1.5,
             speed: 0.08,
-            description: '🌑 Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
+            description: '?? Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
         });
         // Deimos: ~12 km / 12,742 km = 0.0009
         this.createMoon(this.planets.mars, {
@@ -1546,7 +1546,7 @@ class SolarSystemModule {
             color: 0x888888,
             distance: 2.5,
             speed: 0.04,
-            description: '🌑 Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
+            description: '?? Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
         });
     }
 
@@ -1560,7 +1560,7 @@ class SolarSystemModule {
             speed: 0.002,
             rotationSpeed: 0.04,
             tilt: 3.13,
-            description: '♃ Jupiter is the largest planet - all other planets could fit inside it! The Great Red Spot is a storm larger than Earth that has raged for at least 400 years. Jupiter has 95 known moons!',
+            description: '? Jupiter is the largest planet - all other planets could fit inside it! The Great Red Spot is a storm larger than Earth that has raged for at least 400 years. Jupiter has 95 known moons!',
             funFact: 'Jupiter\'s gravity shields Earth from many asteroids and comets!',
             realSize: '139,820 km diameter',
             moons: 4,
@@ -1575,7 +1575,7 @@ class SolarSystemModule {
             color: 0xFFFF00,
             distance: 8,
             speed: 0.06,
-            description: '🌋 Io is the most volcanically active body in the solar system!'
+            description: '?? Io is the most volcanically active body in the solar system!'
         });
         // Europa: 3,122 km / 12,742 km = 0.245
         this.createMoon(this.planets.jupiter, {
@@ -1584,7 +1584,7 @@ class SolarSystemModule {
             color: 0xCCBB99,
             distance: 10,
             speed: 0.045,
-            description: '❄️ Europa has a global ocean beneath its ice - a potential place for life!'
+            description: '?? Europa has a global ocean beneath its ice - a potential place for life!'
         });
         // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
         this.createMoon(this.planets.jupiter, {
@@ -1593,7 +1593,7 @@ class SolarSystemModule {
             color: 0x996633,
             distance: 12,
             speed: 0.035,
-            description: '🌕 Ganymede is the largest moon in the solar system, bigger than Mercury!'
+            description: '?? Ganymede is the largest moon in the solar system, bigger than Mercury!'
         });
         // Callisto: 4,821 km / 12,742 km = 0.378
         this.createMoon(this.planets.jupiter, {
@@ -1602,7 +1602,7 @@ class SolarSystemModule {
             color: 0x777777,
             distance: 14,
             speed: 0.025,
-            description: '🌑 Callisto is the most heavily cratered object in the solar system!'
+            description: '?? Callisto is the most heavily cratered object in the solar system!'
         });
 
         // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
@@ -1614,7 +1614,7 @@ class SolarSystemModule {
             speed: 0.0009,
             rotationSpeed: 0.038,
             tilt: 26.73,
-            description: '♄ Saturn is famous for its spectacular ring system made of ice and rock particles. It\'s the least dense planet - it would float in water! Saturn has 146 known moons including Titan, which has a thick atmosphere.',
+            description: '? Saturn is famous for its spectacular ring system made of ice and rock particles. It\'s the least dense planet - it would float in water! Saturn has 146 known moons including Titan, which has a thick atmosphere.',
             funFact: 'Saturn\'s rings are only 10 meters thick but 280,000 km wide!',
             realSize: '116,460 km diameter',
             moons: 3,
@@ -1629,7 +1629,7 @@ class SolarSystemModule {
             color: 0xFFAA33,
             distance: 10,
             speed: 0.03,
-            description: '🔶 Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
+            description: '?? Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
         });
         // Enceladus: 504 km / 12,742 km = 0.040
         this.createMoon(this.planets.saturn, {
@@ -1638,7 +1638,7 @@ class SolarSystemModule {
             color: 0xFFFFFF,
             distance: 7,
             speed: 0.05,
-            description: '💧 Enceladus shoots water geysers into space from its subsurface ocean!'
+            description: '?? Enceladus shoots water geysers into space from its subsurface ocean!'
         });
         // Rhea: 1,527 km / 12,742 km = 0.120
         this.createMoon(this.planets.saturn, {
@@ -1647,7 +1647,7 @@ class SolarSystemModule {
             color: 0xCCCCCC,
             distance: 12,
             speed: 0.025,
-            description: '🌑 Rhea may have its own ring system!'
+            description: '?? Rhea may have its own ring system!'
         });
 
         // Uranus: 50,724 km / 12,742 km = 3.98
@@ -1659,7 +1659,7 @@ class SolarSystemModule {
             speed: 0.0004,
             rotationSpeed: 0.03,
             tilt: 97.77,
-            description: '♅ Uranus is unique - it rotates on its side! This means its poles take turns facing the Sun during its 84-year orbit. Made of water, methane, and ammonia ices, it appears blue-green due to methane in its atmosphere.',
+            description: '? Uranus is unique - it rotates on its side! This means its poles take turns facing the Sun during its 84-year orbit. Made of water, methane, and ammonia ices, it appears blue-green due to methane in its atmosphere.',
             funFact: 'Uranus was the first planet discovered with a telescope (1781)!',
             realSize: '50,724 km diameter',
             moons: 2,
@@ -1673,7 +1673,7 @@ class SolarSystemModule {
             color: 0xAAAAAA,
             distance: 5,
             speed: 0.04,
-            description: '🌑 Titania is Uranus\' largest moon with massive canyons!'
+            description: '?? Titania is Uranus\' largest moon with massive canyons!'
         });
         // Miranda: 472 km / 12,742 km = 0.037
         this.createMoon(this.planets.uranus, {
@@ -1682,7 +1682,7 @@ class SolarSystemModule {
             color: 0x999999,
             distance: 3.5,
             speed: 0.06,
-            description: '🎢 Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
+            description: '?? Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
         });
 
         // Neptune: 49,244 km / 12,742 km = 3.86
@@ -1694,7 +1694,7 @@ class SolarSystemModule {
             speed: 0.0001,
             rotationSpeed: 0.032,
             tilt: 28.32,
-            description: '♆ Neptune is the windiest planet with storms reaching 2,100 km/h! Its beautiful blue color comes from methane. Neptune has a large dark spot (storm) similar to Jupiter\'s Great Red Spot.',
+            description: '? Neptune is the windiest planet with storms reaching 2,100 km/h! Its beautiful blue color comes from methane. Neptune has a large dark spot (storm) similar to Jupiter\'s Great Red Spot.',
             funFact: 'Neptune was discovered by math before being seen - its gravity affected Uranus\'s orbit!',
             realSize: '49,244 km diameter',
             moons: 1,
@@ -1708,7 +1708,7 @@ class SolarSystemModule {
             color: 0xFFCCCC,
             distance: 5,
             speed: -0.05,
-            description: '❄️ Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
+            description: '?? Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
         });
 
         // Pluto: 2,377 km / 12,742 km = 0.187
@@ -1720,7 +1720,7 @@ class SolarSystemModule {
             speed: 0.00004,
             rotationSpeed: 0.015,
             tilt: 122.53,
-            description: '♇ Pluto is a dwarf planet in the Kuiper Belt. It has a heart-shaped glacier (Tombaugh Regio), mountains of water ice, and five moons. Pluto and its largest moon Charon are tidally locked - they always show the same face to each other!',
+            description: '? Pluto is a dwarf planet in the Kuiper Belt. It has a heart-shaped glacier (Tombaugh Regio), mountains of water ice, and five moons. Pluto and its largest moon Charon are tidally locked - they always show the same face to each other!',
             funFact: 'A year on Pluto lasts 248 Earth years! It hasn\'t completed one orbit since its discovery in 1930.',
             realSize: '2,377 km diameter',
             moons: 1,
@@ -1734,7 +1734,7 @@ class SolarSystemModule {
             color: 0xAAAAAA,
             distance: 1.2,
             speed: 0.02,
-            description: '🌗 Charon is so large relative to Pluto that they form a binary system!'
+            description: '?? Charon is so large relative to Pluto that they form a binary system!'
         });
     }
 
@@ -1743,7 +1743,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         // Simple noise function (deterministic pseudo-random)
         const noise = (x, y, seed = 0) => {
@@ -1919,7 +1919,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y, seed = 0) => {
             const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
@@ -1976,7 +1976,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         // Gradient from core to edge
         const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
@@ -2026,7 +2026,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         // Base gray
         ctx.fillStyle = '#808080';
@@ -2073,18 +2073,18 @@ class SolarSystemModule {
         
         const tryLoadTexture = () => {
             if (currentURLIndex >= textureURLs.length) {
-                console.warn('⚠️ All NASA Earth texture sources failed');
+                console.warn('?? All NASA Earth texture sources failed');
                 console.warn('   Using beautiful procedural Earth instead');
                 return;
             }
             
             const url = textureURLs[currentURLIndex];
-            console.log(`🌍 Attempting to load Earth texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
+            console.log(`?? Attempting to load Earth texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
             
             loader.load(
                 url,
                 (tex) => {
-                    console.log('✅ Real Earth texture loaded successfully!');
+                    console.log('? Real Earth texture loaded successfully!');
                     console.log('   Earth now shows real continents from NASA Blue Marble!');
                     
                     // Apply proper texture settings for best quality
@@ -2096,17 +2096,17 @@ class SolarSystemModule {
                     if (this.planets && this.planets.earth) {
                         this.planets.earth.material.map = tex;
                         this.planets.earth.material.needsUpdate = true;
-                        console.log('🌍 Earth material updated with real texture!');
+                        console.log('?? Earth material updated with real texture!');
                     }
                 },
                 (progress) => {
                     if (progress.lengthComputable) {
                         const percent = (progress.loaded / progress.total * 100).toFixed(0);
-                        console.log(`⏳ Loading NASA Earth texture: ${percent}%`);
+                        console.log(`? Loading NASA Earth texture: ${percent}%`);
                     }
                 },
                 (err) => {
-                    console.warn(`⚠️ Source ${currentURLIndex + 1} failed, trying next...`);
+                    console.warn(`?? Source ${currentURLIndex + 1} failed, trying next...`);
                     currentURLIndex++;
                     tryLoadTexture(); // Try next URL
                 }
@@ -2132,18 +2132,18 @@ class SolarSystemModule {
         
         const tryLoadTexture = () => {
             if (currentURLIndex >= textureURLs.length) {
-                console.warn(`⚠️ All ${planetName} texture sources failed`);
+                console.warn(`?? All ${planetName} texture sources failed`);
                 console.warn(`   Using beautiful procedural ${planetName} instead`);
                 return;
             }
             
             const url = textureURLs[currentURLIndex];
-            console.log(`🪐 Loading ${planetName} texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
+            console.log(`?? Loading ${planetName} texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
             
             loader.load(
                 url,
                 (tex) => {
-                    console.log(`✅ Real ${planetName} texture loaded successfully!`);
+                    console.log(`? Real ${planetName} texture loaded successfully!`);
                     
                     // Apply proper texture settings
                     tex.colorSpace = THREE.SRGBColorSpace;
@@ -2155,12 +2155,12 @@ class SolarSystemModule {
                     if (planet && planet.material) {
                         planet.material.map = tex;
                         planet.material.needsUpdate = true;
-                        console.log(`🪐 ${planetName} material updated with real NASA texture!`);
+                        console.log(`?? ${planetName} material updated with real NASA texture!`);
                     }
                 },
                 undefined,
                 (err) => {
-                    console.warn(`⚠️ ${planetName} source ${currentURLIndex + 1} failed, trying next...`);
+                    console.warn(`?? ${planetName} source ${currentURLIndex + 1} failed, trying next...`);
                     currentURLIndex++;
                     tryLoadTexture();
                 }
@@ -2248,7 +2248,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         // Enhanced Perlin-like noise with seed variations
         const noise = (x, y, seed = 0) => {
@@ -2326,7 +2326,7 @@ class SolarSystemModule {
                 
                 // DEBUG: Log elevation range and raw values
                 if (x === 512 && y % 200 === 0) {
-                    console.log(`📊 Elevation: ${elevation.toFixed(4)} (continents:${continents.toFixed(3)}, details:${details.toFixed(3)}) at lat ${(lat * 180/Math.PI).toFixed(1)}° lon ${(lon * 180/Math.PI).toFixed(1)}°`);
+                    console.log(`?? Elevation: ${elevation.toFixed(4)} (continents:${continents.toFixed(3)}, details:${details.toFixed(3)}) at lat ${(lat * 180/Math.PI).toFixed(1)}� lon ${(lon * 180/Math.PI).toFixed(1)}�`);
                 }
                 
                 // EXTRA DEBUG: Track min/max elevation
@@ -2419,34 +2419,34 @@ class SolarSystemModule {
             }
         }
         const totalPixels = size * size;
-        console.log(`🌍 Earth texture generated: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
-        console.log(`🌲 Greenest land pixel found: RGB(${greenestPixel.r}, ${greenestPixel.g}, ${greenestPixel.b}) at pixel ${greenestPixel.idx}`);
+        console.log(`?? Earth texture generated: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
+        console.log(`?? Greenest land pixel found: RGB(${greenestPixel.r}, ${greenestPixel.g}, ${greenestPixel.b}) at pixel ${greenestPixel.idx}`);
         
-        // ⚠️ CRITICAL FIX: Create texture BEFORE adding clouds
+        // ?? CRITICAL FIX: Create texture BEFORE adding clouds
         // Otherwise clouds overwrite the surface texture!
-        console.log('🌍 Creating THREE.js texture from canvas (BEFORE clouds)...');
+        console.log('?? Creating THREE.js texture from canvas (BEFORE clouds)...');
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
         
         // DEBUG: Log final elevation statistics
         if (window._earthElevationStats) {
-            console.log(`📊 Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
-            console.log(`📊 🌍 REALISTIC CONTINENTS: Americas, Eurasia, Africa, Australia, Antarctica`);
-            console.log(`📊 Land threshold: 0.15, Shallow threshold: 0.05 (elevation range: ~-0.2 to +1.5)`);
-            console.log(`📊 Using Gaussian distributions to approximate real Earth geography`);
+            console.log(`?? Earth elevation stats: min=${window._earthElevationStats.min.toFixed(4)}, max=${window._earthElevationStats.max.toFixed(4)}`);
+            console.log(`?? ?? REALISTIC CONTINENTS: Americas, Eurasia, Africa, Australia, Antarctica`);
+            console.log(`?? Land threshold: 0.15, Shallow threshold: 0.05 (elevation range: ~-0.2 to +1.5)`);
+            console.log(`?? Using Gaussian distributions to approximate real Earth geography`);
             const range = window._earthElevationStats.max - window._earthElevationStats.min;
             const landPercent = window._earthElevationStats.max > 0.15 ? 
                 ((window._earthElevationStats.max - 0.15) / range * 100).toFixed(1) : 0;
-            console.log(`📊 Elevation range: ${range.toFixed(4)}, expected ~30% land coverage (like real Earth)`);
+            console.log(`?? Elevation range: ${range.toFixed(4)}, expected ~30% land coverage (like real Earth)`);
         }
         
         // CRITICAL TEST: Verify canvas actually has color data
-        console.log('🎨 Canvas verification:');
+        console.log('?? Canvas verification:');
         console.log('   - Canvas size:', canvas.width, 'x', canvas.height);
-        console.log('   - Canvas context:', canvas.getContext('2d') ? 'OK' : 'FAILED');
+        console.log('   - Canvas context:', canvas.getContext('2d', { willReadFrequently: true }) ? 'OK' : 'FAILED');
         
         // Sample some pixels to verify colors
-        const testCtx = canvas.getContext('2d');
+        const testCtx = canvas.getContext('2d', { willReadFrequently: true });
         const samples = [
             testCtx.getImageData(512, 512, 1, 1).data,    // Center
             testCtx.getImageData(1024, 512, 1, 1).data,   // Right
@@ -2462,7 +2462,7 @@ class SolarSystemModule {
         // ULTIMATE TEST: Create a downloadable preview
         try {
             const dataURL = canvas.toDataURL('image/png');
-            console.log('🖼️ TEXTURE PREVIEW: Right-click and "Open in new tab" to see the actual texture:');
+            console.log('??? TEXTURE PREVIEW: Right-click and "Open in new tab" to see the actual texture:');
             console.log(dataURL.substring(0, 100) + '...');
             console.log('   Copy this and paste in browser to view Earth texture:');
             console.log('   %c[VIEW EARTH TEXTURE]', 'color: #00ff00; font-size: 16px; font-weight: bold; background: #000; padding: 5px;');
@@ -2471,7 +2471,7 @@ class SolarSystemModule {
             window._earthTextureDataURL = dataURL;
             console.log('   Stored in: window._earthTextureDataURL');
         } catch (e) {
-            console.error('❌ Failed to create texture preview:', e);
+            console.error('? Failed to create texture preview:', e);
         }
         
         return texture;
@@ -2481,7 +2481,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y, seed = 0) => {
             const angle = Math.sin(x * 12.9898 + y * 78.233 + seed * 43.758) * 43758.5453;
@@ -2540,7 +2540,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y, seed = 0) => {
             const angle = Math.sin(x * 12.9898 + y * 78.233 + seed * 43.758) * 43758.5453;
@@ -2595,7 +2595,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -2636,7 +2636,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -2703,7 +2703,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         ctx.fillStyle = '#808080';
         ctx.fillRect(0, 0, size, size);
@@ -2736,7 +2736,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         ctx.fillStyle = '#8080FF';
         ctx.fillRect(0, 0, size, size);
@@ -2764,7 +2764,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -2824,7 +2824,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -2860,7 +2860,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         ctx.fillStyle = '#8080FF';
         ctx.fillRect(0, 0, size, size);
@@ -2874,7 +2874,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -2932,7 +2932,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         ctx.fillStyle = '#808080';
         ctx.fillRect(0, 0, size, size);
@@ -2963,7 +2963,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -3012,7 +3012,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -3087,7 +3087,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -3123,7 +3123,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -3177,7 +3177,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y) => {
             const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
@@ -3214,7 +3214,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y, seed) => {
             const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
@@ -3258,7 +3258,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y, seed) => {
             const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
@@ -3308,7 +3308,7 @@ class SolarSystemModule {
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
         const noise = (x, y, seed) => {
             const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
@@ -3371,7 +3371,7 @@ class SolarSystemModule {
     createPlanetMaterial(config) {
         // Create HYPERREALISTIC materials with advanced texturing
         const name = config.name.toLowerCase();
-        console.log(`🎨 Creating material for planet: "${name}" (original: "${config.name}")`);
+        console.log(`?? Creating material for planet: "${name}" (original: "${config.name}")`);
         
         // Base material properties
         let materialProps = {
@@ -3533,7 +3533,7 @@ class SolarSystemModule {
                 
             default:
                 // Default material
-                console.warn(`⚠️ DEFAULT MATERIAL CASE for planet "${name}" - using simple color: 0x${config.color?.toString(16)}`);
+                console.warn(`?? DEFAULT MATERIAL CASE for planet "${name}" - using simple color: 0x${config.color?.toString(16)}`);
                 return new THREE.MeshStandardMaterial({
                     color: config.color,
                     ...materialProps
@@ -3573,7 +3573,7 @@ class SolarSystemModule {
         // Add atmosphere for Earth with clouds
         if (config.atmosphere) {
             // TEMPORARILY DISABLED FOR DEBUGGING - Testing if clouds are causing blue sphere
-            console.log('🌍 ATMOSPHERE DISABLED FOR DEBUGGING - If Earth shows continents now, clouds were the issue!');
+            console.log('?? ATMOSPHERE DISABLED FOR DEBUGGING - If Earth shows continents now, clouds were the issue!');
             
             /* DISABLED CLOUD LAYER - TESTING
             // Cloud layer with procedural patterns - VERY subtle
@@ -3657,7 +3657,7 @@ class SolarSystemModule {
         this.objects.push(planet);
         
         // DIAGNOSTIC: Verify planet was added
-        console.log(`✅ Planet "${config.name}" added to scene:`);
+        console.log(`? Planet "${config.name}" added to scene:`);
         console.log(`   - Position: (${planet.position.x}, ${planet.position.y}, ${planet.position.z})`);
         console.log(`   - Radius: ${config.radius}`);
         console.log(`   - Material type: ${planet.material.type}`);
@@ -3798,9 +3798,10 @@ class SolarSystemModule {
         this.asteroidBelt.userData = {
             name: 'Asteroid Belt',
             type: 'Asteroid Belt',
-            description: '☄️ The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
+            description: '?? The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
             funFact: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
-            count: asteroidCount
+            count: asteroidCount,
+            radius: 40 // Effective radius for focus camera positioning (belt is at ~140 AU)
         };
         scene.add(this.asteroidBelt);
         this.objects.push(this.asteroidBelt);
@@ -3842,9 +3843,10 @@ class SolarSystemModule {
         this.kuiperBelt.userData = {
             name: 'Kuiper Belt',
             type: 'Kuiper Belt',
-            description: '🧊 The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
+            description: '?? The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
             funFact: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
-            count: kuiperCount
+            count: kuiperCount,
+            radius: 60  // Belt spans ~280-380 AU, radius for focus system
         };
         scene.add(this.kuiperBelt);
         this.objects.push(this.kuiperBelt);
@@ -3955,11 +3957,11 @@ class SolarSystemModule {
         this.distantStars = [];
         
         const brightStars = [
-            { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '⭐ Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
-            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '🔴 Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
-            { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '💙 Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
-            { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '🌟 Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
-            { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '🧭 Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
+            { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '? Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
+            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '?? Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
+            { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '?? Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
+            { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '?? Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
+            { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '?? Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
         ];
 
         brightStars.forEach(starData => {
@@ -4010,9 +4012,9 @@ class SolarSystemModule {
         this.nebulae = [];
         
         const nebulaeData = [
-            { name: 'Orion Nebula', color: 0xFF69B4, position: { x: 6000, y: 1000, z: 3000 }, size: 400, description: '🌌 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!' },
-            { name: 'Crab Nebula', color: 0x87CEEB, position: { x: -5500, y: -800, z: 4500 }, size: 300, description: '🦀 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!' },
-            { name: 'Ring Nebula', color: 0x9370DB, position: { x: 4500, y: 1500, z: -5000 }, size: 250, description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.' }
+            { name: 'Orion Nebula', color: 0xFF69B4, position: { x: 6000, y: 1000, z: 3000 }, size: 400, description: '?? The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!' },
+            { name: 'Crab Nebula', color: 0x87CEEB, position: { x: -5500, y: -800, z: 4500 }, size: 300, description: '?? The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!' },
+            { name: 'Ring Nebula', color: 0x9370DB, position: { x: 4500, y: 1500, z: -5000 }, size: 250, description: '?? The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.' }
         ];
 
         nebulaeData.forEach(nebData => {
@@ -4080,7 +4082,7 @@ class SolarSystemModule {
         const constellationsData = [
             {
                 name: 'Orion (The Hunter)',
-                description: '⭐ Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
+                description: '? Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
                 stars: [
                     { name: 'Betelgeuse', ra: 88.8, dec: 7.4, mag: 0.5, color: 0xFF4500 },  // Red supergiant
                     { name: 'Rigel', ra: 78.6, dec: -8.2, mag: 0.1, color: 0x87CEEB },     // Blue supergiant
@@ -4094,7 +4096,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Big Dipper (Ursa Major)',
-                description: '🐻 The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+                description: '?? The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
                 stars: [
                     { name: 'Dubhe', ra: 165.9, dec: 61.8, mag: 1.8, color: 0xFFFFE0 },
                     { name: 'Merak', ra: 165.5, dec: 56.4, mag: 2.4, color: 0xFFFFF0 },
@@ -4108,7 +4110,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Southern Cross (Crux)',
-                description: '✝️ The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
+                description: '?? The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
                 stars: [
                     { name: 'Acrux', ra: 186.6, dec: -63.1, mag: 0.8, color: 0xE0FFFF },
                     { name: 'Mimosa', ra: 191.9, dec: -59.7, mag: 1.3, color: 0xE0FFFF },
@@ -4119,7 +4121,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Cassiopeia (The Queen)',
-                description: '👑 Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
+                description: '?? Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
                 stars: [
                     { name: 'Schedar', ra: 10.1, dec: 56.5, mag: 2.2, color: 0xFFA500 },
                     { name: 'Caph', ra: 2.3, dec: 59.1, mag: 2.3, color: 0xFFFFF0 },
@@ -4131,7 +4133,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Scorpius (The Scorpion)',
-                description: '🦂 Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
+                description: '?? Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
                 stars: [
                     { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 },  // Red supergiant
                     { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF },
@@ -4149,7 +4151,7 @@ class SolarSystemModule {
             
             // Convert RA/Dec to 3D positions at distance 10000
             constData.stars.forEach(star => {
-                // Convert RA (0-360°) and Dec (-90 to +90°) to radians
+                // Convert RA (0-360�) and Dec (-90 to +90�) to radians
                 const raRad = (star.ra * Math.PI) / 180;
                 const decRad = (star.dec * Math.PI) / 180;
                 const distance = 10000;
@@ -4216,7 +4218,7 @@ class SolarSystemModule {
             this.constellations.push(group);
         });
         
-        console.log(`✨ Created ${this.constellations.length} constellations with star patterns!`);
+        console.log(`? Created ${this.constellations.length} constellations with star patterns!`);
     }
 
     createGalaxies(scene) {
@@ -4224,9 +4226,9 @@ class SolarSystemModule {
         this.galaxies = [];
         
         const galaxiesData = [
-            { name: 'Andromeda Galaxy', position: { x: 12000, y: 2000, z: -8000 }, size: 600, type: 'spiral', description: '🌀 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).' },
-            { name: 'Whirlpool Galaxy', position: { x: -10000, y: -1500, z: -9000 }, size: 400, type: 'spiral', description: '🌊 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.' },
-            { name: 'Sombrero Galaxy', position: { x: -8000, y: 3000, z: 7000 }, size: 350, type: 'elliptical', description: '🎩 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!' }
+            { name: 'Andromeda Galaxy', position: { x: 12000, y: 2000, z: -8000 }, size: 600, type: 'spiral', description: '?? The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).' },
+            { name: 'Whirlpool Galaxy', position: { x: -10000, y: -1500, z: -9000 }, size: 400, type: 'spiral', description: '?? The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.' },
+            { name: 'Sombrero Galaxy', position: { x: -8000, y: 3000, z: 7000 }, size: 350, type: 'elliptical', description: '?? The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!' }
         ];
 
         galaxiesData.forEach(galData => {
@@ -4344,11 +4346,11 @@ class SolarSystemModule {
         
         const cometsData = [
             // Halley: 15 km / 12,742 km = 0.0012
-            { name: 'Halley\'s Comet', distance: 200, eccentricity: 0.967, speed: 0.001, size: 0.002, description: '☄️ Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
+            { name: 'Halley\'s Comet', distance: 200, eccentricity: 0.967, speed: 0.001, size: 0.002, description: '?? Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
             // Hale-Bopp: 60 km / 12,742 km = 0.0047
-            { name: 'Comet Hale-Bopp', distance: 250, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: '☄️ Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
+            { name: 'Comet Hale-Bopp', distance: 250, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: '?? Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
             // NEOWISE: 5 km / 12,742 km = 0.0004
-            { name: 'Comet NEOWISE', distance: 180, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: '☄️ Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
+            { name: 'Comet NEOWISE', distance: 180, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: '?? Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
         ];
 
         cometsData.forEach((cometData, index) => {
@@ -4474,9 +4476,9 @@ class SolarSystemModule {
                 speed: 15.5,  // Orbital velocity: 7.66 km/s (27,576 km/h), completes 15.5 orbits/day
                 size: 0.03,
                 color: 0xCCCCCC,
-                description: '🛰️ ISS orbits at 408 km altitude, traveling at 7.66 km/s (27,576 km/h). One orbit takes 92.68 minutes. Continuously inhabited since Nov 2, 2000 (25 years!). Collaboration of NASA, Roscosmos, ESA, JAXA, CSA. Completed 180,000+ orbits as of Oct 2025.',
+                description: '??? ISS orbits at 408 km altitude, traveling at 7.66 km/s (27,576 km/h). One orbit takes 92.68 minutes. Continuously inhabited since Nov 2, 2000 (25 years!). Collaboration of NASA, Roscosmos, ESA, JAXA, CSA. Completed 180,000+ orbits as of Oct 2025.',
                 funFact: 'ISS is 109m long, 73m wide, masses 419,725 kg. Pressurized volume equals a Boeing 747! Visible to naked eye as brightest "star" after Venus.',
-                realSize: '109m × 73m × 20m, 419,725 kg',
+                realSize: '109m � 73m � 20m, 419,725 kg',
                 orbitTime: '92.68 minutes'
             },
             { 
@@ -4485,9 +4487,9 @@ class SolarSystemModule {
                 speed: 15.1, // Orbital velocity: 7.59 km/s (27,300 km/h)
                 size: 0.02,
                 color: 0x4169E1,
-                description: '🔭 Launched April 24, 1990 on Space Shuttle Discovery. Orbits at ~535 km altitude. Made 1.6+ million observations as of Oct 2025. 2.4m primary mirror observes UV, visible, and near-IR. Five servicing missions (1993-2009) upgraded instruments.',
+                description: '?? Launched April 24, 1990 on Space Shuttle Discovery. Orbits at ~535 km altitude. Made 1.6+ million observations as of Oct 2025. 2.4m primary mirror observes UV, visible, and near-IR. Five servicing missions (1993-2009) upgraded instruments.',
                 funFact: 'Can resolve objects 0.05 arcseconds apart - like seeing two fireflies 10,000 km away! Deepest image (eXtreme Deep Field) shows 5,500 galaxies, some 13.2 billion light-years away.',
-                realSize: '13.2m long × 4.2m diameter, 11,110 kg',
+                realSize: '13.2m long � 4.2m diameter, 11,110 kg',
                 orbitTime: '95 minutes'
             },
             { 
@@ -4496,7 +4498,7 @@ class SolarSystemModule {
                 speed: 2,  // Orbital velocity: 3.87 km/s, period: 11h 58min (2 orbits/day)
                 size: 0.025,
                 color: 0x00FF00,
-                description: '📡 GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻¹⁴ seconds.',
+                description: '?? GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55� inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10?�4 seconds.',
                 funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
                 realSize: 'GPS III: 2,161 kg, 7.8m solar span',
                 orbitTime: '11h 58min'
@@ -4507,9 +4509,9 @@ class SolarSystemModule {
                 speed: 0.01,  // Halo orbit around L2, period synced with Earth (1 year)
                 size: 0.04,
                 color: 0xFFD700,
-                description: '🔬 Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 μm). 6.5m segmented beryllium mirror (18 hexagons) with 25 m² collecting area - 6x Hubble! Sunshield: 21.2m × 14.2m, 5 layers.',
-                funFact: 'Operating at -233°C (-388°F)! Can detect heat signature of a bumblebee at Moon distance. Discovered earliest galaxies at z=14 (280 million years after Big Bang).',
-                realSize: '6.5m mirror, 21.2m × 14.2m sunshield, 6,161 kg',
+                description: '?? Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 �m). 6.5m segmented beryllium mirror (18 hexagons) with 25 m� collecting area - 6x Hubble! Sunshield: 21.2m � 14.2m, 5 layers.',
+                funFact: 'Operating at -233�C (-388�F)! Can detect heat signature of a bumblebee at Moon distance. Discovered earliest galaxies at z=14 (280 million years after Big Bang).',
+                realSize: '6.5m mirror, 21.2m � 14.2m sunshield, 6,161 kg',
                 orbitTime: 'L2 halo orbit: ~6 months period'
             },
             { 
@@ -4518,9 +4520,9 @@ class SolarSystemModule {
                 speed: 15, // Orbital velocity: ~7.6 km/s at 550 km altitude
                 size: 0.015,
                 color: 0xFF6B6B,
-                description: '🛰️ SpaceX Starlink: 5,400+ operational satellites as of Oct 2025 (largest constellation ever). Provides broadband internet globally. Ku/Ka-band phased array antennas. Ion thrusters for station-keeping and deorbit. Gen2 satellites: 1,250 kg, laser inter-satellite links.',
+                description: '??? SpaceX Starlink: 5,400+ operational satellites as of Oct 2025 (largest constellation ever). Provides broadband internet globally. Ku/Ka-band phased array antennas. Ion thrusters for station-keeping and deorbit. Gen2 satellites: 1,250 kg, laser inter-satellite links.',
                 funFact: 'Launches 20-23 satellites per Falcon 9 flight. Over 300 launches! FCC approved up to 42,000 satellites. Each satellite deorbits after 5-7 years.',
-                realSize: 'V1.5: 260 kg, 2.8m × 1.4m × 0.12m flat',
+                realSize: 'V1.5: 260 kg, 2.8m � 1.4m � 0.12m flat',
                 orbitTime: '95 minutes (550 km shell)'
             }
         ];
@@ -4603,12 +4605,12 @@ class SolarSystemModule {
             {
                 name: 'Voyager 1',
                 distance: 300, // ~24.3 billion km from Sun as of Oct 2025 (162 AU) - scaled for visualization
-                angle: Math.PI * 0.7, // Direction: 35° north of ecliptic plane
+                angle: Math.PI * 0.7, // Direction: 35� north of ecliptic plane
                 speed: 0.0001, // Traveling at 17 km/s relative to Sun
                 size: 0.08,
                 color: 0xC0C0C0,
                 type: 'probe',
-                description: '🚀 Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently 24.3 billion km (162 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
+                description: '?? Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently 24.3 billion km (162 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
                 funFact: 'Voyager 1 travels at 17 km/s (61,200 km/h). Its radio signals take 22.5 hours to reach Earth!',
                 realSize: '825.5 kg, 3.7m antenna dish',
                 launched: 'September 5, 1977',
@@ -4622,7 +4624,7 @@ class SolarSystemModule {
                 size: 0.08,
                 color: 0xB0B0B0,
                 type: 'probe',
-                description: '🚀 Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now 20.3 billion km (135 AU) from Sun.',
+                description: '?? Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now 20.3 billion km (135 AU) from Sun.',
                 funFact: 'Voyager 2 discovered 16 moons across the giant planets, Neptune\'s Great Dark Spot, and Triton\'s geysers!',
                 realSize: '825.5 kg, 3.7m antenna dish',
                 launched: 'August 20, 1977',
@@ -4636,9 +4638,9 @@ class SolarSystemModule {
                 size: 0.06,
                 color: 0x4169E1,
                 type: 'probe',
-                description: '🪐 New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
+                description: '?? New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
                 funFact: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto at 58,536 km/h. It carries 1 oz of Clyde Tombaugh\'s ashes!',
-                realSize: '478 kg, 0.7 × 2.1 × 2.7m (piano-sized)',
+                realSize: '478 kg, 0.7 � 2.1 � 2.7m (piano-sized)',
                 launched: 'January 19, 2006',
                 status: 'Active in Kuiper Belt'
             },
@@ -4650,7 +4652,7 @@ class SolarSystemModule {
                 size: 0.05,
                 color: 0xFF6B35,
                 type: 'probe',
-                description: '☀️ Parker Solar Probe is "touching" the Sun! Launched Aug 12, 2018, it flies through the Sun\'s corona. At closest approach (6.9 million km from surface), it reaches 192 km/s (690,000 km/h)! Heat shield withstands 1,377°C while instruments stay at 30°C.',
+                description: '?? Parker Solar Probe is "touching" the Sun! Launched Aug 12, 2018, it flies through the Sun\'s corona. At closest approach (6.9 million km from surface), it reaches 192 km/s (690,000 km/h)! Heat shield withstands 1,377�C while instruments stay at 30�C.',
                 funFact: 'Parker completed 21 orbits as of Oct 2025. Final perihelion in Dec 2025 will reach 6.9 million km - into the corona!',
                 realSize: '685 kg, 3m tall, 2.3m heat shield',
                 launched: 'August 12, 2018',
@@ -4659,30 +4661,30 @@ class SolarSystemModule {
             {
                 name: 'Perseverance Rover (Mars)',
                 orbitPlanet: 'mars',
-                distance: 1.001, // On Mars surface at Jezero Crater (18.38°N 77.58°E)
+                distance: 1.001, // On Mars surface at Jezero Crater (18.38�N 77.58�E)
                 angle: 0.5,
                 speed: 0,
                 size: 0.04,
                 color: 0xFF4500,
                 type: 'rover',
-                description: '🤖 Perseverance landed in Jezero Crater on Feb 18, 2021. Searching for biosignatures of ancient microbial life in a former lake delta. Has 23 cameras, 7 instruments, collects core samples for Mars Sample Return mission. Ingenuity helicopter completed 66+ flights!',
+                description: '?? Perseverance landed in Jezero Crater on Feb 18, 2021. Searching for biosignatures of ancient microbial life in a former lake delta. Has 23 cameras, 7 instruments, collects core samples for Mars Sample Return mission. Ingenuity helicopter completed 66+ flights!',
                 funFact: 'First spacecraft to record sounds on Mars! MOXIE experiment produces oxygen from CO2 atmosphere. Has driven 28+ km as of Oct 2025.',
-                realSize: '1,025 kg, 3m long × 2.7m wide × 2.2m tall',
+                realSize: '1,025 kg, 3m long � 2.7m wide � 2.2m tall',
                 launched: 'July 30, 2020',
                 status: 'Active on Mars Surface (1,352+ sols)'
             },
             {
                 name: 'Curiosity Rover (Mars)',
                 orbitPlanet: 'mars',
-                distance: 1.001, // On Mars surface at Gale Crater, climbing Mount Sharp (4.5°S 137.4°E)
+                distance: 1.001, // On Mars surface at Gale Crater, climbing Mount Sharp (4.5�S 137.4�E)
                 angle: 0.8,
                 speed: 0,
                 size: 0.04,
                 color: 0xDC143C,
                 type: 'rover',
-                description: '🤖 Curiosity landed in Gale Crater on Aug 6, 2012. Climbing Mount Sharp (Aeolis Mons), studying rock layers. Confirmed ancient Mars had water, organic molecules, and habitable conditions. Has 17 cameras, 10 science instruments, plutonium power source.',
+                description: '?? Curiosity landed in Gale Crater on Aug 6, 2012. Climbing Mount Sharp (Aeolis Mons), studying rock layers. Confirmed ancient Mars had water, organic molecules, and habitable conditions. Has 17 cameras, 10 science instruments, plutonium power source.',
                 funFact: 'ChemCam laser can vaporize rocks from 7m away! Has driven 32+ km and climbed 625+ meters as of Oct 2025. Still going strong after 4,780+ sols!',
-                realSize: '899 kg, 3m long × 2.8m wide × 2.1m tall',
+                realSize: '899 kg, 3m long � 2.8m wide � 2.1m tall',
                 launched: 'November 26, 2011',
                 status: 'Active on Mars Surface (4,780+ sols)'
             },
@@ -4696,7 +4698,7 @@ class SolarSystemModule {
                 size: 0.02,
                 color: 0xFFD700,
                 type: 'landing-site',
-                description: '🌕 The historic Apollo 11 landing site where Neil Armstrong took "one small step for man" on July 20, 1969! The lunar module\'s descent stage, flag, and astronaut footprints remain preserved in the Sea of Tranquility.',
+                description: '?? The historic Apollo 11 landing site where Neil Armstrong took "one small step for man" on July 20, 1969! The lunar module\'s descent stage, flag, and astronaut footprints remain preserved in the Sea of Tranquility.',
                 funFact: 'The footprints will last millions of years because there\'s no wind or water on the Moon!',
                 realSize: 'Tranquility Base',
                 launched: '1969',
@@ -4711,7 +4713,7 @@ class SolarSystemModule {
                 size: 0.05,
                 color: 0xFFD700,
                 type: 'orbiter',
-                description: '🪐 Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
+                description: '?? Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
                 funFact: 'First solar-powered spacecraft at Jupiter! Three 9m solar panels generate 500W. Carries three LEGO figurines: Galileo, Jupiter, and Juno!',
                 realSize: '3,625 kg, 20m solar panel span',
                 launched: 'August 5, 2011',
@@ -4726,7 +4728,7 @@ class SolarSystemModule {
                 size: 0.06,
                 color: 0xDAA520,
                 type: 'memorial',
-                description: '🪐 Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
+                description: '?? Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
                 funFact: 'Discovered Enceladus\' subsurface ocean! Water geysers shoot 250kg/s into space. Cassini flew through plumes, detected H2, organics - ingredients for life!',
                 realSize: '5,600 kg, 6.8m tall, 4m wide',
                 launched: 'October 15, 1997',
@@ -4831,7 +4833,7 @@ class SolarSystemModule {
                 Math.max(craft.size * 1.8, craft.distance * 0.03) : // Min 3% of distance for far objects
                 craft.size * 1.8; // Normal size for nearby objects
             
-            console.log(`🔆 ${craft.name} glow size: ${glowSize.toFixed(2)} (distance: ${craft.distance}, base size: ${craft.size})`);
+            console.log(`?? ${craft.name} glow size: ${glowSize.toFixed(2)} (distance: ${craft.distance}, base size: ${craft.size})`);
             
             const glowGeometry = new THREE.SphereGeometry(glowSize, 16, 16);
             const glowMaterial = new THREE.MeshBasicMaterial({
@@ -4890,7 +4892,7 @@ class SolarSystemModule {
             this.spacecraft.push(spacecraft);
         });
         
-        console.log(`✨ Created ${this.spacecraft.length} spacecraft, rovers, and landing sites!`);
+        console.log(`? Created ${this.spacecraft.length} spacecraft, rovers, and landing sites!`);
     }
 
     update(deltaTime, timeSpeed, camera, controls) {
@@ -4950,7 +4952,7 @@ class SolarSystemModule {
                             
                             // Debug: Log moon position occasionally
                             if (Math.random() < 0.001 && moon.userData.name === 'Moon') {
-                                console.log(`🌙 Moon orbiting Earth: angle=${moon.userData.angle.toFixed(2)}, x=${moon.position.x.toFixed(1)}, z=${moon.position.z.toFixed(1)}`);
+                                console.log(`?? Moon orbiting Earth: angle=${moon.userData.angle.toFixed(2)}, x=${moon.position.x.toFixed(1)}, z=${moon.position.z.toFixed(1)}`);
                             }
                         }
                     });
@@ -5306,32 +5308,42 @@ class SolarSystemModule {
 
         // Add fun facts for kids
         if (userData.funFact) {
-            info.description += `\n\n💡 ${userData.funFact}`;
+            info.description += `\n\n?? ${userData.funFact}`;
         }
 
         // Add moon count for planets
         if (userData.moonCount > 0) {
-            info.description += `\n\n🌙 This planet has ${userData.moonCount} major moon${userData.moonCount > 1 ? 's' : ''} shown here (many more small ones exist!)`;
+            info.description += `\n\n?? This planet has ${userData.moonCount} major moon${userData.moonCount > 1 ? 's' : ''} shown here (many more small ones exist!)`;
         }
 
         return info;
     }
 
     focusOnObject(object, camera, controls) {
-        const distance = Math.max(object.userData.radius * 5, 10);
+        if (!object || !object.userData) {
+            console.warn('⚠️ Cannot focus on invalid object');
+            return;
+        }
+        
+        const radius = object.userData.radius || 10;
+        const distance = Math.max(radius * 5, 10);
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
         
         // Store reference for tracking
         this.focusedObject = object;
+        console.log(`🎯 Focusing on ${object.userData.name} (radius: ${radius}, distance: ${distance})`);
         
         // Configure controls for focused object inspection
         const originalMinDistance = controls.minDistance;
         const originalMaxDistance = controls.maxDistance;
         
         // Set dynamic zoom limits based on object size
-        controls.minDistance = object.userData.radius * 1.5; // Can zoom in close
-        controls.maxDistance = object.userData.radius * 50;  // Can zoom out far
+        const minDist = Math.max(radius * 1.5, 5); // Minimum 5 units
+        const maxDist = Math.max(radius * 50, 500); // Minimum 500 units for large objects
+        controls.minDistance = minDist;
+        controls.maxDistance = maxDist;
+        console.log(`  📏 Zoom limits: ${minDist.toFixed(1)} to ${maxDist.toFixed(1)}`);
         
         // Enable full rotation around object
         controls.enableRotate = true;
@@ -5370,7 +5382,7 @@ class SolarSystemModule {
             } else {
                 // Animation complete - controls are now centered on object
                 // User can now freely rotate, zoom, and pan around the focused object
-                console.log(`🎯 Focused on ${object.userData.name} - Use mouse to rotate, scroll to zoom`);
+                console.log(`?? Focused on ${object.userData.name} - Use mouse to rotate, scroll to zoom`);
             }
         };
         
@@ -5412,22 +5424,22 @@ class SolarSystemModule {
         
         // Add labels to Sun
         if (this.sun) {
-            createLabel(this.sun, '☀️ Sun');
+            createLabel(this.sun, '?? Sun');
         }
         
         // Add labels to planets
         Object.entries(this.planets).forEach(([name, planet]) => {
             if (planet) {
                 const emoji = {
-                    'mercury': '☿️', 'venus': '♀️', 'earth': '🌍', 'mars': '♂️',
-                    'jupiter': '♃', 'saturn': '♄', 'uranus': '♅', 'neptune': '♆'
-                }[name.toLowerCase()] || '🪐';
+                    'mercury': '??', 'venus': '??', 'earth': '??', 'mars': '??',
+                    'jupiter': '?', 'saturn': '?', 'uranus': '?', 'neptune': '?'
+                }[name.toLowerCase()] || '??';
                 createLabel(planet, `${emoji} ${planet.userData.name}`);
                 
                 // Add labels to moons
                 if (planet.userData.moons) {
                     planet.userData.moons.forEach(moon => {
-                        createLabel(moon, `🌙 ${moon.userData.name}`);
+                        createLabel(moon, `?? ${moon.userData.name}`);
                     });
                 }
             }
@@ -5436,35 +5448,35 @@ class SolarSystemModule {
         // Add labels to spacecraft
         if (this.spacecraft) {
             this.spacecraft.forEach(craft => {
-                createLabel(craft, `🚀 ${craft.userData.name}`);
+                createLabel(craft, `?? ${craft.userData.name}`);
             });
         }
         
         // Add labels to satellites
         if (this.satellites) {
             this.satellites.forEach(sat => {
-                createLabel(sat, `🛰️ ${sat.userData.name}`);
+                createLabel(sat, `??? ${sat.userData.name}`);
             });
         }
         
         // Add labels to distant stars
         if (this.distantStars) {
             this.distantStars.forEach(star => {
-                createLabel(star, `⭐ ${star.userData.name}`);
+                createLabel(star, `? ${star.userData.name}`);
             });
         }
         
         // Add labels to nebulae
         if (this.nebulae) {
             this.nebulae.forEach(nebula => {
-                createLabel(nebula, `🌌 ${nebula.userData.name}`);
+                createLabel(nebula, `?? ${nebula.userData.name}`);
             });
         }
         
         // Add labels to constellations
         if (this.constellations) {
             this.constellations.forEach(constellation => {
-                createLabel(constellation, `✨ ${constellation.userData.name}`);
+                createLabel(constellation, `? ${constellation.userData.name}`);
             });
         }
     }
@@ -5480,100 +5492,100 @@ class SolarSystemModule {
     getExplorerContent(focusCallback) {
         const categories = [
             {
-                title: '⭐ The Sun',
+                title: '? The Sun',
                 items: [
-                    { name: '☀️ Sun', onClick: () => focusCallback(this.sun) }
+                    { name: '?? Sun', onClick: () => focusCallback(this.sun) }
                 ]
             },
             {
-                title: '🪨 Inner Planets (Rocky)',
+                title: '?? Inner Planets (Rocky)',
                 items: [
-                    { name: '☿️ Mercury', onClick: () => focusCallback(this.planets.mercury) },
-                    { name: '♀️ Venus', onClick: () => focusCallback(this.planets.venus) },
-                    { name: '🌍 Earth', onClick: () => focusCallback(this.planets.earth) },
-                    { name: '🌙 Moon', onClick: () => focusCallback(this.moons.moon) },
-                    { name: '♂️ Mars', onClick: () => focusCallback(this.planets.mars) },
-                    { name: '🌑 Phobos', onClick: () => focusCallback(this.moons.phobos) },
-                    { name: '🌑 Deimos', onClick: () => focusCallback(this.moons.deimos) }
+                    { name: '?? Mercury', onClick: () => focusCallback(this.planets.mercury) },
+                    { name: '?? Venus', onClick: () => focusCallback(this.planets.venus) },
+                    { name: '?? Earth', onClick: () => focusCallback(this.planets.earth) },
+                    { name: '?? Moon', onClick: () => focusCallback(this.moons.moon) },
+                    { name: '?? Mars', onClick: () => focusCallback(this.planets.mars) },
+                    { name: '?? Phobos', onClick: () => focusCallback(this.moons.phobos) },
+                    { name: '?? Deimos', onClick: () => focusCallback(this.moons.deimos) }
                 ]
             },
             {
-                title: '☄️ Asteroid Belt',
+                title: '?? Asteroid Belt',
                 items: [
-                    { name: '💫 Asteroid Belt', onClick: () => focusCallback(this.asteroidBelt) }
+                    { name: '?? Asteroid Belt', onClick: () => focusCallback(this.asteroidBelt) }
                 ]
             },
             {
-                title: '🌌 Outer Planets (Gas Giants)',
+                title: '?? Outer Planets (Gas Giants)',
                 items: [
-                    { name: '♃ Jupiter', onClick: () => focusCallback(this.planets.jupiter) },
-                    { name: '🌋 Io', onClick: () => focusCallback(this.moons.io) },
-                    { name: '❄️ Europa', onClick: () => focusCallback(this.moons.europa) },
-                    { name: '🌕 Ganymede', onClick: () => focusCallback(this.moons.ganymede) },
-                    { name: '🌑 Callisto', onClick: () => focusCallback(this.moons.callisto) },
-                    { name: '♄ Saturn', onClick: () => focusCallback(this.planets.saturn) },
-                    { name: '🔶 Titan', onClick: () => focusCallback(this.moons.titan) },
-                    { name: '💧 Enceladus', onClick: () => focusCallback(this.moons.enceladus) },
-                    { name: '🌑 Rhea', onClick: () => focusCallback(this.moons.rhea) }
+                    { name: '? Jupiter', onClick: () => focusCallback(this.planets.jupiter) },
+                    { name: '?? Io', onClick: () => focusCallback(this.moons.io) },
+                    { name: '?? Europa', onClick: () => focusCallback(this.moons.europa) },
+                    { name: '?? Ganymede', onClick: () => focusCallback(this.moons.ganymede) },
+                    { name: '?? Callisto', onClick: () => focusCallback(this.moons.callisto) },
+                    { name: '? Saturn', onClick: () => focusCallback(this.planets.saturn) },
+                    { name: '?? Titan', onClick: () => focusCallback(this.moons.titan) },
+                    { name: '?? Enceladus', onClick: () => focusCallback(this.moons.enceladus) },
+                    { name: '?? Rhea', onClick: () => focusCallback(this.moons.rhea) }
                 ]
             },
             {
-                title: '❄️ Ice Giants',
+                title: '?? Ice Giants',
                 items: [
-                    { name: '♅ Uranus', onClick: () => focusCallback(this.planets.uranus) },
-                    { name: '🌑 Titania', onClick: () => focusCallback(this.moons.titania) },
-                    { name: '🎢 Miranda', onClick: () => focusCallback(this.moons.miranda) },
-                    { name: '♆ Neptune', onClick: () => focusCallback(this.planets.neptune) },
-                    { name: '❄️ Triton', onClick: () => focusCallback(this.moons.triton) }
+                    { name: '? Uranus', onClick: () => focusCallback(this.planets.uranus) },
+                    { name: '?? Titania', onClick: () => focusCallback(this.moons.titania) },
+                    { name: '?? Miranda', onClick: () => focusCallback(this.moons.miranda) },
+                    { name: '? Neptune', onClick: () => focusCallback(this.planets.neptune) },
+                    { name: '?? Triton', onClick: () => focusCallback(this.moons.triton) }
                 ]
             },
             {
-                title: '🧊 Kuiper Belt & Dwarf Planets',
+                title: '?? Kuiper Belt & Dwarf Planets',
                 items: [
-                    { name: '♇ Pluto', onClick: () => focusCallback(this.planets.pluto) },
-                    { name: '🌗 Charon', onClick: () => focusCallback(this.moons.charon) },
-                    { name: '🧊 Kuiper Belt', onClick: () => focusCallback(this.kuiperBelt) }
+                    { name: '? Pluto', onClick: () => focusCallback(this.planets.pluto) },
+                    { name: '?? Charon', onClick: () => focusCallback(this.moons.charon) },
+                    { name: '?? Kuiper Belt', onClick: () => focusCallback(this.kuiperBelt) }
                 ]
             },
             {
-                title: '☄️ Comets',
+                title: '?? Comets',
                 items: this.comets.map(comet => ({
-                    name: `☄️ ${comet.userData.name}`,
+                    name: `?? ${comet.userData.name}`,
                     onClick: () => focusCallback(comet)
                 }))
             },
             {
-                title: '🛰️ Satellites & Space Stations',
+                title: '??? Satellites & Space Stations',
                 items: this.satellites.map(sat => ({
-                    name: `🛰️ ${sat.userData.name}`,
+                    name: `??? ${sat.userData.name}`,
                     onClick: () => focusCallback(sat)
                 }))
             },
             {
-                title: '🚀 Spacecraft & Probes',
+                title: '?? Spacecraft & Probes',
                 items: this.spacecraft.map(craft => ({
-                    name: `🚀 ${craft.userData.name}`,
+                    name: `?? ${craft.userData.name}`,
                     onClick: () => focusCallback(craft)
                 }))
             },
             {
-                title: '⭐ Distant Stars',
+                title: '? Distant Stars',
                 items: this.distantStars.map(star => ({
-                    name: `⭐ ${star.userData.name}`,
+                    name: `? ${star.userData.name}`,
                     onClick: () => focusCallback(star)
                 }))
             },
             {
-                title: '🌌 Nebulae',
+                title: '?? Nebulae',
                 items: this.nebulae.map(nebula => ({
-                    name: `🌌 ${nebula.userData.name}`,
+                    name: `?? ${nebula.userData.name}`,
                     onClick: () => focusCallback(nebula)
                 }))
             },
             {
-                title: '🌀 Galaxies',
+                title: '?? Galaxies',
                 items: this.galaxies.map(galaxy => ({
-                    name: `🌀 ${galaxy.userData.name}`,
+                    name: `?? ${galaxy.userData.name}`,
                     onClick: () => focusCallback(galaxy)
                 }))
             }
@@ -5637,7 +5649,7 @@ class QuantumModule {
             name: 'Atomic Nucleus',
             type: 'Nucleus',
             radius: 0.5,
-            description: '⚛️ The nucleus is the tiny, dense center of an atom containing protons (+) and neutrons (no charge). It holds 99.9% of the atom\'s mass! Protons determine which element it is.\n\n💡 For Kids: The nucleus is like a tiny sun at the center - super small but super important!\n\n🔬 Advanced: Protons (up,up,down quarks) and neutrons (up,down,down quarks) are held together by the strong nuclear force, the strongest force in nature!',
+            description: '?? The nucleus is the tiny, dense center of an atom containing protons (+) and neutrons (no charge). It holds 99.9% of the atom\'s mass! Protons determine which element it is.\n\n?? For Kids: The nucleus is like a tiny sun at the center - super small but super important!\n\n?? Advanced: Protons (up,up,down quarks) and neutrons (up,down,down quarks) are held together by the strong nuclear force, the strongest force in nature!',
             funFact: 'If an atom were the size of a football stadium, the nucleus would be the size of a pea at the center!'
         };
         scene.add(this.nucleus);
@@ -5662,7 +5674,7 @@ class QuantumModule {
                 orbitalRadius: 3 + Math.floor(i / 2) * 1.5,
                 orbitalSpeed: 0.02 - i * 0.002,
                 angle: (i * Math.PI) / 3,
-                description: '⚡ Electrons are negatively charged particles that orbit the nucleus in "clouds" called orbitals. They determine how atoms bond with each other to make molecules!\n\n💡 For Kids: Electrons zip around the nucleus like planets around the sun, but much faster and in weird quantum ways!\n\n🔬 Advanced: Electrons exhibit wave-particle duality and exist in probability clouds. Their position follows the Heisenberg Uncertainty Principle!',
+                description: '? Electrons are negatively charged particles that orbit the nucleus in "clouds" called orbitals. They determine how atoms bond with each other to make molecules!\n\n?? For Kids: Electrons zip around the nucleus like planets around the sun, but much faster and in weird quantum ways!\n\n?? Advanced: Electrons exhibit wave-particle duality and exist in probability clouds. Their position follows the Heisenberg Uncertainty Principle!',
                 funFact: 'Electrons are so light that it takes 1,836 electrons to equal the mass of one proton!'
             };
             
@@ -5687,8 +5699,8 @@ class QuantumModule {
             name: 'Matter Wave',
             type: 'Wave',
             radius: 4,
-            description: '〰️ All matter has wave properties! This is called wave-particle duality. Electrons can behave like waves, creating interference patterns just like light waves.\n\n💡 For Kids: Imagine if you could be in two places at once - that\'s what particles can do when acting like waves!\n\n🔬 Advanced: The de Broglie wavelength λ = h/p shows all matter has wave properties. This is why electrons create diffraction patterns in the double-slit experiment!',
-            funFact: 'You have a wavelength too! But it\'s so tiny (about 10⁻³⁵ m) we never notice it.'
+            description: '?? All matter has wave properties! This is called wave-particle duality. Electrons can behave like waves, creating interference patterns just like light waves.\n\n?? For Kids: Imagine if you could be in two places at once - that\'s what particles can do when acting like waves!\n\n?? Advanced: The de Broglie wavelength ? = h/p shows all matter has wave properties. This is why electrons create diffraction patterns in the double-slit experiment!',
+            funFact: 'You have a wavelength too! But it\'s so tiny (about 10?�5 m) we never notice it.'
         };
         scene.add(this.wave);
         this.objects.push(this.wave);
@@ -5721,7 +5733,7 @@ class QuantumModule {
             name: 'Photon',
             type: 'Light Particle',
             radius: 0.5,
-            description: '💡 Photons are particles of light! They have no mass but carry energy. All electromagnetic radiation (radio waves, visible light, X-rays) is made of photons traveling at light speed (299,792 km/s).\n\n💡 For Kids: Light is made of tiny packets of energy called photons - like little light bullets!\n\n🔬 Advanced: Photons are the quantum of electromagnetic field, described by E = hf where h is Planck\'s constant. They exhibit both particle and wave properties!',
+            description: '?? Photons are particles of light! They have no mass but carry energy. All electromagnetic radiation (radio waves, visible light, X-rays) is made of photons traveling at light speed (299,792 km/s).\n\n?? For Kids: Light is made of tiny packets of energy called photons - like little light bullets!\n\n?? Advanced: Photons are the quantum of electromagnetic field, described by E = hf where h is Planck\'s constant. They exhibit both particle and wave properties!',
             funFact: 'Photons from the Sun take 8 minutes to reach Earth, but they spent 100,000 years bouncing around inside the Sun before escaping!'
         };
         scene.add(this.photon);
@@ -5743,7 +5755,7 @@ class QuantumModule {
             name: 'Superposition',
             type: 'Quantum State',
             radius: 2,
-            description: '🎭 Superposition means a quantum particle can be in multiple states at once until measured! Like Schrödinger\'s famous cat being both alive and dead.\n\n💡 For Kids: Imagine flipping a coin - while it\'s spinning, it\'s both heads AND tails at the same time!\n\n🔬 Advanced: Quantum superposition is described by ψ = α|0⟩ + β|1⟩ where |α|² + |β|² = 1. Measurement causes wavefunction collapse to a definite state!',
+            description: '?? Superposition means a quantum particle can be in multiple states at once until measured! Like Schr�dinger\'s famous cat being both alive and dead.\n\n?? For Kids: Imagine flipping a coin - while it\'s spinning, it\'s both heads AND tails at the same time!\n\n?? Advanced: Quantum superposition is described by ? = a|0? + �|1? where |a|� + |�|� = 1. Measurement causes wavefunction collapse to a definite state!',
             funFact: 'Quantum computers use superposition to process multiple calculations simultaneously!'
         };
         scene.add(this.superposition);
@@ -5788,7 +5800,7 @@ class QuantumModule {
             name: 'Quantum Entanglement',
             type: 'Quantum Connection',
             radius: 2,
-            description: '🔗 Entangled particles are mysteriously connected! Measuring one instantly affects the other, even across the universe. Einstein called it "spooky action at a distance"!\n\n💡 For Kids: Imagine having a magic pair of dice - when you roll one, the other shows the opposite number instantly, no matter how far apart they are!\n\n🔬 Advanced: Entanglement violates Bell\'s inequalities, proving quantum mechanics is fundamentally non-local. Used in quantum teleportation and quantum cryptography!',
+            description: '?? Entangled particles are mysteriously connected! Measuring one instantly affects the other, even across the universe. Einstein called it "spooky action at a distance"!\n\n?? For Kids: Imagine having a magic pair of dice - when you roll one, the other shows the opposite number instantly, no matter how far apart they are!\n\n?? Advanced: Entanglement violates Bell\'s inequalities, proving quantum mechanics is fundamentally non-local. Used in quantum teleportation and quantum cryptography!',
             funFact: 'Entanglement has been proven to work over 1,200 km using satellites!'
         };
         
@@ -5909,7 +5921,7 @@ class QuantumModule {
         let info = {
             name: userData.name || 'Unknown',
             type: userData.type || 'Object',
-            distance: 'Quantum scale (10⁻¹⁰ m)',
+            distance: 'Quantum scale (10?�� m)',
             size: `${userData.radius} units (subatomic)`,
             description: userData.description || 'Quantum object'
         };
@@ -5972,7 +5984,7 @@ class QuantumModule {
                 requestAnimationFrame(animate);
             } else {
                 // Animation complete - controls are now centered on object
-                console.log(`🎯 Focused on ${object.userData.name} - Use mouse to rotate, scroll to zoom`);
+                console.log(`?? Focused on ${object.userData.name} - Use mouse to rotate, scroll to zoom`);
             }
         };
         
@@ -5986,24 +5998,24 @@ class QuantumModule {
     getExplorerContent(focusCallback) {
         return [
             {
-                title: '⚛️ Atomic Structure',
+                title: '?? Atomic Structure',
                 items: [
-                    { name: '🔴 Nucleus (Protons & Neutrons)', onClick: () => focusCallback(this.nucleus) },
-                    { name: '⚡ Electron Cloud', onClick: () => focusCallback(this.orbitals[0]) }
+                    { name: '?? Nucleus (Protons & Neutrons)', onClick: () => focusCallback(this.nucleus) },
+                    { name: '? Electron Cloud', onClick: () => focusCallback(this.orbitals[0]) }
                 ]
             },
             {
-                title: '🌊 Wave-Particle Duality',
+                title: '?? Wave-Particle Duality',
                 items: [
-                    { name: '〰️ Matter Wave', onClick: () => focusCallback(this.wave) },
-                    { name: '💡 Photon (Light Particle)', onClick: () => focusCallback(this.photon) }
+                    { name: '?? Matter Wave', onClick: () => focusCallback(this.wave) },
+                    { name: '?? Photon (Light Particle)', onClick: () => focusCallback(this.photon) }
                 ]
             },
             {
-                title: '🎭 Quantum Phenomena',
+                title: '?? Quantum Phenomena',
                 items: [
-                    { name: '🎭 Superposition', onClick: () => focusCallback(this.superposition) },
-                    { name: '🔗 Quantum Entanglement', onClick: () => focusCallback(this.objects[this.objects.length - 1]) }
+                    { name: '?? Superposition', onClick: () => focusCallback(this.superposition) },
+                    { name: '?? Quantum Entanglement', onClick: () => focusCallback(this.objects[this.objects.length - 1]) }
                 ]
             }
         ];
@@ -6071,7 +6083,7 @@ class TopicManager {
                     this.solarSystemModule.realisticScale = !this.solarSystemModule.realisticScale;
                     scaleButton.classList.toggle('active');
                     scaleButton.textContent = this.solarSystemModule.realisticScale ? 
-                        '🔬 Realistic Scale' : '📏 Educational Scale';
+                        '?? Realistic Scale' : '?? Educational Scale';
                     
                     // Recalculate positions with new scale
                     this.solarSystemModule.updateScale();
@@ -6087,7 +6099,7 @@ class TopicManager {
                     this.solarSystemModule.cometTailsVisible = !this.solarSystemModule.cometTailsVisible;
                     cometTailsButton.classList.toggle('toggle-on');
                     cometTailsButton.textContent = this.solarSystemModule.cometTailsVisible ? 
-                        '☄️ Tails ON' : '☄️ Tails OFF';
+                        '?? Tails ON' : '?? Tails OFF';
                     console.log(`Comet tails ${this.solarSystemModule.cometTailsVisible ? 'enabled' : 'disabled'}`);
                 }
             }, { passive: true });
@@ -6105,8 +6117,8 @@ class TopicManager {
                         currentModule.toggleLabels(this.sceneManager.labelsVisible);
                         labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
                         labelsButton.textContent = this.sceneManager.labelsVisible ? 
-                            '📊 Labels ON' : '📊 Labels OFF';
-                        console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+                            '?? Labels ON' : '?? Labels OFF';
+                        console.log(`??? Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
                     }
                 }
             }, { passive: true });
@@ -6175,7 +6187,7 @@ class TopicManager {
                 };
                 
                 this.uiManager.updateExplorer(
-                    `🌍 Explore ${topicId}`, 
+                    `?? Explore ${topicId}`, 
                     module.getExplorerContent(focusCallback)
                 );
             } else {
@@ -6270,10 +6282,10 @@ class App {
                 }
             });
 
-            console.log('✅ Scientific Explorer initialized successfully!');
-            console.log(`📊 Performance: ${this.sceneManager.renderer.info.memory.geometries} geometries, ${this.sceneManager.renderer.info.memory.textures} textures`);
+            console.log('? Scientific Explorer initialized successfully!');
+            console.log(`?? Performance: ${this.sceneManager.renderer.info.memory.geometries} geometries, ${this.sceneManager.renderer.info.memory.textures} textures`);
         } catch (error) {
-            console.error('❌ Failed to initialize application:', error);
+            console.error('? Failed to initialize application:', error);
             this.sceneManager?.showError('Failed to start application. Please refresh the page.');
         }
     }
@@ -6295,63 +6307,63 @@ class App {
         if (helpButton) {
             helpButton.addEventListener('click', () => {
                 this.uiManager.showHelp(`
-                    <h3>🎮 Controls</h3>
-                    <p>• <strong>Click & Drag:</strong> Rotate view around selected object</p>
-                    <p>• <strong>Scroll:</strong> Zoom in/out (closer or farther from object)</p>
-                    <p>• <strong>Right Click & Drag:</strong> Pan camera position</p>
-                    <p>• <strong>Click Objects:</strong> Select and focus on object</p>
-                    <p>• <strong>Explorer Panel:</strong> Click object names to jump to them</p>
+                    <h3>?? Controls</h3>
+                    <p>� <strong>Click & Drag:</strong> Rotate view around selected object</p>
+                    <p>� <strong>Scroll:</strong> Zoom in/out (closer or farther from object)</p>
+                    <p>� <strong>Right Click & Drag:</strong> Pan camera position</p>
+                    <p>� <strong>Click Objects:</strong> Select and focus on object</p>
+                    <p>� <strong>Explorer Panel:</strong> Click object names to jump to them</p>
                     
-                    <h3>⌨️ Keyboard Shortcuts</h3>
-                    <p>• <span class="keyboard-shortcut">H</span> Show this help</p>
-                    <p>• <span class="keyboard-shortcut">R</span> Reset camera view</p>
-                    <p>• <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
-                    <p>• <span class="keyboard-shortcut">D</span> Toggle object details</p>
-                    <p>• <span class="keyboard-shortcut">C</span> Toggle comet tails (off for VR/AR)</p>
-                    <p>• <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
-                    <p>• <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
-                    <p>• <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
-                    <p>• <span class="keyboard-shortcut">ESC</span> Close panels</p>
+                    <h3>?? Keyboard Shortcuts</h3>
+                    <p>� <span class="keyboard-shortcut">H</span> Show this help</p>
+                    <p>� <span class="keyboard-shortcut">R</span> Reset camera view</p>
+                    <p>� <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
+                    <p>� <span class="keyboard-shortcut">D</span> Toggle object details</p>
+                    <p>� <span class="keyboard-shortcut">C</span> Toggle comet tails (off for VR/AR)</p>
+                    <p>� <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
+                    <p>� <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
+                    <p>� <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
+                    <p>� <span class="keyboard-shortcut">ESC</span> Close panels</p>
                     
-                    <h3>🔍 Object Inspection</h3>
-                    <p>• <strong>After selecting an object:</strong></p>
+                    <h3>?? Object Inspection</h3>
+                    <p>� <strong>After selecting an object:</strong></p>
                     <p>  - Drag to rotate camera around the object</p>
                     <p>  - Scroll to zoom in for close-up views</p>
                     <p>  - View object from all sides and angles</p>
                     <p>  - Camera stays focused as object moves in orbit</p>
                     
-                    <h3>⚙️ Settings</h3>
-                    <p>• <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
-                    <p>• <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
-                    <p>• <strong>Reset Button:</strong> Return camera to starting position</p>
+                    <h3>?? Settings</h3>
+                    <p>� <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
+                    <p>� <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
+                    <p>� <strong>Reset Button:</strong> Return camera to starting position</p>
                     
-                    <h3>🪐 Topics</h3>
-                    <p>• <strong>Solar System:</strong> Explore our solar system</p>
-                    <p>• <strong>Quantum Physics:</strong> Visualize particle-wave duality</p>
-                    <p>• <strong>More topics:</strong> Coming soon!</p>
+                    <h3>?? Topics</h3>
+                    <p>� <strong>Solar System:</strong> Explore our solar system</p>
+                    <p>� <strong>Quantum Physics:</strong> Visualize particle-wave duality</p>
+                    <p>� <strong>More topics:</strong> Coming soon!</p>
                     
-                    <h3>🥽 VR/AR Mode</h3>
-                    <p>• Click "Enter VR" or "Enter AR" buttons (bottom right)</p>
-                    <p>• Requires WebXR-compatible device</p>
-                    <p>• AR mode uses passthrough for mixed reality</p>
-                    <p>• <strong>VR Controls:</strong></p>
+                    <h3>?? VR/AR Mode</h3>
+                    <p>� Click "Enter VR" or "Enter AR" buttons (bottom right)</p>
+                    <p>� Requires WebXR-compatible device</p>
+                    <p>� AR mode uses passthrough for mixed reality</p>
+                    <p>� <strong>VR Controls:</strong></p>
                     <p>  - Left stick: Move forward/backward/strafe</p>
                     <p>  - Right stick: Rotate camera view</p>
                     <p>  - Trigger: Select objects</p>
-                    <p>• <strong>Tip:</strong> Turn OFF comet tails (press C) before entering VR/AR to avoid visual flicker</p>
+                    <p>� <strong>Tip:</strong> Turn OFF comet tails (press C) before entering VR/AR to avoid visual flicker</p>
                     
-                    <h3>💡 Tips</h3>
-                    <p>• Increase brightness to see dark sides of planets</p>
-                    <p>• Use speed slider to watch orbits in fast-forward</p>
-                    <p>• Click objects directly or use the explorer panel</p>
-                    <p>• Zoom in close to see surface details</p>
-                    <p>• Rotate around objects to view from all angles</p>
+                    <h3>?? Tips</h3>
+                    <p>� Increase brightness to see dark sides of planets</p>
+                    <p>� Use speed slider to watch orbits in fast-forward</p>
+                    <p>� Click objects directly or use the explorer panel</p>
+                    <p>� Zoom in close to see surface details</p>
+                    <p>� Rotate around objects to view from all angles</p>
                     
-                    <h3>⚡ Performance</h3>
-                    <p>• Optimized for 60 FPS on modern devices</p>
-                    <p>• Reduced geometry for better mobile performance</p>
-                    <p>• Hardware-accelerated WebGL rendering</p>
-                    <p>• Press <span class="keyboard-shortcut">F</span> to show FPS counter</p>
+                    <h3>? Performance</h3>
+                    <p>� Optimized for 60 FPS on modern devices</p>
+                    <p>� Reduced geometry for better mobile performance</p>
+                    <p>� Hardware-accelerated WebGL rendering</p>
+                    <p>� Press <span class="keyboard-shortcut">F</span> to show FPS counter</p>
                 `);
             }, { passive: true });
         }
@@ -6419,10 +6431,10 @@ class App {
                     if (this.topicManager) {
                         if (this.topicManager.timeSpeed === 0) {
                             this.topicManager.timeSpeed = 1;
-                            console.log('▶️ PLAY');
+                            console.log('?? PLAY');
                         } else {
                             this.topicManager.timeSpeed = 0;
-                            console.log('⏸️ PAUSE');
+                            console.log('?? PAUSE');
                         }
                     }
                     break;
@@ -6432,7 +6444,7 @@ class App {
                         const iss = this.spacecraft.find(s => s.userData.name.includes('ISS'));
                         if (iss) {
                             this.focusOnObject(iss, this.camera, this.controls);
-                            console.log('🛰️ Focusing on International Space Station');
+                            console.log('??? Focusing on International Space Station');
                         }
                     }
                     break;
@@ -6443,7 +6455,7 @@ class App {
                         if (voyagers.length > 0) {
                             this._voyagerIndex = ((this._voyagerIndex || 0) + 1) % voyagers.length;
                             this.focusOnObject(voyagers[this._voyagerIndex], this.camera, this.controls);
-                            console.log(`🚀 Focusing on ${voyagers[this._voyagerIndex].userData.name}`);
+                            console.log(`?? Focusing on ${voyagers[this._voyagerIndex].userData.name}`);
                         }
                     }
                     break;
@@ -6454,7 +6466,7 @@ class App {
                         if (rovers.length > 0) {
                             this._roverIndex = ((this._roverIndex || 0) + 1) % rovers.length;
                             this.focusOnObject(rovers[this._roverIndex], this.camera, this.controls);
-                            console.log(`🤖 Focusing on ${rovers[this._roverIndex].userData.name}`);
+                            console.log(`?? Focusing on ${rovers[this._roverIndex].userData.name}`);
                         }
                     }
                     break;
@@ -6465,7 +6477,7 @@ class App {
                         if (probes.length > 0) {
                             this._probeIndex = ((this._probeIndex || 0) + 1) % probes.length;
                             this.focusOnObject(probes[this._probeIndex], this.camera, this.controls);
-                            console.log(`🛰️ Focusing on ${probes[this._probeIndex].userData.name}`);
+                            console.log(`??? Focusing on ${probes[this._probeIndex].userData.name}`);
                         }
                     }
                     break;
@@ -6475,7 +6487,7 @@ class App {
                         const apollo = this.spacecraft.find(s => s.userData.name.includes('Apollo'));
                         if (apollo) {
                             this.focusOnObject(apollo, this.camera, this.controls);
-                            console.log('🌕 Focusing on Apollo 11 Landing Site');
+                            console.log('?? Focusing on Apollo 11 Landing Site');
                         }
                     }
                     break;
@@ -6528,5 +6540,6 @@ if (document.readyState === 'loading') {
 } else {
     new App();
 }
+
 
 
