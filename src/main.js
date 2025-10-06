@@ -1398,14 +1398,20 @@ class SolarSystemModule {
         const sunRadius = 15; // Compromise between realism and usability
         const sunGeometry = new THREE.SphereGeometry(sunRadius, 128, 128); // Higher detail
         
-        // Create advanced sun texture with sunspots and granulation
-        const sunTexture = this.createSunTexture(2048);
-        const sunBumpMap = this.createSunBumpMap(2048);
+        // REAL NASA Sun texture with sunspots and solar surface detail
+        const sunTexture = new THREE.TextureLoader().load(
+            'https://www.solarsystemscope.com/textures/download/2k_sun.jpg',
+            undefined,
+            undefined,
+            () => {
+                console.warn('Sun texture failed, using fallback');
+                return this.createSunTexture(2048);
+            }
+        );
         
         const sunMaterial = new THREE.MeshStandardMaterial({
             map: sunTexture,
-            bumpMap: sunBumpMap,
-            bumpScale: 0.5,
+            bumpScale: 0.3,
             emissive: 0xff6600,
             emissiveMap: sunTexture,
             emissiveIntensity: 2.5,
@@ -3369,17 +3375,21 @@ class SolarSystemModule {
                 return earthMaterial;
                 
             case 'mars':
-                // Mars: Hyperrealistic rusty red surface with canyons, polar caps
-                const marsTexture = this.createMarsTexture(2048);
-                const marsBump = this.createMarsBumpMap(2048);
-                const marsNormal = this.createMarsNormalMap(2048);
+                // Mars: REAL NASA texture - rusty red surface with Valles Marineris, polar caps
+                const marsTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_mars.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Mars texture failed, using fallback');
+                        return this.createMarsTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: marsTexture,
-                    normalMap: marsNormal,
-                    normalScale: new THREE.Vector2(1.2, 1.2),
-                    bumpMap: marsBump,
-                    bumpScale: 0.08,
+                    normalScale: new THREE.Vector2(1.0, 1.0),
+                    bumpScale: 0.05,
                     roughness: 0.95,
                     metalness: 0.0,
                     emissive: 0x3d1505,
@@ -3387,11 +3397,18 @@ class SolarSystemModule {
                 });
                 
             case 'venus':
-                // Venus: Thick yellowish sulfuric acid clouds
-                const venusTexture = this.createVenusTexture(2048);
+                // Venus: REAL NASA texture - thick yellowish sulfuric acid cloud atmosphere
+                const venusTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_venus_atmosphere.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Venus texture failed, using fallback');
+                        return this.createVenusTexture(2048);
+                    }
+                );
                 return new THREE.MeshStandardMaterial({
                     map: venusTexture,
-                    color: 0xe8c468,
                     roughness: 0.3,
                     metalness: 0.05,
                     emissive: 0xffc649,
@@ -3399,14 +3416,20 @@ class SolarSystemModule {
                 });
                 
             case 'mercury':
-                // Mercury: Heavily cratered like the Moon
-                const mercuryTexture = this.createMercuryTexture(2048);
-                const mercuryBump = this.createMercuryBumpMap(2048);
+                // Mercury: REAL NASA texture - heavily cratered surface like the Moon
+                const mercuryTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_mercury.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Mercury texture failed, using fallback');
+                        return this.createMercuryTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: mercuryTexture,
-                    bumpMap: mercuryBump,
-                    bumpScale: 0.1,
+                    bumpScale: 0.08,
                     roughness: 0.95,
                     metalness: 0.02,
                     emissive: 0x2d2520,
@@ -3414,13 +3437,19 @@ class SolarSystemModule {
                 });
                 
             case 'jupiter':
-                // Jupiter: Hyperrealistic bands with Great Red Spot
-                const jupiterTexture = this.createJupiterTexture(2048);
-                const jupiterBump = this.createJupiterBumpMap(1024);
+                // Jupiter: REAL NASA texture - bands with Great Red Spot
+                const jupiterTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_jupiter.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Jupiter texture failed, using fallback');
+                        return this.createJupiterTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: jupiterTexture,
-                    bumpMap: jupiterBump,
                     bumpScale: 0.02,
                     roughness: 0.6,
                     metalness: 0.0,
@@ -3429,13 +3458,19 @@ class SolarSystemModule {
                 });
                 
             case 'saturn':
-                // Saturn: Pale gold with detailed banding
-                const saturnTexture = this.createSaturnTexture(2048);
-                const saturnBump = this.createSaturnBumpMap(1024);
+                // Saturn: REAL NASA texture - pale gold with detailed banding
+                const saturnTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_saturn.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Saturn texture failed, using fallback');
+                        return this.createSaturnTexture(2048);
+                    }
+                );
                 
                 return new THREE.MeshStandardMaterial({
                     map: saturnTexture,
-                    bumpMap: saturnBump,
                     bumpScale: 0.015,
                     roughness: 0.55,
                     metalness: 0.0,
@@ -3444,8 +3479,16 @@ class SolarSystemModule {
                 });
                 
             case 'uranus':
-                // Uranus: Hyperrealistic cyan atmosphere with methane
-                const uranusTexture = this.createUranusTexture(2048);
+                // Uranus: REAL NASA texture - cyan atmosphere with methane
+                const uranusTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_uranus.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Uranus texture failed, using fallback');
+                        return this.createUranusTexture(2048);
+                    }
+                );
                 return new THREE.MeshStandardMaterial({
                     map: uranusTexture,
                     roughness: 0.3,
@@ -3455,8 +3498,16 @@ class SolarSystemModule {
                 });
                 
             case 'neptune':
-                // Neptune: Hyperrealistic deep blue with Great Dark Spot
-                const neptuneTexture = this.createNeptuneTexture(2048);
+                // Neptune: REAL NASA texture - deep blue with Great Dark Spot
+                const neptuneTexture = new THREE.TextureLoader().load(
+                    'https://www.solarsystemscope.com/textures/download/2k_neptune.jpg',
+                    undefined,
+                    undefined,
+                    () => {
+                        console.warn('Neptune texture failed, using fallback');
+                        return this.createNeptuneTexture(2048);
+                    }
+                );
                 return new THREE.MeshStandardMaterial({
                     map: neptuneTexture,
                     roughness: 0.3,
@@ -3622,17 +3673,21 @@ class SolarSystemModule {
         const moonName = config.name.toLowerCase();
         
         if (moonName === 'moon') {
-            // Earth's Moon: HYPERREALISTIC with deep craters and maria
-            const moonTexture = this.createMoonTexture(2048);
-            const moonBump = this.createMoonBumpMap(2048);
-            const moonNormal = this.createMoonNormalMap(2048);
+            // Earth's Moon: REAL NASA texture with deep craters and maria (dark seas)
+            const moonTexture = new THREE.TextureLoader().load(
+                'https://www.solarsystemscope.com/textures/download/2k_moon.jpg',
+                undefined,
+                undefined,
+                () => {
+                    console.warn('Moon texture failed, using fallback');
+                    return this.createMoonTexture(2048);
+                }
+            );
             
             moonMaterial = new THREE.MeshStandardMaterial({
                 map: moonTexture,
-                normalMap: moonNormal,
-                normalScale: new THREE.Vector2(2.0, 2.0), // Deep craters!
-                bumpMap: moonBump,
-                bumpScale: 0.15, // Pronounced elevation
+                normalScale: new THREE.Vector2(1.5, 1.5), // Crater detail
+                bumpScale: 0.12, // Elevation
                 roughness: 0.98,
                 metalness: 0.02
             });
