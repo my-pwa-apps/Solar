@@ -4921,13 +4921,24 @@ class SolarSystemModule {
 
     getObjectInfo(object) {
         const userData = object.userData;
+        
+        // Safely format distance
+        let distanceText;
+        if (userData.distance === 0) {
+            distanceText = 'Center of Solar System';
+        } else if (userData.parentPlanet) {
+            distanceText = `Orbits ${userData.parentPlanet}`;
+        } else if (typeof userData.distance === 'number') {
+            distanceText = `${userData.distance.toFixed(1)} million km from Sun`;
+        } else {
+            distanceText = 'Distance varies';
+        }
+        
         let info = {
             name: userData.name || 'Unknown',
             type: userData.type || 'Object',
-            distance: userData.distance === 0 ? 'Center of Solar System' : 
-                      userData.parentPlanet ? `Orbits ${userData.parentPlanet}` :
-                      `${userData.distance.toFixed(1)} million km from Sun`,
-            size: userData.realSize || `${userData.radius?.toFixed(2)} units`,
+            distance: distanceText,
+            size: userData.realSize || (userData.radius ? `${userData.radius.toFixed(2)} units` : 'Unknown size'),
             description: userData.description || 'No description available'
         };
 
