@@ -1431,35 +1431,22 @@ class SolarSystemModule {
             realSize: '1,391,000 km diameter'
         };
         
-        // 🌅 DAG/NACHT GRENS SYSTEEM - Directional light from sun
-        // Use DirectionalLight instead of PointLight for better day/night boundary
-        const sunLight = new THREE.DirectionalLight(0xFFFFE0, 2.5); // Bright daylight
+        // Sun lighting - PointLight from center
+        const sunLight = new THREE.PointLight(0xFFFFE0, 8, 0, 1); // Bright warm light
         sunLight.name = 'sunLight';
-        sunLight.position.set(0, 0, 0); // At sun's position
+        sunLight.position.set(0, 0, 0);
         sunLight.castShadow = true;
-        
-        // Enhanced shadow quality for sharp day/night terminator
-        sunLight.shadow.mapSize.width = 4096;  // Increased from 2048 for sharper shadows
-        sunLight.shadow.mapSize.height = 4096;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
         sunLight.shadow.camera.near = 1;
         sunLight.shadow.camera.far = 1000;
-        sunLight.shadow.camera.left = -500;
-        sunLight.shadow.camera.right = 500;
-        sunLight.shadow.camera.top = 500;
-        sunLight.shadow.camera.bottom = -500;
-        sunLight.shadow.bias = -0.0001; // Prevent shadow acne
-        
         scene.add(sunLight);
-        this.sun.userData.sunLight = sunLight; // Store reference
+        this.sun.userData.sunLight = sunLight;
         
-        // Reduced ambient light to make day/night contrast visible
-        const ambientLight = new THREE.AmbientLight(0x404060, 0.15); // Much lower: dark blue ambient for space
+        // Ambient light for general scene illumination
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
-        
-        console.log('🌅 Day/Night boundary lighting system initialized');
-        console.log('   ☀️ Directional light intensity: 2.5');
-        console.log('   🌌 Ambient light intensity: 0.15 (low for contrast)');
         
         // Multi-layer corona for realistic glow
         const coronaLayers = [
@@ -3545,49 +3532,42 @@ class SolarSystemModule {
         // Planet-specific hyperrealistic materials with high-quality textures
         switch(name) {
             case 'earth':
-                // Earth: ULTRA HYPER-REALISTIC with real NASA textures + DAY/NIGHT CYCLE
+                // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
                 const earthTexture = this.createEarthTextureReal(4096);  // 4K resolution!
                 const earthBump = this.createEarthBumpMap(4096);
                 const earthSpecular = this.createEarthSpecularMap(4096);
                 const earthNormal = this.createEarthNormalMap(4096);
-                const earthNightLights = this.createEarthNightLights(2048); // 🌃 City lights!
                 
-                // ULTRA realistic material with PBR + Night Lights
+                // ULTRA realistic material with PBR (Physically Based Rendering)
                 const earthMaterial = new THREE.MeshStandardMaterial({
                     map: earthTexture,
                     
                     // Normal map for surface detail (mountains, valleys)
                     normalMap: earthNormal,
-                    normalScale: new THREE.Vector2(1.2, 1.2),
+                    normalScale: new THREE.Vector2(1.2, 1.2), // Increased for more detail
                     
                     // Bump map for elevation
                     bumpMap: earthBump,
-                    bumpScale: 0.08,
+                    bumpScale: 0.08, // Doubled for realistic terrain
                     
                     // Roughness map (water = smooth/shiny, land = rough)
                     roughnessMap: earthSpecular,
-                    roughness: 0.35,
+                    roughness: 0.35, // Slightly rougher for realistic continents
                     
                     // Metalness (oceans have slight reflection)
-                    metalness: 0.2,
+                    metalness: 0.2, // Increased for water reflections
                     
-                    // 🌃 NIGHT SIDE: City lights glow in the dark!
-                    emissive: 0xffffaa,              // Warm yellow-white city lights
-                    emissiveIntensity: 0.8,          // Bright enough to see clearly
-                    emissiveMap: earthNightLights,   // City lights texture
+                    // Subtle emissive for atmospheric glow
+                    emissive: 0x0a0a0f,
+                    emissiveIntensity: 0.08,
                     
                     // Advanced rendering
-                    envMapIntensity: 1.5,
+                    envMapIntensity: 1.5, // Environment reflections
                     transparent: false,
                     side: THREE.FrontSide,
                     flatShading: false,
                     toneMapped: true
                 });
-                
-                console.log('🌍 Earth material created with:');
-                console.log('   ☀️ Day side: Real NASA Blue Marble texture');
-                console.log('   🌃 Night side: Procedural city lights');
-                console.log('   🌅 Automatic day/night transition via directional lighting');
                 
                 return earthMaterial;
                 
