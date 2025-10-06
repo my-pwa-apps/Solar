@@ -1537,15 +1537,15 @@ class SolarSystemModule {
         scene.add(sunLight);
         this.sun.userData.sunLight = sunLight;
         
-        // Ambient light - enough to see dark sides clearly
-        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 0.45); // Dark blue-grey ambient
+        // Ambient light - brighter to see dark sides clearly
+        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 0.6); // Dark blue-grey ambient
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
         
         if (DEBUG.enabled) {
-            console.log('💡 Lighting: Sun intensity 15 (warm white), Ambient 0.45, Tone mapping 1.2');
+            console.log('💡 Lighting: Sun intensity 15 (warm white), Ambient 0.6, Tone mapping 1.2');
             console.log('   - Balanced brightness: textures visible, not washed out');
-            console.log('   - Dark sides more visible with ambient 0.45');
+            console.log('   - Dark sides well visible with ambient 0.6');
             console.log('   - Sun light reaches all planets without decay');
             console.log('   - Eclipses will cast 4K shadows');
         }
