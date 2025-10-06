@@ -3596,7 +3596,8 @@ class SolarSystemModule {
             type: 'Asteroid Belt',
             description: '☄️ The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
             funFact: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
-            count: asteroidCount
+            count: asteroidCount,
+            radius: 82.5  // Average radius of belt (75-90 range, centered at 82.5)
         };
         scene.add(this.asteroidBelt);
         this.objects.push(this.asteroidBelt);
@@ -3640,7 +3641,8 @@ class SolarSystemModule {
             type: 'Kuiper Belt',
             description: '🧊 The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
             funFact: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
-            count: kuiperCount
+            count: kuiperCount,
+            radius: 330  // Average radius of belt (280-380 range, centered at 330)
         };
         scene.add(this.kuiperBelt);
         this.objects.push(this.kuiperBelt);
@@ -5120,7 +5122,11 @@ class SolarSystemModule {
         controls.minDistance = CONFIG.CONTROLS.minDistance;
         controls.maxDistance = CONFIG.CONTROLS.maxDistance;
         
-        const distance = Math.max(object.userData.radius * 5, 10);
+        // Safe fallback for objects without radius (spacecraft, asteroid belt, etc.)
+        // Use the object's distance from origin or a reasonable default
+        const objectRadius = object.userData.radius || object.userData.distance || 10;
+        
+        const distance = Math.max(objectRadius * 5, 10);
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
         
@@ -5129,8 +5135,8 @@ class SolarSystemModule {
         
         // Set REASONABLE dynamic zoom limits based on object size
         // Cap maxDistance to prevent excessive values from large objects
-        const minLimit = Math.max(object.userData.radius * 1.5, 1);
-        const maxLimit = Math.min(object.userData.radius * 50, 5000);
+        const minLimit = Math.max(objectRadius * 1.5, 1);
+        const maxLimit = Math.min(objectRadius * 50, 5000);
         
         controls.minDistance = minLimit;
         controls.maxDistance = maxLimit;
@@ -5730,11 +5736,14 @@ class QuantumModule {
         // Store reference for tracking
         this.focusedObject = object;
         
-        const distance = Math.max(object.userData.radius * 6, 8);
+        // Safe fallback for objects without radius
+        const objectRadius = object.userData.radius || object.userData.distance || 8;
+        
+        const distance = Math.max(objectRadius * 6, 8);
         
         // Set REASONABLE dynamic zoom limits
-        const minLimit = Math.max(object.userData.radius * 1.5, 1);
-        const maxLimit = Math.min(object.userData.radius * 50, 5000);
+        const minLimit = Math.max(objectRadius * 1.5, 1);
+        const maxLimit = Math.min(objectRadius * 50, 5000);
         
         controls.minDistance = minLimit;
         controls.maxDistance = maxLimit;
