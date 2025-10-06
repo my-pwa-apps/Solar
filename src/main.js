@@ -6542,7 +6542,7 @@ class App {
 
             // Load Solar System module directly
             this.solarSystemModule = new SolarSystemModule(this.uiManager);
-            await this.solarSystemModule.init(this.sceneManager);
+            await this.solarSystemModule.init(this.sceneManager.scene);
             
             // Setup UI for Solar System
             this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
