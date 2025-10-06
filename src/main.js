@@ -2052,28 +2052,67 @@ class SolarSystemModule {
     }
     
     createEarthTextureReal(size) {
-        // Try to load real NASA Earth texture first
+        // Create procedural texture as fallback first
+        const proceduralTexture = this.createEarthTexture(size);
+        
+        // Try to load real NASA Earth texture and swap it in when ready
         const loader = new THREE.TextureLoader();
-        let texture = null;
-        let loadedReal = false;
+        loader.setCrossOrigin('anonymous');
         
-        loader.load(
+        // Try multiple NASA Earth texture sources (in case one fails)
+        const textureURLs = [
+            // NASA Earth Observatory (high quality, often works)
             'https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73909/world.topo.bathy.200412.3x5400x2700.jpg',
-            (tex) => {
-                console.log('✅ Real NASA Earth texture loaded!');
-                texture = tex;
-                texture.needsUpdate = true;
-                loadedReal = true;
-            },
-            undefined,
-            (err) => {
-                console.warn('⚠️ NASA Earth texture failed, using procedural fallback');
-                texture = this.createEarthTexture(size);
-            }
-        );
+            // Alternative: NASA Visible Earth
+            'https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg',
+            // Alternative: Blue Marble 2048
+            'https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57735/land_ocean_ice_2048.jpg'
+        ];
         
-        // Return procedural immediately (will update when real loads)
-        return texture || this.createEarthTexture(size);
+        let currentURLIndex = 0;
+        
+        const tryLoadTexture = () => {
+            if (currentURLIndex >= textureURLs.length) {
+                console.warn('⚠️ All NASA Earth texture sources failed');
+                console.warn('   Using beautiful procedural Earth instead');
+                return;
+            }
+            
+            const url = textureURLs[currentURLIndex];
+            console.log(`🌍 Attempting to load Earth texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
+            
+            loader.load(
+                url,
+                (tex) => {
+                    console.log('✅ Real NASA Earth texture loaded successfully!');
+                    console.log('   Earth now shows real continents!');
+                    tex.needsUpdate = true;
+                    
+                    // Update the material's map to use the real texture
+                    if (this.planets && this.planets.earth) {
+                        this.planets.earth.material.map = tex;
+                        this.planets.earth.material.needsUpdate = true;
+                        console.log('🌍 Earth material updated with real NASA texture!');
+                    }
+                },
+                (progress) => {
+                    if (progress.lengthComputable) {
+                        const percent = (progress.loaded / progress.total * 100).toFixed(0);
+                        console.log(`⏳ Loading NASA Earth texture: ${percent}%`);
+                    }
+                },
+                (err) => {
+                    console.warn(`⚠️ Source ${currentURLIndex + 1} failed, trying next...`);
+                    currentURLIndex++;
+                    tryLoadTexture(); // Try next URL
+                }
+            );
+        };
+        
+        tryLoadTexture();
+        
+        // Return procedural texture immediately (real texture will swap in when loaded)
+        return proceduralTexture;
     }
     
     createEarthTexture(size) {
