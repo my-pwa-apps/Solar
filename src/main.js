@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // ===========================
 // CONSTANTS & CONFIG
@@ -102,6 +103,19 @@ class SceneManager {
         } else {
             throw new Error('Canvas container not found');
         }
+        
+        // Setup CSS2D label renderer
+        this.labelRenderer = new CSS2DRenderer();
+        this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        this.labelRenderer.domElement.style.position = 'absolute';
+        this.labelRenderer.domElement.style.top = '0px';
+        this.labelRenderer.domElement.style.pointerEvents = 'none';
+        container.appendChild(this.labelRenderer.domElement);
+        
+        // Label visibility state
+        this.labelsVisible = true;
+        
+        console.log('🏷️ Label system initialized');
     }
 
     setupCamera() {
@@ -1031,6 +1045,9 @@ class SceneManager {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        if (this.labelRenderer) {
+            this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
     }
 
     clear() {
@@ -1067,6 +1084,9 @@ class SceneManager {
             this.controls.update();
             callback();
             this.renderer.render(this.scene, this.camera);
+            if (this.labelRenderer) {
+                this.labelRenderer.render(this.scene, this.camera);
+            }
         });
     }
 
@@ -1309,6 +1329,9 @@ class SolarSystemModule {
         if (this.uiManager) this.uiManager.showLoading('Creating nebulae...');
         this.createNebulae(scene);
         
+        if (this.uiManager) this.uiManager.showLoading('Creating constellations...');
+        this.createConstellations(scene);
+        
         if (this.uiManager) this.uiManager.showLoading('Adding galaxies...');
         this.createGalaxies(scene);
         
@@ -1320,6 +1343,9 @@ class SolarSystemModule {
         
         if (this.uiManager) this.uiManager.showLoading('Creating spacecraft & rovers...');
         this.createSpacecraft(scene);
+        
+        if (this.uiManager) this.uiManager.showLoading('Creating labels...');
+        this.createLabels();
         
         return true;
     }
@@ -3857,6 +3883,153 @@ class SolarSystemModule {
         });
     }
 
+    createConstellations(scene) {
+        // Create famous star constellations visible from Earth
+        this.constellations = [];
+        
+        // Constellation data: star positions (RA/Dec converted to 3D) and connections
+        const constellationsData = [
+            {
+                name: 'Orion (The Hunter)',
+                description: '⭐ Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
+                stars: [
+                    { name: 'Betelgeuse', ra: 88.8, dec: 7.4, mag: 0.5, color: 0xFF4500 },  // Red supergiant
+                    { name: 'Rigel', ra: 78.6, dec: -8.2, mag: 0.1, color: 0x87CEEB },     // Blue supergiant
+                    { name: 'Bellatrix', ra: 81.3, dec: 6.3, mag: 1.6, color: 0xB0C4DE },
+                    { name: 'Alnitak', ra: 85.2, dec: -1.9, mag: 1.8, color: 0xE0FFFF },  // Belt star 1
+                    { name: 'Alnilam', ra: 84.1, dec: -1.2, mag: 1.7, color: 0xE0FFFF },  // Belt star 2
+                    { name: 'Mintaka', ra: 83.0, dec: -0.3, mag: 2.2, color: 0xE0FFFF },  // Belt star 3
+                    { name: 'Saiph', ra: 86.9, dec: -9.7, mag: 2.1, color: 0xB0E0E6 }
+                ],
+                lines: [[0,2], [2,3], [3,4], [4,5], [5,1], [1,6], [6,3]]  // Connect stars
+            },
+            {
+                name: 'Big Dipper (Ursa Major)',
+                description: '🐻 The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+                stars: [
+                    { name: 'Dubhe', ra: 165.9, dec: 61.8, mag: 1.8, color: 0xFFFFE0 },
+                    { name: 'Merak', ra: 165.5, dec: 56.4, mag: 2.4, color: 0xFFFFF0 },
+                    { name: 'Phecda', ra: 178.5, dec: 53.7, mag: 2.4, color: 0xFFFFF0 },
+                    { name: 'Megrez', ra: 183.9, dec: 57.0, mag: 3.3, color: 0xFFFFF0 },
+                    { name: 'Alioth', ra: 193.5, dec: 55.96, mag: 1.8, color: 0xFFFFE0 },
+                    { name: 'Mizar', ra: 200.9, dec: 54.9, mag: 2.2, color: 0xFFFFF0 },
+                    { name: 'Alkaid', ra: 206.9, dec: 49.3, mag: 1.9, color: 0xFFFFE0 }
+                ],
+                lines: [[0,1], [1,2], [2,3], [3,4], [4,5], [5,6]]  // Dipper shape
+            },
+            {
+                name: 'Southern Cross (Crux)',
+                description: '✝️ The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
+                stars: [
+                    { name: 'Acrux', ra: 186.6, dec: -63.1, mag: 0.8, color: 0xE0FFFF },
+                    { name: 'Mimosa', ra: 191.9, dec: -59.7, mag: 1.3, color: 0xE0FFFF },
+                    { name: 'Gacrux', ra: 187.8, dec: -57.1, mag: 1.6, color: 0xFF6347 },  // Red giant
+                    { name: 'Delta Crucis', ra: 183.8, dec: -58.7, mag: 2.8, color: 0xFFFFE0 }
+                ],
+                lines: [[2,0], [0,1], [3,1], [3,2]]  // Cross shape
+            },
+            {
+                name: 'Cassiopeia (The Queen)',
+                description: '👑 Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
+                stars: [
+                    { name: 'Schedar', ra: 10.1, dec: 56.5, mag: 2.2, color: 0xFFA500 },
+                    { name: 'Caph', ra: 2.3, dec: 59.1, mag: 2.3, color: 0xFFFFF0 },
+                    { name: 'Gamma Cas', ra: 14.2, dec: 60.7, mag: 2.5, color: 0xE0FFFF },
+                    { name: 'Ruchbah', ra: 21.5, dec: 60.2, mag: 2.7, color: 0xFFFFF0 },
+                    { name: 'Segin', ra: 25.6, dec: 63.7, mag: 3.4, color: 0xFFFFE0 }
+                ],
+                lines: [[0,1], [1,2], [2,3], [3,4]]  // W shape
+            },
+            {
+                name: 'Scorpius (The Scorpion)',
+                description: '🦂 Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
+                stars: [
+                    { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 },  // Red supergiant
+                    { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF },
+                    { name: 'Sargas', ra: 264.3, dec: -43.0, mag: 1.9, color: 0xFFFFE0 },
+                    { name: 'Dschubba', ra: 240.1, dec: -22.6, mag: 2.3, color: 0xE0FFFF },
+                    { name: 'Graffias', ra: 241.4, dec: -19.8, mag: 2.6, color: 0xFFFFE0 }
+                ],
+                lines: [[4,3], [3,0], [0,1], [1,2]]  // Scorpion curve
+            }
+        ];
+        
+        constellationsData.forEach(constData => {
+            const group = new THREE.Group();
+            const starMeshes = [];
+            
+            // Convert RA/Dec to 3D positions at distance 10000
+            constData.stars.forEach(star => {
+                // Convert RA (0-360°) and Dec (-90 to +90°) to radians
+                const raRad = (star.ra * Math.PI) / 180;
+                const decRad = (star.dec * Math.PI) / 180;
+                const distance = 10000;
+                
+                // Spherical to Cartesian coordinates
+                const x = distance * Math.cos(decRad) * Math.cos(raRad);
+                const y = distance * Math.sin(decRad);
+                const z = distance * Math.cos(decRad) * Math.sin(raRad);
+                
+                // Create star
+                const starSize = 15 * Math.pow(2.5, -star.mag);  // Brighter = larger
+                const starGeom = new THREE.SphereGeometry(starSize, 8, 8);
+                const starMat = new THREE.MeshBasicMaterial({
+                    color: star.color,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                const starMesh = new THREE.Mesh(starGeom, starMat);
+                starMesh.position.set(x, y, z);
+                group.add(starMesh);
+                starMeshes.push(starMesh);
+                
+                // Add glow
+                const glowGeom = new THREE.SphereGeometry(starSize * 2, 8, 8);
+                const glowMat = new THREE.MeshBasicMaterial({
+                    color: star.color,
+                    transparent: true,
+                    opacity: 0.3,
+                    blending: THREE.AdditiveBlending
+                });
+                const glow = new THREE.Mesh(glowGeom, glowMat);
+                starMesh.add(glow);
+            });
+            
+            // Draw constellation lines
+            constData.lines.forEach(line => {
+                const points = [
+                    starMeshes[line[0]].position,
+                    starMeshes[line[1]].position
+                ];
+                const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                const lineMat = new THREE.LineBasicMaterial({
+                    color: 0x4488FF,
+                    transparent: true,
+                    opacity: 0.4,
+                    linewidth: 2
+                });
+                const lineMesh = new THREE.Line(lineGeom, lineMat);
+                group.add(lineMesh);
+            });
+            
+            // Add constellation metadata
+            group.userData = {
+                name: constData.name,
+                type: 'Constellation',
+                description: constData.description,
+                distance: '100s to 1000s of light-years',
+                starCount: constData.stars.length
+            };
+            
+            scene.add(group);
+            this.objects.push(group);
+            this.constellations.push(group);
+        });
+        
+        console.log(`✨ Created ${this.constellations.length} constellations with star patterns!`);
+    }
+
     createGalaxies(scene) {
         // Create distant galaxies
         this.galaxies = [];
@@ -5019,6 +5192,106 @@ class SolarSystemModule {
         object.userData._originalMaxDistance = originalMaxDistance;
     }
 
+    createLabels() {
+        // Create CSS2D labels for all major objects
+        this.labels = [];
+        
+        // Helper function to create a label
+        const createLabel = (object, text) => {
+            if (!object || !object.userData) return;
+            
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'object-label';
+            labelDiv.textContent = text || object.userData.name;
+            labelDiv.style.color = 'white';
+            labelDiv.style.fontSize = '14px';
+            labelDiv.style.fontFamily = 'Arial, sans-serif';
+            labelDiv.style.padding = '2px 6px';
+            labelDiv.style.background = 'rgba(0, 0, 0, 0.7)';
+            labelDiv.style.borderRadius = '4px';
+            labelDiv.style.pointerEvents = 'none';
+            labelDiv.style.userSelect = 'none';
+            
+            const label = new CSS2DObject(labelDiv);
+            label.position.set(0, object.userData.radius * 1.5 || 5, 0);
+            object.add(label);
+            
+            object.userData.label = label;
+            this.labels.push(label);
+        };
+        
+        // Add labels to Sun
+        if (this.sun) {
+            createLabel(this.sun, '☀️ Sun');
+        }
+        
+        // Add labels to planets
+        Object.entries(this.planets).forEach(([name, planet]) => {
+            if (planet) {
+                const emoji = {
+                    'mercury': '☿️', 'venus': '♀️', 'earth': '🌍', 'mars': '♂️',
+                    'jupiter': '♃', 'saturn': '♄', 'uranus': '♅', 'neptune': '♆'
+                }[name.toLowerCase()] || '🪐';
+                createLabel(planet, `${emoji} ${planet.userData.name}`);
+                
+                // Add labels to moons
+                if (planet.userData.moons) {
+                    planet.userData.moons.forEach(moon => {
+                        createLabel(moon, `🌙 ${moon.userData.name}`);
+                    });
+                }
+            }
+        });
+        
+        // Add labels to spacecraft
+        if (this.spacecraft) {
+            this.spacecraft.forEach(craft => {
+                createLabel(craft, `🚀 ${craft.userData.name}`);
+            });
+        }
+        
+        // Add labels to satellites
+        if (this.satellites) {
+            this.satellites.forEach(sat => {
+                createLabel(sat, `🛰️ ${sat.userData.name}`);
+            });
+        }
+        
+        // Add labels to distant stars
+        if (this.distantStars) {
+            this.distantStars.forEach(star => {
+                createLabel(star, `⭐ ${star.userData.name}`);
+            });
+        }
+        
+        // Add labels to nebulae
+        if (this.nebulae) {
+            this.nebulae.forEach(nebula => {
+                createLabel(nebula, `🌌 ${nebula.userData.name}`);
+            });
+        }
+        
+        // Add labels to constellations
+        if (this.constellations) {
+            this.constellations.forEach(constellation => {
+                createLabel(constellation, `✨ ${constellation.userData.name}`);
+            });
+        }
+        
+        console.log(`🏷️ Created ${this.labels.length} object labels`);
+    }
+
+    toggleLabels(visible) {
+        if (!this.labels) return;
+        
+        this.labels.forEach(label => {
+            label.visible = visible !== undefined ? visible : !label.visible;
+        });
+        
+        const firstLabel = this.labels[0];
+        console.log(`🏷️ Labels ${firstLabel && firstLabel.visible ? 'shown' : 'hidden'}`);
+    }
+
     getExplorerContent(focusCallback) {
         const categories = [
             {
@@ -5631,6 +5904,22 @@ class TopicManager {
                     cometTailsButton.textContent = this.solarSystemModule.cometTailsVisible ? 
                         '☄️ Tails ON' : '☄️ Tails OFF';
                     console.log(`Comet tails ${this.solarSystemModule.cometTailsVisible ? 'enabled' : 'disabled'}`);
+                }
+            }, { passive: true });
+        }
+        
+        // Labels toggle button
+        const labelsButton = document.getElementById('toggle-details');
+        if (labelsButton) {
+            labelsButton.addEventListener('click', () => {
+                const currentModule = this.solarSystemModule || this.quantumModule;
+                if (currentModule && currentModule.labels) {
+                    // Toggle visibility
+                    const firstLabel = currentModule.labels[0];
+                    const newState = firstLabel ? !firstLabel.visible : true;
+                    currentModule.toggleLabels(newState);
+                    labelsButton.classList.toggle('toggle-on', newState);
+                    labelsButton.textContent = newState ? '📊 Labels ON' : '📊 Labels OFF';
                 }
             }, { passive: true });
         }
