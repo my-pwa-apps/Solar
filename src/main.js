@@ -119,7 +119,7 @@ class SceneManager {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.5; // Increased for better visibility
+        this.renderer.toneMappingExposure = 1.2; // Balanced - not too bright, textures visible
         
         // Performance optimizations
         this.renderer.sortObjects = false; // Skip sorting for better performance
@@ -169,21 +169,23 @@ class SceneManager {
     }
 
     setupLighting() {
-        // Minimal ambient light - the Sun will be the main light source
-        this.lights.ambient = new THREE.AmbientLight(0x0a0a0f, 0.05);
+        // Subtle ambient light - helps visibility without washing out day/night contrast
+        this.lights.ambient = new THREE.AmbientLight(0x1a1a28, 0.08);
         this.scene.add(this.lights.ambient);
 
         // Hemisphere light for subtle space lighting (starlight)
-        this.lights.hemisphere = new THREE.HemisphereLight(0x111122, 0x000000, 0.02);
+        this.lights.hemisphere = new THREE.HemisphereLight(0x2a2a44, 0x0a0a0f, 0.05);
         this.scene.add(this.lights.hemisphere);
 
-        // Very subtle camera light - just to prevent complete darkness when viewing dark sides
-        this.lights.camera = new THREE.PointLight(0x4466ff, 0.2, 500);
+        // Subtle camera light - helps viewing dark sides without overpowering
+        this.lights.camera = new THREE.PointLight(0x5577bb, 0.3, 600);
         this.camera.add(this.lights.camera);
         this.scene.add(this.camera);
         
         if (DEBUG.enabled) {
-            console.log('🌌 Scene ambient lighting: Minimal (sun is primary light source)');
+            console.log('🌌 Scene ambient lighting: Subtle (ambient 0.08, hemisphere 0.05, camera 0.3)');
+            console.log('   - Dark sides remain visible for navigation');
+            console.log('   - Sun is still primary light source');
         }
     }
 
@@ -1496,7 +1498,8 @@ class SolarSystemModule {
         
         // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
         // In space, light doesn't decay with distance (inverse square law applies but over HUGE distances)
-        const sunLight = new THREE.PointLight(0xFFFFE0, 25, 0, 0); // High intensity, NO decay (0)
+        // BALANCED: Not too bright (preserves textures) but enough to light planets
+        const sunLight = new THREE.PointLight(0xFFFAE8, 15, 0, 0); // Warm white, moderate intensity
         sunLight.name = 'sunLight';
         sunLight.position.set(0, 0, 0);
         sunLight.castShadow = CONFIG.QUALITY.shadows;
@@ -1509,16 +1512,17 @@ class SolarSystemModule {
         scene.add(sunLight);
         this.sun.userData.sunLight = sunLight;
         
-        // Minimal ambient light - just enough to see dark sides slightly
-        const ambientLight = new THREE.AmbientLight(0x111122, 0.15); // Very dark ambient
+        // Ambient light - enough to see dark sides but still clearly dark
+        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 0.35); // Dark blue-grey ambient
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
         
         if (DEBUG.enabled) {
-            console.log('💡 Lighting: Sun intensity 25 (no decay), Ambient 0.15, Shadows enabled');
+            console.log('💡 Lighting: Sun intensity 15 (warm white), Ambient 0.35, Tone mapping 1.2');
+            console.log('   - Balanced brightness: textures visible, not washed out');
+            console.log('   - Dark sides visible but still clearly dark');
             console.log('   - Sun light reaches all planets without decay');
-            console.log('   - Planets will show day/night sides correctly');
-            console.log('   - Eclipses will cast shadows');
+            console.log('   - Eclipses will cast 4K shadows');
         }
         
         // Multi-layer corona for realistic glow
