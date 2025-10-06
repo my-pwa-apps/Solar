@@ -119,7 +119,7 @@ class SceneManager {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.0;
+        this.renderer.toneMappingExposure = 1.5; // Increased for better visibility
         
         // Performance optimizations
         this.renderer.sortObjects = false; // Skip sorting for better performance
@@ -169,18 +169,22 @@ class SceneManager {
     }
 
     setupLighting() {
-        // Increased ambient light for better planet visibility
-        this.lights.ambient = new THREE.AmbientLight(0x505050, 1.2);
+        // Minimal ambient light - the Sun will be the main light source
+        this.lights.ambient = new THREE.AmbientLight(0x0a0a0f, 0.05);
         this.scene.add(this.lights.ambient);
 
-        // Hemisphere light for realistic space lighting
-        this.lights.hemisphere = new THREE.HemisphereLight(0xffffee, 0x222222, 0.6);
+        // Hemisphere light for subtle space lighting (starlight)
+        this.lights.hemisphere = new THREE.HemisphereLight(0x111122, 0x000000, 0.02);
         this.scene.add(this.lights.hemisphere);
 
-        // Camera light for viewing objects on dark side - INCREASED for better visibility
-        this.lights.camera = new THREE.PointLight(0xffffff, 1.5, 1000);
+        // Very subtle camera light - just to prevent complete darkness when viewing dark sides
+        this.lights.camera = new THREE.PointLight(0x4466ff, 0.2, 500);
         this.camera.add(this.lights.camera);
         this.scene.add(this.camera);
+        
+        if (DEBUG.enabled) {
+            console.log('🌌 Scene ambient lighting: Minimal (sun is primary light source)');
+        }
     }
 
     setupXR() {
@@ -1490,26 +1494,31 @@ class SolarSystemModule {
             realSize: '1,391,000 km diameter'
         };
         
-        // Sun lighting - PointLight from center (increased intensity for better day/night contrast)
-        const sunLight = new THREE.PointLight(0xFFFFE0, 12, 0, 1.2); // Higher intensity, faster decay
+        // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
+        // In space, light doesn't decay with distance (inverse square law applies but over HUGE distances)
+        const sunLight = new THREE.PointLight(0xFFFFE0, 25, 0, 0); // High intensity, NO decay (0)
         sunLight.name = 'sunLight';
         sunLight.position.set(0, 0, 0);
         sunLight.castShadow = CONFIG.QUALITY.shadows;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.mapSize.width = 4096; // Higher resolution shadows
+        sunLight.shadow.mapSize.height = 4096;
         sunLight.shadow.camera.near = 1;
-        sunLight.shadow.camera.far = 1000;
-        sunLight.shadow.bias = -0.001; // Reduce shadow artifacts
+        sunLight.shadow.camera.far = 5000; // Increased for distant planets
+        sunLight.shadow.bias = -0.0005; // Reduce shadow artifacts
+        sunLight.shadow.radius = 2; // Softer shadows
         scene.add(sunLight);
         this.sun.userData.sunLight = sunLight;
         
-        // Reduced ambient light for better day/night contrast
-        const ambientLight = new THREE.AmbientLight(0x202040, 0.3); // Much darker ambient for contrast
+        // Minimal ambient light - just enough to see dark sides slightly
+        const ambientLight = new THREE.AmbientLight(0x111122, 0.15); // Very dark ambient
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
         
         if (DEBUG.enabled) {
-            console.log('💡 Lighting: Sun intensity 12, Ambient 0.3 (enhanced day/night contrast)');
+            console.log('💡 Lighting: Sun intensity 25 (no decay), Ambient 0.15, Shadows enabled');
+            console.log('   - Sun light reaches all planets without decay');
+            console.log('   - Planets will show day/night sides correctly');
+            console.log('   - Eclipses will cast shadows');
         }
         
         // Multi-layer corona for realistic glow
