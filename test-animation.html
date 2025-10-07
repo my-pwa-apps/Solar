@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quick Animation Test</title>
+    <style>
+        body { margin: 0; font-family: monospace; background: #000; color: #0f0; padding: 20px; }
+        #output { white-space: pre-wrap; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Animation Loop Quick Test</h1>
+    <button onclick="testAnimation()">Test Animation Loop</button>
+    <button onclick="checkApp()">Check App State</button>
+    <button onclick="location.href='index.html'">Open Main App</button>
+    <div id="output"></div>
+
+    <script type="module">
+        import * as THREE from './libs/three.module.js';
+
+        const output = document.getElementById('output');
+        
+        function log(msg) {
+            output.innerHTML += msg + '\n';
+            console.log(msg);
+        }
+
+        window.testAnimation = function() {
+            output.innerHTML = '';
+            log('🧪 Testing Animation Loop...\n');
+            
+            try {
+                // Create minimal Three.js scene
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer();
+                
+                log('✅ Scene created');
+                log('✅ Camera created');
+                log('✅ Renderer created');
+                
+                // Test setAnimationLoop
+                let callbackCount = 0;
+                let lastTime = 0;
+                
+                log('\n🎬 Starting animation loop...');
+                
+                renderer.setAnimationLoop(() => {
+                    callbackCount++;
+                    const now = performance.now();
+                    const deltaTime = lastTime ? (now - lastTime) / 1000 : 0;
+                    lastTime = now;
+                    
+                    if (callbackCount <= 5) {
+                        log(`Frame ${callbackCount}: deltaTime=${deltaTime.toFixed(4)}s`);
+                    }
+                    
+                    if (callbackCount === 5) {
+                        log('\n✅ Animation loop is working!');
+                        log('   5 frames executed successfully');
+                        renderer.setAnimationLoop(null); // Stop
+                    }
+                });
+                
+                log('✅ setAnimationLoop called');
+                
+                setTimeout(() => {
+                    if (callbackCount === 0) {
+                        log('\n❌ ERROR: No callbacks executed!');
+                        log('   Browser may not support setAnimationLoop');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                log(`\n❌ ERROR: ${error.message}`);
+                log(error.stack);
+            }
+        };
+
+        window.checkApp = function() {
+            output.innerHTML = '';
+            log('🔍 Checking Main App State...\n');
+            
+            if (window.opener && window.opener.app) {
+                const app = window.opener.app;
+                log('✅ Found app in window.opener');
+                log(`   - sceneManager: ${!!app.sceneManager}`);
+                log(`   - renderer: ${!!app.sceneManager?.renderer}`);
+                log(`   - solarSystemModule: ${!!app.solarSystemModule}`);
+                log(`   - planets loaded: ${Object.keys(app.solarSystemModule?.planets || {}).length}`);
+                log(`   - timeSpeed: ${app.timeSpeed}`);
+                
+                // Try to get renderer info
+                if (app.sceneManager?.renderer) {
+                    const info = app.sceneManager.renderer.info;
+                    log(`\n📊 Renderer Info:`);
+                    log(`   - Geometries: ${info.memory.geometries}`);
+                    log(`   - Textures: ${info.memory.textures}`);
+                    log(`   - Render calls: ${info.render.calls}`);
+                    log(`   - Triangles: ${info.render.triangles}`);
+                }
+            } else {
+                log('❌ Cannot access main app');
+                log('   Open index.html first, then open this page');
+            }
+        };
+        
+        log('✅ Test page loaded');
+        log('   Click "Test Animation Loop" to verify Three.js works');
+        log('   Click "Check App State" to inspect main app');
+    </script>
+</body>
+</html>

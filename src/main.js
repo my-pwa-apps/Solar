@@ -1376,7 +1376,17 @@ class SceneManager {
     }
 
     animate(callback) {
+        console.log('🎬 SceneManager.animate() called');
+        console.log('   - renderer exists:', !!this.renderer);
+        console.log('   - callback is function:', typeof callback === 'function');
+        
+        let frameCount = 0;
         this.renderer.setAnimationLoop(() => {
+            frameCount++;
+            if (frameCount <= 3) {
+                console.log(`🎞️  setAnimationLoop callback #${frameCount} executing`);
+            }
+            
             this.controls.update();
             callback();
             this.renderer.render(this.scene, this.camera);
@@ -1384,6 +1394,8 @@ class SceneManager {
                 this.labelRenderer.render(this.scene, this.camera);
             }
         });
+        
+        console.log('✅ setAnimationLoop has been set');
     }
 
     updateBrightness(multiplier) {
@@ -6828,11 +6840,16 @@ class App {
             this.setupControls();
 
             // Start animation loop
+            console.log('🎬 About to start animation loop...');
+            console.log('   - sceneManager exists:', !!this.sceneManager);
+            console.log('   - sceneManager.animate exists:', !!(this.sceneManager && this.sceneManager.animate));
+            console.log('   - solarSystemModule exists:', !!this.solarSystemModule);
+            
             this.sceneManager.animate(() => {
                 // Initialize timing on first frame to avoid huge initial deltaTime
                 if (!this.lastTime) {
                     this.lastTime = performance.now();
-                    console.log('⏱️  Animation timing initialized');
+                    console.log('⏱️  Animation timing initialized on first callback');
                     return; // Skip first frame, just initialize timing
                 }
                 
