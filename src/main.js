@@ -348,13 +348,13 @@ class SceneManager {
         
         // Title
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 60px Arial';
+        ctx.font = 'bold 60px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('?? Space Explorer VR', 512, 80);
+        ctx.fillText('🚀 Space Explorer VR', 512, 80);
         
         // Subtitle
         ctx.fillStyle = '#fff';
-        ctx.font = '28px Arial';
+        ctx.font = '28px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.fillText('Use Triggers to Select Buttons', 512, 120);
         
         // Initialize pause mode state
@@ -403,7 +403,7 @@ class SceneManager {
             
             // Button text
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 32px Arial';
+            ctx.font = 'bold 32px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 12);
         });
@@ -411,9 +411,9 @@ class SceneManager {
         // Time Speed Slider
         const sliderY = 560;
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 32px Arial';
+        ctx.font = 'bold 32px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('?? Time Speed:', 50, sliderY);
+        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
         
         // Slider track
         const sliderX = 280;
@@ -456,12 +456,12 @@ class SceneManager {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.fillRect(0, 640, 1024, 128);
         ctx.fillStyle = '#0f0';
-        ctx.font = 'bold 28px Arial';
+        ctx.font = 'bold 28px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Mode: ?? Playing | Speed: 1x | Brightness: 50%', 512, 685);
+        ctx.fillText('Mode: ▶️ Playing | Speed: 1x | Brightness: 50%', 512, 685);
         ctx.fillStyle = '#fff';
-        ctx.font = '22px Arial';
-        ctx.fillText('?? All = Pause Everything | ?? Orbit = Pause Solar Orbits Only', 512, 720);
+        ctx.font = '22px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
+        ctx.fillText('⏸️ All = Pause Everything | ⏸️ Orbit = Pause Solar Orbits Only', 512, 720);
         ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
         
         // Create texture
@@ -867,19 +867,19 @@ class SceneManager {
         const brightness = app.topicManager?.brightness || 50;
         
         // Mode text
-        let modeText = '?? Playing';
-        if (this.pauseMode === 'all') modeText = '?? Paused All';
-        else if (this.pauseMode === 'orbital') modeText = '?? Orbital Pause';
+        let modeText = '▶️ Playing';
+        if (this.pauseMode === 'all') modeText = '⏸️ Paused All';
+        else if (this.pauseMode === 'orbital') modeText = '⏸️ Orbital Pause';
         
         // Status line
         ctx.fillStyle = '#0f0';
-        ctx.font = 'bold 28px Arial';
+        ctx.font = 'bold 28px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(`Mode: ${modeText} | Speed: ${speed}x | Brightness: ${brightness}%`, 512, 685);
         
         // Info lines
         ctx.fillStyle = '#fff';
-        ctx.font = '22px Arial';
+        ctx.font = '22px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.fillText(message || 'Ready', 512, 720);
         ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
         
@@ -905,9 +905,9 @@ class SceneManager {
         
         // Redraw slider label
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 32px Arial';
+        ctx.font = 'bold 32px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('?? Time Speed:', 50, sliderY);
+        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
         
         // Slider track
         ctx.fillStyle = '#34495e';
@@ -915,7 +915,7 @@ class SceneManager {
         
         // Slider markers
         ctx.fillStyle = '#7f8c8d';
-        ctx.font = '20px Arial';
+        ctx.font = '20px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('0', sliderX, sliderY + 45);
         ctx.fillText('1x', sliderX + sliderW * 0.1, sliderY + 45);
