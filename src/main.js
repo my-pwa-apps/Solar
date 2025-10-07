@@ -6038,100 +6038,100 @@ class SolarSystemModule {
     getExplorerContent(focusCallback) {
         const categories = [
             {
-                title: '? The Sun',
+                title: '☀️ The Sun',
                 items: [
-                    { name: '?? Sun', onClick: () => focusCallback(this.sun) }
+                    { name: '☀️ Sun', onClick: () => focusCallback(this.sun) }
                 ]
             },
             {
-                title: '?? Inner Planets (Rocky)',
+                title: '🪨 Inner Planets (Rocky)',
                 items: [
-                    { name: '?? Mercury', onClick: () => focusCallback(this.planets.mercury) },
-                    { name: '?? Venus', onClick: () => focusCallback(this.planets.venus) },
-                    { name: '?? Earth', onClick: () => focusCallback(this.planets.earth) },
-                    { name: '?? Moon', onClick: () => focusCallback(this.moons.moon) },
-                    { name: '?? Mars', onClick: () => focusCallback(this.planets.mars) },
-                    { name: '?? Phobos', onClick: () => focusCallback(this.moons.phobos) },
-                    { name: '?? Deimos', onClick: () => focusCallback(this.moons.deimos) }
+                    { name: '☿️ Mercury', onClick: () => focusCallback(this.planets.mercury) },
+                    { name: '♀️ Venus', onClick: () => focusCallback(this.planets.venus) },
+                    { name: '🌍 Earth', onClick: () => focusCallback(this.planets.earth) },
+                    { name: '🌙 Moon', onClick: () => focusCallback(this.moons.moon) },
+                    { name: '🔴 Mars', onClick: () => focusCallback(this.planets.mars) },
+                    { name: '🌑 Phobos', onClick: () => focusCallback(this.moons.phobos) },
+                    { name: '🌑 Deimos', onClick: () => focusCallback(this.moons.deimos) }
                 ]
             },
             {
-                title: '?? Asteroid Belt',
+                title: '🪨 Asteroid Belt',
                 items: [
-                    { name: '?? Asteroid Belt', onClick: () => focusCallback(this.asteroidBelt) }
+                    { name: '☄️ Asteroid Belt', onClick: () => focusCallback(this.asteroidBelt) }
                 ]
             },
             {
-                title: '?? Outer Planets (Gas Giants)',
+                title: '🪐 Outer Planets (Gas Giants)',
                 items: [
-                    { name: '? Jupiter', onClick: () => focusCallback(this.planets.jupiter) },
-                    { name: '?? Io', onClick: () => focusCallback(this.moons.io) },
-                    { name: '?? Europa', onClick: () => focusCallback(this.moons.europa) },
-                    { name: '?? Ganymede', onClick: () => focusCallback(this.moons.ganymede) },
-                    { name: '?? Callisto', onClick: () => focusCallback(this.moons.callisto) },
-                    { name: '? Saturn', onClick: () => focusCallback(this.planets.saturn) },
-                    { name: '?? Titan', onClick: () => focusCallback(this.moons.titan) },
-                    { name: '?? Enceladus', onClick: () => focusCallback(this.moons.enceladus) },
-                    { name: '?? Rhea', onClick: () => focusCallback(this.moons.rhea) }
+                    { name: '🪐 Jupiter', onClick: () => focusCallback(this.planets.jupiter) },
+                    { name: '🌋 Io', onClick: () => focusCallback(this.moons.io) },
+                    { name: '❄️ Europa', onClick: () => focusCallback(this.moons.europa) },
+                    { name: '🌕 Ganymede', onClick: () => focusCallback(this.moons.ganymede) },
+                    { name: '🌑 Callisto', onClick: () => focusCallback(this.moons.callisto) },
+                    { name: '🪐 Saturn', onClick: () => focusCallback(this.planets.saturn) },
+                    { name: '🟠 Titan', onClick: () => focusCallback(this.moons.titan) },
+                    { name: '💎 Enceladus', onClick: () => focusCallback(this.moons.enceladus) },
+                    { name: '🌕 Rhea', onClick: () => focusCallback(this.moons.rhea) }
                 ]
             },
             {
-                title: '?? Ice Giants',
+                title: '❄️ Ice Giants',
                 items: [
-                    { name: '? Uranus', onClick: () => focusCallback(this.planets.uranus) },
-                    { name: '?? Titania', onClick: () => focusCallback(this.moons.titania) },
-                    { name: '?? Miranda', onClick: () => focusCallback(this.moons.miranda) },
-                    { name: '? Neptune', onClick: () => focusCallback(this.planets.neptune) },
-                    { name: '?? Triton', onClick: () => focusCallback(this.moons.triton) }
+                    { name: '🔵 Uranus', onClick: () => focusCallback(this.planets.uranus) },
+                    { name: '🌕 Titania', onClick: () => focusCallback(this.moons.titania) },
+                    { name: '🌑 Miranda', onClick: () => focusCallback(this.moons.miranda) },
+                    { name: '🔷 Neptune', onClick: () => focusCallback(this.planets.neptune) },
+                    { name: '🌑 Triton', onClick: () => focusCallback(this.moons.triton) }
                 ]
             },
             {
-                title: '?? Kuiper Belt & Dwarf Planets',
+                title: '🧊 Kuiper Belt & Dwarf Planets',
                 items: [
-                    { name: '? Pluto', onClick: () => focusCallback(this.planets.pluto) },
-                    { name: '?? Charon', onClick: () => focusCallback(this.moons.charon) },
-                    { name: '?? Kuiper Belt', onClick: () => focusCallback(this.kuiperBelt) }
+                    { name: '🪐 Pluto', onClick: () => focusCallback(this.planets.pluto) },
+                    { name: '🌑 Charon', onClick: () => focusCallback(this.moons.charon) },
+                    { name: '❄️ Kuiper Belt', onClick: () => focusCallback(this.kuiperBelt) }
                 ]
             },
             {
-                title: '?? Comets',
+                title: '☄️ Comets',
                 items: this.comets.map(comet => ({
-                    name: `?? ${comet.userData.name}`,
+                    name: `☄️ ${comet.userData.name}`,
                     onClick: () => focusCallback(comet)
                 }))
             },
             {
-                title: '??? Satellites & Space Stations',
+                title: '🛰️ Satellites & Space Stations',
                 items: this.satellites.map(sat => ({
-                    name: `??? ${sat.userData.name}`,
+                    name: `🛰️ ${sat.userData.name}`,
                     onClick: () => focusCallback(sat)
                 }))
             },
             {
-                title: '?? Spacecraft & Probes',
+                title: '🚀 Spacecraft & Probes',
                 items: this.spacecraft.map(craft => ({
-                    name: `?? ${craft.userData.name}`,
+                    name: `🚀 ${craft.userData.name}`,
                     onClick: () => focusCallback(craft)
                 }))
             },
             {
-                title: '? Distant Stars',
+                title: '⭐ Distant Stars',
                 items: this.distantStars.map(star => ({
-                    name: `? ${star.userData.name}`,
+                    name: `⭐ ${star.userData.name}`,
                     onClick: () => focusCallback(star)
                 }))
             },
             {
-                title: '?? Nebulae',
+                title: '🌌 Nebulae',
                 items: this.nebulae.map(nebula => ({
-                    name: `?? ${nebula.userData.name}`,
+                    name: `🌌 ${nebula.userData.name}`,
                     onClick: () => focusCallback(nebula)
                 }))
             },
             {
-                title: '?? Galaxies',
+                title: '🌌 Galaxies',
                 items: this.galaxies.map(galaxy => ({
-                    name: `?? ${galaxy.userData.name}`,
+                    name: `🌌 ${galaxy.userData.name}`,
                     onClick: () => focusCallback(galaxy)
                 }))
             }
@@ -6853,8 +6853,26 @@ class App {
                 
                 // Update Solar System module every frame
                 if (this.solarSystemModule) {
+                    // Extra debug for first few frames
+                    if (this._updateCount <= 3) {
+                        const earth = this.solarSystemModule.planets?.earth;
+                        if (earth) {
+                            console.log(`🌍 Earth BEFORE update: pos=(${earth.position.x.toFixed(2)}, ${earth.position.z.toFixed(2)}), angle=${earth.userData.angle.toFixed(4)}`);
+                        }
+                    }
+                    
                     this.solarSystemModule.update(deltaTime, this.timeSpeed, 
                         this.sceneManager.camera, this.sceneManager.controls);
+                    
+                    // Extra debug for first few frames
+                    if (this._updateCount <= 3) {
+                        const earth = this.solarSystemModule.planets?.earth;
+                        if (earth) {
+                            console.log(`🌍 Earth AFTER update: pos=(${earth.position.x.toFixed(2)}, ${earth.position.z.toFixed(2)}), angle=${earth.userData.angle.toFixed(4)}`);
+                        }
+                    }
+                } else {
+                    console.error('❌ solarSystemModule is undefined in animation loop!');
                 }
             });
 
