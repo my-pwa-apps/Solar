@@ -3908,9 +3908,7 @@ class SolarSystemModule {
                     bumpMap: marsBump,
                     bumpScale: 0.08,
                     roughness: 0.95,
-                    metalness: 0.0,
-                    emissive: 0x3d1505,
-                    emissiveIntensity: 0.01
+                    metalness: 0.0
                 });
                 
             case 'venus':
@@ -3920,9 +3918,7 @@ class SolarSystemModule {
                     map: venusTexture,
                     color: 0xe8c468,
                     roughness: 0.3,
-                    metalness: 0.05,
-                    emissive: 0xffc649,
-                    emissiveIntensity: 0.25
+                    metalness: 0.05
                 });
                 
             case 'mercury':
@@ -3935,9 +3931,7 @@ class SolarSystemModule {
                     bumpMap: mercuryBump,
                     bumpScale: 0.1,
                     roughness: 0.95,
-                    metalness: 0.02,
-                    emissive: 0x2d2520,
-                    emissiveIntensity: 0.01
+                    metalness: 0.02
                 });
                 
             case 'jupiter':
@@ -3950,9 +3944,7 @@ class SolarSystemModule {
                     bumpMap: jupiterBump,
                     bumpScale: 0.02,
                     roughness: 0.6,
-                    metalness: 0.0,
-                    emissive: 0x3d2a15,
-                    emissiveIntensity: 0.03
+                    metalness: 0.0
                 });
                 
             case 'saturn':
@@ -3965,9 +3957,7 @@ class SolarSystemModule {
                     bumpMap: saturnBump,
                     bumpScale: 0.015,
                     roughness: 0.55,
-                    metalness: 0.0,
-                    emissive: 0x4d3820,
-                    emissiveIntensity: 0.02
+                    metalness: 0.0
                 });
                 
             case 'uranus':
@@ -3976,9 +3966,7 @@ class SolarSystemModule {
                 return new THREE.MeshStandardMaterial({
                     map: uranusTexture,
                     roughness: 0.3,
-                    metalness: 0.1,
-                    emissive: 0x1a4d5a,
-                    emissiveIntensity: 0.12
+                    metalness: 0.1
                 });
                 
             case 'neptune':
@@ -3987,9 +3975,7 @@ class SolarSystemModule {
                 return new THREE.MeshStandardMaterial({
                     map: neptuneTexture,
                     roughness: 0.3,
-                    metalness: 0.1,
-                    emissive: 0x0f1f3d,
-                    emissiveIntensity: 0.18
+                    metalness: 0.1
                 });
                 
             case 'pluto':
@@ -3998,9 +3984,7 @@ class SolarSystemModule {
                 return new THREE.MeshStandardMaterial({
                     map: plutoTexture,
                     roughness: 0.85,
-                    metalness: 0.0,
-                    emissive: 0x3d2f20,
-                    emissiveIntensity: 0.05
+                    metalness: 0.0
                 });
                 
             default:
