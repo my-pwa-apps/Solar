@@ -1383,15 +1383,21 @@ class SceneManager {
         let frameCount = 0;
         this.renderer.setAnimationLoop(() => {
             frameCount++;
-            if (frameCount <= 3) {
+            if (frameCount <= 5) {
                 console.log(`🎞️  setAnimationLoop callback #${frameCount} executing`);
             }
             
-            this.controls.update();
-            callback();
-            this.renderer.render(this.scene, this.camera);
-            if (this.labelRenderer) {
-                this.labelRenderer.render(this.scene, this.camera);
+            try {
+                this.controls.update();
+                callback();
+                this.renderer.render(this.scene, this.camera);
+                if (this.labelRenderer) {
+                    this.labelRenderer.render(this.scene, this.camera);
+                }
+            } catch (error) {
+                console.error('❌ ERROR in animation loop:', error);
+                console.error('   Stack:', error.stack);
+                // Don't stop the loop, just log the error
             }
         });
         
@@ -6850,8 +6856,11 @@ class App {
                 if (!this.lastTime) {
                     this.lastTime = performance.now();
                     console.log('⏱️  Animation timing initialized on first callback');
+                    console.log('🔄 Returning from first callback, next callback should start real animation');
                     return; // Skip first frame, just initialize timing
                 }
+                
+                console.log('🎯 Animation callback #2+ executing - this should repeat every frame!');
                 
                 const currentTime = performance.now();
                 const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
