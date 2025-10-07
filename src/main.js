@@ -4500,13 +4500,21 @@ class SolarSystemModule {
                 undefined,
                 (error) => {
                     console.warn(`⚠️ Failed to load ${url}, using fallback color`);
-                    // Create simple colored texture as fallback
+                    // Create circular gradient texture as fallback (no visible edges)
                     const canvas = document.createElement('canvas');
-                    canvas.width = 64;
-                    canvas.height = 64;
+                    canvas.width = 128;
+                    canvas.height = 128;
                     const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = fallbackColor;
-                    ctx.fillRect(0, 0, 64, 64);
+                    
+                    // Create radial gradient (bright center, fades to transparent)
+                    const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+                    gradient.addColorStop(0, fallbackColor);
+                    gradient.addColorStop(0.5, fallbackColor + '80'); // 50% opacity
+                    gradient.addColorStop(1, fallbackColor + '00'); // Transparent
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, 128, 128);
+                    
                     const texture = new THREE.CanvasTexture(canvas);
                     resolve(texture);
                 }
@@ -4592,7 +4600,7 @@ class SolarSystemModule {
                 position: { x: 6000, y: 1000, z: 3000 }, 
                 size: 400, 
                 description: '🌟 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!',
-                texture: 'https://science.nasa.gov/wp-content/uploads/2023/09/orion-nebula-jpg.webp'
+                texture: 'https://esahubble.org/media/archives/images/large/heic0601a.jpg'
             },
             { 
                 name: 'Crab Nebula', 
@@ -4600,7 +4608,7 @@ class SolarSystemModule {
                 position: { x: -5500, y: -800, z: 4500 }, 
                 size: 300, 
                 description: '💥 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!',
-                texture: 'https://science.nasa.gov/wp-content/uploads/2023/09/crab-nebula-jpg.webp'
+                texture: 'https://esahubble.org/media/archives/images/large/heic0515a.jpg'
             },
             { 
                 name: 'Ring Nebula', 
@@ -4608,7 +4616,7 @@ class SolarSystemModule {
                 position: { x: 4500, y: 1500, z: -5000 }, 
                 size: 250, 
                 description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.',
-                texture: 'https://science.nasa.gov/wp-content/uploads/2023/05/ring-nebula-2023.png'
+                texture: 'https://esahubble.org/media/archives/images/large/heic1310a.jpg'
             }
         ];
 
@@ -4807,7 +4815,7 @@ class SolarSystemModule {
                 size: 600, 
                 type: 'spiral', 
                 description: '🌌 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).',
-                texture: 'https://science.nasa.gov/wp-content/uploads/2023/04/andromeda-galaxy-potw1805a.jpg'
+                texture: 'https://esahubble.org/media/archives/images/large/potw1805a.jpg'
             },
             { 
                 name: 'Whirlpool Galaxy', 
@@ -4815,7 +4823,7 @@ class SolarSystemModule {
                 size: 400, 
                 type: 'spiral', 
                 description: '🌌 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.',
-                texture: 'https://science.nasa.gov/wp-content/uploads/2023/04/m51-whirlpool-galaxy-opo0506a.jpg'
+                texture: 'https://esahubble.org/media/archives/images/large/heic0506a.jpg'
             },
             { 
                 name: 'Sombrero Galaxy', 
@@ -4823,7 +4831,7 @@ class SolarSystemModule {
                 size: 350, 
                 type: 'elliptical', 
                 description: '🌌 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!',
-                texture: 'https://science.nasa.gov/wp-content/uploads/2023/04/sombrero-galaxy-opo0328e.jpg'
+                texture: 'https://esahubble.org/media/archives/images/large/heic0305a.jpg'
             }
         ];
 
