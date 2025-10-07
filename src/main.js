@@ -119,7 +119,7 @@ class SceneManager {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.2; // Balanced - not too bright, textures visible
+        this.renderer.toneMappingExposure = 1.0; // Reduced to prevent bright side washout (1.2→1.0)
         
         // Performance optimizations
         this.renderer.sortObjects = false; // Skip sorting for better performance
@@ -1563,8 +1563,8 @@ class SolarSystemModule {
         
         // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
         // In space, light doesn't decay with distance (inverse square law applies but over HUGE distances)
-        // BALANCED: Not too bright (preserves textures) but enough to light planets
-        const sunLight = new THREE.PointLight(0xFFFAE8, 15, 0, 0); // Warm white, moderate intensity
+        // BALANCED: Reduced intensity to prevent washing out textures on sunny side
+        const sunLight = new THREE.PointLight(0xFFFAE8, 12, 0, 0); // Warm white, reduced intensity (15→12)
         sunLight.name = 'sunLight';
         sunLight.position.set(0, 0, 0);
         sunLight.castShadow = CONFIG.QUALITY.shadows;
@@ -1577,15 +1577,16 @@ class SolarSystemModule {
         scene.add(sunLight);
         this.sun.userData.sunLight = sunLight;
         
-        // Ambient light - brighter to see dark sides clearly
-        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 0.6); // Dark blue-grey ambient
+        // Ambient light - increased to see dark sides clearly
+        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 0.75); // Dark blue-grey ambient (0.6→0.75)
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
         
         if (DEBUG.enabled) {
-            console.log('💡 Lighting: Sun intensity 15 (warm white), Ambient 0.6, Tone mapping 1.2');
-            console.log('   - Balanced brightness: textures visible, not washed out');
-            console.log('   - Dark sides well visible with ambient 0.6');
+            console.log('💡 Lighting: Sun intensity 12 (warm white), Ambient 0.75, Tone mapping 1.0');
+            console.log('   - Balanced brightness: sunny side not washed out, dark side visible');
+            console.log('   - Reduced sun intensity prevents texture washout');
+            console.log('   - Increased ambient light makes dark sides clearly visible');
             console.log('   - Sun light reaches all planets without decay');
             console.log('   - Eclipses will cast 4K shadows');
         }
