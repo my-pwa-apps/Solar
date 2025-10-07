@@ -6827,11 +6827,15 @@ class App {
             // Setup controls
             this.setupControls();
 
-            // Initialize timing before animation loop
-            this.lastTime = performance.now();
-
             // Start animation loop
             this.sceneManager.animate(() => {
+                // Initialize timing on first frame to avoid huge initial deltaTime
+                if (!this.lastTime) {
+                    this.lastTime = performance.now();
+                    console.log('⏱️  Animation timing initialized');
+                    return; // Skip first frame, just initialize timing
+                }
+                
                 const currentTime = performance.now();
                 const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
                 this.lastTime = currentTime;
