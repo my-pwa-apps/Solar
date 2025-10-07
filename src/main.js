@@ -574,7 +574,8 @@ class SceneManager {
             { x: 520, y: 340, w: 450, h: 80, label: '🏠 Reset View', action: 'reset', color: '#2980b9' },
             
             // Row 4: Menu control
-            { x: 262, y: 450, w: 500, h: 80, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' }
+            { x: 50, y: 450, w: 460, h: 80, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' },
+            { x: 520, y: 450, w: 450, h: 80, label: '🚪 Exit VR', action: 'exitvr', color: '#c0392b' }
         ];
         
         // Draw buttons
@@ -1040,6 +1041,20 @@ class SceneManager {
                 if (this.vrUIPanel) {
                     this.vrUIPanel.visible = false;
                     if (DEBUG.VR) console.log('🥽 ✅ VR menu hidden');
+                }
+                break;
+            case 'exitvr':
+                if (DEBUG.VR) console.log('🥽 Exiting VR mode');
+                // End the XR session
+                if (this.renderer.xr.isPresenting) {
+                    const session = this.renderer.xr.getSession();
+                    if (session) {
+                        session.end().then(() => {
+                            console.log('🥽 ✅ VR session ended');
+                        }).catch(err => {
+                            console.error('🥽 ❌ Error ending VR session:', err);
+                        });
+                    }
                 }
                 break;
             default:
@@ -1742,9 +1757,15 @@ class SolarSystemModule {
             this.createSpacecraft(scene);
             this.createLabels();
             
+            // Refresh navigation menu now that all objects are created
+            if (this.uiManager && typeof this.refreshExplorerContent === 'function') {
+                this.refreshExplorerContent();
+            }
+            
             const totalTime = performance.now() - initStartTime;
             if (DEBUG.PERFORMANCE) {
                 console.log(`⚡ Full initialization completed in ${totalTime.toFixed(0)}ms`);
+                console.log(`📦 Total objects: Planets=${Object.keys(this.planets).length}, Satellites=${this.satellites.length}, Spacecraft=${this.spacecraft.length}, Stars=${this.distantStars.length}, Nebulae=${this.nebulae.length}, Galaxies=${this.galaxies.length}`);
             }
         }, 10);
         
@@ -5452,11 +5473,17 @@ class SolarSystemModule {
                     const planetName = planet.userData.name.toLowerCase();
                     const astroData = this.ASTRONOMICAL_DATA[planetName];
                     if (astroData && astroData.orbitalPeriod) {
-                        // Speed relative to Earth: earthPeriod / planetPeriod
-                        // Then multiply by base educational speed for smooth motion
-                        const earthPeriod = this.ASTRONOMICAL_DATA.earth.orbitalPeriod;
-                        const speedRatio = earthPeriod / astroData.orbitalPeriod;
-                        planetOrbitalSpeed = speedRatio * orbitalSpeed;
+                        // In realtime mode, calculate absolute speed (not relative to educational speed)
+                        // We want: angle_change_per_second = (2π / orbital_period_in_seconds) * time_compression
+                        // Time compression: 365.25 (1 year = 1 day)
+                        // So for Earth: (2π / 365.25 days) * 365.25 = 2π per day = full orbit in 24 hours
+                        const orbitalPeriodDays = astroData.orbitalPeriod;
+                        const secondsPerDay = 86400;
+                        const radiansPerSecond = (2 * Math.PI / (orbitalPeriodDays * secondsPerDay)) * 365.25;
+                        // Convert to our angle increment (userData.speed is the base educational rate)
+                        // In educational mode, Earth has speed 0.01, so we normalize to that
+                        const earthEducationalSpeed = 0.01; // From planet config
+                        planetOrbitalSpeed = radiansPerSecond / earthEducationalSpeed;
                     }
                 }
                 
@@ -6217,6 +6244,25 @@ class SolarSystemModule {
         
         // Filter out categories with no items (empty arrays)
         return categories.filter(category => category.items && category.items.length > 0);
+    }
+    
+    refreshExplorerContent() {
+        // Refresh the explorer menu with all loaded objects
+        if (!this.uiManager) return;
+        
+        const focusCallback = (obj) => {
+            if (obj) {
+                const info = this.getObjectInfo(obj);
+                this.uiManager.updateInfoPanel(info);
+                this.focusOnObject(obj, window.app?.sceneManager?.camera, window.app?.sceneManager?.controls);
+            }
+        };
+        
+        const explorerContent = this.getExplorerContent(focusCallback);
+        if (explorerContent && Array.isArray(explorerContent)) {
+            this.uiManager.updateExplorer('🚀 Explore the Solar System', explorerContent);
+            console.log(`🔄 Explorer menu refreshed with ${explorerContent.length} categories`);
+        }
     }
 }
 
