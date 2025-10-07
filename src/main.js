@@ -5384,12 +5384,12 @@ class SolarSystemModule {
                     const planetName = planet.userData.name.toLowerCase();
                     const astroData = this.ASTRONOMICAL_DATA[planetName];
                     if (astroData && astroData.orbitalPeriod) {
-                        // REALTIME MODE: Calculate angle increment directly from orbital period
-                        // Goal: Earth completes 1 full orbit (2π radians) in 1 real day (86400 seconds)
-                        // Other planets scale proportionally to their orbital periods
+                        // REALTIME MODE: Use actual astronomical orbital periods
+                        // Earth: 365.25 days = 31,557,600 seconds for full orbit (2π radians)
+                        // Formula: anglePerSecond = 2π / (orbitalPeriodDays × 86400 seconds/day)
                         const orbitalPeriodDays = astroData.orbitalPeriod;
-                        const secondsForFullOrbit = 86400; // 1 real day for Earth's full orbit
-                        const anglePerSecond = (2 * Math.PI) / (secondsForFullOrbit * (orbitalPeriodDays / 365.25));
+                        const orbitalPeriodSeconds = orbitalPeriodDays * 86400; // Convert days to seconds
+                        const anglePerSecond = (2 * Math.PI) / orbitalPeriodSeconds;
                         angleIncrement = anglePerSecond * deltaTime;
                     } else {
                         // Fallback
@@ -5937,9 +5937,9 @@ class SolarSystemModule {
         const originalMinDistance = controls.minDistance;
         const originalMaxDistance = controls.maxDistance;
         
-        // Set dynamic zoom limits based on object size
-        const minDist = Math.max(radius * 1.5, 5); // Minimum 5 units
-        const maxDist = Math.max(radius * 50, 500); // Minimum 500 units for large objects
+        // Set dynamic zoom limits based on object size - allow very close zoom
+        const minDist = Math.max(radius * 0.5, 0.5); // Allow zooming to half the radius, minimum 0.5 units
+        const maxDist = Math.max(radius * 100, 1000); // Allow zooming far out
         controls.minDistance = minDist;
         controls.maxDistance = maxDist;
         console.log(`  📏 Zoom limits: ${minDist.toFixed(1)} to ${maxDist.toFixed(1)}`);
@@ -6229,8 +6229,9 @@ class SolarSystemModule {
 }
 
 // ===========================
-// QUANTUM MODULE
+// QUANTUM MODULE - REMOVED (Focusing on Solar System only)
 // ===========================
+/* REMOVED - Quantum Module class deleted to focus on solar system exploration
 class QuantumModule {
     constructor() {
         this.objects = [];
@@ -6655,7 +6656,7 @@ class QuantumModule {
             }
         ];
     }
-}
+} END REMOVED QuantumModule */
 
 // ===========================
 // TOPIC MANAGER
@@ -6673,13 +6674,10 @@ class TopicManager {
         this.brightnessMultiplier = 0.5;
         this.clickTimeout = null;
         
-        // Lazy load modules
+        // Modules - Only Solar System (quantum removed)
         this.modules = {
-            'solar-system': new SolarSystemModule(uiManager),
-            'quantum': new QuantumModule(),
-            'relativity': null,
-            'atoms': null,
-            'dna': null
+            'solar-system': new SolarSystemModule(uiManager)
+            // Other modules removed - focusing on solar system only
         };
 
         this.setupControls();
