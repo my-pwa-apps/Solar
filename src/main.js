@@ -477,20 +477,61 @@ class SceneManager {
             // Setup VR UI Panel
             this.setupVRUI();
             
-            // VR Button
-            const vrButton = VRButton.createButton(this.renderer);
+            // Custom VR Button - Explicitly request immersive-vr mode
+            const vrButton = document.createElement('button');
+            vrButton.id = 'VRButton';
+            vrButton.style.cssText = 'position: absolute; bottom: 20px; left: calc(50% - 50px); width: 100px; cursor: pointer; padding: 12px 6px; border: 1px solid #fff; border-radius: 4px; background: rgba(0,0,0,0.8); color: #fff; font: normal 13px sans-serif; text-align: center; opacity: 0.8; outline: none; z-index: 999;';
+            vrButton.textContent = 'ENTER VR';
+            
+            vrButton.onclick = async () => {
+                if (navigator.xr) {
+                    try {
+                        // Explicitly request immersive-vr mode
+                        const session = await navigator.xr.requestSession('immersive-vr', {
+                            requiredFeatures: ['local-floor']
+                        });
+                        await this.renderer.xr.setSession(session);
+                        console.log('✅ VR session started via custom button');
+                    } catch (error) {
+                        console.error('❌ Failed to start VR session:', error);
+                        alert('Could not enter VR mode: ' + error.message);
+                    }
+                } else {
+                    alert('WebXR not supported');
+                }
+            };
+            
             const vrContainer = document.getElementById('vr-button');
             if (vrContainer) {
                 vrContainer.appendChild(vrButton);
                 vrContainer.classList.remove('hidden');
             }
 
-            // AR Button
-            const arButton = ARButton.createButton(this.renderer, {
-                requiredFeatures: ['hit-test'],
-                optionalFeatures: ['dom-overlay', 'dom-overlay-for-handheld-ar'],
-                domOverlay: { root: document.body }
-            });
+            // Custom AR Button - Explicitly request immersive-ar mode
+            const arButton = document.createElement('button');
+            arButton.id = 'ARButton';
+            arButton.style.cssText = 'position: absolute; bottom: 20px; left: calc(50% + 60px); width: 100px; cursor: pointer; padding: 12px 6px; border: 1px solid #fff; border-radius: 4px; background: rgba(0,0,0,0.8); color: #fff; font: normal 13px sans-serif; text-align: center; opacity: 0.8; outline: none; z-index: 999;';
+            arButton.textContent = 'ENTER AR';
+            
+            arButton.onclick = async () => {
+                if (navigator.xr) {
+                    try {
+                        // Explicitly request immersive-ar mode
+                        const session = await navigator.xr.requestSession('immersive-ar', {
+                            requiredFeatures: ['local-floor'],
+                            optionalFeatures: ['dom-overlay', 'hit-test']
+                        });
+                        await this.renderer.xr.setSession(session);
+                        console.log('✅ AR session started via custom button');
+                    } catch (error) {
+                        console.error('❌ Failed to start AR session:', error);
+                        alert('Could not enter AR mode: ' + error.message);
+                    }
+                } else {
+                    alert('WebXR not supported');
+                }
+            };
+            
             const arContainer = document.getElementById('ar-button');
             if (arContainer) {
                 arContainer.appendChild(arButton);
@@ -502,6 +543,12 @@ class SceneManager {
                 const session = this.renderer.xr.getSession();
                 console.log('🥽 XR SESSION STARTED - Mode:', session.mode);
                 console.log('🌐 Environment Blend Mode:', session.environmentBlendMode);
+                
+                if (session.mode === 'immersive-ar') {
+                    console.warn('⚠️ AR mode detected! If you want VR, use the "ENTER VR" button.');
+                } else if (session.mode === 'immersive-vr') {
+                    console.log('✅ VR mode confirmed!');
+                }
                 
                 // Move camera to dolly for VR
                 if (this.dolly && this.camera) {
@@ -7027,6 +7074,12 @@ class App {
             console.log('   - sceneManager exists:', !!this.sceneManager);
             console.log('   - sceneManager.animate exists:', !!(this.sceneManager && this.sceneManager.animate));
             console.log('   - solarSystemModule exists:', !!this.solarSystemModule);
+            console.log('🎥 Camera position:', this.sceneManager.camera.position);
+            console.log('🎥 Camera parent:', this.sceneManager.camera.parent?.type || 'Scene');
+            console.log('🎯 Controls target:', this.sceneManager.controls?.target);
+            console.log('☀️ Sun position:', this.solarSystemModule.sun?.position);
+            console.log('🌍 Earth position:', this.solarSystemModule.planets?.earth?.position);
+            console.log('💡 Lights in scene:', this.sceneManager.lights);
             
             this.sceneManager.animate(() => {
                 // Initialize timing on first frame to avoid huge initial deltaTime
