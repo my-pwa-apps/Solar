@@ -1678,23 +1678,21 @@ class SolarSystemModule {
     async init(scene) {
         const initStartTime = performance.now();
         
-        // PHASE 1: Critical content (show immediately)
+        // PHASE 1: Critical content - Sun and all planets (needed for navigation/animation)
         if (this.uiManager) this.uiManager.showLoading('Creating the Sun...');
         await this.createSun(scene);
         
         if (this.uiManager) this.uiManager.showLoading('Building inner planets...');
         await this.createInnerPlanets(scene);
         
-        // Hide loading screen early - planets are ready
-        if (this.uiManager) {
-            setTimeout(() => this.uiManager.hideLoading(), 100);
-        }
+        // CRITICAL: Create outer planets synchronously so they're clickable/navigable
+        if (this.uiManager) this.uiManager.showLoading('Building outer planets...');
+        await this.createOuterPlanets(scene);
         
-        // PHASE 2: Secondary content (load in background)
-        // Use non-blocking setTimeout to allow rendering to start
+        // PHASE 2: Decorative content (can load in background after planets are ready)
+        // Use non-blocking setTimeout to allow rendering to start with all planets loaded
         setTimeout(async () => {
             await this.createAsteroidBelt(scene);
-            await this.createOuterPlanets(scene);
             await this.createKuiperBelt(scene);
             
             // PHASE 3: Background decorations
@@ -1717,6 +1715,7 @@ class SolarSystemModule {
             }
         }, 10);
         
+        // All planets are now loaded - safe to start animation
         return true;
     }
 
@@ -1749,7 +1748,7 @@ class SolarSystemModule {
             type: 'Star',
             distance: 0,
             radius: sunRadius,
-            description: '?? The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
+            description: '☀️ The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
             funFact: 'The Sun is so big that 1.3 million Earths could fit inside it!',
             realSize: '1,391,000 km diameter'
         };
@@ -1853,7 +1852,7 @@ class SolarSystemModule {
             speed: 0.04,
             rotationSpeed: 0.004,
             tilt: 0.034,
-            description: '?? Mercury is the smallest planet and closest to the Sun. Its surface is covered with craters like our Moon. Temperature ranges from -180�C at night to 430�C during the day - the largest temperature swing in the solar system!',
+            description: '🔥 Mercury is the smallest planet and closest to the Sun. Its surface is covered with craters like our Moon. Temperature ranges from -180°C at night to 430°C during the day - the largest temperature swing in the solar system!',
             funFact: 'A year on Mercury (88 Earth days) is shorter than its day (176 Earth days)!',
             realSize: '4,879 km diameter',
             moons: 0
@@ -1868,7 +1867,7 @@ class SolarSystemModule {
             speed: 0.015,
             rotationSpeed: -0.001,
             tilt: 2.64,
-            description: '?? Venus is the hottest planet with surface temperature of 465�C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards compared to most planets!',
+            description: '🌋 Venus is the hottest planet with surface temperature of 465°C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards compared to most planets!',
             funFact: 'Venus is the brightest planet in our sky and is often called Earth\'s "evil twin"',
             realSize: '12,104 km diameter',
             moons: 0,
@@ -1885,7 +1884,7 @@ class SolarSystemModule {
             speed: 0.01,
             rotationSpeed: 0.02,
             tilt: 23.44,
-            description: '?? Earth is our home, the only known planet with life! 71% is covered by water, creating the blue color visible from space. The atmosphere protects us from harmful radiation and meteors.',
+            description: '🌍 Earth is our home, the only known planet with life! 71% is covered by water, creating the blue color visible from space. The atmosphere protects us from harmful radiation and meteors.',
             funFact: 'Earth is the only planet not named after a god. It travels at 107,000 km/h around the Sun!',
             realSize: '12,742 km diameter',
             moons: 1,
@@ -1901,7 +1900,7 @@ class SolarSystemModule {
             distance: 4, // Increased from 3 for better visibility
             speed: 0.05, // Increased from 0.03 for visible orbit
             rotationSpeed: 0.004, // Moon rotates (tidally locked)
-            description: '?? Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
+            description: '🌕 Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
             funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
         });
 
@@ -1914,7 +1913,7 @@ class SolarSystemModule {
             speed: 0.008,
             rotationSpeed: 0.018,
             tilt: 25.19,
-            description: '?? Mars, the Red Planet, gets its color from iron oxide (rust). It has the largest volcano (Olympus Mons - 22 km high) and canyon (Valles Marineris - 4,000 km long) in the solar system. Water ice exists at its poles!',
+            description: '🔴 Mars, the Red Planet, gets its color from iron oxide (rust). It has the largest volcano (Olympus Mons - 22 km high) and canyon (Valles Marineris - 4,000 km long) in the solar system. Water ice exists at its poles!',
             funFact: 'Mars has seasons like Earth, and its day is only 37 minutes longer than ours!',
             realSize: '6,779 km diameter',
             moons: 2
@@ -1927,7 +1926,7 @@ class SolarSystemModule {
             color: 0x666666,
             distance: 1.5,
             speed: 0.08,
-            description: '?? Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
+            description: '🌑 Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
         });
         // Deimos: ~12 km / 12,742 km = 0.0009
         this.createMoon(this.planets.mars, {
@@ -1936,7 +1935,7 @@ class SolarSystemModule {
             color: 0x888888,
             distance: 2.5,
             speed: 0.04,
-            description: '?? Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
+            description: '🌑 Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
         });
     }
 
@@ -1950,7 +1949,7 @@ class SolarSystemModule {
             speed: 0.002,
             rotationSpeed: 0.04,
             tilt: 3.13,
-            description: '? Jupiter is the largest planet - all other planets could fit inside it! The Great Red Spot is a storm larger than Earth that has raged for at least 400 years. Jupiter has 95 known moons!',
+            description: '🪐 Jupiter is the largest planet - all other planets could fit inside it! The Great Red Spot is a storm larger than Earth that has raged for at least 400 years. Jupiter has 95 known moons!',
             funFact: 'Jupiter\'s gravity shields Earth from many asteroids and comets!',
             realSize: '139,820 km diameter',
             moons: 4,
@@ -1965,7 +1964,7 @@ class SolarSystemModule {
             color: 0xFFFF00,
             distance: 8,
             speed: 0.06,
-            description: '?? Io is the most volcanically active body in the solar system!'
+            description: '🌋 Io is the most volcanically active body in the solar system!'
         });
         // Europa: 3,122 km / 12,742 km = 0.245
         this.createMoon(this.planets.jupiter, {
@@ -1974,7 +1973,7 @@ class SolarSystemModule {
             color: 0xCCBB99,
             distance: 10,
             speed: 0.045,
-            description: '?? Europa has a global ocean beneath its ice - a potential place for life!'
+            description: '❄️ Europa has a global ocean beneath its ice - a potential place for life!'
         });
         // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
         this.createMoon(this.planets.jupiter, {
@@ -1983,7 +1982,7 @@ class SolarSystemModule {
             color: 0x996633,
             distance: 12,
             speed: 0.035,
-            description: '?? Ganymede is the largest moon in the solar system, bigger than Mercury!'
+            description: '🌙 Ganymede is the largest moon in the solar system, bigger than Mercury!'
         });
         // Callisto: 4,821 km / 12,742 km = 0.378
         this.createMoon(this.planets.jupiter, {
@@ -1992,7 +1991,7 @@ class SolarSystemModule {
             color: 0x777777,
             distance: 14,
             speed: 0.025,
-            description: '?? Callisto is the most heavily cratered object in the solar system!'
+            description: '🌙 Callisto is the most heavily cratered object in the solar system!'
         });
 
         // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
@@ -2004,7 +2003,7 @@ class SolarSystemModule {
             speed: 0.0009,
             rotationSpeed: 0.038,
             tilt: 26.73,
-            description: '? Saturn is famous for its spectacular ring system made of ice and rock particles. It\'s the least dense planet - it would float in water! Saturn has 146 known moons including Titan, which has a thick atmosphere.',
+            description: '💍 Saturn is famous for its spectacular ring system made of ice and rock particles. It\'s the least dense planet - it would float in water! Saturn has 146 known moons including Titan, which has a thick atmosphere.',
             funFact: 'Saturn\'s rings are only 10 meters thick but 280,000 km wide!',
             realSize: '116,460 km diameter',
             moons: 3,
@@ -2019,7 +2018,7 @@ class SolarSystemModule {
             color: 0xFFAA33,
             distance: 10,
             speed: 0.03,
-            description: '?? Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
+            description: '🌊 Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
         });
         // Enceladus: 504 km / 12,742 km = 0.040
         this.createMoon(this.planets.saturn, {
@@ -2028,7 +2027,7 @@ class SolarSystemModule {
             color: 0xFFFFFF,
             distance: 7,
             speed: 0.05,
-            description: '?? Enceladus shoots water geysers into space from its subsurface ocean!'
+            description: '💦 Enceladus shoots water geysers into space from its subsurface ocean!'
         });
         // Rhea: 1,527 km / 12,742 km = 0.120
         this.createMoon(this.planets.saturn, {
@@ -2037,7 +2036,7 @@ class SolarSystemModule {
             color: 0xCCCCCC,
             distance: 12,
             speed: 0.025,
-            description: '?? Rhea may have its own ring system!'
+            description: '💫 Rhea may have its own ring system!'
         });
 
         // Uranus: 50,724 km / 12,742 km = 3.98
@@ -2049,7 +2048,7 @@ class SolarSystemModule {
             speed: 0.0004,
             rotationSpeed: 0.03,
             tilt: 97.77,
-            description: '? Uranus is unique - it rotates on its side! This means its poles take turns facing the Sun during its 84-year orbit. Made of water, methane, and ammonia ices, it appears blue-green due to methane in its atmosphere.',
+            description: '🔵 Uranus is unique - it rotates on its side! This means its poles take turns facing the Sun during its 84-year orbit. Made of water, methane, and ammonia ices, it appears blue-green due to methane in its atmosphere.',
             funFact: 'Uranus was the first planet discovered with a telescope (1781)!',
             realSize: '50,724 km diameter',
             moons: 2,
@@ -2063,7 +2062,7 @@ class SolarSystemModule {
             color: 0xAAAAAA,
             distance: 5,
             speed: 0.04,
-            description: '?? Titania is Uranus\' largest moon with massive canyons!'
+            description: '🏔️ Titania is Uranus\' largest moon with massive canyons!'
         });
         // Miranda: 472 km / 12,742 km = 0.037
         this.createMoon(this.planets.uranus, {
@@ -2072,7 +2071,7 @@ class SolarSystemModule {
             color: 0x999999,
             distance: 3.5,
             speed: 0.06,
-            description: '?? Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
+            description: '🏔️ Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
         });
 
         // Neptune: 49,244 km / 12,742 km = 3.86
@@ -2084,7 +2083,7 @@ class SolarSystemModule {
             speed: 0.0001,
             rotationSpeed: 0.032,
             tilt: 28.32,
-            description: '? Neptune is the windiest planet with storms reaching 2,100 km/h! Its beautiful blue color comes from methane. Neptune has a large dark spot (storm) similar to Jupiter\'s Great Red Spot.',
+            description: '🌀 Neptune is the windiest planet with storms reaching 2,100 km/h! Its beautiful blue color comes from methane. Neptune has a large dark spot (storm) similar to Jupiter\'s Great Red Spot.',
             funFact: 'Neptune was discovered by math before being seen - its gravity affected Uranus\'s orbit!',
             realSize: '49,244 km diameter',
             moons: 1,
@@ -2098,7 +2097,7 @@ class SolarSystemModule {
             color: 0xFFCCCC,
             distance: 5,
             speed: -0.05,
-            description: '?? Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
+            description: '❄️ Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
         });
 
         // Pluto: 2,377 km / 12,742 km = 0.187
@@ -2124,7 +2123,7 @@ class SolarSystemModule {
             color: 0xAAAAAA,
             distance: 1.2,
             speed: 0.02,
-            description: '?? Charon is so large relative to Pluto that they form a binary system!'
+            description: '🌙 Charon is so large relative to Pluto that they form a binary system!'
         });
     }
 
@@ -4280,7 +4279,7 @@ class SolarSystemModule {
         this.asteroidBelt.userData = {
             name: 'Asteroid Belt',
             type: 'Asteroid Belt',
-            description: '?? The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
+            description: '☄️ The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
             funFact: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
             count: asteroidCount,
             radius: 40 // Effective radius for focus camera positioning (belt is at ~140 AU)
@@ -4325,7 +4324,7 @@ class SolarSystemModule {
         this.kuiperBelt.userData = {
             name: 'Kuiper Belt',
             type: 'Kuiper Belt',
-            description: '?? The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
+            description: '🧊 The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
             funFact: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
             count: kuiperCount,
             radius: 60  // Belt spans ~280-380 AU, radius for focus system
@@ -4440,10 +4439,10 @@ class SolarSystemModule {
         
         const brightStars = [
             { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '? Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
-            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '?? Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
-            { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '?? Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
-            { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '?? Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
-            { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '?? Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
+            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
+            { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '⭐ Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
+            { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '⭐ Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
+            { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '⭐ Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
         ];
 
         brightStars.forEach(starData => {
@@ -4494,9 +4493,9 @@ class SolarSystemModule {
         this.nebulae = [];
         
         const nebulaeData = [
-            { name: 'Orion Nebula', color: 0xFF69B4, position: { x: 6000, y: 1000, z: 3000 }, size: 400, description: '?? The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!' },
-            { name: 'Crab Nebula', color: 0x87CEEB, position: { x: -5500, y: -800, z: 4500 }, size: 300, description: '?? The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!' },
-            { name: 'Ring Nebula', color: 0x9370DB, position: { x: 4500, y: 1500, z: -5000 }, size: 250, description: '?? The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.' }
+            { name: 'Orion Nebula', color: 0xFF69B4, position: { x: 6000, y: 1000, z: 3000 }, size: 400, description: '🌟 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!' },
+            { name: 'Crab Nebula', color: 0x87CEEB, position: { x: -5500, y: -800, z: 4500 }, size: 300, description: '💥 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!' },
+            { name: 'Ring Nebula', color: 0x9370DB, position: { x: 4500, y: 1500, z: -5000 }, size: 250, description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.' }
         ];
 
         nebulaeData.forEach(nebData => {
@@ -4578,7 +4577,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Big Dipper (Ursa Major)',
-                description: '?? The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+                description: '✨ The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
                 stars: [
                     { name: 'Dubhe', ra: 165.9, dec: 61.8, mag: 1.8, color: 0xFFFFE0 },
                     { name: 'Merak', ra: 165.5, dec: 56.4, mag: 2.4, color: 0xFFFFF0 },
@@ -4592,7 +4591,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Southern Cross (Crux)',
-                description: '?? The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
+                description: '✨ The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
                 stars: [
                     { name: 'Acrux', ra: 186.6, dec: -63.1, mag: 0.8, color: 0xE0FFFF },
                     { name: 'Mimosa', ra: 191.9, dec: -59.7, mag: 1.3, color: 0xE0FFFF },
@@ -4603,7 +4602,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Cassiopeia (The Queen)',
-                description: '?? Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
+                description: '✨ Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
                 stars: [
                     { name: 'Schedar', ra: 10.1, dec: 56.5, mag: 2.2, color: 0xFFA500 },
                     { name: 'Caph', ra: 2.3, dec: 59.1, mag: 2.3, color: 0xFFFFF0 },
@@ -4615,7 +4614,7 @@ class SolarSystemModule {
             },
             {
                 name: 'Scorpius (The Scorpion)',
-                description: '?? Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
+                description: '🦂 Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
                 stars: [
                     { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 },  // Red supergiant
                     { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF },
@@ -4708,9 +4707,9 @@ class SolarSystemModule {
         this.galaxies = [];
         
         const galaxiesData = [
-            { name: 'Andromeda Galaxy', position: { x: 12000, y: 2000, z: -8000 }, size: 600, type: 'spiral', description: '?? The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).' },
-            { name: 'Whirlpool Galaxy', position: { x: -10000, y: -1500, z: -9000 }, size: 400, type: 'spiral', description: '?? The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.' },
-            { name: 'Sombrero Galaxy', position: { x: -8000, y: 3000, z: 7000 }, size: 350, type: 'elliptical', description: '?? The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!' }
+            { name: 'Andromeda Galaxy', position: { x: 12000, y: 2000, z: -8000 }, size: 600, type: 'spiral', description: '🌌 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).' },
+            { name: 'Whirlpool Galaxy', position: { x: -10000, y: -1500, z: -9000 }, size: 400, type: 'spiral', description: '🌌 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.' },
+            { name: 'Sombrero Galaxy', position: { x: -8000, y: 3000, z: 7000 }, size: 350, type: 'elliptical', description: '🌌 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!' }
         ];
 
         galaxiesData.forEach(galData => {
@@ -4828,11 +4827,11 @@ class SolarSystemModule {
         
         const cometsData = [
             // Halley: 15 km / 12,742 km = 0.0012
-            { name: 'Halley\'s Comet', distance: 200, eccentricity: 0.967, speed: 0.001, size: 0.002, description: '?? Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
+            { name: 'Halley\'s Comet', distance: 200, eccentricity: 0.967, speed: 0.001, size: 0.002, description: '☄️ Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
             // Hale-Bopp: 60 km / 12,742 km = 0.0047
-            { name: 'Comet Hale-Bopp', distance: 250, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: '?? Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
+            { name: 'Comet Hale-Bopp', distance: 250, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: '☄️ Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
             // NEOWISE: 5 km / 12,742 km = 0.0004
-            { name: 'Comet NEOWISE', distance: 180, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: '?? Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
+            { name: 'Comet NEOWISE', distance: 180, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: '☄️ Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
         ];
 
         cometsData.forEach((cometData, index) => {
@@ -4958,7 +4957,7 @@ class SolarSystemModule {
                 speed: 15.5,  // Orbital velocity: 7.66 km/s (27,576 km/h), completes 15.5 orbits/day
                 size: 0.03,
                 color: 0xCCCCCC,
-                description: '??? ISS orbits at 408 km altitude, traveling at 7.66 km/s (27,576 km/h). One orbit takes 92.68 minutes. Continuously inhabited since Nov 2, 2000 (25 years!). Collaboration of NASA, Roscosmos, ESA, JAXA, CSA. Completed 180,000+ orbits as of Oct 2025.',
+                description: '🛰️ ISS orbits at 408 km altitude, traveling at 7.66 km/s (27,576 km/h). One orbit takes 92.68 minutes. Continuously inhabited since Nov 2, 2000 (25 years!). Collaboration of NASA, Roscosmos, ESA, JAXA, CSA. Completed 180,000+ orbits as of Oct 2025.',
                 funFact: 'ISS is 109m long, 73m wide, masses 419,725 kg. Pressurized volume equals a Boeing 747! Visible to naked eye as brightest "star" after Venus.',
                 realSize: '109m � 73m � 20m, 419,725 kg',
                 orbitTime: '92.68 minutes'
@@ -4969,7 +4968,7 @@ class SolarSystemModule {
                 speed: 15.1, // Orbital velocity: 7.59 km/s (27,300 km/h)
                 size: 0.02,
                 color: 0x4169E1,
-                description: '?? Launched April 24, 1990 on Space Shuttle Discovery. Orbits at ~535 km altitude. Made 1.6+ million observations as of Oct 2025. 2.4m primary mirror observes UV, visible, and near-IR. Five servicing missions (1993-2009) upgraded instruments.',
+                description: '🔭 Launched April 24, 1990 on Space Shuttle Discovery. Orbits at ~535 km altitude. Made 1.6+ million observations as of Oct 2025. 2.4m primary mirror observes UV, visible, and near-IR. Five servicing missions (1993-2009) upgraded instruments.',
                 funFact: 'Can resolve objects 0.05 arcseconds apart - like seeing two fireflies 10,000 km away! Deepest image (eXtreme Deep Field) shows 5,500 galaxies, some 13.2 billion light-years away.',
                 realSize: '13.2m long � 4.2m diameter, 11,110 kg',
                 orbitTime: '95 minutes'
@@ -4980,7 +4979,7 @@ class SolarSystemModule {
                 speed: 2,  // Orbital velocity: 3.87 km/s, period: 11h 58min (2 orbits/day)
                 size: 0.025,
                 color: 0x00FF00,
-                description: '?? GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55� inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10?�4 seconds.',
+                description: '📡 GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻⁴ seconds.',
                 funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
                 realSize: 'GPS III: 2,161 kg, 7.8m solar span',
                 orbitTime: '11h 58min'
@@ -4991,7 +4990,7 @@ class SolarSystemModule {
                 speed: 0.01,  // Halo orbit around L2, period synced with Earth (1 year)
                 size: 0.04,
                 color: 0xFFD700,
-                description: '?? Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 �m). 6.5m segmented beryllium mirror (18 hexagons) with 25 m� collecting area - 6x Hubble! Sunshield: 21.2m � 14.2m, 5 layers.',
+                description: '🔭 Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 μm). 6.5m segmented beryllium mirror (18 hexagons) with 25 m² collecting area - 6x Hubble! Sunshield: 21.2m × 14.2m, 5 layers.',
                 funFact: 'Operating at -233�C (-388�F)! Can detect heat signature of a bumblebee at Moon distance. Discovered earliest galaxies at z=14 (280 million years after Big Bang).',
                 realSize: '6.5m mirror, 21.2m � 14.2m sunshield, 6,161 kg',
                 orbitTime: 'L2 halo orbit: ~6 months period'
@@ -5002,7 +5001,7 @@ class SolarSystemModule {
                 speed: 15, // Orbital velocity: ~7.6 km/s at 550 km altitude
                 size: 0.015,
                 color: 0xFF6B6B,
-                description: '??? SpaceX Starlink: 5,400+ operational satellites as of Oct 2025 (largest constellation ever). Provides broadband internet globally. Ku/Ka-band phased array antennas. Ion thrusters for station-keeping and deorbit. Gen2 satellites: 1,250 kg, laser inter-satellite links.',
+                description: '🛰️ SpaceX Starlink: 5,400+ operational satellites as of Oct 2025 (largest constellation ever). Provides broadband internet globally. Ku/Ka-band phased array antennas. Ion thrusters for station-keeping and deorbit. Gen2 satellites: 1,250 kg, laser inter-satellite links.',
                 funFact: 'Launches 20-23 satellites per Falcon 9 flight. Over 300 launches! FCC approved up to 42,000 satellites. Each satellite deorbits after 5-7 years.',
                 realSize: 'V1.5: 260 kg, 2.8m � 1.4m � 0.12m flat',
                 orbitTime: '95 minutes (550 km shell)'
@@ -5092,7 +5091,7 @@ class SolarSystemModule {
                 size: 0.08,
                 color: 0xC0C0C0,
                 type: 'probe',
-                description: '?? Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently 24.3 billion km (162 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
+                description: '🚀 Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently 24.3 billion km (162 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
                 funFact: 'Voyager 1 travels at 17 km/s (61,200 km/h). Its radio signals take 22.5 hours to reach Earth!',
                 realSize: '825.5 kg, 3.7m antenna dish',
                 launched: 'September 5, 1977',
@@ -5106,7 +5105,7 @@ class SolarSystemModule {
                 size: 0.08,
                 color: 0xB0B0B0,
                 type: 'probe',
-                description: '?? Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now 20.3 billion km (135 AU) from Sun.',
+                description: '🚀 Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now 20.3 billion km (135 AU) from Sun.',
                 funFact: 'Voyager 2 discovered 16 moons across the giant planets, Neptune\'s Great Dark Spot, and Triton\'s geysers!',
                 realSize: '825.5 kg, 3.7m antenna dish',
                 launched: 'August 20, 1977',
@@ -5120,7 +5119,7 @@ class SolarSystemModule {
                 size: 0.06,
                 color: 0x4169E1,
                 type: 'probe',
-                description: '?? New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
+                description: '🚀 New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
                 funFact: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto at 58,536 km/h. It carries 1 oz of Clyde Tombaugh\'s ashes!',
                 realSize: '478 kg, 0.7 � 2.1 � 2.7m (piano-sized)',
                 launched: 'January 19, 2006',
@@ -5134,7 +5133,7 @@ class SolarSystemModule {
                 size: 0.05,
                 color: 0xFF6B35,
                 type: 'probe',
-                description: '?? Parker Solar Probe is "touching" the Sun! Launched Aug 12, 2018, it flies through the Sun\'s corona. At closest approach (6.9 million km from surface), it reaches 192 km/s (690,000 km/h)! Heat shield withstands 1,377�C while instruments stay at 30�C.',
+                description: '🚀 Parker Solar Probe is "touching" the Sun! Launched Aug 12, 2018, it flies through the Sun\'s corona. At closest approach (6.9 million km from surface), it reaches 192 km/s (690,000 km/h)! Heat shield withstands 1,377°C while instruments stay at 30°C.',
                 funFact: 'Parker completed 21 orbits as of Oct 2025. Final perihelion in Dec 2025 will reach 6.9 million km - into the corona!',
                 realSize: '685 kg, 3m tall, 2.3m heat shield',
                 launched: 'August 12, 2018',
@@ -5149,7 +5148,7 @@ class SolarSystemModule {
                 size: 0.04,
                 color: 0xFF4500,
                 type: 'rover',
-                description: '?? Perseverance landed in Jezero Crater on Feb 18, 2021. Searching for biosignatures of ancient microbial life in a former lake delta. Has 23 cameras, 7 instruments, collects core samples for Mars Sample Return mission. Ingenuity helicopter completed 66+ flights!',
+                description: '🤖 Perseverance landed in Jezero Crater on Feb 18, 2021. Searching for biosignatures of ancient microbial life in a former lake delta. Has 23 cameras, 7 instruments, collects core samples for Mars Sample Return mission. Ingenuity helicopter completed 66+ flights!',
                 funFact: 'First spacecraft to record sounds on Mars! MOXIE experiment produces oxygen from CO2 atmosphere. Has driven 28+ km as of Oct 2025.',
                 realSize: '1,025 kg, 3m long � 2.7m wide � 2.2m tall',
                 launched: 'July 30, 2020',
@@ -5164,7 +5163,7 @@ class SolarSystemModule {
                 size: 0.04,
                 color: 0xDC143C,
                 type: 'rover',
-                description: '?? Curiosity landed in Gale Crater on Aug 6, 2012. Climbing Mount Sharp (Aeolis Mons), studying rock layers. Confirmed ancient Mars had water, organic molecules, and habitable conditions. Has 17 cameras, 10 science instruments, plutonium power source.',
+                description: '🤖 Curiosity landed in Gale Crater on Aug 6, 2012. Climbing Mount Sharp (Aeolis Mons), studying rock layers. Confirmed ancient Mars had water, organic molecules, and habitable conditions. Has 17 cameras, 10 science instruments, plutonium power source.',
                 funFact: 'ChemCam laser can vaporize rocks from 7m away! Has driven 32+ km and climbed 625+ meters as of Oct 2025. Still going strong after 4,780+ sols!',
                 realSize: '899 kg, 3m long � 2.8m wide � 2.1m tall',
                 launched: 'November 26, 2011',
@@ -5180,7 +5179,7 @@ class SolarSystemModule {
                 size: 0.02,
                 color: 0xFFD700,
                 type: 'landing-site',
-                description: '?? The historic Apollo 11 landing site where Neil Armstrong took "one small step for man" on July 20, 1969! The lunar module\'s descent stage, flag, and astronaut footprints remain preserved in the Sea of Tranquility.',
+                description: '🌙 The historic Apollo 11 landing site where Neil Armstrong took "one small step for man" on July 20, 1969! The lunar module\'s descent stage, flag, and astronaut footprints remain preserved in the Sea of Tranquility.',
                 funFact: 'The footprints will last millions of years because there\'s no wind or water on the Moon!',
                 realSize: 'Tranquility Base',
                 launched: '1969',
@@ -5195,7 +5194,7 @@ class SolarSystemModule {
                 size: 0.05,
                 color: 0xFFD700,
                 type: 'orbiter',
-                description: '?? Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
+                description: '🛰️ Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
                 funFact: 'First solar-powered spacecraft at Jupiter! Three 9m solar panels generate 500W. Carries three LEGO figurines: Galileo, Jupiter, and Juno!',
                 realSize: '3,625 kg, 20m solar panel span',
                 launched: 'August 5, 2011',
@@ -5210,7 +5209,7 @@ class SolarSystemModule {
                 size: 0.06,
                 color: 0xDAA520,
                 type: 'memorial',
-                description: '?? Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
+                description: '🛰️ Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
                 funFact: 'Discovered Enceladus\' subsurface ocean! Water geysers shoot 250kg/s into space. Cassini flew through plumes, detected H2, organics - ingredients for life!',
                 realSize: '5,600 kg, 6.8m tall, 4m wide',
                 launched: 'October 15, 1997',
@@ -5841,12 +5840,12 @@ class SolarSystemModule {
 
         // Add fun facts for kids
         if (userData.funFact) {
-            info.description += `\n\n?? ${userData.funFact}`;
+            info.description += `\n\n💡 ${userData.funFact}`;
         }
 
         // Add moon count for planets
         if (userData.moonCount > 0) {
-            info.description += `\n\n?? This planet has ${userData.moonCount} major moon${userData.moonCount > 1 ? 's' : ''} shown here (many more small ones exist!)`;
+            info.description += `\n\n🌙 This planet has ${userData.moonCount} major moon${userData.moonCount > 1 ? 's' : ''} shown here (many more small ones exist!)`;
         }
 
         return info;
@@ -6196,7 +6195,7 @@ class QuantumModule {
             name: 'Atomic Nucleus',
             type: 'Nucleus',
             radius: 0.5,
-            description: '?? The nucleus is the tiny, dense center of an atom containing protons (+) and neutrons (no charge). It holds 99.9% of the atom\'s mass! Protons determine which element it is.\n\n?? For Kids: The nucleus is like a tiny sun at the center - super small but super important!\n\n?? Advanced: Protons (up,up,down quarks) and neutrons (up,down,down quarks) are held together by the strong nuclear force, the strongest force in nature!',
+            description: '⚛️ The nucleus is the tiny, dense center of an atom containing protons (+) and neutrons (no charge). It holds 99.9% of the atom\'s mass! Protons determine which element it is.\n\n👶 For Kids: The nucleus is like a tiny sun at the center - super small but super important!\n\n🎓 Advanced: Protons (up,up,down quarks) and neutrons (up,down,down quarks) are held together by the strong nuclear force, the strongest force in nature!',
             funFact: 'If an atom were the size of a football stadium, the nucleus would be the size of a pea at the center!'
         };
         scene.add(this.nucleus);
@@ -6246,7 +6245,7 @@ class QuantumModule {
             name: 'Matter Wave',
             type: 'Wave',
             radius: 4,
-            description: '?? All matter has wave properties! This is called wave-particle duality. Electrons can behave like waves, creating interference patterns just like light waves.\n\n?? For Kids: Imagine if you could be in two places at once - that\'s what particles can do when acting like waves!\n\n?? Advanced: The de Broglie wavelength ? = h/p shows all matter has wave properties. This is why electrons create diffraction patterns in the double-slit experiment!',
+            description: '🌊 All matter has wave properties! This is called wave-particle duality. Electrons can behave like waves, creating interference patterns just like light waves.\n\n👶 For Kids: Imagine if you could be in two places at once - that\'s what particles can do when acting like waves!\n\n🎓 Advanced: The de Broglie wavelength λ = h/p shows all matter has wave properties. This is why electrons create diffraction patterns in the double-slit experiment!',
             funFact: 'You have a wavelength too! But it\'s so tiny (about 10?�5 m) we never notice it.'
         };
         scene.add(this.wave);
@@ -6280,7 +6279,7 @@ class QuantumModule {
             name: 'Photon',
             type: 'Light Particle',
             radius: 0.5,
-            description: '?? Photons are particles of light! They have no mass but carry energy. All electromagnetic radiation (radio waves, visible light, X-rays) is made of photons traveling at light speed (299,792 km/s).\n\n?? For Kids: Light is made of tiny packets of energy called photons - like little light bullets!\n\n?? Advanced: Photons are the quantum of electromagnetic field, described by E = hf where h is Planck\'s constant. They exhibit both particle and wave properties!',
+            description: '💡 Photons are particles of light! They have no mass but carry energy. All electromagnetic radiation (radio waves, visible light, X-rays) is made of photons traveling at light speed (299,792 km/s).\n\n👶 For Kids: Light is made of tiny packets of energy called photons - like little light bullets!\n\n🎓 Advanced: Photons are the quantum of electromagnetic field, described by E = hf where h is Planck\'s constant. They exhibit both particle and wave properties!',
             funFact: 'Photons from the Sun take 8 minutes to reach Earth, but they spent 100,000 years bouncing around inside the Sun before escaping!'
         };
         scene.add(this.photon);
@@ -6302,7 +6301,7 @@ class QuantumModule {
             name: 'Superposition',
             type: 'Quantum State',
             radius: 2,
-            description: '?? Superposition means a quantum particle can be in multiple states at once until measured! Like Schr�dinger\'s famous cat being both alive and dead.\n\n?? For Kids: Imagine flipping a coin - while it\'s spinning, it\'s both heads AND tails at the same time!\n\n?? Advanced: Quantum superposition is described by ? = a|0? + �|1? where |a|� + |�|� = 1. Measurement causes wavefunction collapse to a definite state!',
+            description: '🎭 Superposition means a quantum particle can be in multiple states at once until measured! Like Schrödinger\'s famous cat being both alive and dead.\n\n👶 For Kids: Imagine flipping a coin - while it\'s spinning, it\'s both heads AND tails at the same time!\n\n🎓 Advanced: Quantum superposition is described by ψ = a|0⟩ + β|1⟩ where |a|² + |β|² = 1. Measurement causes wavefunction collapse to a definite state!',
             funFact: 'Quantum computers use superposition to process multiple calculations simultaneously!'
         };
         scene.add(this.superposition);
@@ -6347,7 +6346,7 @@ class QuantumModule {
             name: 'Quantum Entanglement',
             type: 'Quantum Connection',
             radius: 2,
-            description: '?? Entangled particles are mysteriously connected! Measuring one instantly affects the other, even across the universe. Einstein called it "spooky action at a distance"!\n\n?? For Kids: Imagine having a magic pair of dice - when you roll one, the other shows the opposite number instantly, no matter how far apart they are!\n\n?? Advanced: Entanglement violates Bell\'s inequalities, proving quantum mechanics is fundamentally non-local. Used in quantum teleportation and quantum cryptography!',
+            description: '🔗 Entangled particles are mysteriously connected! Measuring one instantly affects the other, even across the universe. Einstein called it "spooky action at a distance"!\n\n👶 For Kids: Imagine having a magic pair of dice - when you roll one, the other shows the opposite number instantly, no matter how far apart they are!\n\n🎓 Advanced: Entanglement violates Bell\'s inequalities, proving quantum mechanics is fundamentally non-local. Used in quantum teleportation and quantum cryptography!',
             funFact: 'Entanglement has been proven to work over 1,200 km using satellites!'
         };
         
