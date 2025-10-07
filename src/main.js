@@ -1747,9 +1747,9 @@ class SolarSystemModule {
             this.createStarfield(scene);
             this.createOrbitalPaths(scene);
             this.createDistantStars(scene);
-            this.createNebulae(scene);
+            await this.createNebulae(scene);
             this.createConstellations(scene);
-            this.createGalaxies(scene);
+            await this.createGalaxies(scene);
             
             // PHASE 4: Dynamic objects
             this.createComets(scene);
@@ -1757,7 +1757,7 @@ class SolarSystemModule {
             this.createSpacecraft(scene);
             this.createLabels();
             
-            // Refresh navigation menu now that all objects are created
+            // Refresh navigation menu now that all objects are created (after async nebulae/galaxies load)
             if (this.uiManager && typeof this.refreshExplorerContent === 'function') {
                 this.refreshExplorerContent();
             }
@@ -4520,7 +4520,7 @@ class SolarSystemModule {
         
         const brightStars = [
             { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '? Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
-            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!', texture: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/sun.jpg' },
+            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
             { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '⭐ Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
             { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '⭐ Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
             { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '⭐ Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
@@ -4592,7 +4592,7 @@ class SolarSystemModule {
                 position: { x: 6000, y: 1000, z: 3000 }, 
                 size: 400, 
                 description: '🌟 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!',
-                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/orion-nebula-full.jpg'
+                texture: 'https://science.nasa.gov/wp-content/uploads/2023/09/orion-nebula-jpg.webp'
             },
             { 
                 name: 'Crab Nebula', 
@@ -4600,7 +4600,7 @@ class SolarSystemModule {
                 position: { x: -5500, y: -800, z: 4500 }, 
                 size: 300, 
                 description: '💥 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!',
-                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/crab-nebula-mosaic-full.jpg'
+                texture: 'https://science.nasa.gov/wp-content/uploads/2023/09/crab-nebula-jpg.webp'
             },
             { 
                 name: 'Ring Nebula', 
@@ -4608,7 +4608,7 @@ class SolarSystemModule {
                 position: { x: 4500, y: 1500, z: -5000 }, 
                 size: 250, 
                 description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.',
-                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/stsci-j-p13114a-4000x3985-1.png'
+                texture: 'https://science.nasa.gov/wp-content/uploads/2023/05/ring-nebula-2023.png'
             }
         ];
 
@@ -4807,7 +4807,7 @@ class SolarSystemModule {
                 size: 600, 
                 type: 'spiral', 
                 description: '🌌 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).',
-                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/andromeda-galaxy-full.jpg'
+                texture: 'https://science.nasa.gov/wp-content/uploads/2023/04/andromeda-galaxy-potw1805a.jpg'
             },
             { 
                 name: 'Whirlpool Galaxy', 
@@ -4815,7 +4815,7 @@ class SolarSystemModule {
                 size: 400, 
                 type: 'spiral', 
                 description: '🌌 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.',
-                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/whirlpool-galaxy-full.jpg'
+                texture: 'https://science.nasa.gov/wp-content/uploads/2023/04/m51-whirlpool-galaxy-opo0506a.jpg'
             },
             { 
                 name: 'Sombrero Galaxy', 
@@ -4823,7 +4823,7 @@ class SolarSystemModule {
                 size: 350, 
                 type: 'elliptical', 
                 description: '🌌 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!',
-                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/sombrero-galaxy-full.jpg'
+                texture: 'https://science.nasa.gov/wp-content/uploads/2023/04/sombrero-galaxy-opo0328e.jpg'
             }
         ];
 
