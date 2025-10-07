@@ -5194,52 +5194,6 @@ class SolarSystemModule {
                 status: 'Active, 7-year mission (ends 2025)'
             },
             {
-                name: 'Perseverance Rover (Mars)',
-                orbitPlanet: 'mars',
-                distance: 1.001, // On Mars surface at Jezero Crater (18.38�N 77.58�E)
-                angle: 0.5,
-                speed: 0,
-                size: 0.04,
-                color: 0xFF4500,
-                type: 'rover',
-                description: '🤖 Perseverance landed in Jezero Crater on Feb 18, 2021. Searching for biosignatures of ancient microbial life in a former lake delta. Has 23 cameras, 7 instruments, collects core samples for Mars Sample Return mission. Ingenuity helicopter completed 66+ flights!',
-                funFact: 'First spacecraft to record sounds on Mars! MOXIE experiment produces oxygen from CO2 atmosphere. Has driven 28+ km as of Oct 2025.',
-                realSize: '1,025 kg, 3m long � 2.7m wide � 2.2m tall',
-                launched: 'July 30, 2020',
-                status: 'Active on Mars Surface (1,352+ sols)'
-            },
-            {
-                name: 'Curiosity Rover (Mars)',
-                orbitPlanet: 'mars',
-                distance: 1.001, // On Mars surface at Gale Crater, climbing Mount Sharp (4.5�S 137.4�E)
-                angle: 0.8,
-                speed: 0,
-                size: 0.04,
-                color: 0xDC143C,
-                type: 'rover',
-                description: '🤖 Curiosity landed in Gale Crater on Aug 6, 2012. Climbing Mount Sharp (Aeolis Mons), studying rock layers. Confirmed ancient Mars had water, organic molecules, and habitable conditions. Has 17 cameras, 10 science instruments, plutonium power source.',
-                funFact: 'ChemCam laser can vaporize rocks from 7m away! Has driven 32+ km and climbed 625+ meters as of Oct 2025. Still going strong after 4,780+ sols!',
-                realSize: '899 kg, 3m long � 2.8m wide � 2.1m tall',
-                launched: 'November 26, 2011',
-                status: 'Active on Mars Surface (4,780+ sols)'
-            },
-            {
-                name: 'Apollo 11 Landing Site (Moon)',
-                orbitPlanet: 'earth',
-                isMoon: true,
-                distance: 0.273, // On Moon surface
-                angle: 1.2,
-                speed: 0,
-                size: 0.02,
-                color: 0xFFD700,
-                type: 'landing-site',
-                description: '🌙 The historic Apollo 11 landing site where Neil Armstrong took "one small step for man" on July 20, 1969! The lunar module\'s descent stage, flag, and astronaut footprints remain preserved in the Sea of Tranquility.',
-                funFact: 'The footprints will last millions of years because there\'s no wind or water on the Moon!',
-                realSize: 'Tranquility Base',
-                launched: '1969',
-                status: 'Historic Site'
-            },
-            {
                 name: 'Juno (Jupiter)',
                 orbitPlanet: 'jupiter',
                 distance: 11.5, // Highly elliptical polar orbit: 4,200 km to 8.1 million km from Jupiter's cloud tops
@@ -5285,26 +5239,6 @@ class SolarSystemModule {
                     emissive: craft.color,
                     emissiveIntensity: 0.2
                 });
-            } else if (craft.type === 'rover') {
-                // Box shape for rovers
-                geometry = new THREE.BoxGeometry(craft.size, craft.size * 0.6, craft.size * 0.8);
-                material = new THREE.MeshStandardMaterial({
-                    color: craft.color,
-                    roughness: 0.8,
-                    metalness: 0.4,
-                    emissive: craft.color,
-                    emissiveIntensity: 0.15
-                });
-            } else if (craft.type === 'landing-site') {
-                // Marker for landing site
-                geometry = new THREE.CylinderGeometry(craft.size, craft.size * 1.5, craft.size * 2, 8);
-                material = new THREE.MeshStandardMaterial({
-                    color: craft.color,
-                    roughness: 0.3,
-                    metalness: 0.9,
-                    emissive: craft.color,
-                    emissiveIntensity: 0.5
-                });
             } else {
                 // Memorial/generic
                 geometry = new THREE.OctahedronGeometry(craft.size * 0.6);
@@ -5344,24 +5278,6 @@ class SolarSystemModule {
                 spacecraft.add(boom);
             }
             
-            // Add wheels for rovers
-            if (craft.type === 'rover') {
-                for (let i = 0; i < 4; i++) {
-                    const wheelGeometry = new THREE.CylinderGeometry(craft.size * 0.2, craft.size * 0.2, craft.size * 0.15, 12);
-                    const wheelMaterial = new THREE.MeshStandardMaterial({
-                        color: 0x404040,
-                        roughness: 0.9,
-                        metalness: 0.3
-                    });
-                    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-                    wheel.rotation.z = Math.PI / 2;
-                    wheel.position.x = (i % 2 === 0 ? 1 : -1) * craft.size * 0.5;
-                    wheel.position.z = (i < 2 ? 1 : -1) * craft.size * 0.4;
-                    wheel.position.y = -craft.size * 0.3;
-                    spacecraft.add(wheel);
-                }
-            }
-            
             // Add glow marker - MUCH BIGGER for distant spacecraft!
             // For distant probes (distance > 100), make glow proportional to distance so they're visible
             const glowSize = craft.distance > 100 ? 
@@ -5399,23 +5315,12 @@ class SolarSystemModule {
             
             // Position spacecraft
             if (craft.orbitPlanet) {
-                // Position relative to planet
+                // Orbiter around planet
                 const planet = this.planets[craft.orbitPlanet];
                 if (planet) {
-                    if (craft.isMoon && planet.userData.moons && planet.userData.moons[0]) {
-                        // Position on Moon surface
-                        const moon = planet.userData.moons[0];
-                        const moonDist = moon.userData.distance;
-                        spacecraft.position.x = moonDist * Math.cos(craft.angle);
-                        spacecraft.position.z = moonDist * Math.sin(craft.angle);
-                        spacecraft.position.y = craft.size * 2; // Slightly above surface
-                        moon.add(spacecraft);
-                    } else {
-                        // Position relative to planet
-                        spacecraft.position.x = craft.distance * Math.cos(craft.angle);
-                        spacecraft.position.z = craft.distance * Math.sin(craft.angle);
-                        planet.add(spacecraft);
-                    }
+                    spacecraft.position.x = craft.distance * Math.cos(craft.angle);
+                    spacecraft.position.z = craft.distance * Math.sin(craft.angle);
+                    planet.add(spacecraft);
                 }
             } else {
                 // Deep space probe - position in solar system
@@ -5428,7 +5333,7 @@ class SolarSystemModule {
             this.spacecraft.push(spacecraft);
         });
         
-        console.log(`? Created ${this.spacecraft.length} spacecraft, rovers, and landing sites!`);
+        console.log(`🚀 Created ${this.spacecraft.length} spacecraft and probes!`);
     }
 
     update(deltaTime, timeSpeed, camera, controls) {
@@ -5468,27 +5373,29 @@ class SolarSystemModule {
         Object.values(this.planets).forEach(planet => {
             if (planet && planet.userData) {
                 // Calculate planet-specific orbital speed for realtime mode
-                let planetOrbitalSpeed = orbitalSpeed;
+                let angleIncrement;
                 if (timeSpeed === 'realtime' && planet.userData.name) {
                     const planetName = planet.userData.name.toLowerCase();
                     const astroData = this.ASTRONOMICAL_DATA[planetName];
                     if (astroData && astroData.orbitalPeriod) {
-                        // In realtime mode, calculate absolute speed (not relative to educational speed)
-                        // We want: angle_change_per_second = (2π / orbital_period_in_seconds) * time_compression
-                        // Time compression: 365.25 (1 year = 1 day)
-                        // So for Earth: (2π / 365.25 days) * 365.25 = 2π per day = full orbit in 24 hours
+                        // REALTIME MODE: Calculate angle increment directly from orbital period
+                        // Goal: Earth completes 1 full orbit (2π radians) in 1 real day (86400 seconds)
+                        // Other planets scale proportionally to their orbital periods
                         const orbitalPeriodDays = astroData.orbitalPeriod;
-                        const secondsPerDay = 86400;
-                        const radiansPerSecond = (2 * Math.PI / (orbitalPeriodDays * secondsPerDay)) * 365.25;
-                        // Convert to our angle increment (userData.speed is the base educational rate)
-                        // In educational mode, Earth has speed 0.01, so we normalize to that
-                        const earthEducationalSpeed = 0.01; // From planet config
-                        planetOrbitalSpeed = radiansPerSecond / earthEducationalSpeed;
+                        const secondsForFullOrbit = 86400; // 1 real day for Earth's full orbit
+                        const anglePerSecond = (2 * Math.PI) / (secondsForFullOrbit * (orbitalPeriodDays / 365.25));
+                        angleIncrement = anglePerSecond * deltaTime;
+                    } else {
+                        // Fallback
+                        angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
                     }
+                } else {
+                    // EDUCATIONAL or PAUSED mode: use pre-set educational speed
+                    angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
                 }
                 
                 // Solar orbit (affected by orbital pause)
-                planet.userData.angle += planet.userData.speed * planetOrbitalSpeed;
+                planet.userData.angle += angleIncrement;
                 planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
                 planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
                 
