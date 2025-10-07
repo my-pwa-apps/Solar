@@ -303,7 +303,7 @@ class SceneManager {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.80; // Further reduced to prevent bright side washout (0.85→0.80)
+        this.renderer.toneMappingExposure = 1.2; // Increased to brighten dark areas
         
         // Performance optimizations
         this.renderer.sortObjects = false; // Skip sorting for better performance
@@ -366,21 +366,21 @@ class SceneManager {
 
     setupLighting() {
         // Ambient light - provides base illumination so dark sides are visible
-        this.lights.ambient = new THREE.AmbientLight(0x2a2a3a, 0.25);
+        this.lights.ambient = new THREE.AmbientLight(0x444466, 0.6);
         this.scene.add(this.lights.ambient);
 
         // Hemisphere light for space lighting (starlight from above/below)
-        this.lights.hemisphere = new THREE.HemisphereLight(0x3a3a55, 0x1a1a2a, 0.15);
+        this.lights.hemisphere = new THREE.HemisphereLight(0x5555aa, 0x222244, 0.4);
         this.scene.add(this.lights.hemisphere);
 
         // Camera light - helps viewing dark sides without overpowering
-        this.lights.camera = new THREE.PointLight(0x6688cc, 0.4, 600);
+        this.lights.camera = new THREE.PointLight(0x8899dd, 0.8, 600);
         this.camera.add(this.lights.camera);
         this.scene.add(this.camera);
         
         if (DEBUG.enabled) {
-            console.log('🌌 Scene ambient lighting: Balanced (ambient 0.25, hemisphere 0.15, camera 0.4)');
-            console.log('   - Dark sides visible for navigation');
+            console.log('🌌 Scene ambient lighting: Enhanced (ambient 0.6, hemisphere 0.4, camera 0.8)');
+            console.log('   - Dark sides clearly visible for navigation');
             console.log('   - Sun is still primary light source');
         }
     }
@@ -1769,16 +1769,16 @@ class SolarSystemModule {
         scene.add(sunLight);
         this.sun.userData.sunLight = sunLight;
         
-        // Ambient light - increased to see dark sides clearly
-        const ambientLight = new THREE.AmbientLight(0x2a2a3e, 1.3); // Lighter blue-grey ambient
+        // Ambient light - significantly increased to see dark sides clearly
+        const ambientLight = new THREE.AmbientLight(0x444466, 2.0); // Bright ambient for dark side visibility
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
         
         if (DEBUG.enabled) {
-            console.log('💡 Lighting: Sun intensity 9 (warm white), Ambient 1.3, Tone mapping 0.80');
-            console.log('   - Balanced: reduced bright side glare, good dark side visibility');
-            console.log('   - Lower sun intensity + exposure prevents texture washout');
-            console.log('   - Higher ambient light makes dark sides clearly visible');
+            console.log('💡 Lighting: Sun intensity 9 (warm white), Ambient 2.0, Tone mapping 1.2');
+            console.log('   - Enhanced dark side visibility with increased ambient light');
+            console.log('   - Higher exposure prevents dark tone crushing');
+            console.log('   - Ambient light makes dark sides clearly visible');
             console.log('   - Sun light reaches all planets without decay');
             console.log('   - Eclipses will cast 4K shadows');
         }
