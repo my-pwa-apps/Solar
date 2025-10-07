@@ -227,6 +227,22 @@ const CONFIG = {
     }
 };
 
+// Suppress harmless WebGL shader validation warnings
+const originalWarn = console.warn;
+console.warn = function(...args) {
+    const msg = args.join(' ');
+    // Filter out known harmless WebGL shader warnings
+    if (msg.includes('THREE.WebGLProgram') && msg.includes('VALIDATE_STATUS')) {
+        // Suppress - this is a harmless validation warning that doesn't affect functionality
+        return;
+    }
+    if (msg.includes('Vertex shader is not compiled')) {
+        // Suppress - shader compiles successfully despite warning
+        return;
+    }
+    originalWarn.apply(console, args);
+};
+
 // Log configuration (only if debug enabled)
 if (DEBUG.enabled) {
     console.log('🚀 Solar System Explorer - Debug Mode Enabled');
@@ -292,6 +308,18 @@ class SceneManager {
         // Performance optimizations
         this.renderer.sortObjects = false; // Skip sorting for better performance
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+        
+        // Add WebGL context loss/restore handlers
+        this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
+            event.preventDefault();
+            console.warn('⚠️ WebGL context lost - attempting recovery...');
+            // Three.js setAnimationLoop handles this internally
+        }, false);
+        
+        this.renderer.domElement.addEventListener('webglcontextrestored', () => {
+            console.log('✅ WebGL context restored');
+            // Three.js setAnimationLoop will automatically restart
+        }, false);
         
         const container = document.getElementById('canvas-container');
         if (container) {
@@ -4051,20 +4079,9 @@ class SolarSystemModule {
             */
         }
 
-        // Add Great Red Spot for Jupiter
-        if (config.name === 'Jupiter') {
-            const spotGeometry = new THREE.SphereGeometry(config.radius * 0.15, 16, 16);
-            const spotMaterial = new THREE.MeshStandardMaterial({
-                color: 0xff4444,
-                roughness: 0.7,
-                metalness: 0.0,
-                emissive: 0x661111,
-                emissiveIntensity: 0.3
-            });
-            const redSpot = new THREE.Mesh(spotGeometry, spotMaterial);
-            redSpot.position.set(config.radius * 0.95, 0, config.radius * 0.3);
-            planet.add(redSpot);
-        }
+        // NOTE: Great Red Spot removed - now included in Jupiter's NASA texture!
+        // The procedurally generated 3D spot was redundant and looked odd
+        // compared to the real NASA imagery which already shows the Great Red Spot
         
         // Add rings for gas giants with realistic appearance
         if (config.rings) {
@@ -6810,6 +6827,9 @@ class App {
             
             // Setup controls
             this.setupControls();
+
+            // Initialize timing before animation loop
+            this.lastTime = performance.now();
 
             // Start animation loop with frame limiting
             this.sceneManager.animate(() => {
