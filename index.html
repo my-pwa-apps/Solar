@@ -50,9 +50,11 @@
     <aside id="controls" class="hidden" role="complementary" aria-label="Simulation controls">
         <div class="control-group">
             <label for="time-speed">⏱️ Speed:</label>
-            <input type="range" id="time-speed" min="0" max="100" value="10" step="1" 
-                   aria-label="Animation speed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="10">
-            <span id="speed-value" aria-live="polite">1.0x</span>
+            <select id="time-speed" aria-label="Animation speed mode">
+                <option value="0">⏸️ Paused</option>
+                <option value="1" selected>📚 Educational</option>
+                <option value="365">⏱️ Realtime</option>
+            </select>
         </div>
         <div class="control-group">
             <label for="brightness">💡 Brightness:</label>
@@ -97,6 +99,6 @@
     </script>
     
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=20251007-1604"></script>
+    <script type="module" src="./src/main.js?v=20251007-1842"></script>
 </body>
 </html>

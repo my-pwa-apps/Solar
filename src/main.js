@@ -936,30 +936,46 @@ class SceneManager {
                 break;
             case 'speed++':
                 if (app) {
-                    const currentSpeed = app.timeSpeed;
-                    app.timeSpeed = Math.min(currentSpeed + 1, 10);
-                    this.updateVRStatus(`⚡ Speed: ${app.timeSpeed.toFixed(1)}x`);
+                    // Cycle forward: Paused (0) -> Educational (1) -> Realtime (365) -> Paused
+                    if (app.timeSpeed === 0) {
+                        app.timeSpeed = 1;
+                        this.updateVRStatus('📚 Educational Speed');
+                    } else if (app.timeSpeed === 1) {
+                        app.timeSpeed = 365;
+                        this.updateVRStatus('⏱️ Realtime Speed');
+                    } else {
+                        app.timeSpeed = 0;
+                        this.updateVRStatus('⏸️ Paused');
+                    }
                     this.updateVRUI();
-                    console.log(`⚡ VR: Speed increased to ${app.timeSpeed}x`);
+                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed}x`);
                 }
                 break;
                 
             case 'speed--':
                 if (app) {
-                    const currentSpeed = app.timeSpeed;
-                    app.timeSpeed = Math.max(currentSpeed - 1, 0);
-                    this.updateVRStatus(`⚡ Speed: ${app.timeSpeed.toFixed(1)}x`);
+                    // Cycle backward: Realtime (365) -> Educational (1) -> Paused (0) -> Realtime
+                    if (app.timeSpeed === 365) {
+                        app.timeSpeed = 1;
+                        this.updateVRStatus('📚 Educational Speed');
+                    } else if (app.timeSpeed === 1) {
+                        app.timeSpeed = 0;
+                        this.updateVRStatus('⏸️ Paused');
+                    } else {
+                        app.timeSpeed = 365;
+                        this.updateVRStatus('⏱️ Realtime Speed');
+                    }
                     this.updateVRUI();
-                    console.log(`⚡ VR: Speed decreased to ${app.timeSpeed}x`);
+                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed}x`);
                 }
                 break;
                 
             case 'speedreset':
                 if (app) {
                     app.timeSpeed = 1;
-                    this.updateVRStatus('⚡ Speed Reset to 1.0x');
+                    this.updateVRStatus('📚 Educational Speed');
                     this.updateVRUI();
-                    console.log('⚡ VR: Speed reset to 1x');
+                    console.log('⚡ VR: Speed reset to Educational (1x)');
                 }
                 break;
             case 'brightup':
@@ -1080,48 +1096,53 @@ class SceneManager {
     }
     
     updateVRUI() {
-        // Redraw slider with current speed
+        // Redraw speed mode selector with current speed
         const app = window.app || this;
         const speed = app.timeSpeed || 0;
         const ctx = this.vrUIContext;
         
-        // Clear slider area
+        // Clear selector area
         const sliderY = 560;
         const sliderX = 280;
-        const sliderW = 660;
-        const sliderH = 20;
+        const boxW = 200;
+        const boxH = 60;
+        const spacing = 20;
         
         ctx.fillStyle = 'rgba(10, 10, 30, 0.95)';
-        ctx.fillRect(0, sliderY - 60, 1024, 120);
+        ctx.fillRect(0, sliderY - 80, 1024, 140);
         
-        // Redraw slider label
+        // Redraw label
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 32px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
+        ctx.fillText('⏱️ Speed Mode:', 50, sliderY - 20);
         
-        // Slider track
-        ctx.fillStyle = '#34495e';
-        ctx.fillRect(sliderX, sliderY - 15, sliderW, sliderH);
+        // Three mode boxes
+        const modes = [
+            { label: '⏸️ Paused', value: 0, x: sliderX },
+            { label: '📚 Educational', value: 1, x: sliderX + boxW + spacing },
+            { label: '⏱️ Realtime', value: 365, x: sliderX + (boxW + spacing) * 2 }
+        ];
         
-        // Slider markers
-        ctx.fillStyle = '#7f8c8d';
-        ctx.font = '20px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
+        ctx.font = '24px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('0', sliderX, sliderY + 45);
-        ctx.fillText('1x', sliderX + sliderW * 0.1, sliderY + 45);
-        ctx.fillText('5x', sliderX + sliderW * 0.5, sliderY + 45);
-        ctx.fillText('10x', sliderX + sliderW, sliderY + 45);
         
-        // Slider handle at current speed
-        const handleX = sliderX + (sliderW * (speed / 10));
-        ctx.fillStyle = '#3498db';
-        ctx.beginPath();
-        ctx.arc(handleX, sliderY - 5, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        modes.forEach(mode => {
+            const isActive = speed === mode.value;
+            
+            // Box background
+            ctx.fillStyle = isActive ? '#3498db' : '#34495e';
+            ctx.fillRect(mode.x, sliderY, boxW, boxH);
+            
+            // Box border
+            ctx.strokeStyle = isActive ? '#fff' : '#7f8c8d';
+            ctx.lineWidth = isActive ? 4 : 2;
+            ctx.strokeRect(mode.x, sliderY, boxW, boxH);
+            
+            // Text
+            ctx.fillStyle = '#fff';
+            ctx.fillText(mode.label, mode.x + boxW / 2, sliderY + boxH / 2 + 8);
+        });
         
         // Update status bar
         this.updateVRStatus();
@@ -6603,14 +6624,16 @@ class TopicManager {
             btn.addEventListener('click', () => this.handleTopicChange(btn), { passive: true });
         });
 
-        // Time speed control
-        const timeSpeedSlider = document.getElementById('time-speed');
-        const speedValue = document.getElementById('speed-value');
-        if (timeSpeedSlider && speedValue) {
-            timeSpeedSlider.addEventListener('input', (e) => {
-                this.timeSpeed = parseFloat(e.target.value) / 10;
-                speedValue.textContent = `${this.timeSpeed.toFixed(1)}x`;
+        // Time speed control (dropdown selector)
+        const timeSpeedSelect = document.getElementById('time-speed');
+        if (timeSpeedSelect) {
+            timeSpeedSelect.addEventListener('change', (e) => {
+                this.timeSpeed = parseFloat(e.target.value);
+                console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
             }, { passive: true });
+            
+            // Set initial speed
+            this.timeSpeed = parseFloat(timeSpeedSelect.value);
         }
 
         // Brightness control
@@ -7108,18 +7131,24 @@ class App {
                     break;
                 case '+':
                 case '=':
-                    const speedSlider = document.getElementById('time-speed');
-                    if (speedSlider) {
-                        speedSlider.value = Math.min(100, parseInt(speedSlider.value) + 10);
-                        speedSlider.dispatchEvent(new Event('input'));
+                    // Cycle speed modes forward: Paused -> Educational -> Realtime -> Paused
+                    const speedSelect = document.getElementById('time-speed');
+                    if (speedSelect) {
+                        const currentIndex = speedSelect.selectedIndex;
+                        const nextIndex = (currentIndex + 1) % speedSelect.options.length;
+                        speedSelect.selectedIndex = nextIndex;
+                        speedSelect.dispatchEvent(new Event('change'));
                     }
                     break;
                 case '-':
                 case '_':
-                    const speedSliderDown = document.getElementById('time-speed');
-                    if (speedSliderDown) {
-                        speedSliderDown.value = Math.max(0, parseInt(speedSliderDown.value) - 10);
-                        speedSliderDown.dispatchEvent(new Event('input'));
+                    // Cycle speed modes backward: Realtime -> Educational -> Paused -> Realtime
+                    const speedSelectDown = document.getElementById('time-speed');
+                    if (speedSelectDown) {
+                        const currentIndex = speedSelectDown.selectedIndex;
+                        const prevIndex = currentIndex === 0 ? speedSelectDown.options.length - 1 : currentIndex - 1;
+                        speedSelectDown.selectedIndex = prevIndex;
+                        speedSelectDown.dispatchEvent(new Event('change'));
                     }
                     break;
                 case 'escape':
@@ -7128,14 +7157,20 @@ class App {
                     break;
                 case ' ':
                 case 'space':
-                    // SPACE = Pause/Play
+                    // SPACE = Toggle between Paused and Educational
                     e.preventDefault();
-                    if (this.timeSpeed === 0) {
-                        this.timeSpeed = 1;
-                        console.log('▶️ PLAY');
-                    } else {
-                        this.timeSpeed = 0;
-                        console.log('⏸️ PAUSE');
+                    const spaceSpeedSelect = document.getElementById('time-speed');
+                    if (spaceSpeedSelect) {
+                        if (this.timeSpeed === 0) {
+                            // If paused, go to Educational
+                            spaceSpeedSelect.value = '1';
+                            console.log('▶️ PLAY (Educational Speed)');
+                        } else {
+                            // If playing, pause
+                            spaceSpeedSelect.value = '0';
+                            console.log('⏸️ PAUSE');
+                        }
+                        spaceSpeedSelect.dispatchEvent(new Event('change'));
                     }
                     break;
                 case 'i':
