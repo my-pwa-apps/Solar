@@ -365,22 +365,22 @@ class SceneManager {
     }
 
     setupLighting() {
-        // Subtle ambient light - helps visibility without washing out day/night contrast
-        this.lights.ambient = new THREE.AmbientLight(0x1a1a28, 0.08);
+        // Ambient light - provides base illumination so dark sides are visible
+        this.lights.ambient = new THREE.AmbientLight(0x2a2a3a, 0.25);
         this.scene.add(this.lights.ambient);
 
-        // Hemisphere light for subtle space lighting (starlight)
-        this.lights.hemisphere = new THREE.HemisphereLight(0x2a2a44, 0x0a0a0f, 0.05);
+        // Hemisphere light for space lighting (starlight from above/below)
+        this.lights.hemisphere = new THREE.HemisphereLight(0x3a3a55, 0x1a1a2a, 0.15);
         this.scene.add(this.lights.hemisphere);
 
-        // Subtle camera light - helps viewing dark sides without overpowering
-        this.lights.camera = new THREE.PointLight(0x5577bb, 0.3, 600);
+        // Camera light - helps viewing dark sides without overpowering
+        this.lights.camera = new THREE.PointLight(0x6688cc, 0.4, 600);
         this.camera.add(this.lights.camera);
         this.scene.add(this.camera);
         
         if (DEBUG.enabled) {
-            console.log('🌌 Scene ambient lighting: Subtle (ambient 0.08, hemisphere 0.05, camera 0.3)');
-            console.log('   - Dark sides remain visible for navigation');
+            console.log('🌌 Scene ambient lighting: Balanced (ambient 0.25, hemisphere 0.15, camera 0.4)');
+            console.log('   - Dark sides visible for navigation');
             console.log('   - Sun is still primary light source');
         }
     }
@@ -417,9 +417,7 @@ class SceneManager {
                 const laserMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
                     transparent: true,
-                    opacity: 0.6,
-                    emissive: 0x00ffff,
-                    emissiveIntensity: 0.5
+                    opacity: 0.6
                 });
                 
                 const laser = new THREE.Mesh(laserGeometry, laserMaterial);
@@ -434,9 +432,7 @@ class SceneManager {
                 const pointerMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
                     transparent: true,
-                    opacity: 0.8,
-                    emissive: 0x00ffff,
-                    emissiveIntensity: 1.5
+                    opacity: 0.8
                 });
                 const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
                 pointer.position.set(0, 0, -10);
@@ -458,9 +454,7 @@ class SceneManager {
                 // Add a cone at controller tip for direction indicator
                 const coneGeometry = new THREE.ConeGeometry(0.02, 0.4, 8);
                 const coneMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0x00ffff,
-                    emissive: 0x00ffff,
-                    emissiveIntensity: 1.0
+                    color: 0x00ffff
                 });
                 const cone = new THREE.Mesh(coneGeometry, coneMaterial);
                 cone.rotation.x = Math.PI / 2; // Point forward
@@ -1376,17 +1370,7 @@ class SceneManager {
     }
 
     animate(callback) {
-        console.log('🎬 SceneManager.animate() called');
-        console.log('   - renderer exists:', !!this.renderer);
-        console.log('   - callback is function:', typeof callback === 'function');
-        
-        let frameCount = 0;
         this.renderer.setAnimationLoop(() => {
-            frameCount++;
-            if (frameCount <= 5) {
-                console.log(`🎞️  setAnimationLoop callback #${frameCount} executing`);
-            }
-            
             try {
                 this.controls.update();
                 callback();
@@ -1400,8 +1384,6 @@ class SceneManager {
                 // Don't stop the loop, just log the error
             }
         });
-        
-        console.log('✅ setAnimationLoop has been set');
     }
 
     updateBrightness(multiplier) {
@@ -1788,13 +1770,13 @@ class SolarSystemModule {
         this.sun.userData.sunLight = sunLight;
         
         // Ambient light - increased to see dark sides clearly
-        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 1.05); // Dark blue-grey ambient (0.95→1.05)
+        const ambientLight = new THREE.AmbientLight(0x2a2a3e, 1.3); // Lighter blue-grey ambient
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
         
         if (DEBUG.enabled) {
-            console.log('💡 Lighting: Sun intensity 9 (warm white), Ambient 1.05, Tone mapping 0.80');
-            console.log('   - Finely balanced: reduced bright side glare, enhanced dark side visibility');
+            console.log('💡 Lighting: Sun intensity 9 (warm white), Ambient 1.3, Tone mapping 0.80');
+            console.log('   - Balanced: reduced bright side glare, good dark side visibility');
             console.log('   - Lower sun intensity + exposure prevents texture washout');
             console.log('   - Higher ambient light makes dark sides clearly visible');
             console.log('   - Sun light reaches all planets without decay');
@@ -6855,23 +6837,12 @@ class App {
                 // Initialize timing on first frame to avoid huge initial deltaTime
                 if (!this.lastTime) {
                     this.lastTime = performance.now();
-                    console.log('⏱️  Animation timing initialized on first callback');
-                    console.log('🔄 Returning from first callback, next callback should start real animation');
                     return; // Skip first frame, just initialize timing
                 }
-                
-                console.log('🎯 Animation callback #2+ executing - this should repeat every frame!');
                 
                 const currentTime = performance.now();
                 const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
                 this.lastTime = currentTime;
-                
-                // Debug: Log first few updates
-                if (!this._updateCount) this._updateCount = 0;
-                this._updateCount++;
-                if (this._updateCount <= 5) {
-                    console.log(`🎬 Animation frame ${this._updateCount}: deltaTime=${deltaTime.toFixed(4)}s, timeSpeed=${this.timeSpeed}`);
-                }
                 
                 // Update XR controller movement and laser pointers
                 this.sceneManager.updateXRMovement();
@@ -6879,26 +6850,8 @@ class App {
                 
                 // Update Solar System module every frame
                 if (this.solarSystemModule) {
-                    // Extra debug for first few frames
-                    if (this._updateCount <= 3) {
-                        const earth = this.solarSystemModule.planets?.earth;
-                        if (earth) {
-                            console.log(`🌍 Earth BEFORE update: pos=(${earth.position.x.toFixed(2)}, ${earth.position.z.toFixed(2)}), angle=${earth.userData.angle.toFixed(4)}`);
-                        }
-                    }
-                    
                     this.solarSystemModule.update(deltaTime, this.timeSpeed, 
                         this.sceneManager.camera, this.sceneManager.controls);
-                    
-                    // Extra debug for first few frames
-                    if (this._updateCount <= 3) {
-                        const earth = this.solarSystemModule.planets?.earth;
-                        if (earth) {
-                            console.log(`🌍 Earth AFTER update: pos=(${earth.position.x.toFixed(2)}, ${earth.position.z.toFixed(2)}), angle=${earth.userData.angle.toFixed(4)}`);
-                        }
-                    }
-                } else {
-                    console.error('❌ solarSystemModule is undefined in animation loop!');
                 }
             });
 
