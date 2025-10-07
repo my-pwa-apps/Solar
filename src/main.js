@@ -390,13 +390,15 @@ class SceneManager {
             console.log('🥽 Setting up XR...');
             console.log('📦 Scene children at XR setup:', this.scene?.children?.length || 0);
             
-            // Create a dolly (rig) for VR movement
+            // Create a dolly (rig) for VR movement (but don't add camera yet - only in VR mode)
             this.dolly = new THREE.Group();
             this.dolly.position.set(0, 50, 150); // Start away from Sun
             this.scene.add(this.dolly);
-            this.dolly.add(this.camera);
             
-            console.log('🎥 Camera added to dolly at:', this.dolly.position);
+            // Store original camera parent for switching back
+            this.cameraOriginalParent = this.camera.parent;
+            
+            console.log('🎥 Dolly created at:', this.dolly.position);
             
             // Initialize XR controllers
             this.controllers = [];
@@ -501,6 +503,21 @@ class SceneManager {
                 console.log('🥽 XR SESSION STARTED - Mode:', session.mode);
                 console.log('🌐 Environment Blend Mode:', session.environmentBlendMode);
                 
+                // Move camera to dolly for VR
+                if (this.dolly && this.camera) {
+                    // Remove camera from scene
+                    if (this.camera.parent) {
+                        this.camera.parent.remove(this.camera);
+                    }
+                    // Add camera to dolly
+                    this.dolly.add(this.camera);
+                    // Reset camera local position
+                    this.camera.position.set(0, 0, 0);
+                    // Position dolly for good initial view
+                    this.dolly.position.set(0, 50, 150);
+                    console.log('🎥 Camera moved to dolly at:', this.dolly.position);
+                }
+                
                 // Set background based on session type
                 if (session.mode === 'immersive-ar' || 
                     session.environmentBlendMode === 'additive' || 
@@ -511,12 +528,6 @@ class SceneManager {
                     // VR mode - keep starfield background
                     this.scene.background = new THREE.Color(0x000011);
                     console.log('🥽 VR MODE: Dark space background');
-                }
-                
-                // Position dolly/camera for good initial view
-                if (this.dolly) {
-                    this.dolly.position.set(0, 50, 150);
-                    console.log('📍 Dolly positioned at:', this.dolly.position);
                 }
                 
                 // Show welcome message and instructions
@@ -542,6 +553,17 @@ class SceneManager {
 
             // Handle XR session end
             this.renderer.xr.addEventListener('sessionend', () => {
+                console.log('🥽 XR SESSION ENDED');
+                
+                // Restore camera to scene
+                if (this.dolly && this.camera && this.camera.parent === this.dolly) {
+                    this.dolly.remove(this.camera);
+                    this.scene.add(this.camera);
+                    // Restore camera position from dolly position
+                    this.camera.position.copy(this.dolly.position);
+                    console.log('🎥 Camera restored to scene at:', this.camera.position);
+                }
+                
                 this.scene.background = new THREE.Color(0x000000);
                 // Hide VR UI panel
                 if (this.vrUIPanel) this.vrUIPanel.visible = false;
@@ -4534,8 +4556,8 @@ class SolarSystemModule {
         this.distantStars = [];
         
         const brightStars = [
-            { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '⭐ Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.', texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Sirius_A_and_B_artwork.jpg/800px-Sirius_A_and_B_artwork.jpg' },
-            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!', texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Betelgeuse_captured_by_ALMA.jpg/800px-Betelgeuse_captured_by_ALMA.jpg' },
+            { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '⭐ Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
+            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
             { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '⭐ Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
             { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '⭐ Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
             { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '⭐ Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
