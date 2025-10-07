@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Debug Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: #fff;
+        }
+        #console {
+            background: #111;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .log { color: #0f0; margin: 5px 0; }
+        .error { color: #f00; margin: 5px 0; }
+        .warn { color: #ff0; margin: 5px 0; }
+        .info { color: #0ff; margin: 5px 0; }
+        h1 { color: #fff; }
+        button {
+            background: #0066cc;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 10px 10px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #0055aa; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Animation Debug Test</h1>
+    <button onclick="openMainApp()">Open Main App</button>
+    <button onclick="clearConsole()">Clear Console</button>
+    <button onclick="runDiagnostics()">Run Diagnostics</button>
+    
+    <div id="console"></div>
+
+    <script type="module">
+        const consoleDiv = document.getElementById('console');
+        
+        function addLog(message, type = 'log') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleDiv.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        window.clearConsole = () => {
+            consoleDiv.innerHTML = '';
+        };
+        
+        window.openMainApp = () => {
+            window.location.href = 'index.html';
+        };
+        
+        window.runDiagnostics = async () => {
+            addLog('🔍 Running diagnostics...', 'info');
+            
+            // Check if Three.js is available
+            try {
+                const response = await fetch('./libs/three.module.js');
+                if (response.ok) {
+                    addLog('✅ Three.js library found', 'log');
+                } else {
+                    addLog('❌ Three.js library NOT found!', 'error');
+                }
+            } catch (e) {
+                addLog(`❌ Error loading Three.js: ${e.message}`, 'error');
+            }
+            
+            // Check if main.js exists
+            try {
+                const response = await fetch('./src/main.js');
+                if (response.ok) {
+                    addLog('✅ main.js found', 'log');
+                    const content = await response.text();
+                    addLog(`📊 main.js size: ${(content.length / 1024).toFixed(2)} KB`, 'info');
+                    
+                    // Check for animation loop
+                    if (content.includes('setAnimationLoop')) {
+                        addLog('✅ setAnimationLoop found in code', 'log');
+                    } else {
+                        addLog('❌ setAnimationLoop NOT found!', 'error');
+                    }
+                    
+                    // Check for update method
+                    if (content.includes('update(deltaTime, timeSpeed')) {
+                        addLog('✅ update method found', 'log');
+                    } else {
+                        addLog('❌ update method NOT found!', 'error');
+                    }
+                    
+                    // Check for frame limiter bug
+                    if (content.includes('if (deltaTime >= CONFIG.PERFORMANCE.frameTime')) {
+                        addLog('🔴 FRAME LIMITER BUG DETECTED!', 'error');
+                        addLog('   The faulty frame limiter is still in the code!', 'error');
+                    } else {
+                        addLog('✅ Frame limiter removed (bug fix applied)', 'log');
+                    }
+                    
+                    // Count planets
+                    const planetMatches = content.match(/this\.planets\.\w+\s*=\s*this\.createPlanet/g);
+                    if (planetMatches) {
+                        addLog(`✅ Found ${planetMatches.length} planet definitions`, 'log');
+                    }
+                    
+                } else {
+                    addLog('❌ main.js NOT found!', 'error');
+                }
+            } catch (e) {
+                addLog(`❌ Error loading main.js: ${e.message}`, 'error');
+            }
+            
+            // Check IndexedDB
+            if (window.indexedDB) {
+                addLog('✅ IndexedDB supported', 'log');
+            } else {
+                addLog('⚠️ IndexedDB NOT supported', 'warn');
+            }
+            
+            // Check WebGL
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                addLog('✅ WebGL supported', 'log');
+            } else {
+                addLog('❌ WebGL NOT supported!', 'error');
+            }
+            
+            addLog('🎯 Diagnostics complete!', 'info');
+        };
+        
+        // Intercept console messages
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warn');
+        };
+        
+        addLog('🚀 Debug console ready', 'info');
+        addLog('📋 Click "Run Diagnostics" to check your setup', 'info');
+    </script>
+</body>
+</html>
