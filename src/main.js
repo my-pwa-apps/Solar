@@ -387,11 +387,16 @@ class SceneManager {
 
     setupXR() {
         try {
+            console.log('🥽 Setting up XR...');
+            console.log('📦 Scene children at XR setup:', this.scene?.children?.length || 0);
+            
             // Create a dolly (rig) for VR movement
             this.dolly = new THREE.Group();
-            this.dolly.position.set(0, 0, 0);
+            this.dolly.position.set(0, 50, 150); // Start away from Sun
             this.scene.add(this.dolly);
             this.dolly.add(this.camera);
+            
+            console.log('🎥 Camera added to dolly at:', this.dolly.position);
             
             // Initialize XR controllers
             this.controllers = [];
@@ -493,14 +498,29 @@ class SceneManager {
             // Handle XR session start
             this.renderer.xr.addEventListener('sessionstart', () => {
                 const session = this.renderer.xr.getSession();
-                if (session.environmentBlendMode === 'additive' || 
+                console.log('🥽 XR SESSION STARTED - Mode:', session.mode);
+                console.log('🌐 Environment Blend Mode:', session.environmentBlendMode);
+                
+                // Set background based on session type
+                if (session.mode === 'immersive-ar' || 
+                    session.environmentBlendMode === 'additive' || 
                     session.environmentBlendMode === 'alpha-blend') {
                     this.scene.background = null; // Transparent for AR
+                    console.log('📱 AR MODE: Transparent background');
+                } else {
+                    // VR mode - keep starfield background
+                    this.scene.background = new THREE.Color(0x000011);
+                    console.log('🥽 VR MODE: Dark space background');
+                }
+                
+                // Position dolly/camera for good initial view
+                if (this.dolly) {
+                    this.dolly.position.set(0, 50, 150);
+                    console.log('📍 Dolly positioned at:', this.dolly.position);
                 }
                 
                 // Show welcome message and instructions
                 if (DEBUG.enabled || DEBUG.VR) {
-                    console.log('🥽 VR SESSION STARTED');
                     console.log('📋 CONTROLS:');
                     console.log('   🕹️ Left Stick: Move forward/back/strafe');
                     console.log('   🕹️ Right Stick: Turn left/right, move up/down');
@@ -514,6 +534,10 @@ class SceneManager {
                 if (this.vrUIPanel) {
                     this.vrUIPanel.visible = false;
                 }
+                
+                // Log scene state
+                console.log('🌟 Scene children count:', this.scene.children.length);
+                console.log('☀️ Sun in scene:', this.solarSystemModule?.sun ? 'YES' : 'NO');
             });
 
             // Handle XR session end
@@ -937,45 +961,25 @@ class SceneManager {
                 }
                 break;
             case 'speed++':
-                if (app) {
-                    // Cycle forward: Paused (0) -> Educational (1) -> Realtime ('realtime') -> Paused
-                    if (app.timeSpeed === 0) {
-                        app.timeSpeed = 1;
-                        this.updateVRStatus('📚 Educational Speed');
-                    } else if (app.timeSpeed === 1) {
-                        app.timeSpeed = 'realtime';
-                        this.updateVRStatus('⏱️ Realtime (Earth: 1 orbit/day)');
-                    } else {
-                        app.timeSpeed = 0;
-                        this.updateVRStatus('⏸️ Paused');
-                    }
-                    this.updateVRUI();
-                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed === 'realtime' ? 'Realtime' : app.timeSpeed + 'x'}`);
-                }
-                break;
-                
             case 'speed--':
                 if (app) {
-                    // Cycle backward: Realtime ('realtime') -> Educational (1) -> Paused (0) -> Realtime
-                    if (app.timeSpeed === 'realtime') {
+                    // Toggle: Paused (0) <-> Animated (1)
+                    if (app.timeSpeed === 0) {
                         app.timeSpeed = 1;
-                        this.updateVRStatus('📚 Educational Speed');
-                    } else if (app.timeSpeed === 1) {
+                        this.updateVRStatus('▶️ Animated');
+                    } else {
                         app.timeSpeed = 0;
                         this.updateVRStatus('⏸️ Paused');
-                    } else {
-                        app.timeSpeed = 'realtime';
-                        this.updateVRStatus('⏱️ Realtime (Earth: 1 orbit/day)');
                     }
                     this.updateVRUI();
-                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed === 'realtime' ? 'Realtime' : app.timeSpeed + 'x'}`);
+                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed}x`);
                 }
                 break;
                 
             case 'speedreset':
                 if (app) {
                     app.timeSpeed = 1;
-                    this.updateVRStatus('📚 Educational Speed');
+                    this.updateVRStatus('▶️ Animated');
                     this.updateVRUI();
                     console.log('⚡ VR: Speed reset to Educational (1x)');
                 }
@@ -1133,11 +1137,10 @@ class SceneManager {
         ctx.textAlign = 'left';
         ctx.fillText('⏱️ Speed Mode:', 50, sliderY - 20);
         
-        // Three mode boxes
+        // Two mode boxes
         const modes = [
-            { label: '⏸️ Paused', value: 0, x: sliderX },
-            { label: '📚 Educational', value: 1, x: sliderX + boxW + spacing },
-            { label: '⏱️ Realtime', value: 'realtime', x: sliderX + (boxW + spacing) * 2 }
+            { label: '⏸️ Paused', value: 0, x: sliderX + boxW / 2 },
+            { label: '▶️ Animated', value: 1, x: sliderX + (boxW * 1.5) + spacing }
         ];
         
         ctx.font = '24px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
@@ -1748,9 +1751,9 @@ class SolarSystemModule {
             this.createStarfield(scene);
             this.createOrbitalPaths(scene);
             this.createDistantStars(scene);
-            await this.createNebulae(scene);
+            this.createNebulae(scene);
             this.createConstellations(scene);
-            await this.createGalaxies(scene);
+            this.createGalaxies(scene);
             
             // PHASE 4: Dynamic objects
             this.createComets(scene);
@@ -4531,8 +4534,8 @@ class SolarSystemModule {
         this.distantStars = [];
         
         const brightStars = [
-            { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '? Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
-            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
+            { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '⭐ Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.', texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Sirius_A_and_B_artwork.jpg/800px-Sirius_A_and_B_artwork.jpg' },
+            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!', texture: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Betelgeuse_captured_by_ALMA.jpg/800px-Betelgeuse_captured_by_ALMA.jpg' },
             { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '⭐ Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
             { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '⭐ Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
             { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '⭐ Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
@@ -4594,8 +4597,8 @@ class SolarSystemModule {
         });
     }
 
-    async createNebulae(scene) {
-        // Create colorful nebulae with real Hubble imagery
+    createNebulae(scene) {
+        // Create colorful nebulae with procedural generation
         this.nebulae = [];
         
         const nebulaeData = [
@@ -4604,48 +4607,101 @@ class SolarSystemModule {
                 color: 0xFF69B4, 
                 position: { x: 6000, y: 1000, z: 3000 }, 
                 size: 400, 
-                description: '🌟 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!',
-                texture: 'https://esahubble.org/media/archives/images/large/heic0601a.jpg'
+                type: 'emission', // Star-forming region
+                description: '🌟 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!'
             },
             { 
                 name: 'Crab Nebula', 
                 color: 0x87CEEB, 
                 position: { x: -5500, y: -800, z: 4500 }, 
                 size: 300, 
-                description: '💥 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!',
-                texture: 'https://esahubble.org/media/archives/images/large/heic0515a.jpg'
+                type: 'supernova', // Supernova remnant with filaments
+                description: '💥 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!'
             },
             { 
                 name: 'Ring Nebula', 
                 color: 0x9370DB, 
                 position: { x: 4500, y: 1500, z: -5000 }, 
                 size: 250, 
-                description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.',
-                texture: 'https://esahubble.org/media/archives/images/large/heic1310a.jpg'
+                type: 'planetary', // Planetary nebula (ring shape)
+                description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.'
             }
         ];
 
         for (const nebData of nebulaeData) {
-            // Try to load real NASA/Hubble imagery
-            const texture = await this.loadTextureWithFallback(
-                nebData.texture, 
-                `#${nebData.color.toString(16).padStart(6, '0')}`
-            );
+            const group = new THREE.Group();
             
-            // Create sprite with texture (works better for nebulae than particles)
-            const spriteMaterial = new THREE.SpriteMaterial({
-                map: texture,
+            // Create procedural nebula with particles
+            const particleCount = 8000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+            
+            const color = new THREE.Color(nebData.color);
+            
+            for (let i = 0; i < particleCount; i++) {
+                let x, y, z;
+                
+                if (nebData.type === 'planetary') {
+                    // Ring shape for planetary nebula
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = nebData.size * 0.4 + Math.random() * nebData.size * 0.3;
+                    const thickness = (Math.random() - 0.5) * nebData.size * 0.15;
+                    x = Math.cos(angle) * radius;
+                    y = Math.sin(angle) * radius;
+                    z = thickness;
+                } else if (nebData.type === 'supernova') {
+                    // Filamentary structure for supernova remnant
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    const r = Math.pow(Math.random(), 0.3) * nebData.size;
+                    x = r * Math.sin(phi) * Math.cos(theta);
+                    y = r * Math.sin(phi) * Math.sin(theta);
+                    z = r * Math.cos(phi);
+                } else {
+                    // Cloudy emission nebula
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    const r = Math.pow(Math.random(), 0.5) * nebData.size;
+                    x = r * Math.sin(phi) * Math.cos(theta);
+                    y = r * Math.sin(phi) * Math.sin(theta);
+                    z = r * Math.cos(phi);
+                }
+                
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+                
+                // Color variation
+                const colorVariation = 0.8 + Math.random() * 0.4;
+                colors[i * 3] = color.r * colorVariation;
+                colors[i * 3 + 1] = color.g * colorVariation;
+                colors[i * 3 + 2] = color.b * colorVariation;
+                
+                sizes[i] = Math.random() * 3 + 1;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            const material = new THREE.PointsMaterial({
+                size: 2,
+                vertexColors: true,
                 transparent: true,
                 opacity: 0.8,
                 blending: THREE.AdditiveBlending,
-                color: 0xFFFFFF // White to show true colors
+                sizeAttenuation: true,
+                depthWrite: false
             });
             
-            const nebula = new THREE.Sprite(spriteMaterial);
-            nebula.scale.set(nebData.size * 2, nebData.size * 2, 1);
-            nebula.position.set(nebData.position.x, nebData.position.y, nebData.position.z);
+            const particles = new THREE.Points(geometry, material);
+            group.add(particles);
             
-            nebula.userData = {
+            group.position.set(nebData.position.x, nebData.position.y, nebData.position.z);
+            
+            group.userData = {
                 name: nebData.name,
                 type: 'Nebula',
                 radius: nebData.size,
@@ -4656,9 +4712,9 @@ class SolarSystemModule {
                          'Planetary nebulae have nothing to do with planets - they just look round like planets through old telescopes!'
             };
             
-            scene.add(nebula);
-            this.objects.push(nebula);
-            this.nebulae.push(nebula);
+            scene.add(group);
+            this.objects.push(group);
+            this.nebulae.push(group);
         }
     }
 
@@ -4810,8 +4866,8 @@ class SolarSystemModule {
         console.log(`? Created ${this.constellations.length} constellations with star patterns!`);
     }
 
-    async createGalaxies(scene) {
-        // Create distant galaxies with real imagery
+    createGalaxies(scene) {
+        // Create distant galaxies with procedural generation
         this.galaxies = [];
         
         const galaxiesData = [
@@ -4820,50 +4876,28 @@ class SolarSystemModule {
                 position: { x: 12000, y: 2000, z: -8000 }, 
                 size: 600, 
                 type: 'spiral', 
-                description: '🌌 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).',
-                texture: 'https://esahubble.org/media/archives/images/large/potw1805a.jpg'
+                description: '🌌 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).'
             },
             { 
                 name: 'Whirlpool Galaxy', 
                 position: { x: -10000, y: -1500, z: -9000 }, 
                 size: 400, 
                 type: 'spiral', 
-                description: '🌌 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.',
-                texture: 'https://esahubble.org/media/archives/images/large/heic0506a.jpg'
+                description: '🌌 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.'
             },
             { 
                 name: 'Sombrero Galaxy', 
                 position: { x: -8000, y: 3000, z: 7000 }, 
                 size: 350, 
                 type: 'elliptical', 
-                description: '🌌 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!',
-                texture: 'https://esahubble.org/media/archives/images/large/heic0305a.jpg'
+                description: '🌌 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!'
             }
         ];
 
         for (const galData of galaxiesData) {
             const group = new THREE.Group();
             
-            // Try to use real NASA/Hubble imagery as a backdrop sprite
-            if (galData.texture) {
-                try {
-                    const texture = await this.loadTextureWithFallback(galData.texture, '#ffffff');
-                    const spriteMaterial = new THREE.SpriteMaterial({
-                        map: texture,
-                        transparent: true,
-                        opacity: 0.7,
-                        blending: THREE.AdditiveBlending
-                    });
-                    const sprite = new THREE.Sprite(spriteMaterial);
-                    sprite.scale.set(galData.size * 2.5, galData.size * 2.5, 1);
-                    group.add(sprite);
-                    console.log(`✅ Added real imagery for ${galData.name}`);
-                } catch (error) {
-                    console.log(`⚠️ Using procedural for ${galData.name}`);
-                }
-            }
-            
-            // Create spiral or elliptical structure
+            // Create procedural spiral or elliptical structure
             if (galData.type === 'spiral') {
                 // Spiral arms
                 const spiralCount = 8000;
@@ -5445,11 +5479,9 @@ class SolarSystemModule {
         const pauseMode = sceneManager.pauseMode || 'none';
         
         // Calculate effective time speeds based on pause mode
-        // NOTE: In realtime mode, planets/moons calculate speeds directly from ASTRONOMICAL_DATA
-        // Other objects (spacecraft, comets, nebulae) use timeSpeed = 1 for realtime
-        let orbitalSpeed = timeSpeed === 'realtime' ? 1 : timeSpeed; // For non-astronomical objects
-        let rotationSpeed = timeSpeed === 'realtime' ? 1 : timeSpeed; // For rotations
-        let moonSpeed = timeSpeed === 'realtime' ? 1 : timeSpeed; // For moon orbits (calculated per moon)
+        let orbitalSpeed = timeSpeed;
+        let rotationSpeed = timeSpeed;
+        let moonSpeed = timeSpeed;
         
         if (pauseMode === 'all') {
             // Pause everything
@@ -5458,41 +5490,22 @@ class SolarSystemModule {
             moonSpeed = 0;
         } else if (pauseMode === 'orbital') {
             // Pause only solar orbits, keep rotations and moon orbits
-            orbitalSpeed = 0; // Freeze planets in their solar orbit
-            rotationSpeed = timeSpeed === 'realtime' ? 365.25 : timeSpeed; // Keep planets rotating
-            moonSpeed = timeSpeed === 'realtime' ? 365.25 : timeSpeed; // Keep moons orbiting their planets
+            orbitalSpeed = 0;
+            rotationSpeed = timeSpeed;
+            moonSpeed = timeSpeed;
         }
         // else 'none' - everything moves normally
         
         // Update all planets
         Object.values(this.planets).forEach(planet => {
             if (planet && planet.userData) {
-                // Calculate planet-specific orbital speed for realtime mode
-                let angleIncrement;
-                if (timeSpeed === 'realtime' && planet.userData.name) {
-                    const planetName = planet.userData.name.toLowerCase();
-                    const astroData = this.ASTRONOMICAL_DATA[planetName];
-                    if (astroData && astroData.orbitalPeriod) {
-                        // REALTIME MODE: Use actual astronomical orbital periods
-                        // Earth: 365.25 days = 31,557,600 seconds for full orbit (2π radians)
-                        // Formula: anglePerSecond = 2π / (orbitalPeriodDays × 86400 seconds/day)
-                        const orbitalPeriodDays = astroData.orbitalPeriod;
-                        const orbitalPeriodSeconds = orbitalPeriodDays * 86400; // Convert days to seconds
-                        const anglePerSecond = (2 * Math.PI) / orbitalPeriodSeconds;
-                        angleIncrement = anglePerSecond * deltaTime;
-                    } else {
-                        // Fallback
-                        angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
-                    }
-                } else {
-                    // EDUCATIONAL or PAUSED mode: use pre-set educational speed
-                    angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
-                }
+                // Calculate angle increment based on speed
+                const angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
                 
                 // Safety check for angle increment
                 if (isNaN(angleIncrement) || !isFinite(angleIncrement)) {
                     console.error('❌ Invalid angleIncrement for', planet.userData.name, ':', angleIncrement);
-                    angleIncrement = 0;
+                    return;
                 }
                 
                 // Solar orbit (affected by orbital pause)
@@ -5538,25 +5551,8 @@ class SolarSystemModule {
                 if (planet.userData.moons && planet.userData.moons.length > 0) {
                     planet.userData.moons.forEach(moon => {
                         if (moon.userData) {
-                            // Calculate moon-specific orbital speed for realtime mode
-                            let moonAngleIncrement;
-                            if (timeSpeed === 'realtime' && moon.userData.name) {
-                                const moonName = moon.userData.name.toLowerCase();
-                                const astroData = this.ASTRONOMICAL_DATA[moonName];
-                                if (astroData && astroData.orbitalPeriod) {
-                                    // REALTIME MODE: Calculate directly from moon's orbital period
-                                    // Moon's orbitalPeriod is in Earth days
-                                    const orbitalPeriodDays = astroData.orbitalPeriod;
-                                    const orbitalPeriodSeconds = orbitalPeriodDays * 86400;
-                                    const anglePerSecond = (2 * Math.PI) / orbitalPeriodSeconds;
-                                    moonAngleIncrement = anglePerSecond * deltaTime;
-                                } else {
-                                    moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
-                                }
-                            } else {
-                                // EDUCATIONAL mode: use pre-set speed
-                                moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
-                            }
+                            // Calculate moon angle increment
+                            const moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
                             
                             // Moons orbit their planet
                             moon.userData.angle += moonAngleIncrement;
@@ -5620,7 +5616,7 @@ class SolarSystemModule {
         }
 
         // Rotate asteroid and Kuiper belts slowly
-        const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
+        const effectiveTimeSpeed = timeSpeed;
         if (this.asteroidBelt) {
             const rotationIncrement = 0.0001 * effectiveTimeSpeed;
             if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
@@ -5806,8 +5802,8 @@ class SolarSystemModule {
         
         // Update spacecraft (Voyagers, probes, orbiters)
         if (this.spacecraft) {
-            // Get numeric speed multiplier (handle 'realtime' string)
-            const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
+            // Get numeric speed multiplier
+            const effectiveTimeSpeed = timeSpeed;
             
             this.spacecraft.forEach(craft => {
                 const userData = craft.userData;
@@ -5846,7 +5842,7 @@ class SolarSystemModule {
         
         // Rotate nebulae slowly (optimized - pre-calculate time)
         if (this.nebulae) {
-            const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
+            const effectiveTimeSpeed = timeSpeed;
             const time = Date.now() * 0.0005;
             const scale = 1 + Math.sin(time) * 0.05;
             
@@ -5862,7 +5858,7 @@ class SolarSystemModule {
         
         // Rotate galaxies
         if (this.galaxies) {
-            const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
+            const effectiveTimeSpeed = timeSpeed;
             this.galaxies.forEach(galaxy => {
                 const rotationIncrement = 0.0002 * effectiveTimeSpeed;
                 if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
@@ -7140,19 +7136,12 @@ class App {
         const timeSpeedSelect = document.getElementById('time-speed');
         if (timeSpeedSelect) {
             timeSpeedSelect.addEventListener('change', (e) => {
-                const value = e.target.value;
-                if (value === 'realtime') {
-                    this.timeSpeed = 'realtime';
-                    console.log(`⏱️ Speed mode changed to: Realtime (Earth: 1 orbit/day)`);
-                } else {
-                    this.timeSpeed = parseFloat(value);
-                    console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
-                }
+                this.timeSpeed = parseFloat(e.target.value);
+                console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
             });
             
             // Set initial speed
-            const initialValue = timeSpeedSelect.value;
-            this.timeSpeed = initialValue === 'realtime' ? 'realtime' : parseFloat(initialValue);
+            this.timeSpeed = parseFloat(timeSpeedSelect.value);
         }
         
         // Orbit toggle button
