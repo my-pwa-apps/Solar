@@ -200,6 +200,7 @@ class SceneManager {
             // Initialize XR controllers
             this.controllers = [];
             this.controllerGrips = [];
+            this.lasersVisible = true; // Toggle for laser pointers
             
             // Setup two controllers
             for (let i = 0; i < 2; i++) {
@@ -215,40 +216,44 @@ class SceneManager {
                 // Controller grip for models
                 const controllerGrip = this.renderer.xr.getControllerGrip(i);
                 
-                // Add a SUPER VISIBLE laser beam - using cylinder for thickness
-                const laserGeometry = new THREE.CylinderGeometry(0.005, 0.005, 10, 8);
+                // Thin laser line - subtle and precise
+                const laserGeometry = new THREE.CylinderGeometry(0.001, 0.001, 10, 6);
                 const laserMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
-                    transparent: false,
-                    opacity: 1.0,
+                    transparent: true,
+                    opacity: 0.6,
                     emissive: 0x00ffff,
-                    emissiveIntensity: 1.0
+                    emissiveIntensity: 0.5
                 });
                 
                 const laser = new THREE.Mesh(laserGeometry, laserMaterial);
                 laser.rotation.x = Math.PI / 2; // Rotate to point forward
                 laser.position.set(0, 0, -5); // Position at center of 10m length
                 laser.name = 'laser';
+                laser.visible = true; // Can be toggled
                 controller.add(laser);
                 
-                // Add a BRIGHT glowing sphere at the end
-                const pointerGeometry = new THREE.SphereGeometry(0.05, 16, 16);
+                // Small, clear target point where laser hits
+                const pointerGeometry = new THREE.SphereGeometry(0.01, 8, 8);
                 const pointerMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
+                    transparent: true,
+                    opacity: 0.8,
                     emissive: 0x00ffff,
-                    emissiveIntensity: 2.0
+                    emissiveIntensity: 1.5
                 });
                 const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
                 pointer.position.set(0, 0, -10);
                 pointer.name = 'pointer';
+                pointer.visible = true; // Can be toggled
                 controller.add(pointer);
                 
-                // Add outer glow to pointer
-                const glowGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+                // Subtle outer ring for better visibility
+                const glowGeometry = new THREE.SphereGeometry(0.015, 8, 8);
                 const glowMaterial = new THREE.MeshBasicMaterial({ 
                     color: 0x00ffff,
                     transparent: true,
-                    opacity: 0.3,
+                    opacity: 0.2,
                     blending: THREE.AdditiveBlending
                 });
                 const glow = new THREE.Mesh(glowGeometry, glowMaterial);
@@ -355,29 +360,30 @@ class SceneManager {
         // Initialize pause mode state
         this.pauseMode = 'none'; // 'none', 'orbital', 'all'
         
-        // Define buttons
+        // Define buttons (canvas is 1024x768)
         this.vrButtons = [
-            // Row 1: Time controls
-            { x: 50, y: 160, w: 160, h: 80, label: '?? All', action: 'pauseall', color: '#e74c3c' },
-            { x: 220, y: 160, w: 160, h: 80, label: '?? Orbit', action: 'pauseorbit', color: '#e67e22' },
-            { x: 390, y: 160, w: 160, h: 80, label: '?? Play', action: 'play', color: '#2ecc71' },
-            { x: 560, y: 160, w: 110, h: 80, label: '<<', action: 'speed--', color: '#9b59b6' },
-            { x: 680, y: 160, w: 110, h: 80, label: '>>', action: 'speed++', color: '#3498db' },
-            { x: 800, y: 160, w: 140, h: 80, label: '1x', action: 'speedreset', color: '#16a085' },
+            // Row 1: Playback controls
+            { x: 50, y: 160, w: 150, h: 70, label: '⏸️ All', action: 'pauseall', color: '#e74c3c' },
+            { x: 210, y: 160, w: 150, h: 70, label: '⏸️ Orbit', action: 'pauseorbit', color: '#e67e22' },
+            { x: 370, y: 160, w: 150, h: 70, label: '▶️ Play', action: 'play', color: '#2ecc71' },
+            { x: 530, y: 160, w: 140, h: 70, label: '⏪ Slower', action: 'speed--', color: '#9b59b6' },
+            { x: 680, y: 160, w: 140, h: 70, label: '⏩ Faster', action: 'speed++', color: '#3498db' },
+            { x: 830, y: 160, w: 140, h: 70, label: '⚡ 1x', action: 'speedreset', color: '#16a085' },
             
-            // Row 2: View controls
-            { x: 50, y: 260, w: 160, h: 80, label: '??+', action: 'brightup', color: '#f39c12' },
-            { x: 220, y: 260, w: 160, h: 80, label: '??-', action: 'brightdown', color: '#e67e22' },
-            { x: 390, y: 260, w: 160, h: 80, label: '?? Tails', action: 'tails', color: '#1abc9c' },
-            { x: 560, y: 260, w: 190, h: 80, label: '? Scale', action: 'scale', color: '#8e44ad' },
-            { x: 760, y: 260, w: 180, h: 80, label: '? Reset', action: 'reset', color: '#34495e' },
+            // Row 2: Visual controls
+            { x: 50, y: 250, w: 145, h: 70, label: '💡 +', action: 'brightup', color: '#f39c12' },
+            { x: 205, y: 250, w: 145, h: 70, label: '💡 -', action: 'brightdown', color: '#d68910' },
+            { x: 360, y: 250, w: 145, h: 70, label: '☄️ Tails', action: 'tails', color: '#1abc9c' },
+            { x: 515, y: 250, w: 145, h: 70, label: '🎯 Lasers', action: 'togglelasers', color: '#3498db' },
+            { x: 670, y: 250, w: 145, h: 70, label: '📏 Scale', action: 'scale', color: '#8e44ad' },
+            { x: 825, y: 250, w: 145, h: 70, label: '🔄 Reset', action: 'reset', color: '#34495e' },
             
             // Row 3: Navigation
-            { x: 150, y: 360, w: 340, h: 80, label: '?? Focus Earth', action: 'earth', color: '#16a085' },
-            { x: 530, y: 360, w: 340, h: 80, label: '? Reset View', action: 'reset', color: '#2980b9' },
+            { x: 50, y: 340, w: 460, h: 80, label: '🌍 Focus Earth', action: 'earth', color: '#16a085' },
+            { x: 520, y: 340, w: 450, h: 80, label: '🏠 Reset View', action: 'reset', color: '#2980b9' },
             
-            // Row 4: Help
-            { x: 312, y: 460, w: 400, h: 70, label: '? Close Menu', action: 'hide', color: '#7f8c8d' }
+            // Row 4: Menu control
+            { x: 262, y: 450, w: 500, h: 80, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' }
         ];
         
         // Draw buttons
@@ -479,7 +485,8 @@ class SceneManager {
         this.vrUICanvas = canvas;
         this.vrUIContext = ctx;
         
-        if (DEBUG.VR) console.log('🥽 VR UI Panel created with', this.vrButtons.length, 'buttons');
+        console.log('🥽 ✅ VR UI Panel created with', this.vrButtons.length, 'buttons');
+        console.log('🥽 📊 Button layout:', this.vrButtons.map(b => `"${b.label}" at (${b.x},${b.y})`));
     }
     
     onSelectStart(controller, index) {
@@ -518,19 +525,23 @@ class SceneManager {
                 const uv = intersects[0].uv;
                 const x = uv.x * 1024;
                 const y = (1 - uv.y) * 768;
-                if (DEBUG.VR) console.log(`🥽 VR UI clicked at UV (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)})`);
+                console.log(`🥽 VR UI clicked at pixel (${Math.round(x)}, ${Math.round(y)})`);
                 
                 // Check which button was clicked
                 let buttonFound = false;
                 this.vrButtons.forEach(btn => {
                     if (x >= btn.x && x <= btn.x + btn.w && 
                         y >= btn.y && y <= btn.y + btn.h) {
-                        if (DEBUG.VR) console.log(`🥽 VR Button clicked: "${btn.label}"`);
+                        console.log(`🥽 ✅ VR Button clicked: "${btn.label}" - Action: ${btn.action}`);
                         this.handleVRAction(btn.action);
                         this.flashVRButton(btn);
                         buttonFound = true;
                     }
                 });
+                
+                if (!buttonFound) {
+                    console.log(`🥽 ⚠️ Clicked UI panel but no button at (${Math.round(x)}, ${Math.round(y)})`);
+                }
                 return; // Don't check for object selection if we clicked UI
             }
         }
@@ -600,6 +611,17 @@ class SceneManager {
                 // Face the user (rotate to face +Z direction)
                 this.vrUIPanel.rotation.set(0, 0, 0);
                 
+                // Always force lasers ON when menu opens
+                // This ensures user can interact with the menu even if lasers were hidden
+                this.lasersVisible = true;
+                this.controllers.forEach(controller => {
+                    const laser = controller.getObjectByName('laser');
+                    const pointer = controller.getObjectByName('pointer');
+                    if (laser) laser.visible = true;
+                    if (pointer) pointer.visible = true;
+                });
+                console.log('🎯 Lasers enabled for menu interaction');
+                
                 if (DEBUG.VR) {
                     console.log('🥽 VR Menu OPENED');
                     console.log('   Position:', this.vrUIPanel.position);
@@ -607,6 +629,7 @@ class SceneManager {
                 }
             } else {
                 if (DEBUG.VR) console.log('🥽 VR Menu CLOSED');
+                // Lasers keep their current state when menu closes (user may have toggled them in menu)
             }
             
             // Update status text on panel
@@ -670,10 +693,15 @@ class SceneManager {
     }
     
     handleVRAction(action) {
-        if (DEBUG.VR) console.log(`🥽 VR Action: ${action}`);
+        console.log(`🥽 🎯 Executing VR Action: "${action}"`);
         
         // Get current app state
         const app = window.app || this;
+        
+        if (!app) {
+            console.error('❌ VR Action failed: app not found');
+            return;
+        }
         
         switch(action) {
             case 'pauseall':
@@ -762,6 +790,18 @@ class SceneManager {
                     this.updateVRStatus(`☄️ Tails ${module.cometTailsVisible ? 'ON' : 'OFF'}`);
                 }
                 break;
+            case 'togglelasers':
+                this.lasersVisible = !this.lasersVisible;
+                // Toggle visibility of all laser pointers
+                this.controllers.forEach(controller => {
+                    const laser = controller.getObjectByName('laser');
+                    const pointer = controller.getObjectByName('pointer');
+                    if (laser) laser.visible = this.lasersVisible;
+                    if (pointer) pointer.visible = this.lasersVisible;
+                });
+                this.updateVRStatus(`🎯 Lasers ${this.lasersVisible ? 'ON' : 'OFF'}`);
+                console.log(`🎯 VR Laser pointers ${this.lasersVisible ? 'visible' : 'hidden'}`);
+                break;
             case 'scale':
                 if (app.solarSystemModule) {
                     const module = app.solarSystemModule;
@@ -787,9 +827,15 @@ class SceneManager {
                 }
                 break;
             case 'hide':
+                console.log('🥽 Hiding VR menu');
                 if (this.vrUIPanel) {
                     this.vrUIPanel.visible = false;
+                    console.log('🥽 ✅ VR menu hidden');
                 }
+                break;
+            default:
+                console.warn(`🥽 ⚠️ Unknown VR action: "${action}"`);
+                this.updateVRStatus(`⚠️ Unknown action: ${action}`);
                 break;
         }
     }
@@ -3755,8 +3801,8 @@ class SolarSystemModule {
 
         const planet = new THREE.Mesh(geometry, material);
         planet.position.set(config.distance, 0, 0);
-        planet.castShadow = true;
-        planet.receiveShadow = true;
+        planet.castShadow = false; // Planets don't cast shadows on each other (unrealistic at solar system scale)
+        planet.receiveShadow = true; // But can receive shadows from moons
         planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 
         // Get real astronomical data for this planet
@@ -3862,8 +3908,8 @@ class SolarSystemModule {
             });
             const rings = new THREE.Mesh(ringGeometry, ringMaterial);
             rings.rotation.x = Math.PI / 2;
-            rings.castShadow = true;
-            rings.receiveShadow = true;
+            rings.castShadow = false; // Rings don't cast meaningful shadows at solar system scale
+            rings.receiveShadow = true; // But can receive shadows from moons
             planet.add(rings);
         }
 
@@ -6612,6 +6658,7 @@ class App {
                     <p>⌨️ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
                     <p>⌨️ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
                     <p>⌨️ <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
+                    <p>⌨️ <span class="keyboard-shortcut">L</span> Toggle VR laser pointers (in VR)</p>
                     <p>⌨️ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
                     <p>⌨️ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
                     <p>⌨️ <span class="keyboard-shortcut">ESC</span> Close panels</p>
@@ -6637,6 +6684,7 @@ class App {
                     <p>  - Trigger (hold): Sprint mode while moving</p>
                     <p>  - Grip button: Toggle VR menu (pause, controls, etc.)</p>
                     <p>  - Point + Trigger: Select planets</p>
+                    <p>  - L key or VR menu: Toggle laser pointers for better immersion</p>
                     
                     <h3>💡 Tips</h3>
                     <p>💡 Increase brightness to see dark sides of planets</p>
@@ -6792,6 +6840,19 @@ class App {
                     const fpsCounter = document.getElementById('fps-counter');
                     if (fpsCounter) {
                         fpsCounter.classList.toggle('hidden');
+                    }
+                    break;
+                case 'l':
+                    // Toggle VR laser pointers (only works in VR)
+                    if (this.sceneManager.renderer.xr.isPresenting) {
+                        this.sceneManager.lasersVisible = !this.sceneManager.lasersVisible;
+                        this.sceneManager.controllers.forEach(controller => {
+                            const laser = controller.getObjectByName('laser');
+                            const pointer = controller.getObjectByName('pointer');
+                            if (laser) laser.visible = this.sceneManager.lasersVisible;
+                            if (pointer) pointer.visible = this.sceneManager.lasersVisible;
+                        });
+                        console.log(`🎯 Laser pointers ${this.sceneManager.lasersVisible ? 'visible' : 'hidden'}`);
                     }
                     break;
                 case '+':
