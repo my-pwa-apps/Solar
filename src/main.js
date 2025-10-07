@@ -373,9 +373,8 @@ class SceneManager {
             { x: 760, y: 260, w: 180, h: 80, label: '? Reset', action: 'reset', color: '#34495e' },
             
             // Row 3: Navigation
-            { x: 50, y: 360, w: 290, h: 80, label: '?? Focus Earth', action: 'earth', color: '#16a085' },
-            { x: 350, y: 360, w: 290, h: 80, label: '?? Solar System', action: 'solar', color: '#2980b9' },
-            { x: 650, y: 360, w: 290, h: 80, label: '?? Quantum', action: 'quantum', color: '#c0392b' },
+            { x: 150, y: 360, w: 340, h: 80, label: '?? Focus Earth', action: 'earth', color: '#16a085' },
+            { x: 530, y: 360, w: 340, h: 80, label: '? Reset View', action: 'reset', color: '#2980b9' },
             
             // Row 4: Help
             { x: 312, y: 460, w: 400, h: 70, label: '? Close Menu', action: 'hide', color: '#7f8c8d' }
@@ -545,8 +544,8 @@ class SceneManager {
             
             // Try to focus on the selected object
             const app = window.app || this;
-            if (app.topicManager && app.topicManager.currentModule) {
-                const module = app.topicManager.currentModule;
+            if (app.solarSystemModule) {
+                const module = app.solarSystemModule;
                 
                 // Check if it's a planet or celestial body
                 if (hitObject.name && module.focusOnObject) {
@@ -679,8 +678,8 @@ class SceneManager {
         switch(action) {
             case 'pauseall':
                 // Pause everything - set timeSpeed to 0
-                if (app.topicManager) {
-                    app.topicManager.timeSpeed = 0;
+                if (app) {
+                    app.timeSpeed = 0;
                     this.updateVRStatus('⏸️ PAUSED - Everything Stopped');
                     this.updateVRUI();
                     console.log('⏸️ VR: Paused all motion');
@@ -689,8 +688,8 @@ class SceneManager {
                 
             case 'pauseorbit':
                 // Pause solar orbits only (planets stop moving but keep rotating)
-                if (app.topicManager && app.topicManager.currentModule) {
-                    const module = app.topicManager.currentModule;
+                if (app.solarSystemModule) {
+                    const module = app.solarSystemModule;
                     if (module.pauseOrbits !== undefined) {
                         module.pauseOrbits = true;
                         this.updateVRStatus('⏸️ ORBITAL PAUSE - Planets Frozen in Orbit');
@@ -702,12 +701,12 @@ class SceneManager {
                 
             case 'play':
                 // Resume everything
-                if (app.topicManager) {
-                    if (app.topicManager.timeSpeed === 0) {
-                        app.topicManager.timeSpeed = 1;
+                if (app) {
+                    if (app.timeSpeed === 0) {
+                        app.timeSpeed = 1;
                     }
-                    if (app.topicManager.currentModule) {
-                        app.topicManager.currentModule.pauseOrbits = false;
+                    if (app.solarSystemModule) {
+                        app.solarSystemModule.pauseOrbits = false;
                     }
                     this.updateVRStatus('▶️ PLAYING - All Motion Active');
                     this.updateVRUI();
@@ -715,81 +714,76 @@ class SceneManager {
                 }
                 break;
             case 'speed++':
-                if (app.topicManager) {
-                    const currentSpeed = app.topicManager.timeSpeed;
-                    app.topicManager.timeSpeed = Math.min(currentSpeed + 1, 10);
-                    this.updateVRStatus(`⚡ Speed: ${app.topicManager.timeSpeed.toFixed(1)}x`);
+                if (app) {
+                    const currentSpeed = app.timeSpeed;
+                    app.timeSpeed = Math.min(currentSpeed + 1, 10);
+                    this.updateVRStatus(`⚡ Speed: ${app.timeSpeed.toFixed(1)}x`);
                     this.updateVRUI();
-                    console.log(`⚡ VR: Speed increased to ${app.topicManager.timeSpeed}x`);
+                    console.log(`⚡ VR: Speed increased to ${app.timeSpeed}x`);
                 }
                 break;
                 
             case 'speed--':
-                if (app.topicManager) {
-                    const currentSpeed = app.topicManager.timeSpeed;
-                    app.topicManager.timeSpeed = Math.max(currentSpeed - 1, 0);
-                    this.updateVRStatus(`⚡ Speed: ${app.topicManager.timeSpeed.toFixed(1)}x`);
+                if (app) {
+                    const currentSpeed = app.timeSpeed;
+                    app.timeSpeed = Math.max(currentSpeed - 1, 0);
+                    this.updateVRStatus(`⚡ Speed: ${app.timeSpeed.toFixed(1)}x`);
                     this.updateVRUI();
-                    console.log(`⚡ VR: Speed decreased to ${app.topicManager.timeSpeed}x`);
+                    console.log(`⚡ VR: Speed decreased to ${app.timeSpeed}x`);
                 }
                 break;
                 
             case 'speedreset':
-                if (app.topicManager) {
-                    app.topicManager.timeSpeed = 1;
+                if (app) {
+                    app.timeSpeed = 1;
                     this.updateVRStatus('⚡ Speed Reset to 1.0x');
                     this.updateVRUI();
                     console.log('⚡ VR: Speed reset to 1x');
                 }
                 break;
             case 'brightup':
-                app.topicManager.brightness = Math.min((app.topicManager.brightness || 50) + 10, 100);
-                this.updateBrightness(app.topicManager.brightness / 100);
-                this.updateVRStatus(`?? Brightness: ${app.topicManager.brightness}%`);
+                if (app) {
+                    app.brightness = Math.min((app.brightness || 100) + 10, 200);
+                    this.updateBrightness(app.brightness / 100);
+                    this.updateVRStatus(`💡 Brightness: ${app.brightness}%`);
+                }
                 break;
             case 'brightdown':
-                app.topicManager.brightness = Math.max((app.topicManager.brightness || 50) - 10, 0);
-                this.updateBrightness(app.topicManager.brightness / 100);
-                this.updateVRStatus(`?? Brightness: ${app.topicManager.brightness}%`);
+                if (app) {
+                    app.brightness = Math.max((app.brightness || 100) - 10, 20);
+                    this.updateBrightness(app.brightness / 100);
+                    this.updateVRStatus(`💡 Brightness: ${app.brightness}%`);
+                }
                 break;
             case 'tails':
-                if (app.topicManager && app.topicManager.solarSystemModule) {
-                    const module = app.topicManager.solarSystemModule;
+                if (app.solarSystemModule) {
+                    const module = app.solarSystemModule;
                     module.cometTailsVisible = !module.cometTailsVisible;
-                    this.updateVRStatus(`?? Tails ${module.cometTailsVisible ? 'ON' : 'OFF'}`);
+                    this.updateVRStatus(`☄️ Tails ${module.cometTailsVisible ? 'ON' : 'OFF'}`);
                 }
                 break;
             case 'scale':
-                if (app.topicManager && app.topicManager.solarSystemModule) {
-                    const module = app.topicManager.solarSystemModule;
+                if (app.solarSystemModule) {
+                    const module = app.solarSystemModule;
                     module.realisticScale = !module.realisticScale;
                     module.updateScale();
-                    this.updateVRStatus(`?? ${module.realisticScale ? 'Realistic' : 'Educational'} Scale`);
+                    this.updateVRStatus(`📏 ${module.realisticScale ? 'Realistic' : 'Educational'} Scale`);
                 }
                 break;
             case 'reset':
                 this.resetCamera();
-                this.updateVRStatus('?? View Reset');
+                if (app.solarSystemModule) {
+                    app.solarSystemModule.focusedObject = null;
+                }
+                this.updateVRStatus('🔄 View Reset');
                 break;
             case 'earth':
-                if (app.topicManager && app.topicManager.currentModule) {
-                    const earth = app.topicManager.currentModule.planets?.earth;
+                if (app.solarSystemModule) {
+                    const earth = app.solarSystemModule.planets?.earth;
                     if (earth) {
-                        app.topicManager.currentModule.focusOnObject(earth, this.camera, this.controls);
-                        this.updateVRStatus('?? Focused on Earth');
+                        app.solarSystemModule.focusOnObject(earth, this.camera, this.controls);
+                        this.updateVRStatus('🌍 Focused on Earth');
                     }
-                }
-                break;
-            case 'solar':
-                if (app.topicManager) {
-                    app.topicManager.loadTopic('solar-system');
-                    this.updateVRStatus('?? Loading Solar System...');
-                }
-                break;
-            case 'quantum':
-                if (app.topicManager) {
-                    app.topicManager.loadTopic('quantum');
-                    this.updateVRStatus('?? Loading Quantum Physics...');
                 }
                 break;
             case 'hide':
@@ -6530,6 +6524,7 @@ class App {
         this.solarSystemModule = null;
         this.lastTime = 0;
         this.timeSpeed = 1.0;
+        this.brightness = 100; // Default brightness percentage
         
         this.init();
     }
@@ -6821,46 +6816,45 @@ class App {
                     break;
                 case ' ':
                 case 'space':
-                    // SPACE = Pause/Play (works in VR too!)
-                    if (this.topicManager) {
-                        if (this.topicManager.timeSpeed === 0) {
-                            this.topicManager.timeSpeed = 1;
-                            console.log('?? PLAY');
-                        } else {
-                            this.topicManager.timeSpeed = 0;
-                            console.log('?? PAUSE');
-                        }
+                    // SPACE = Pause/Play
+                    e.preventDefault();
+                    if (this.timeSpeed === 0) {
+                        this.timeSpeed = 1;
+                        console.log('▶️ PLAY');
+                    } else {
+                        this.timeSpeed = 0;
+                        console.log('⏸️ PAUSE');
                     }
                     break;
                 case 'i':
                     // Find and focus on ISS
-                    if (this.spacecraft) {
-                        const iss = this.spacecraft.find(s => s.userData.name.includes('ISS'));
+                    if (this.solarSystemModule?.spacecraft) {
+                        const iss = this.solarSystemModule.spacecraft.find(s => s.userData.name.includes('ISS'));
                         if (iss) {
-                            this.focusOnObject(iss, this.camera, this.controls);
-                            console.log('??? Focusing on International Space Station');
+                            this.solarSystemModule.focusOnObject(iss, this.sceneManager.camera, this.sceneManager.controls);
+                            console.log('🛰️ Focusing on International Space Station');
                         }
                     }
                     break;
                 case 'v':
                     // Cycle through Voyager probes
-                    if (this.spacecraft) {
-                        const voyagers = this.spacecraft.filter(s => s.userData.name.includes('Voyager'));
+                    if (this.solarSystemModule?.spacecraft) {
+                        const voyagers = this.solarSystemModule.spacecraft.filter(s => s.userData.name.includes('Voyager'));
                         if (voyagers.length > 0) {
                             this._voyagerIndex = ((this._voyagerIndex || 0) + 1) % voyagers.length;
-                            this.focusOnObject(voyagers[this._voyagerIndex], this.camera, this.controls);
-                            console.log(`?? Focusing on ${voyagers[this._voyagerIndex].userData.name}`);
+                            this.solarSystemModule.focusOnObject(voyagers[this._voyagerIndex], this.sceneManager.camera, this.sceneManager.controls);
+                            console.log(`🚀 Focusing on ${voyagers[this._voyagerIndex].userData.name}`);
                         }
                     }
                     break;
                 case 'm':
                     // Cycle through Mars rovers
-                    if (this.spacecraft) {
-                        const rovers = this.spacecraft.filter(s => s.userData.type === 'rover');
+                    if (this.solarSystemModule?.spacecraft) {
+                        const rovers = this.solarSystemModule.spacecraft.filter(s => s.userData.type === 'rover');
                         if (rovers.length > 0) {
                             this._roverIndex = ((this._roverIndex || 0) + 1) % rovers.length;
-                            this.focusOnObject(rovers[this._roverIndex], this.camera, this.controls);
-                            console.log(`?? Focusing on ${rovers[this._roverIndex].userData.name}`);
+                            this.solarSystemModule.focusOnObject(rovers[this._roverIndex], this.sceneManager.camera, this.sceneManager.controls);
+                            console.log(`🚙 Focusing on ${rovers[this._roverIndex].userData.name}`);
                         }
                     }
                     break;
