@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Solar System Debug Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        h1 { color: #0ff; margin-bottom: 20px; text-align: center; }
+        .section {
+            background: #111;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .section h2 { color: #ff0; margin-bottom: 10px; font-size: 18px; }
+        .status { margin: 5px 0; padding-left: 20px; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .warn { color: #ff0; }
+        .info { color: #0ff; }
+        button {
+            background: #0066cc;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover { background: #0055aa; }
+        .button-group { text-align: center; margin: 20px 0; }
+        #live-monitor {
+            background: #000;
+            border: 2px solid #0f0;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .timestamp { color: #666; }
+    </style>
+</head>
+<body>
+    <h1>🔍 SOLAR SYSTEM DEBUG PANEL</h1>
+    
+    <div class="button-group">
+        <button onclick="location.href='index.html'">🚀 Open Main App</button>
+        <button onclick="runFullDiagnostic()">🔍 Run Full Diagnostic</button>
+        <button onclick="testAnimation()">🎬 Test Animation</button>
+        <button onclick="testClickDetection()">🖱️  Test Click Detection</button>
+        <button onclick="clearMonitor()">🧹 Clear Monitor</button>
+    </div>
+
+    <div class="section">
+        <h2>📊 System Status</h2>
+        <div id="system-status"></div>
+    </div>
+
+    <div class="section">
+        <h2>🪐 Planets</h2>
+        <div id="planets-status"></div>
+    </div>
+
+    <div class="section">
+        <h2>🎬 Animation Status</h2>
+        <div id="animation-status"></div>
+    </div>
+
+    <div class="section">
+        <h2>📡 Live Monitor</h2>
+        <div id="live-monitor"></div>
+    </div>
+
+    <script>
+        let monitorLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `<div class="${type}"><span class="timestamp">[${timestamp}]</span> ${message}</div>`;
+            monitorLog.push(entry);
+            if (monitorLog.length > 100) monitorLog.shift();
+            document.getElementById('live-monitor').innerHTML = monitorLog.join('');
+            document.getElementById('live-monitor').scrollTop = document.getElementById('live-monitor').scrollHeight;
+        }
+        
+        function clearMonitor() {
+            monitorLog = [];
+            document.getElementById('live-monitor').innerHTML = '';
+        }
+        
+        function updateStatus() {
+            const systemStatus = document.getElementById('system-status');
+            const planetsStatus = document.getElementById('planets-status');
+            const animationStatus = document.getElementById('animation-status');
+            
+            // Check if app is loaded
+            if (typeof THREE === 'undefined') {
+                systemStatus.innerHTML = '<div class="fail">❌ Three.js not loaded - Open main app first!</div>';
+                planetsStatus.innerHTML = '<div class="fail">❌ No data available</div>';
+                animationStatus.innerHTML = '<div class="fail">❌ No data available</div>';
+                return;
+            }
+            
+            // Try to access the app through the iframe or window opener
+            let app = null;
+            
+            // Check if there's a reference to the main window
+            if (window.opener && window.opener.app) {
+                app = window.opener.app;
+                log('✅ Connected to main window via window.opener', 'pass');
+            } else if (parent !== window && parent.app) {
+                app = parent.app;
+                log('✅ Connected to parent window via parent', 'pass');
+            } else {
+                systemStatus.innerHTML = `
+                    <div class="warn">⚠️ Main app not accessible from this window</div>
+                    <div class="info">ℹ️ Open this page, then open index.html in a new tab</div>
+                    <div class="info">ℹ️ Or open developer console (F12) on index.html and run comprehensive-diagnostic.js</div>
+                `;
+                planetsStatus.innerHTML = '<div class="fail">❌ No access to app</div>';
+                animationStatus.innerHTML = '<div class="fail">❌ No access to app</div>';
+                return;
+            }
+            
+            // System Status
+            let sysHtml = '';
+            sysHtml += app ? '<div class="pass">✅ App object found</div>' : '<div class="fail">❌ App object missing</div>';
+            sysHtml += app?.sceneManager ? '<div class="pass">✅ SceneManager initialized</div>' : '<div class="fail">❌ SceneManager missing</div>';
+            sysHtml += app?.solarSystemModule ? '<div class="pass">✅ SolarSystemModule initialized</div>' : '<div class="fail">❌ SolarSystemModule missing</div>';
+            sysHtml += app?.timeSpeed ? `<div class="info">⏱️ Time Speed: ${app.timeSpeed}x</div>` : '<div class="warn">⚠️ Time speed not set</div>';
+            systemStatus.innerHTML = sysHtml;
+            
+            // Planets Status
+            if (app?.solarSystemModule) {
+                const ssm = app.solarSystemModule;
+                const planetCount = Object.keys(ssm.planets).length;
+                const objectCount = ssm.objects.length;
+                
+                let planetsHtml = '';
+                planetsHtml += `<div class="${planetCount > 0 ? 'pass' : 'fail'}">${planetCount > 0 ? '✅' : '❌'} ${planetCount} planets loaded</div>`;
+                planetsHtml += `<div class="${objectCount > 0 ? 'pass' : 'fail'}">${objectCount > 0 ? '✅' : '❌'} ${objectCount} selectable objects</div>`;
+                
+                if (planetCount > 0) {
+                    planetsHtml += '<div class="info" style="margin-top: 10px;">Planet List:</div>';
+                    Object.entries(ssm.planets).forEach(([name, planet]) => {
+                        if (planet && planet.userData) {
+                            const pos = `(${planet.position.x.toFixed(1)}, ${planet.position.y.toFixed(1)}, ${planet.position.z.toFixed(1)})`;
+                            planetsHtml += `<div class="status">🪐 ${name}: ${pos}, speed=${planet.userData.speed}</div>`;
+                        }
+                    });
+                }
+                
+                planetsStatus.innerHTML = planetsHtml;
+            } else {
+                planetsStatus.innerHTML = '<div class="fail">❌ No solar system module</div>';
+            }
+            
+            // Animation Status
+            if (app?.sceneManager) {
+                let animHtml = '';
+                animHtml += app.sceneManager.renderer ? '<div class="pass">✅ Renderer active</div>' : '<div class="fail">❌ No renderer</div>';
+                animHtml += app.sceneManager.scene ? `<div class="info">📦 Scene objects: ${app.sceneManager.scene.children.length}</div>` : '<div class="fail">❌ No scene</div>';
+                animHtml += app.sceneManager.camera ? '<div class="pass">✅ Camera initialized</div>' : '<div class="fail">❌ No camera</div>';
+                animationStatus.innerHTML = animHtml;
+            } else {
+                animationStatus.innerHTML = '<div class="fail">❌ No scene manager</div>';
+            }
+        }
+        
+        function runFullDiagnostic() {
+            log('🔍 Starting full diagnostic...', 'info');
+            
+            // Check Three.js
+            if (typeof THREE === 'undefined') {
+                log('❌ Three.js not loaded - open main app first!', 'fail');
+                return;
+            }
+            
+            log('✅ Three.js loaded', 'pass');
+            
+            // Check for app in various contexts
+            let app = null;
+            if (window.opener && window.opener.app) {
+                app = window.opener.app;
+                log('✅ Found app via window.opener', 'pass');
+            } else if (parent !== window && parent.app) {
+                app = parent.app;
+                log('✅ Found app via parent', 'pass');
+            } else {
+                log('❌ Cannot access app - not opened from main window', 'fail');
+                log('ℹ️ Instructions:', 'info');
+                log('   1. Open index.html in a new tab', 'info');
+                log('   2. Press F12 to open developer console', 'info');
+                log('   3. Load comprehensive-diagnostic.js in console', 'info');
+                return;
+            }
+            
+            // Run comprehensive tests
+            if (app.solarSystemModule) {
+                log(`✅ ${Object.keys(app.solarSystemModule.planets).length} planets loaded`, 'pass');
+                log(`✅ ${app.solarSystemModule.objects.length} selectable objects`, 'pass');
+            }
+            
+            updateStatus();
+        }
+        
+        function testAnimation() {
+            log('🎬 Testing animation...', 'info');
+            // Implementation depends on app access
+            log('⚠️ Open F12 console on main app and run comprehensive-diagnostic.js', 'warn');
+        }
+        
+        function testClickDetection() {
+            log('🖱️  Testing click detection...', 'info');
+            // Implementation depends on app access
+            log('⚠️ Open F12 console on main app and run comprehensive-diagnostic.js', 'warn');
+        }
+        
+        // Initial status check
+        log('🚀 Debug panel loaded', 'pass');
+        log('ℹ️ Open index.html first, then use this panel', 'info');
+        updateStatus();
+        
+        // Auto-refresh status every 2 seconds
+        setInterval(updateStatus, 2000);
+    </script>
+</body>
+</html>
