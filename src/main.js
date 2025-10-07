@@ -4487,25 +4487,64 @@ class SolarSystemModule {
         scene.add(this.starfield);
     }
 
+    async loadTextureWithFallback(url, fallbackColor) {
+        // Try to load real imagery, fallback to color if it fails
+        return new Promise((resolve) => {
+            const loader = new THREE.TextureLoader();
+            loader.load(
+                url,
+                (texture) => {
+                    console.log(`✅ Loaded texture: ${url}`);
+                    resolve(texture);
+                },
+                undefined,
+                (error) => {
+                    console.warn(`⚠️ Failed to load ${url}, using fallback color`);
+                    // Create simple colored texture as fallback
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 64;
+                    canvas.height = 64;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = fallbackColor;
+                    ctx.fillRect(0, 0, 64, 64);
+                    const texture = new THREE.CanvasTexture(canvas);
+                    resolve(texture);
+                }
+            );
+        });
+    }
+
     createDistantStars(scene) {
         // Create recognizable star systems and bright stars
         this.distantStars = [];
         
         const brightStars = [
             { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: '? Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
-            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
+            { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: '⭐ Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!', texture: 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/sun.jpg' },
             { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: '⭐ Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
             { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: '⭐ Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
             { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: '⭐ Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
         ];
 
-        brightStars.forEach(starData => {
+        brightStars.forEach(async (starData) => {
             const geometry = new THREE.SphereGeometry(starData.size, 32, 32);
-            const material = new THREE.MeshBasicMaterial({
-                color: starData.color,
-                transparent: true,
-                opacity: 0.9
-            });
+            
+            // Use texture if provided, otherwise use color
+            let material;
+            if (starData.texture) {
+                const texture = await this.loadTextureWithFallback(starData.texture, `#${starData.color.toString(16).padStart(6, '0')}`);
+                material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 0.9
+                });
+            } else {
+                material = new THREE.MeshBasicMaterial({
+                    color: starData.color,
+                    transparent: true,
+                    opacity: 0.9
+                });
+            }
             
             const star = new THREE.Mesh(geometry, material);
             const x = starData.distance * Math.cos(starData.angle);
@@ -4542,54 +4581,55 @@ class SolarSystemModule {
         });
     }
 
-    createNebulae(scene) {
-        // Create colorful nebulae
+    async createNebulae(scene) {
+        // Create colorful nebulae with real Hubble imagery
         this.nebulae = [];
         
         const nebulaeData = [
-            { name: 'Orion Nebula', color: 0xFF69B4, position: { x: 6000, y: 1000, z: 3000 }, size: 400, description: '🌟 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!' },
-            { name: 'Crab Nebula', color: 0x87CEEB, position: { x: -5500, y: -800, z: 4500 }, size: 300, description: '💥 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!' },
-            { name: 'Ring Nebula', color: 0x9370DB, position: { x: 4500, y: 1500, z: -5000 }, size: 250, description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.' }
+            { 
+                name: 'Orion Nebula', 
+                color: 0xFF69B4, 
+                position: { x: 6000, y: 1000, z: 3000 }, 
+                size: 400, 
+                description: '🌟 The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!',
+                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/orion-nebula-full.jpg'
+            },
+            { 
+                name: 'Crab Nebula', 
+                color: 0x87CEEB, 
+                position: { x: -5500, y: -800, z: 4500 }, 
+                size: 300, 
+                description: '💥 The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!',
+                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/crab-nebula-mosaic-full.jpg'
+            },
+            { 
+                name: 'Ring Nebula', 
+                color: 0x9370DB, 
+                position: { x: 4500, y: 1500, z: -5000 }, 
+                size: 250, 
+                description: '💍 The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.',
+                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/stsci-j-p13114a-4000x3985-1.png'
+            }
         ];
 
-        nebulaeData.forEach(nebData => {
-            // Create particle cloud for nebula
-            const particleCount = 2000;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-            const colors = new Float32Array(particleCount * 3);
+        for (const nebData of nebulaeData) {
+            // Try to load real NASA/Hubble imagery
+            const texture = await this.loadTextureWithFallback(
+                nebData.texture, 
+                `#${nebData.color.toString(16).padStart(6, '0')}`
+            );
             
-            const color = new THREE.Color(nebData.color);
-            
-            for (let i = 0; i < particleCount; i++) {
-                // Spherical distribution
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos(2 * Math.random() - 1);
-                const radius = nebData.size * (0.5 + Math.random() * 0.5);
-                
-                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-                positions[i * 3 + 2] = radius * Math.cos(phi);
-                
-                // Vary colors slightly
-                const colorVariation = 0.8 + Math.random() * 0.2;
-                colors[i * 3] = color.r * colorVariation;
-                colors[i * 3 + 1] = color.g * colorVariation;
-                colors[i * 3 + 2] = color.b * colorVariation;
-            }
-            
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            
-            const material = new THREE.PointsMaterial({
-                size: 5,
-                vertexColors: true,
+            // Create sprite with texture (works better for nebulae than particles)
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: texture,
                 transparent: true,
-                opacity: 0.6,
-                blending: THREE.AdditiveBlending
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+                color: 0xFFFFFF // White to show true colors
             });
             
-            const nebula = new THREE.Points(geometry, material);
+            const nebula = new THREE.Sprite(spriteMaterial);
+            nebula.scale.set(nebData.size * 2, nebData.size * 2, 1);
             nebula.position.set(nebData.position.x, nebData.position.y, nebData.position.z);
             
             nebula.userData = {
@@ -4606,7 +4646,7 @@ class SolarSystemModule {
             scene.add(nebula);
             this.objects.push(nebula);
             this.nebulae.push(nebula);
-        });
+        }
     }
 
     createConstellations(scene) {
@@ -4756,18 +4796,58 @@ class SolarSystemModule {
         console.log(`? Created ${this.constellations.length} constellations with star patterns!`);
     }
 
-    createGalaxies(scene) {
-        // Create distant galaxies
+    async createGalaxies(scene) {
+        // Create distant galaxies with real imagery
         this.galaxies = [];
         
         const galaxiesData = [
-            { name: 'Andromeda Galaxy', position: { x: 12000, y: 2000, z: -8000 }, size: 600, type: 'spiral', description: '🌌 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).' },
-            { name: 'Whirlpool Galaxy', position: { x: -10000, y: -1500, z: -9000 }, size: 400, type: 'spiral', description: '🌌 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.' },
-            { name: 'Sombrero Galaxy', position: { x: -8000, y: 3000, z: 7000 }, size: 350, type: 'elliptical', description: '🌌 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!' }
+            { 
+                name: 'Andromeda Galaxy', 
+                position: { x: 12000, y: 2000, z: -8000 }, 
+                size: 600, 
+                type: 'spiral', 
+                description: '🌌 The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).',
+                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/andromeda-galaxy-full.jpg'
+            },
+            { 
+                name: 'Whirlpool Galaxy', 
+                position: { x: -10000, y: -1500, z: -9000 }, 
+                size: 400, 
+                type: 'spiral', 
+                description: '🌌 The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.',
+                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/whirlpool-galaxy-full.jpg'
+            },
+            { 
+                name: 'Sombrero Galaxy', 
+                position: { x: -8000, y: 3000, z: 7000 }, 
+                size: 350, 
+                type: 'elliptical', 
+                description: '🌌 The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!',
+                texture: 'https://www.nasa.gov/wp-content/uploads/2023/03/sombrero-galaxy-full.jpg'
+            }
         ];
 
-        galaxiesData.forEach(galData => {
+        for (const galData of galaxiesData) {
             const group = new THREE.Group();
+            
+            // Try to use real NASA/Hubble imagery as a backdrop sprite
+            if (galData.texture) {
+                try {
+                    const texture = await this.loadTextureWithFallback(galData.texture, '#ffffff');
+                    const spriteMaterial = new THREE.SpriteMaterial({
+                        map: texture,
+                        transparent: true,
+                        opacity: 0.7,
+                        blending: THREE.AdditiveBlending
+                    });
+                    const sprite = new THREE.Sprite(spriteMaterial);
+                    sprite.scale.set(galData.size * 2.5, galData.size * 2.5, 1);
+                    group.add(sprite);
+                    console.log(`✅ Added real imagery for ${galData.name}`);
+                } catch (error) {
+                    console.log(`⚠️ Using procedural for ${galData.name}`);
+                }
+            }
             
             // Create spiral or elliptical structure
             if (galData.type === 'spiral') {
@@ -4871,7 +4951,7 @@ class SolarSystemModule {
             scene.add(group);
             this.objects.push(group);
             this.galaxies.push(group);
-        });
+        }
     }
 
     createComets(scene) {
