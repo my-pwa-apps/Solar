@@ -446,7 +446,8 @@ class SceneManager {
                     color: 0x00ffff,
                     transparent: true,
                     opacity: 0.2,
-                    blending: THREE.AdditiveBlending
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false // Don't block objects behind the glow
                 });
                 const glow = new THREE.Mesh(glowGeometry, glowMaterial);
                 pointer.add(glow);
@@ -1852,7 +1853,9 @@ class SolarSystemModule {
                 transparent: true,
                 opacity: layer.opacity,
                 side: THREE.BackSide,
-                blending: THREE.AdditiveBlending
+                blending: THREE.AdditiveBlending,
+                depthWrite: false, // Don't block objects behind the glow
+                depthTest: true    // But still respect depth for proper rendering
             });
             const corona = new THREE.Mesh(coronaGeometry, coronaMaterial);
             this.sun.add(corona);
@@ -4169,7 +4172,8 @@ class SolarSystemModule {
                 transparent: true,
                 opacity: ringOpacity,
                 roughness: 0.8,
-                metalness: 0.1
+                metalness: 0.1,
+                depthWrite: false // Don't block moons passing through rings
             });
             const rings = new THREE.Mesh(ringGeometry, ringMaterial);
             rings.rotation.x = Math.PI / 2;
@@ -4566,7 +4570,8 @@ class SolarSystemModule {
                 color: starData.color,
                 transparent: true,
                 opacity: 0.3,
-                side: THREE.BackSide
+                side: THREE.BackSide,
+                depthWrite: false // Don't block objects behind the glow
             });
             const glow = new THREE.Mesh(glowGeo, glowMat);
             star.add(glow);
@@ -4764,7 +4769,8 @@ class SolarSystemModule {
                     color: star.color,
                     transparent: true,
                     opacity: 0.3,
-                    blending: THREE.AdditiveBlending
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false // Don't block objects behind the glow
                 });
                 const glow = new THREE.Mesh(glowGeom, glowMat);
                 starMesh.add(glow);
@@ -5008,7 +5014,8 @@ class SolarSystemModule {
                 transparent: true,
                 opacity: 0.4,
                 side: THREE.BackSide,
-                blending: THREE.AdditiveBlending
+                blending: THREE.AdditiveBlending,
+                depthWrite: false // Don't block objects behind the glow
             });
             const glow = new THREE.Mesh(glowGeo, glowMat);
             comet.add(glow);
@@ -5379,7 +5386,8 @@ class SolarSystemModule {
                 color: craft.color,
                 transparent: true,
                 opacity: 0.25, // Increased from 0.15 for better visibility
-                blending: THREE.AdditiveBlending
+                blending: THREE.AdditiveBlending,
+                depthWrite: false // Don't block objects behind the glow
             });
             const glow = new THREE.Mesh(glowGeometry, glowMaterial);
             spacecraft.add(glow);
