@@ -53,18 +53,11 @@
             <select id="time-speed" aria-label="Animation speed mode">
                 <option value="0">⏸️ Paused</option>
                 <option value="1" selected>📚 Educational</option>
-                <option value="365">⏱️ Realtime</option>
+                <option value="realtime">⏱️ Realtime (Earth: 1 orbit/day)</option>
             </select>
-        </div>
-        <div class="control-group">
-            <label for="brightness">💡 Brightness:</label>
-            <input type="range" id="brightness" min="0" max="100" value="50" step="1" 
-                   aria-label="Scene brightness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
-            <span id="brightness-value" aria-live="polite">50%</span>
         </div>
         <button id="toggle-orbits" aria-label="Toggle orbital paths" data-tooltip="Show/hide orbital paths (O)">🛤️ Orbits</button>
         <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)">📊 Labels OFF</button>
-        <button id="toggle-speed-mode" aria-label="Toggle speed mode" data-tooltip="Switch between educational and realistic orbital speeds">🚀 Educational Speed</button>
         <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)">📏 Educational Scale</button>
         <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)">🔄 Reset</button>
     </aside>
@@ -99,6 +92,6 @@
     </script>
     
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=20251007-1900"></script>
+    <script type="module" src="./src/main.js?v=20251007-2100"></script>
 </body>
 </html>

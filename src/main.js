@@ -936,37 +936,37 @@ class SceneManager {
                 break;
             case 'speed++':
                 if (app) {
-                    // Cycle forward: Paused (0) -> Educational (1) -> Realtime (365) -> Paused
+                    // Cycle forward: Paused (0) -> Educational (1) -> Realtime ('realtime') -> Paused
                     if (app.timeSpeed === 0) {
                         app.timeSpeed = 1;
                         this.updateVRStatus('📚 Educational Speed');
                     } else if (app.timeSpeed === 1) {
-                        app.timeSpeed = 365;
-                        this.updateVRStatus('⏱️ Realtime Speed');
+                        app.timeSpeed = 'realtime';
+                        this.updateVRStatus('⏱️ Realtime (Earth: 1 orbit/day)');
                     } else {
                         app.timeSpeed = 0;
                         this.updateVRStatus('⏸️ Paused');
                     }
                     this.updateVRUI();
-                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed}x`);
+                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed === 'realtime' ? 'Realtime' : app.timeSpeed + 'x'}`);
                 }
                 break;
                 
             case 'speed--':
                 if (app) {
-                    // Cycle backward: Realtime (365) -> Educational (1) -> Paused (0) -> Realtime
-                    if (app.timeSpeed === 365) {
+                    // Cycle backward: Realtime ('realtime') -> Educational (1) -> Paused (0) -> Realtime
+                    if (app.timeSpeed === 'realtime') {
                         app.timeSpeed = 1;
                         this.updateVRStatus('📚 Educational Speed');
                     } else if (app.timeSpeed === 1) {
                         app.timeSpeed = 0;
                         this.updateVRStatus('⏸️ Paused');
                     } else {
-                        app.timeSpeed = 365;
-                        this.updateVRStatus('⏱️ Realtime Speed');
+                        app.timeSpeed = 'realtime';
+                        this.updateVRStatus('⏱️ Realtime (Earth: 1 orbit/day)');
                     }
                     this.updateVRUI();
-                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed}x`);
+                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed === 'realtime' ? 'Realtime' : app.timeSpeed + 'x'}`);
                 }
                 break;
                 
@@ -1121,7 +1121,7 @@ class SceneManager {
         const modes = [
             { label: '⏸️ Paused', value: 0, x: sliderX },
             { label: '📚 Educational', value: 1, x: sliderX + boxW + spacing },
-            { label: '⏱️ Realtime', value: 365, x: sliderX + (boxW + spacing) * 2 }
+            { label: '⏱️ Realtime', value: 'realtime', x: sliderX + (boxW + spacing) * 2 }
         ];
         
         ctx.font = '24px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
@@ -1636,47 +1636,56 @@ class SolarSystemModule {
             mercury: {
                 rotationPeriod: 1407.6,      // hours (58.6 Earth days)
                 axialTilt: 0.034,            // degrees
-                retrograde: false
+                retrograde: false,
+                orbitalPeriod: 88            // Earth days
             },
             venus: {
                 rotationPeriod: 5832.5,      // hours (243 Earth days)
                 axialTilt: 177.4,            // degrees (almost upside down)
-                retrograde: true             // rotates backwards!
+                retrograde: true,            // rotates backwards!
+                orbitalPeriod: 225           // Earth days
             },
             earth: {
                 rotationPeriod: 23.93,       // hours
                 axialTilt: 23.44,            // degrees
-                retrograde: false
+                retrograde: false,
+                orbitalPeriod: 365.25        // Earth days (baseline)
             },
             mars: {
                 rotationPeriod: 24.62,       // hours
                 axialTilt: 25.19,            // degrees
-                retrograde: false
+                retrograde: false,
+                orbitalPeriod: 687           // Earth days
             },
             jupiter: {
                 rotationPeriod: 9.93,        // hours (fastest rotation!)
                 axialTilt: 3.13,             // degrees
-                retrograde: false
+                retrograde: false,
+                orbitalPeriod: 4333          // Earth days (~11.9 years)
             },
             saturn: {
                 rotationPeriod: 10.66,       // hours
                 axialTilt: 26.73,            // degrees
-                retrograde: false
+                retrograde: false,
+                orbitalPeriod: 10759         // Earth days (~29.5 years)
             },
             uranus: {
                 rotationPeriod: 17.24,       // hours
                 axialTilt: 97.77,            // degrees (rotates on its side!)
-                retrograde: true
+                retrograde: true,
+                orbitalPeriod: 30687         // Earth days (~84 years)
             },
             neptune: {
                 rotationPeriod: 16.11,       // hours
                 axialTilt: 28.32,            // degrees
-                retrograde: false
+                retrograde: false,
+                orbitalPeriod: 60190         // Earth days (~165 years)
             },
             moon: {
                 rotationPeriod: 655.7,       // hours (27.3 Earth days - tidally locked)
                 axialTilt: 6.68,             // degrees
-                retrograde: false
+                retrograde: false,
+                orbitalPeriod: 27.3          // Earth days
             }
         };
         
@@ -5363,7 +5372,8 @@ class SolarSystemModule {
                 speed: craft.speed,
                 orbitPlanet: craft.orbitPlanet,
                 isMoon: craft.isMoon || false,
-                isSpacecraft: true
+                isSpacecraft: true,
+                radius: glowSize // Use glow size as radius for focusing
             };
             
             // Position spacecraft
@@ -5411,6 +5421,15 @@ class SolarSystemModule {
         let rotationSpeed = timeSpeed; // Planet rotations
         let moonSpeed = timeSpeed; // Moon orbits
         
+        // Handle realtime mode - calculate speeds based on actual astronomical data
+        if (timeSpeed === 'realtime') {
+            // In realtime mode, Earth completes 1 orbit in 1 real-world day
+            // Base multiplier: 365.25 (to compress 365.25 days into 1 day)
+            orbitalSpeed = 365.25;
+            rotationSpeed = 365.25;
+            moonSpeed = 365.25;
+        }
+        
         if (pauseMode === 'all') {
             // Pause everything
             orbitalSpeed = 0;
@@ -5419,16 +5438,30 @@ class SolarSystemModule {
         } else if (pauseMode === 'orbital') {
             // Pause only solar orbits, keep rotations and moon orbits
             orbitalSpeed = 0; // Freeze planets in their solar orbit
-            rotationSpeed = timeSpeed; // Keep planets rotating
-            moonSpeed = timeSpeed; // Keep moons orbiting their planets
+            rotationSpeed = timeSpeed === 'realtime' ? 365.25 : timeSpeed; // Keep planets rotating
+            moonSpeed = timeSpeed === 'realtime' ? 365.25 : timeSpeed; // Keep moons orbiting their planets
         }
         // else 'none' - everything moves normally
         
         // Update all planets
         Object.values(this.planets).forEach(planet => {
             if (planet && planet.userData) {
+                // Calculate planet-specific orbital speed for realtime mode
+                let planetOrbitalSpeed = orbitalSpeed;
+                if (timeSpeed === 'realtime' && planet.userData.name) {
+                    const planetName = planet.userData.name.toLowerCase();
+                    const astroData = this.ASTRONOMICAL_DATA[planetName];
+                    if (astroData && astroData.orbitalPeriod) {
+                        // Speed relative to Earth: earthPeriod / planetPeriod
+                        // Then multiply by base educational speed for smooth motion
+                        const earthPeriod = this.ASTRONOMICAL_DATA.earth.orbitalPeriod;
+                        const speedRatio = earthPeriod / astroData.orbitalPeriod;
+                        planetOrbitalSpeed = speedRatio * orbitalSpeed;
+                    }
+                }
+                
                 // Solar orbit (affected by orbital pause)
-                planet.userData.angle += planet.userData.speed * orbitalSpeed;
+                planet.userData.angle += planet.userData.speed * planetOrbitalSpeed;
                 planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
                 planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
                 
@@ -5463,8 +5496,21 @@ class SolarSystemModule {
                 if (planet.userData.moons && planet.userData.moons.length > 0) {
                     planet.userData.moons.forEach(moon => {
                         if (moon.userData) {
+                            // Calculate moon-specific orbital speed for realtime mode
+                            let moonOrbitalSpeed = moonSpeed;
+                            if (timeSpeed === 'realtime' && moon.userData.name) {
+                                const moonName = moon.userData.name.toLowerCase();
+                                const astroData = this.ASTRONOMICAL_DATA[moonName];
+                                if (astroData && astroData.orbitalPeriod) {
+                                    // Moon speed relative to Earth's orbital speed
+                                    const earthPeriod = this.ASTRONOMICAL_DATA.earth.orbitalPeriod;
+                                    const speedRatio = earthPeriod / astroData.orbitalPeriod;
+                                    moonOrbitalSpeed = speedRatio * moonSpeed;
+                                }
+                            }
+                            
                             // Moons orbit their planet (affected by moonSpeed)
-                            moon.userData.angle += moon.userData.speed * moonSpeed;
+                            moon.userData.angle += moon.userData.speed * moonOrbitalSpeed;
                             
                             // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
                             // these positions are RELATIVE to the planet's position, not world coordinates!
@@ -6647,17 +6693,6 @@ class TopicManager {
             this.timeSpeed = parseFloat(timeSpeedSelect.value);
         }
 
-        // Brightness control
-        const brightnessSlider = document.getElementById('brightness');
-        const brightnessValue = document.getElementById('brightness-value');
-        if (brightnessSlider && brightnessValue) {
-            brightnessSlider.addEventListener('input', (e) => {
-                this.brightnessMultiplier = parseFloat(e.target.value) / 100;
-                brightnessValue.textContent = `${e.target.value}%`;
-                this.sceneManager.updateBrightness(this.brightnessMultiplier);
-            }, { passive: true });
-        }
-
         // Scale toggle button
         const scaleButton = document.getElementById('toggle-scale');
         if (scaleButton) {
@@ -7000,23 +7035,19 @@ class App {
         const timeSpeedSelect = document.getElementById('time-speed');
         if (timeSpeedSelect) {
             timeSpeedSelect.addEventListener('change', (e) => {
-                this.timeSpeed = parseFloat(e.target.value);
-                console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
+                const value = e.target.value;
+                if (value === 'realtime') {
+                    this.timeSpeed = 'realtime';
+                    console.log(`⏱️ Speed mode changed to: Realtime (Earth: 1 orbit/day)`);
+                } else {
+                    this.timeSpeed = parseFloat(value);
+                    console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
+                }
             });
             
             // Set initial speed
-            this.timeSpeed = parseFloat(timeSpeedSelect.value);
-        }
-
-        // Brightness control
-        const brightnessSlider = document.getElementById('brightness');
-        const brightnessValue = document.getElementById('brightness-value');
-        if (brightnessSlider && brightnessValue) {
-            brightnessSlider.addEventListener('input', (e) => {
-                const brightnessMultiplier = parseFloat(e.target.value) / 100;
-                brightnessValue.textContent = `${e.target.value}%`;
-                this.sceneManager.updateBrightness(brightnessMultiplier);
-            });
+            const initialValue = timeSpeedSelect.value;
+            this.timeSpeed = initialValue === 'realtime' ? 'realtime' : parseFloat(initialValue);
         }
         
         // Orbit toggle button
