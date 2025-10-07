@@ -5337,6 +5337,12 @@ class SolarSystemModule {
     }
 
     update(deltaTime, timeSpeed, camera, controls) {
+        // Safety check for deltaTime
+        if (!deltaTime || isNaN(deltaTime) || deltaTime <= 0 || deltaTime > 1) {
+            console.warn('⚠️ Invalid deltaTime:', deltaTime, '- skipping frame');
+            return;
+        }
+        
         // Get pause mode from sceneManager
         const app = window.app || {};
         const sceneManager = app.sceneManager || {};
@@ -5394,8 +5400,21 @@ class SolarSystemModule {
                     angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
                 }
                 
+                // Safety check for angle increment
+                if (isNaN(angleIncrement) || !isFinite(angleIncrement)) {
+                    console.error('❌ Invalid angleIncrement for', planet.userData.name, ':', angleIncrement);
+                    angleIncrement = 0;
+                }
+                
                 // Solar orbit (affected by orbital pause)
                 planet.userData.angle += angleIncrement;
+                
+                // Safety check for angle
+                if (isNaN(planet.userData.angle) || !isFinite(planet.userData.angle)) {
+                    console.error('❌ Invalid angle for', planet.userData.name, '- resetting to 0');
+                    planet.userData.angle = 0;
+                }
+                
                 planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
                 planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
                 
@@ -5505,16 +5524,26 @@ class SolarSystemModule {
         }
 
         // Rotate asteroid and Kuiper belts slowly
+        const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
         if (this.asteroidBelt) {
-            this.asteroidBelt.rotation.y += 0.0001 * timeSpeed;
+            const rotationIncrement = 0.0001 * effectiveTimeSpeed;
+            if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
+                this.asteroidBelt.rotation.y += rotationIncrement;
+            }
         }
         if (this.kuiperBelt) {
-            this.kuiperBelt.rotation.y += 0.00005 * timeSpeed;
+            const rotationIncrement = 0.00005 * effectiveTimeSpeed;
+            if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
+                this.kuiperBelt.rotation.y += rotationIncrement;
+            }
         }
 
         // Rotate sun and animate surface activity
         if (this.sun) {
-            this.sun.rotation.y += 0.001 * timeSpeed;
+            const rotationIncrement = 0.001 * effectiveTimeSpeed;
+            if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
+                this.sun.rotation.y += rotationIncrement;
+            }
             
             // Animate solar flares (optimized - update every 2 frames)
             if (this.sun.userData.flares && (this._sunFlareFrame || 0) % 2 === 0) {
@@ -5547,7 +5576,10 @@ class SolarSystemModule {
         if (this.comets) {
             this.comets.forEach(comet => {
                 const userData = comet.userData;
-                userData.angle += userData.speed * timeSpeed;
+                const angleIncrement = userData.speed * effectiveTimeSpeed;
+                if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
+                    userData.angle += angleIncrement;
+                }
                 
                 // Elliptical orbit calculation
                 const e = userData.eccentricity;
@@ -5644,7 +5676,10 @@ class SolarSystemModule {
             this.satellites.forEach(satellite => {
                 const userData = satellite.userData;
                 if (userData.planet) {
-                    userData.angle += userData.speed * timeSpeed * 0.01; // Scale down for realistic orbit times
+                    const angleIncrement = userData.speed * effectiveTimeSpeed * 0.01; // Scale down for realistic orbit times
+                    if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
+                        userData.angle += angleIncrement;
+                    }
                     
                     // Get Earth's world position
                     const earthPosition = new THREE.Vector3();
@@ -5675,39 +5710,55 @@ class SolarSystemModule {
         
         // Update spacecraft (Voyagers, probes, orbiters)
         if (this.spacecraft) {
+            // Get numeric speed multiplier (handle 'realtime' string)
+            const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
+            
             this.spacecraft.forEach(craft => {
                 const userData = craft.userData;
                 
                 // Deep space probes keep moving away
                 if (!userData.orbitPlanet && userData.speed) {
-                    userData.angle += userData.speed * timeSpeed * 0.001;
-                    craft.position.x = userData.distance * Math.cos(userData.angle);
-                    craft.position.z = userData.distance * Math.sin(userData.angle);
+                    const angleIncrement = userData.speed * effectiveTimeSpeed * 0.001;
+                    if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
+                        userData.angle += angleIncrement;
+                        craft.position.x = userData.distance * Math.cos(userData.angle);
+                        craft.position.z = userData.distance * Math.sin(userData.angle);
+                    }
                 }
                 
                 // Orbiters around planets (Juno, Cassini legacy, etc)
                 if (userData.orbitPlanet && userData.speed && userData.type === 'orbiter') {
-                    userData.angle += userData.speed * timeSpeed * 0.01;
-                    const radius = userData.distance;
-                    craft.position.x = radius * Math.cos(userData.angle);
-                    craft.position.z = radius * Math.sin(userData.angle);
-                    craft.position.y = Math.sin(userData.angle * 2) * radius * 0.1; // Inclined orbit
+                    const angleIncrement = userData.speed * effectiveTimeSpeed * 0.01;
+                    if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
+                        userData.angle += angleIncrement;
+                        const radius = userData.distance;
+                        craft.position.x = radius * Math.cos(userData.angle);
+                        craft.position.z = radius * Math.sin(userData.angle);
+                        craft.position.y = Math.sin(userData.angle * 2) * radius * 0.1; // Inclined orbit
+                    }
                 }
                 
                 // Rotate spacecraft slowly
                 if (userData.type === 'probe' || userData.type === 'orbiter') {
-                    craft.rotation.y += 0.002 * timeSpeed;
+                    const rotationIncrement = 0.002 * effectiveTimeSpeed;
+                    if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
+                        craft.rotation.y += rotationIncrement;
+                    }
                 }
             });
         }
         
         // Rotate nebulae slowly (optimized - pre-calculate time)
         if (this.nebulae) {
+            const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
             const time = Date.now() * 0.0005;
             const scale = 1 + Math.sin(time) * 0.05;
             
             this.nebulae.forEach(nebula => {
-                nebula.rotation.y += 0.0001 * timeSpeed;
+                const rotationIncrement = 0.0001 * effectiveTimeSpeed;
+                if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
+                    nebula.rotation.y += rotationIncrement;
+                }
                 // Pulsing effect (shared calculation)
                 nebula.scale.setScalar(scale);
             });
@@ -5715,8 +5766,12 @@ class SolarSystemModule {
         
         // Rotate galaxies
         if (this.galaxies) {
+            const effectiveTimeSpeed = timeSpeed === 'realtime' ? orbitalSpeed : timeSpeed;
             this.galaxies.forEach(galaxy => {
-                galaxy.rotation.y += 0.0002 * timeSpeed;
+                const rotationIncrement = 0.0002 * effectiveTimeSpeed;
+                if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
+                    galaxy.rotation.y += rotationIncrement;
+                }
             });
         }
         
@@ -6388,6 +6443,9 @@ class QuantumModule {
     }
 
     update(deltaTime, timeSpeed, camera, controls) {
+        // Safety check for timeSpeed (handle 'realtime' string)
+        const effectiveTimeSpeed = (typeof timeSpeed === 'string') ? 1 : timeSpeed;
+        
         // Keep camera focused on selected object if it's moving
         if (this.focusedObject && camera && controls) {
             const targetPosition = new THREE.Vector3();
@@ -6405,13 +6463,13 @@ class QuantumModule {
         
         // Rotate nucleus
         if (this.nucleus) {
-            this.nucleus.rotation.y += 0.005 * timeSpeed;
-            this.nucleus.rotation.x += 0.003 * timeSpeed;
+            this.nucleus.rotation.y += 0.005 * effectiveTimeSpeed;
+            this.nucleus.rotation.x += 0.003 * effectiveTimeSpeed;
         }
 
         // Orbit electrons
         this.orbitals.forEach((electron, index) => {
-            electron.userData.angle += electron.userData.orbitalSpeed * timeSpeed;
+            electron.userData.angle += electron.userData.orbitalSpeed * effectiveTimeSpeed;
             const r = electron.userData.orbitalRadius;
             const a = electron.userData.angle;
             
@@ -6433,20 +6491,20 @@ class QuantumModule {
                 electron.position.z = r * Math.sin(a * 0.5);
             }
             
-            electron.rotation.y += 0.1 * timeSpeed;
+            electron.rotation.y += 0.1 * effectiveTimeSpeed;
         });
 
         // Animate wave
         if (this.wave) {
-            this.wave.rotation.y += 0.01 * timeSpeed;
-            this.wave.rotation.z += 0.005 * timeSpeed;
+            this.wave.rotation.y += 0.01 * effectiveTimeSpeed;
+            this.wave.rotation.z += 0.005 * effectiveTimeSpeed;
             this.wave.scale.x = 1 + Math.sin(Date.now() * 0.001) * 0.1;
             this.wave.scale.y = 1 + Math.cos(Date.now() * 0.001) * 0.1;
         }
 
         // Animate photon
         if (this.photon) {
-            this.photon.rotation.y += 0.05 * timeSpeed;
+            this.photon.rotation.y += 0.05 * effectiveTimeSpeed;
             this.photon.children.forEach((ray, i) => {
                 ray.rotation.z = (i * Math.PI / 4) + Date.now() * 0.001;
             });
@@ -6454,8 +6512,8 @@ class QuantumModule {
 
         // Animate superposition (phase in/out)
         if (this.superposition) {
-            this.superposition.rotation.x += 0.02 * timeSpeed;
-            this.superposition.rotation.y += 0.03 * timeSpeed;
+            this.superposition.rotation.x += 0.02 * effectiveTimeSpeed;
+            this.superposition.rotation.y += 0.03 * effectiveTimeSpeed;
             this.superposition.material.opacity = 0.3 + Math.sin(Date.now() * 0.002) * 0.2;
         }
 
