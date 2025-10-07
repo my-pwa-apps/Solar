@@ -6843,6 +6843,13 @@ class App {
                 if (deltaTime >= CONFIG.PERFORMANCE.frameTime / 1000) {
                     this.lastTime = currentTime;
                     
+                    // Debug: Log first few updates
+                    if (!this._updateCount) this._updateCount = 0;
+                    this._updateCount++;
+                    if (this._updateCount <= 5) {
+                        console.log(`🎬 Animation frame ${this._updateCount}: deltaTime=${deltaTime.toFixed(4)}s, timeSpeed=${this.timeSpeed}`);
+                    }
+                    
                     // Update Solar System module
                     if (this.solarSystemModule) {
                         this.solarSystemModule.update(deltaTime, this.timeSpeed, 
@@ -6854,6 +6861,9 @@ class App {
             const totalTime = performance.now() - appStartTime;
             console.log(`🚀 Space Explorer initialized in ${totalTime.toFixed(0)}ms!`);
             console.log(`📊 Performance: ${this.sceneManager.renderer.info.memory.geometries} geometries, ${this.sceneManager.renderer.info.memory.textures} textures`);
+            console.log(`🪐 Planets loaded: ${Object.keys(this.solarSystemModule.planets).length}`);
+            console.log(`📦 Objects in scene: ${this.solarSystemModule.objects.length}`);
+            console.log(`✅ Animation loop status: ${this.sceneManager.renderer.xr ? 'Active' : 'Unknown'}`);
             
             if (DEBUG.PERFORMANCE) {
                 console.log(`⚡ Breakdown: Scene ${(moduleStartTime - appStartTime).toFixed(0)}ms | Module ${(performance.now() - moduleStartTime - totalTime).toFixed(0)}ms`);
@@ -7027,7 +7037,13 @@ class App {
     }
     
     handleCanvasClick(event) {
-        if (!this.solarSystemModule) return;
+        console.log('🖱️ Canvas clicked!');
+        if (!this.solarSystemModule) {
+            console.warn('❌ No solar system module!');
+            return;
+        }
+        
+        console.log(`🔍 Checking ${this.solarSystemModule.objects.length} objects for intersection...`);
         
         const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
         const mouse = new THREE.Vector2(
@@ -7038,6 +7054,7 @@ class App {
         this.sceneManager.raycaster.setFromCamera(mouse, this.sceneManager.camera);
         const intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
 
+        console.log(`📍 Found ${intersects.length} intersections`);
         if (intersects.length > 0) {
             let target = intersects[0].object;
             while (target.parent && !target.userData.name) {
