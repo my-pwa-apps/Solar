@@ -1625,6 +1625,9 @@ class SolarSystemModule {
         // Comet tails visibility: false = hidden (better for VR/AR)
         this.cometTailsVisible = false;
         
+        // Orbits visibility: true = visible by default
+        this.orbitsVisible = true;
+        
         // Geometry cache for reuse
         this.geometryCache = new Map();
         
@@ -5797,6 +5800,14 @@ class SolarSystemModule {
         return this.objects;
     }
     
+    toggleOrbits(visible) {
+        this.orbitsVisible = visible;
+        this.orbits.forEach(orbit => {
+            orbit.visible = visible;
+        });
+        console.log(`🛤️ Orbit paths ${visible ? 'shown' : 'hidden'}`);
+    }
+    
     updateScale() {
         // Update all planetary positions based on scale mode
         const scaleFactors = this.realisticScale ? {
@@ -6810,6 +6821,9 @@ class App {
         this.timeSpeed = 1.0;
         this.brightness = 100; // Default brightness percentage
         
+        // Make this app instance globally accessible for VR and other modules
+        window.app = this;
+        
         this.init();
     }
 
@@ -6982,14 +6996,16 @@ class App {
     }
     
     setupControls() {
-        // Time speed slider
-        const timeSpeedSlider = document.getElementById('time-speed');
-        const speedValue = document.getElementById('speed-value');
-        if (timeSpeedSlider && speedValue) {
-            timeSpeedSlider.addEventListener('input', (e) => {
-                this.timeSpeed = parseFloat(e.target.value) / 10;
-                speedValue.textContent = `${this.timeSpeed.toFixed(1)}x`;
-            }, { passive: true });
+        // Time speed control (dropdown selector)
+        const timeSpeedSelect = document.getElementById('time-speed');
+        if (timeSpeedSelect) {
+            timeSpeedSelect.addEventListener('change', (e) => {
+                this.timeSpeed = parseFloat(e.target.value);
+                console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
+            });
+            
+            // Set initial speed
+            this.timeSpeed = parseFloat(timeSpeedSelect.value);
         }
 
         // Brightness control
@@ -7000,7 +7016,20 @@ class App {
                 const brightnessMultiplier = parseFloat(e.target.value) / 100;
                 brightnessValue.textContent = `${e.target.value}%`;
                 this.sceneManager.updateBrightness(brightnessMultiplier);
-            }, { passive: true });
+            });
+        }
+        
+        // Orbit toggle button
+        const orbitsButton = document.getElementById('toggle-orbits');
+        if (orbitsButton) {
+            orbitsButton.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    const visible = !this.solarSystemModule.orbitsVisible;
+                    this.solarSystemModule.toggleOrbits(visible);
+                    orbitsButton.classList.toggle('toggle-on', visible);
+                    console.log(`🛤️ Orbits toggled: ${visible ? 'ON' : 'OFF'}`);
+                }
+            });
         }
 
         // Scale toggle button
@@ -7016,7 +7045,7 @@ class App {
                     // Recalculate positions with new scale
                     this.solarSystemModule.updateScale();
                 }
-            }, { passive: true });
+            });
         }
         
         // Labels toggle button
@@ -7033,10 +7062,10 @@ class App {
                         labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
                         labelsButton.textContent = this.sceneManager.labelsVisible ? 
                             '📊 Labels ON' : '📊 Labels OFF';
-                        if (DEBUG.enabled) console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+                        console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
                     }
                 }
-            }, { passive: true });
+            });
         }
         
         // Reset view button
@@ -7047,7 +7076,7 @@ class App {
                     this.solarSystemModule.focusedObject = null;
                 }
                 this.sceneManager.resetCamera();
-            }, { passive: true });
+            });
         }
 
         // Canvas click for object selection
