@@ -6830,31 +6830,27 @@ class App {
             // Initialize timing before animation loop
             this.lastTime = performance.now();
 
-            // Start animation loop with frame limiting
+            // Start animation loop
             this.sceneManager.animate(() => {
                 const currentTime = performance.now();
                 const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
+                this.lastTime = currentTime;
+                
+                // Debug: Log first few updates
+                if (!this._updateCount) this._updateCount = 0;
+                this._updateCount++;
+                if (this._updateCount <= 5) {
+                    console.log(`🎬 Animation frame ${this._updateCount}: deltaTime=${deltaTime.toFixed(4)}s, timeSpeed=${this.timeSpeed}`);
+                }
                 
                 // Update XR controller movement and laser pointers
                 this.sceneManager.updateXRMovement();
                 this.sceneManager.updateLaserPointers();
                 
-                // Limit to ~60 FPS and prevent huge jumps
-                if (deltaTime >= CONFIG.PERFORMANCE.frameTime / 1000) {
-                    this.lastTime = currentTime;
-                    
-                    // Debug: Log first few updates
-                    if (!this._updateCount) this._updateCount = 0;
-                    this._updateCount++;
-                    if (this._updateCount <= 5) {
-                        console.log(`🎬 Animation frame ${this._updateCount}: deltaTime=${deltaTime.toFixed(4)}s, timeSpeed=${this.timeSpeed}`);
-                    }
-                    
-                    // Update Solar System module
-                    if (this.solarSystemModule) {
-                        this.solarSystemModule.update(deltaTime, this.timeSpeed, 
-                            this.sceneManager.camera, this.sceneManager.controls);
-                    }
+                // Update Solar System module every frame
+                if (this.solarSystemModule) {
+                    this.solarSystemModule.update(deltaTime, this.timeSpeed, 
+                        this.sceneManager.camera, this.sceneManager.controls);
                 }
             });
 
