@@ -6,6 +6,174 @@ import { ARButton } from 'three/addons/webxr/ARButton.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // ===========================
+// TEXTURE CACHE SYSTEM
+// ===========================
+class TextureCache {
+    constructor() {
+        this.cache = new Map();
+        this.dbName = 'SolarSystemTextureCache';
+        this.dbVersion = 1;
+        this.storeName = 'textures';
+        this.db = null;
+        this.initPromise = this.initDB();
+    }
+
+    async initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.dbVersion);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve(this.db);
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName);
+                }
+            };
+        });
+    }
+
+    async get(key) {
+        // Check memory cache first
+        if (this.cache.has(key)) {
+            if (DEBUG.PERFORMANCE) console.log(`📦 Cache HIT (memory): ${key}`);
+            return this.cache.get(key);
+        }
+
+        // Check IndexedDB
+        try {
+            await this.initPromise;
+            const tx = this.db.transaction([this.storeName], 'readonly');
+            const store = tx.objectStore(this.storeName);
+            
+            return new Promise((resolve, reject) => {
+                const request = store.get(key);
+                request.onsuccess = () => {
+                    if (request.result) {
+                        if (DEBUG.PERFORMANCE) console.log(`📦 Cache HIT (IndexedDB): ${key}`);
+                        this.cache.set(key, request.result); // Promote to memory cache
+                        resolve(request.result);
+                    } else {
+                        if (DEBUG.PERFORMANCE) console.log(`📦 Cache MISS: ${key}`);
+                        resolve(null);
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.warn('Cache read error:', error);
+            return null;
+        }
+    }
+
+    async set(key, dataURL) {
+        // Set in memory cache
+        this.cache.set(key, dataURL);
+
+        // Set in IndexedDB for persistence
+        try {
+            await this.initPromise;
+            const tx = this.db.transaction([this.storeName], 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            
+            return new Promise((resolve, reject) => {
+                const request = store.put(dataURL, key);
+                request.onsuccess = () => {
+                    if (DEBUG.PERFORMANCE) console.log(`📦 Cache SET: ${key} (${(dataURL.length / 1024).toFixed(0)}KB)`);
+                    resolve();
+                };
+                request.onerror = () => {
+                    console.warn('Cache write error:', error);
+                    resolve(); // Don't reject, just continue
+                };
+            });
+        } catch (error) {
+            console.warn('Cache write error:', error);
+        }
+    }
+
+    async clear() {
+        this.cache.clear();
+        try {
+            await this.initPromise;
+            const tx = this.db.transaction([this.storeName], 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            await store.clear();
+            console.log('🗑️ Texture cache cleared');
+        } catch (error) {
+            console.warn('Cache clear error:', error);
+        }
+    }
+}
+
+// Global texture cache instance
+const TEXTURE_CACHE = new TextureCache();
+
+// Warm up cache with essential textures (run in background)
+async function warmupTextureCache() {
+    const essentialTextures = [
+        'earth_texture_4096',
+        'moon_texture_2048',
+        'mars_texture_2048'
+    ];
+    
+    let cached = 0;
+    for (const key of essentialTextures) {
+        if (await TEXTURE_CACHE.get(key)) {
+            cached++;
+        }
+    }
+    
+    if (DEBUG.PERFORMANCE) {
+        console.log(`📦 Texture cache: ${cached}/${essentialTextures.length} essential textures cached`);
+    }
+    
+    return cached === essentialTextures.length;
+}
+
+// Helper function to wrap texture generation with caching
+async function cachedTextureGeneration(cacheKey, generatorFn) {
+    // Try to load from cache
+    const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
+    if (cachedDataURL) {
+        const startTime = performance.now();
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = img;
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.needsUpdate = true;
+                if (DEBUG.PERFORMANCE) {
+                    console.log(`⚡ Loaded ${cacheKey} from cache in ${(performance.now() - startTime).toFixed(0)}ms`);
+                }
+                resolve(texture);
+            };
+            img.src = cachedDataURL;
+        });
+    }
+    
+    // Generate texture if not cached
+    const startTime = performance.now();
+    const { canvas, texture } = await generatorFn();
+    
+    // Cache for future use
+    const dataURL = canvas.toDataURL('image/png');
+    TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => 
+        console.warn('Failed to cache texture:', err)
+    );
+    
+    if (DEBUG.PERFORMANCE) {
+        console.log(`🎨 Generated ${cacheKey} in ${(performance.now() - startTime).toFixed(0)}ms`);
+    }
+    
+    return texture;
+}
+
+// ===========================
 // CONSTANTS & CONFIG
 // ===========================
 
@@ -119,7 +287,7 @@ class SceneManager {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.85; // Further reduced to prevent bright side washout (1.0→0.85)
+        this.renderer.toneMappingExposure = 0.80; // Further reduced to prevent bright side washout (0.85→0.80)
         
         // Performance optimizations
         this.renderer.sortObjects = false; // Skip sorting for better performance
@@ -308,15 +476,16 @@ class SceneManager {
                 }
                 
                 // Show welcome message and instructions
-                console.log('🥽 VR SESSION STARTED');
-                console.log('📋 CONTROLS:');
-                console.log('   🕹️ Left Stick: Move forward/back/strafe');
-                console.log('   🕹️ Right Stick: Turn left/right, move up/down');
-                console.log('   🎯 Trigger: Sprint mode (hold while moving)');
-                console.log('   🤏 Grip Button: Toggle VR menu (pause, controls, etc.)');
-                console.log('   👉 Point + Trigger: Select planets');
-                console.log('');
-                console.log('💡 TIP: Press GRIP BUTTON to open VR menu!');
+                if (DEBUG.enabled || DEBUG.VR) {
+                    console.log('🥽 VR SESSION STARTED');
+                    console.log('📋 CONTROLS:');
+                    console.log('   🕹️ Left Stick: Move forward/back/strafe');
+                    console.log('   🕹️ Right Stick: Turn left/right, move up/down');
+                    console.log('   🎯 Trigger: Sprint mode (hold while moving)');
+                    console.log('   🤏 Grip Button: Toggle VR menu (pause, controls, etc.)');
+                    console.log('   👉 Point + Trigger: Select planets');
+                    console.log('💡 TIP: Press GRIP BUTTON to open VR menu!');
+                }
                 
                 // Hide VR UI panel initially - let user toggle with grip
                 if (this.vrUIPanel) {
@@ -485,8 +654,10 @@ class SceneManager {
         this.vrUICanvas = canvas;
         this.vrUIContext = ctx;
         
-        console.log('🥽 ✅ VR UI Panel created with', this.vrButtons.length, 'buttons');
-        console.log('🥽 📊 Button layout:', this.vrButtons.map(b => `"${b.label}" at (${b.x},${b.y})`));
+        if (DEBUG.enabled || DEBUG.VR) {
+            console.log('🥽 ✅ VR UI Panel created with', this.vrButtons.length, 'buttons');
+            console.log('🥽 📊 Button layout:', this.vrButtons.map(b => `"${b.label}" at (${b.x},${b.y})`));
+        }
     }
     
     onSelectStart(controller, index) {
@@ -620,9 +791,9 @@ class SceneManager {
                     if (laser) laser.visible = true;
                     if (pointer) pointer.visible = true;
                 });
-                console.log('🎯 Lasers enabled for menu interaction');
                 
                 if (DEBUG.VR) {
+                    console.log('🎯 Lasers enabled for menu interaction');
                     console.log('🥽 VR Menu OPENED');
                     console.log('   Position:', this.vrUIPanel.position);
                     console.log('   Press grip button again to close');
@@ -827,10 +998,10 @@ class SceneManager {
                 }
                 break;
             case 'hide':
-                console.log('🥽 Hiding VR menu');
+                if (DEBUG.VR) console.log('🥽 Hiding VR menu');
                 if (this.vrUIPanel) {
                     this.vrUIPanel.visible = false;
-                    console.log('🥽 ✅ VR menu hidden');
+                    if (DEBUG.VR) console.log('🥽 ✅ VR menu hidden');
                 }
                 break;
             default:
@@ -863,8 +1034,8 @@ class SceneManager {
         
         // Get current state
         const app = window.app || this;
-        const speed = app.topicManager?.timeSpeed || 0;
-        const brightness = app.topicManager?.brightness || 50;
+        const speed = app.timeSpeed || 0;
+        const brightness = app.brightness || 50;
         
         // Mode text
         let modeText = '▶️ Playing';
@@ -884,14 +1055,12 @@ class SceneManager {
         ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
         
         this.vrUIPanel.material.map.needsUpdate = true;
-        
-        console.log('?? VR Status:', message);
     }
     
     updateVRUI() {
         // Redraw slider with current speed
         const app = window.app || this;
-        const speed = app.topicManager?.timeSpeed || 0;
+        const speed = app.timeSpeed || 0;
         const ctx = this.vrUIContext;
         
         // Clear slider area
@@ -1479,50 +1648,46 @@ class SolarSystemModule {
     }
 
     async init(scene) {
+        const initStartTime = performance.now();
+        
+        // PHASE 1: Critical content (show immediately)
         if (this.uiManager) this.uiManager.showLoading('Creating the Sun...');
         await this.createSun(scene);
         
         if (this.uiManager) this.uiManager.showLoading('Building inner planets...');
         await this.createInnerPlanets(scene);
         
-        if (this.uiManager) this.uiManager.showLoading('Creating asteroid belt...');
-        await this.createAsteroidBelt(scene);
+        // Hide loading screen early - planets are ready
+        if (this.uiManager) {
+            setTimeout(() => this.uiManager.hideLoading(), 100);
+        }
         
-        if (this.uiManager) this.uiManager.showLoading('Building outer planets...');
-        await this.createOuterPlanets(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Adding Kuiper Belt objects...');
-        await this.createKuiperBelt(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Creating starfield...');
-        this.createStarfield(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Adding orbital paths...');
-        this.createOrbitalPaths(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Adding distant stars...');
-        this.createDistantStars(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Creating nebulae...');
-        this.createNebulae(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Creating constellations...');
-        this.createConstellations(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Adding galaxies...');
-        this.createGalaxies(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Generating comets...');
-        this.createComets(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Creating satellites...');
-        this.createSatellites(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Creating spacecraft & rovers...');
-        this.createSpacecraft(scene);
-        
-        if (this.uiManager) this.uiManager.showLoading('Creating labels...');
-        this.createLabels();
+        // PHASE 2: Secondary content (load in background)
+        // Use non-blocking setTimeout to allow rendering to start
+        setTimeout(async () => {
+            await this.createAsteroidBelt(scene);
+            await this.createOuterPlanets(scene);
+            await this.createKuiperBelt(scene);
+            
+            // PHASE 3: Background decorations
+            this.createStarfield(scene);
+            this.createOrbitalPaths(scene);
+            this.createDistantStars(scene);
+            this.createNebulae(scene);
+            this.createConstellations(scene);
+            this.createGalaxies(scene);
+            
+            // PHASE 4: Dynamic objects
+            this.createComets(scene);
+            this.createSatellites(scene);
+            this.createSpacecraft(scene);
+            this.createLabels();
+            
+            const totalTime = performance.now() - initStartTime;
+            if (DEBUG.PERFORMANCE) {
+                console.log(`⚡ Full initialization completed in ${totalTime.toFixed(0)}ms`);
+            }
+        }, 10);
         
         return true;
     }
@@ -1564,7 +1729,7 @@ class SolarSystemModule {
         // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
         // In space, light doesn't decay with distance (inverse square law applies but over HUGE distances)
         // BALANCED: Reduced intensity to prevent washing out textures on sunny side
-        const sunLight = new THREE.PointLight(0xFFFAE8, 10, 0, 0); // Warm white, reduced intensity (12→10)
+        const sunLight = new THREE.PointLight(0xFFFAE8, 9, 0, 0); // Warm white, reduced intensity (10→9)
         sunLight.name = 'sunLight';
         sunLight.position.set(0, 0, 0);
         sunLight.castShadow = CONFIG.QUALITY.shadows;
@@ -1578,13 +1743,13 @@ class SolarSystemModule {
         this.sun.userData.sunLight = sunLight;
         
         // Ambient light - increased to see dark sides clearly
-        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 0.95); // Dark blue-grey ambient (0.75→0.95)
+        const ambientLight = new THREE.AmbientLight(0x1a1a2e, 1.05); // Dark blue-grey ambient (0.95→1.05)
         ambientLight.name = 'ambientLight';
         scene.add(ambientLight);
         
         if (DEBUG.enabled) {
-            console.log('💡 Lighting: Sun intensity 10 (warm white), Ambient 0.95, Tone mapping 0.85');
-            console.log('   - Further balanced: reduced bright side glare, enhanced dark side visibility');
+            console.log('💡 Lighting: Sun intensity 9 (warm white), Ambient 1.05, Tone mapping 0.80');
+            console.log('   - Finely balanced: reduced bright side glare, enhanced dark side visibility');
             console.log('   - Lower sun intensity + exposure prevents texture washout');
             console.log('   - Higher ambient light makes dark sides clearly visible');
             console.log('   - Sun light reaches all planets without decay');
@@ -2519,7 +2684,29 @@ class SolarSystemModule {
         return this.loadPlanetTextureReal('Moon', textureURLs, this.createMoonTexture, size);
     }
     
-    createEarthTexture(size) {
+    async createEarthTexture(size) {
+        const cacheKey = `earth_texture_${size}`;
+        
+        // Try to load from cache
+        const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
+        if (cachedDataURL) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const texture = new THREE.CanvasTexture(canvas);
+                    texture.needsUpdate = true;
+                    resolve(texture);
+                };
+                img.src = cachedDataURL;
+            });
+        }
+        
+        // Generate texture if not cached
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -2698,6 +2885,12 @@ class SolarSystemModule {
             console.log(`🌍 Earth texture: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
         }
         
+        // Cache the texture for future use
+        const dataURL = canvas.toDataURL('image/png');
+        TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => 
+            console.warn('Failed to cache texture:', err)
+        );
+        
         // Create texture BEFORE adding clouds
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
@@ -2710,18 +2903,19 @@ class SolarSystemModule {
         }
         
         // ULTIMATE TEST: Create a downloadable preview
-        try {
-            const dataURL = canvas.toDataURL('image/png');
-            console.log('??? TEXTURE PREVIEW: Right-click and "Open in new tab" to see the actual texture:');
-            console.log(dataURL.substring(0, 100) + '...');
-            console.log('   Copy this and paste in browser to view Earth texture:');
-            console.log('   %c[VIEW EARTH TEXTURE]', 'color: #00ff00; font-size: 16px; font-weight: bold; background: #000; padding: 5px;');
-            console.log('   Length:', dataURL.length, 'bytes');
-            // Store for inspection
-            window._earthTextureDataURL = dataURL;
-            console.log('   Stored in: window._earthTextureDataURL');
-        } catch (e) {
-            console.error('? Failed to create texture preview:', e);
+        if (DEBUG.TEXTURES) {
+            try {
+                console.log('??? TEXTURE PREVIEW: Right-click and "Open in new tab" to see the actual texture:');
+                console.log(dataURL.substring(0, 100) + '...');
+                console.log('   Copy this and paste in browser to view Earth texture:');
+                console.log('   %c[VIEW EARTH TEXTURE]', 'color: #00ff00; font-size: 16px; font-weight: bold; background: #000; padding: 5px;');
+                console.log('   Length:', dataURL.length, 'bytes');
+                // Store for inspection
+                window._earthTextureDataURL = dataURL;
+                console.log('   Stored in: window._earthTextureDataURL');
+            } catch (e) {
+                console.error('? Failed to create texture preview:', e);
+            }
         }
         
         return texture;
@@ -3834,7 +4028,7 @@ class SolarSystemModule {
         // Add atmosphere for Earth with clouds
         if (config.atmosphere) {
             // TEMPORARILY DISABLED FOR DEBUGGING - Testing if clouds are causing blue sphere
-            console.log('?? ATMOSPHERE DISABLED FOR DEBUGGING - If Earth shows continents now, clouds were the issue!');
+            if (DEBUG.enabled) console.log('?? ATMOSPHERE DISABLED FOR DEBUGGING - If Earth shows continents now, clouds were the issue!');
             
             /* DISABLED CLOUD LAYER - TESTING
             // Cloud layer with procedural patterns - VERY subtle
@@ -6361,6 +6555,9 @@ class QuantumModule {
 // ===========================
 // TOPIC MANAGER
 // ===========================
+// TOPIC MANAGER (UNUSED - Commented out for single-topic app)
+// ===========================
+/* UNUSED CLASS - Kept for reference if multi-topic support needed in future
 class TopicManager {
     constructor(sceneManager, uiManager) {
         this.sceneManager = sceneManager;
@@ -6560,6 +6757,7 @@ class TopicManager {
         }
     }
 }
+*/ // END OF UNUSED TopicManager CLASS
 
 // ===========================
 // MAIN APPLICATION
@@ -6577,7 +6775,15 @@ class App {
     }
 
     async init() {
+        const appStartTime = performance.now();
+        
         try {
+            // Check cache status
+            const cacheReady = await warmupTextureCache();
+            if (cacheReady && DEBUG.PERFORMANCE) {
+                console.log('⚡ Fast start: All essential textures cached');
+            }
+            
             // Initialize managers
             this.sceneManager = new SceneManager();
             this.uiManager = new UIManager();
@@ -6591,8 +6797,13 @@ class App {
             this.setupHelpButton();
 
             // Load Solar System module directly
+            const moduleStartTime = performance.now();
             this.solarSystemModule = new SolarSystemModule(this.uiManager);
             await this.solarSystemModule.init(this.sceneManager.scene);
+            
+            if (DEBUG.PERFORMANCE) {
+                console.log(`⚡ Module loaded in ${(performance.now() - moduleStartTime).toFixed(0)}ms`);
+            }
             
             // Setup UI for Solar System
             this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
@@ -6621,8 +6832,14 @@ class App {
                 }
             });
 
-            console.log('🚀 Space Explorer initialized successfully!');
+            const totalTime = performance.now() - appStartTime;
+            console.log(`🚀 Space Explorer initialized in ${totalTime.toFixed(0)}ms!`);
             console.log(`📊 Performance: ${this.sceneManager.renderer.info.memory.geometries} geometries, ${this.sceneManager.renderer.info.memory.textures} textures`);
+            
+            if (DEBUG.PERFORMANCE) {
+                console.log(`⚡ Breakdown: Scene ${(moduleStartTime - appStartTime).toFixed(0)}ms | Module ${(performance.now() - moduleStartTime - totalTime).toFixed(0)}ms`);
+                console.log(`💾 Storage: ${(await TEXTURE_CACHE.cache.size)} textures in memory`);
+            }
         } catch (error) {
             console.error('❌ Failed to initialize Space Explorer:', error);
             this.sceneManager?.showError('Failed to start Space Explorer. Please refresh the page.');
@@ -6937,7 +7154,7 @@ class App {
                         const apollo = this.spacecraft.find(s => s.userData.name.includes('Apollo'));
                         if (apollo) {
                             this.focusOnObject(apollo, this.camera, this.controls);
-                            console.log('?? Focusing on Apollo 11 Landing Site');
+                            if (DEBUG.enabled) console.log('?? Focusing on Apollo 11 Landing Site');
                         }
                     }
                     break;
