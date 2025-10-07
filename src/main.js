@@ -5429,18 +5429,11 @@ class SolarSystemModule {
         const pauseMode = sceneManager.pauseMode || 'none';
         
         // Calculate effective time speeds based on pause mode
-        let orbitalSpeed = timeSpeed; // Solar system orbits
-        let rotationSpeed = timeSpeed; // Planet rotations
-        let moonSpeed = timeSpeed; // Moon orbits
-        
-        // Handle realtime mode - calculate speeds based on actual astronomical data
-        if (timeSpeed === 'realtime') {
-            // In realtime mode, Earth completes 1 orbit in 1 real-world day
-            // Base multiplier: 365.25 (to compress 365.25 days into 1 day)
-            orbitalSpeed = 365.25;
-            rotationSpeed = 365.25;
-            moonSpeed = 365.25;
-        }
+        // NOTE: In realtime mode, planets/moons calculate speeds directly from ASTRONOMICAL_DATA
+        // Other objects (spacecraft, comets, nebulae) use timeSpeed = 1 for realtime
+        let orbitalSpeed = timeSpeed === 'realtime' ? 1 : timeSpeed; // For non-astronomical objects
+        let rotationSpeed = timeSpeed === 'realtime' ? 1 : timeSpeed; // For rotations
+        let moonSpeed = timeSpeed === 'realtime' ? 1 : timeSpeed; // For moon orbits (calculated per moon)
         
         if (pauseMode === 'all') {
             // Pause everything
@@ -5530,20 +5523,27 @@ class SolarSystemModule {
                     planet.userData.moons.forEach(moon => {
                         if (moon.userData) {
                             // Calculate moon-specific orbital speed for realtime mode
-                            let moonOrbitalSpeed = moonSpeed;
+                            let moonAngleIncrement;
                             if (timeSpeed === 'realtime' && moon.userData.name) {
                                 const moonName = moon.userData.name.toLowerCase();
                                 const astroData = this.ASTRONOMICAL_DATA[moonName];
                                 if (astroData && astroData.orbitalPeriod) {
-                                    // Moon speed relative to Earth's orbital speed
-                                    const earthPeriod = this.ASTRONOMICAL_DATA.earth.orbitalPeriod;
-                                    const speedRatio = earthPeriod / astroData.orbitalPeriod;
-                                    moonOrbitalSpeed = speedRatio * moonSpeed;
+                                    // REALTIME MODE: Calculate directly from moon's orbital period
+                                    // Moon's orbitalPeriod is in Earth days
+                                    const orbitalPeriodDays = astroData.orbitalPeriod;
+                                    const orbitalPeriodSeconds = orbitalPeriodDays * 86400;
+                                    const anglePerSecond = (2 * Math.PI) / orbitalPeriodSeconds;
+                                    moonAngleIncrement = anglePerSecond * deltaTime;
+                                } else {
+                                    moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
                                 }
+                            } else {
+                                // EDUCATIONAL mode: use pre-set speed
+                                moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
                             }
                             
-                            // Moons orbit their planet (affected by moonSpeed)
-                            moon.userData.angle += moon.userData.speed * moonOrbitalSpeed;
+                            // Moons orbit their planet
+                            moon.userData.angle += moonAngleIncrement;
                             
                             // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
                             // these positions are RELATIVE to the planet's position, not world coordinates!
