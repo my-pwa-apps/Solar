@@ -643,55 +643,42 @@ class SceneManager {
     }
     
     setupVRUI() {
-        // Create a floating VR control panel
+        // Create a minimal floating VR control panel matching desktop menu
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
-        canvas.height = 768;
+        canvas.height = 600; // Reduced height for minimal menu
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Background
-        ctx.fillStyle = 'rgba(10, 10, 30, 0.95)';
-        ctx.fillRect(0, 0, 1024, 768);
+        // Background with transparency
+        ctx.fillStyle = 'rgba(10, 10, 30, 0.9)';
+        ctx.fillRect(0, 0, 1024, 600);
         
         // Title
         ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 60px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
+        ctx.font = 'bold 48px "Segoe UI", Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('🚀 Space Explorer VR', 512, 80);
+        ctx.fillText('🚀 Space Explorer VR', 512, 60);
         
-        // Subtitle
-        ctx.fillStyle = '#fff';
-        ctx.font = '28px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
-        ctx.fillText('Use Triggers to Select Buttons', 512, 120);
-        
-        // Initialize pause mode state
-        this.pauseMode = 'none'; // 'none', 'orbital', 'all'
-        
-        // Define buttons (canvas is 1024x768)
+        // Define buttons matching desktop menu (canvas is 1024x600)
         this.vrButtons = [
-            // Row 1: Playback controls
-            { x: 50, y: 160, w: 150, h: 70, label: '⏸️ All', action: 'pauseall', color: '#e74c3c' },
-            { x: 210, y: 160, w: 150, h: 70, label: '⏸️ Orbit', action: 'pauseorbit', color: '#e67e22' },
-            { x: 370, y: 160, w: 150, h: 70, label: '▶️ Play', action: 'play', color: '#2ecc71' },
-            { x: 530, y: 160, w: 140, h: 70, label: '⏪ Slower', action: 'speed--', color: '#9b59b6' },
-            { x: 680, y: 160, w: 140, h: 70, label: '⏩ Faster', action: 'speed++', color: '#3498db' },
-            { x: 830, y: 160, w: 140, h: 70, label: '⚡ 1x', action: 'speedreset', color: '#16a085' },
+            // Row 1: Animation Speed (matching desktop time-speed select)
+            { x: 50, y: 100, w: 180, h: 70, label: '⏸️ Paused', action: 'speed0', color: '#e74c3c' },
+            { x: 240, y: 100, w: 180, h: 70, label: '▶️ Animated', action: 'speed1', color: '#2ecc71' },
             
-            // Row 2: Visual controls
-            { x: 50, y: 250, w: 145, h: 70, label: '💡 +', action: 'brightup', color: '#f39c12' },
-            { x: 205, y: 250, w: 145, h: 70, label: '💡 -', action: 'brightdown', color: '#d68910' },
-            { x: 360, y: 250, w: 145, h: 70, label: '☄️ Tails', action: 'tails', color: '#1abc9c' },
-            { x: 515, y: 250, w: 145, h: 70, label: '🎯 Lasers', action: 'togglelasers', color: '#3498db' },
-            { x: 670, y: 250, w: 145, h: 70, label: '📏 Scale', action: 'scale', color: '#8e44ad' },
-            { x: 825, y: 250, w: 145, h: 70, label: '🔄 Reset', action: 'reset', color: '#34495e' },
+            // Row 2: Visual Controls (matching desktop buttons)
+            { x: 50, y: 190, w: 180, h: 70, label: '🛤️ Orbits', action: 'orbits', color: '#3498db' },
+            { x: 240, y: 190, w: 180, h: 70, label: '📊 Labels', action: 'labels', color: '#9b59b6' },
+            { x: 430, y: 190, w: 200, h: 70, label: '� Scale', action: 'scale', color: '#e67e22' },
+            { x: 640, y: 190, w: 180, h: 70, label: '� Reset', action: 'reset', color: '#16a085' },
             
-            // Row 3: Navigation
-            { x: 50, y: 340, w: 460, h: 80, label: '🌍 Focus Earth', action: 'earth', color: '#16a085' },
-            { x: 520, y: 340, w: 450, h: 80, label: '🏠 Reset View', action: 'reset', color: '#2980b9' },
+            // Row 3: Additional VR Controls
+            { x: 50, y: 280, w: 200, h: 70, label: '🎯 Lasers', action: 'togglelasers', color: '#1abc9c' },
+            { x: 260, y: 280, w: 280, h: 70, label: '� Apollo 11', action: 'apollo', color: '#2a5298' },
+            { x: 550, y: 280, w: 270, h: 70, label: '🌍 Focus Earth', action: 'earth', color: '#27ae60' },
             
-            // Row 4: Menu control
-            { x: 50, y: 450, w: 460, h: 80, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' },
-            { x: 520, y: 450, w: 450, h: 80, label: '🚪 Exit VR', action: 'exitvr', color: '#c0392b' }
+            // Row 4: Menu Control
+            { x: 50, y: 370, w: 400, h: 80, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' },
+            { x: 460, y: 370, w: 360, h: 80, label: '🚪 Exit VR', action: 'exitvr', color: '#c0392b' }
         ];
         
         // Draw buttons
@@ -706,78 +693,35 @@ class SceneManager {
             
             // Button border
             ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
             
             // Button text
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 32px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
+            ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 12);
+            ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 10);
         });
-        
-        // Time Speed Slider
-        const sliderY = 560;
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 32px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('⏱️ Time Speed:', 50, sliderY);
-        
-        // Slider track
-        const sliderX = 280;
-        const sliderW = 660;
-        const sliderH = 20;
-        ctx.fillStyle = '#34495e';
-        ctx.fillRect(sliderX, sliderY - 15, sliderW, sliderH);
-        
-        // Slider markers (0, 1x, 5x, 10x)
-        ctx.fillStyle = '#7f8c8d';
-        ctx.font = '20px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('0', sliderX, sliderY + 45);
-        ctx.fillText('1x', sliderX + sliderW * 0.1, sliderY + 45);
-        ctx.fillText('5x', sliderX + sliderW * 0.5, sliderY + 45);
-        ctx.fillText('10x', sliderX + sliderW, sliderY + 45);
-        
-        // Slider handle (will update dynamically)
-        const speed = 1; // Default
-        const handleX = sliderX + (sliderW * (speed / 10));
-        ctx.fillStyle = '#3498db';
-        ctx.beginPath();
-        ctx.arc(handleX, sliderY - 5, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        
-        // Store slider info for interaction
-        this.vrSlider = {
-            x: sliderX,
-            y: sliderY - 15,
-            w: sliderW,
-            h: sliderH,
-            min: 0,
-            max: 10
-        };
         
         // Status bar
         ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 640, 1024, 128);
+        ctx.fillRect(0, 470, 1024, 130);
         ctx.fillStyle = '#0f0';
-        ctx.font = 'bold 28px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
+        ctx.font = 'bold 26px "Segoe UI", Arial, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Mode: ▶️ Playing | Speed: 1x | Brightness: 50%', 512, 685);
-        ctx.fillStyle = '#fff';
-        ctx.font = '22px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
-        ctx.fillText('⏸️ All = Pause Everything | ⏸️ Orbit = Pause Solar Orbits Only', 512, 720);
-        ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
+        ctx.fillText('🎮 Use Laser to Click Buttons', 512, 515);
+        ctx.fillStyle = '#aaa';
+        ctx.font = '22px "Segoe UI", Arial, sans-serif';
+        ctx.fillText('Press GRIP button to open/close this menu', 512, 555);
+        
+        // No slider needed - simplified to match desktop menu
         
         // Create texture
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
         
-        // Create plane
-        const geometry = new THREE.PlaneGeometry(3, 2.25);
+        // Create plane (adjusted for new aspect ratio)
+        const geometry = new THREE.PlaneGeometry(3, 1.76); // 1024x600 aspect ratio
         const material = new THREE.MeshBasicMaterial({ 
             map: texture, 
             transparent: true,
@@ -1014,88 +958,41 @@ class SceneManager {
         }
         
         switch(action) {
-            case 'pauseall':
-                // Pause everything - set timeSpeed to 0
+            case 'speed0':
+                // Paused (matching desktop time-speed=0)
                 if (app) {
                     app.timeSpeed = 0;
-                    this.updateVRStatus('⏸️ PAUSED - Everything Stopped');
-                    this.updateVRUI();
-                    console.log('⏸️ VR: Paused all motion');
+                    this.updateVRStatus('⏸️ Paused');
+                    console.log('⏸️ VR: Paused');
                 }
                 break;
                 
-            case 'pauseorbit':
-                // Pause solar orbits only (planets stop moving but keep rotating)
-                if (app.solarSystemModule) {
-                    const module = app.solarSystemModule;
-                    if (module.pauseOrbits !== undefined) {
-                        module.pauseOrbits = true;
-                        this.updateVRStatus('⏸️ ORBITAL PAUSE - Planets Frozen in Orbit');
-                        this.updateVRUI();
-                        console.log('⏸️ VR: Paused orbital motion only');
-                    }
-                }
-                break;
-                
-            case 'play':
-                // Resume everything
-                if (app) {
-                    if (app.timeSpeed === 0) {
-                        app.timeSpeed = 1;
-                    }
-                    if (app.solarSystemModule) {
-                        app.solarSystemModule.pauseOrbits = false;
-                    }
-                    this.updateVRStatus('▶️ PLAYING - All Motion Active');
-                    this.updateVRUI();
-                    console.log('▶️ VR: Resumed motion');
-                }
-                break;
-            case 'speed++':
-            case 'speed--':
-                if (app) {
-                    // Toggle: Paused (0) <-> Animated (1)
-                    if (app.timeSpeed === 0) {
-                        app.timeSpeed = 1;
-                        this.updateVRStatus('▶️ Animated');
-                    } else {
-                        app.timeSpeed = 0;
-                        this.updateVRStatus('⏸️ Paused');
-                    }
-                    this.updateVRUI();
-                    console.log(`⚡ VR: Speed mode: ${app.timeSpeed}x`);
-                }
-                break;
-                
-            case 'speedreset':
+            case 'speed1':
+                // Animated (matching desktop time-speed=1)
                 if (app) {
                     app.timeSpeed = 1;
                     this.updateVRStatus('▶️ Animated');
-                    this.updateVRUI();
-                    console.log('⚡ VR: Speed reset to Educational (1x)');
+                    console.log('▶️ VR: Animated');
                 }
                 break;
-            case 'brightup':
-                if (app) {
-                    app.brightness = Math.min((app.brightness || 100) + 10, 200);
-                    this.updateBrightness(app.brightness / 100);
-                    this.updateVRStatus(`💡 Brightness: ${app.brightness}%`);
-                }
+                
+            case 'orbits':
+                // Toggle orbits (matching desktop toggle-orbits button)
+                document.getElementById('toggle-orbits')?.click();
+                this.updateVRStatus('🛤️ Orbits Toggled');
                 break;
-            case 'brightdown':
-                if (app) {
-                    app.brightness = Math.max((app.brightness || 100) - 10, 20);
-                    this.updateBrightness(app.brightness / 100);
-                    this.updateVRStatus(`💡 Brightness: ${app.brightness}%`);
-                }
+                
+            case 'labels':
+                // Toggle labels (matching desktop toggle-details button)
+                document.getElementById('toggle-details')?.click();
+                this.updateVRStatus('📊 Labels Toggled');
                 break;
-            case 'tails':
-                if (app.solarSystemModule) {
-                    const module = app.solarSystemModule;
-                    module.cometTailsVisible = !module.cometTailsVisible;
-                    this.updateVRStatus(`☄️ Tails ${module.cometTailsVisible ? 'ON' : 'OFF'}`);
-                }
+            case 'scale':
+                // Toggle scale (matching desktop toggle-scale button)
+                document.getElementById('toggle-scale')?.click();
+                this.updateVRStatus('📏 Scale Toggled');
                 break;
+                
             case 'togglelasers':
                 this.lasersVisible = !this.lasersVisible;
                 // Toggle visibility of all laser pointers
@@ -1108,13 +1005,11 @@ class SceneManager {
                 this.updateVRStatus(`🎯 Lasers ${this.lasersVisible ? 'ON' : 'OFF'}`);
                 console.log(`🎯 VR Laser pointers ${this.lasersVisible ? 'visible' : 'hidden'}`);
                 break;
-            case 'scale':
-                if (app.solarSystemModule) {
-                    const module = app.solarSystemModule;
-                    module.realisticScale = !module.realisticScale;
-                    module.updateScale();
-                    this.updateVRStatus(`📏 ${module.realisticScale ? 'Realistic' : 'Educational'} Scale`);
-                }
+                
+            case 'apollo':
+                // Launch Apollo 11 mission (matching desktop apollo-button)
+                document.getElementById('apollo-button')?.click();
+                this.updateVRStatus('� Apollo 11 Mission');
                 break;
             case 'reset':
                 this.resetCamera();
@@ -6460,6 +6355,156 @@ class SolarSystemModule {
         });
     }
 
+    createHyperrealisticISS(satData) {
+        // Create detailed ISS model with all major modules
+        // Real ISS: 109m long × 73m wide × 20m tall, 419,725 kg
+        const iss = new THREE.Group();
+        const scale = satData.size / 3; // Scale factor for visibility
+        
+        // Materials
+        const moduleMaterial = new THREE.MeshStandardMaterial({
+            color: 0xE8E8E8, // White/silver modules
+            roughness: 0.5,
+            metalness: 0.7
+        });
+        
+        const solarPanelMaterial = new THREE.MeshStandardMaterial({
+            color: 0x1a3d5c, // Dark blue solar panels
+            roughness: 0.2,
+            metalness: 0.9,
+            emissive: 0x0a1a2e,
+            emissiveIntensity: 0.1
+        });
+        
+        const trussMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8B8B8B, // Gray truss
+            roughness: 0.6,
+            metalness: 0.8
+        });
+        
+        // 1. Integrated Truss Structure (ITS) - Main backbone (109m long)
+        const trussGeometry = new THREE.BoxGeometry(scale * 36, scale * 0.5, scale * 0.5);
+        const mainTruss = new THREE.Mesh(trussGeometry, trussMaterial);
+        mainTruss.position.set(0, 0, 0);
+        iss.add(mainTruss);
+        
+        // 2. Pressurized Modules (connected along truss)
+        // Zarya (FGB) - Russian control module
+        const zaryaGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 4.2, 16);
+        const zarya = new THREE.Mesh(zaryaGeometry, moduleMaterial);
+        zarya.rotation.z = Math.PI / 2;
+        zarya.position.set(-scale * 2, 0, 0);
+        iss.add(zarya);
+        
+        // Unity (Node 1) - US connecting module
+        const unityGeometry = new THREE.CylinderGeometry(scale * 1.5, scale * 1.5, scale * 1.8, 16);
+        const unity = new THREE.Mesh(unityGeometry, moduleMaterial);
+        unity.rotation.z = Math.PI / 2;
+        unity.position.set(scale * 0.5, 0, 0);
+        iss.add(unity);
+        
+        // Destiny Lab - US laboratory
+        const destinyGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 2.8, 16);
+        const destiny = new THREE.Mesh(destinyGeometry, moduleMaterial);
+        destiny.rotation.z = Math.PI / 2;
+        destiny.position.set(scale * 2.5, 0, 0);
+        iss.add(destiny);
+        
+        // Columbus - European laboratory
+        const columbusGeometry = new THREE.CylinderGeometry(scale * 1.3, scale * 1.3, scale * 2.2, 16);
+        const columbus = new THREE.Mesh(columbusGeometry, moduleMaterial);
+        columbus.rotation.x = Math.PI / 2;
+        columbus.position.set(scale * 1, 0, -scale * 2);
+        iss.add(columbus);
+        
+        // Kibo - Japanese laboratory (largest module)
+        const kiboGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 3.6, 16);
+        const kibo = new THREE.Mesh(kiboGeometry, moduleMaterial);
+        kibo.rotation.x = Math.PI / 2;
+        kibo.position.set(scale * 2, 0, scale * 2.5);
+        iss.add(kibo);
+        
+        // 3. Russian Segment Modules
+        // Zvezda - Service module (living quarters)
+        const zvezdaGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 4.3, 16);
+        const zvezda = new THREE.Mesh(zvezdaGeometry, moduleMaterial);
+        zvezda.rotation.z = Math.PI / 2;
+        zvezda.position.set(-scale * 5, 0, 0);
+        iss.add(zvezda);
+        
+        // Poisk & Rassvet - Docking modules
+        const poiskGeometry = new THREE.CylinderGeometry(scale * 0.8, scale * 0.8, scale * 1.3, 12);
+        const poisk = new THREE.Mesh(poiskGeometry, moduleMaterial);
+        poisk.position.set(-scale * 5, scale * 1.8, 0);
+        iss.add(poisk);
+        
+        // 4. Solar Arrays - 8 arrays total (73m wingspan)
+        const solarArrayGeometry = new THREE.BoxGeometry(scale * 11.5, scale * 0.05, scale * 3.5);
+        
+        // Port arrays (4 arrays on left side)
+        for (let i = 0; i < 2; i++) {
+            const array = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+            array.position.set(-scale * 10 - i * scale * 2, scale * 2.5, 0);
+            iss.add(array);
+            
+            const array2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+            array2.position.set(-scale * 10 - i * scale * 2, -scale * 2.5, 0);
+            iss.add(array2);
+        }
+        
+        // Starboard arrays (4 arrays on right side)
+        for (let i = 0; i < 2; i++) {
+            const array = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+            array.position.set(scale * 10 + i * scale * 2, scale * 2.5, 0);
+            iss.add(array);
+            
+            const array2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+            array2.position.set(scale * 10 + i * scale * 2, -scale * 2.5, 0);
+            iss.add(array2);
+        }
+        
+        // 5. Radiators - Heat dissipation panels
+        const radiatorGeometry = new THREE.BoxGeometry(scale * 10, scale * 0.05, scale * 1.5);
+        const radiatorMaterial = new THREE.MeshStandardMaterial({
+            color: 0xC0C0C0,
+            roughness: 0.3,
+            metalness: 0.9
+        });
+        
+        for (let i = 0; i < 2; i++) {
+            const radiator = new THREE.Mesh(radiatorGeometry, radiatorMaterial);
+            radiator.position.set(-scale * 8 + i * scale * 16, 0, scale * 3);
+            iss.add(radiator);
+        }
+        
+        // 6. Canadarm2 - Robotic arm
+        const armGeometry = new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 5.7, 8);
+        const canadarm = new THREE.Mesh(armGeometry, trussMaterial);
+        canadarm.rotation.z = Math.PI / 4;
+        canadarm.position.set(scale * 1, scale * 1.5, 0);
+        iss.add(canadarm);
+        
+        // 7. Add glow marker for visibility
+        const glowGeometry = new THREE.SphereGeometry(scale * 0.8, 16, 16);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: satData.color,
+            transparent: true,
+            opacity: 0.6
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        iss.add(glow);
+        
+        // Enable shadows for realism
+        iss.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        
+        return iss;
+    }
+
     createSatellites(scene) {
         // Create Earth satellites (ISS and important satellites)
         this.satellites = [];
@@ -6468,13 +6513,16 @@ class SolarSystemModule {
             { 
                 name: 'ISS (International Space Station)', 
                 distance: 1.05,  // Orbital altitude: 408-410 km above Earth's surface (scaled)
-                speed: 15.5,  // Orbital velocity: 7.66 km/s (27,576 km/h), completes 15.5 orbits/day
+                speed: 15.5,  // REAL SPEED: 7.66 km/s (27,576 km/h), 15.5 orbits/day, 92.68 min/orbit
+                           // Animation: speed * timeSpeed * 0.01 = angle increment
+                           // At timeSpeed=1: 15.5 * 1 * 0.01 = 0.155 rad/frame = realistic orbital motion
                 size: 0.03,
                 color: 0xCCCCCC,
                 description: '🛰️ ISS orbits at 408 km altitude, traveling at 7.66 km/s (27,576 km/h). One orbit takes 92.68 minutes. Continuously inhabited since Nov 2, 2000 (25 years!). Collaboration of NASA, Roscosmos, ESA, JAXA, CSA. Completed 180,000+ orbits as of Oct 2025.',
                 funFact: 'ISS is 109m long, 73m wide, masses 419,725 kg. Pressurized volume equals a Boeing 747! Visible to naked eye as brightest "star" after Venus.',
-                realSize: '109m � 73m � 20m, 419,725 kg',
-                orbitTime: '92.68 minutes'
+                realSize: '109m × 73m × 20m, 419,725 kg',
+                orbitTime: '92.68 minutes',
+                modules: '16 pressurized modules: Zarya, Unity, Zvezda, Destiny, Quest, Pirs, Harmony, Columbus, Kibo, Poisk, Tranquility, Cupola, Rassvet, Leonardo, Bigelow, Nauka'
             },
             { 
                 name: 'Hubble Space Telescope', 
@@ -6528,47 +6576,54 @@ class SolarSystemModule {
         }
 
         satellitesData.forEach((satData, index) => {
-            // Satellite body
-            const geometry = new THREE.BoxGeometry(satData.size, satData.size * 0.5, satData.size * 0.3);
-            const material = new THREE.MeshStandardMaterial({
-                color: satData.color,
-                roughness: 0.4,
-                metalness: 0.8,
-                emissive: satData.color,
-                emissiveIntensity: 0.3
-            });
+            let satellite;
             
-            const satellite = new THREE.Mesh(geometry, material);
-            
-            // Add solar panels for most satellites
-            if (satData.name !== 'Starlink Constellation') {
-                const panelGeometry = new THREE.BoxGeometry(satData.size * 2, satData.size * 0.02, satData.size * 0.8);
-                const panelMaterial = new THREE.MeshStandardMaterial({
-                    color: 0x1a3d5c,
-                    roughness: 0.2,
-                    metalness: 0.9
+            // Create hyperrealistic ISS with all modules
+            if (satData.name.includes('ISS')) {
+                satellite = this.createHyperrealisticISS(satData);
+            } else {
+                // Simple satellite body for others
+                const geometry = new THREE.BoxGeometry(satData.size, satData.size * 0.5, satData.size * 0.3);
+                const material = new THREE.MeshStandardMaterial({
+                    color: satData.color,
+                    roughness: 0.4,
+                    metalness: 0.8,
+                    emissive: satData.color,
+                    emissiveIntensity: 0.3
                 });
                 
-                const panel1 = new THREE.Mesh(panelGeometry, panelMaterial);
-                panel1.position.x = satData.size * 1.2;
-                satellite.add(panel1);
+                satellite = new THREE.Mesh(geometry, material);
                 
-                const panel2 = new THREE.Mesh(panelGeometry, panelMaterial);
-                panel2.position.x = -satData.size * 1.2;
-                satellite.add(panel2);
-            }
-            
-            // Add antenna for communication satellites
-            if (satData.name.includes('GPS') || satData.name.includes('Starlink')) {
-                const antennaGeometry = new THREE.CylinderGeometry(0.005, 0.005, satData.size * 0.8);
-                const antennaMaterial = new THREE.MeshStandardMaterial({
-                    color: 0x888888,
-                    roughness: 0.3,
-                    metalness: 0.9
-                });
-                const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
-                antenna.position.y = satData.size * 0.6;
-                satellite.add(antenna);
+                // Add solar panels for most satellites
+                if (satData.name !== 'Starlink Constellation') {
+                    const panelGeometry = new THREE.BoxGeometry(satData.size * 2, satData.size * 0.02, satData.size * 0.8);
+                    const panelMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x1a3d5c,
+                        roughness: 0.2,
+                        metalness: 0.9
+                    });
+                    
+                    const panel1 = new THREE.Mesh(panelGeometry, panelMaterial);
+                    panel1.position.x = satData.size * 1.2;
+                    satellite.add(panel1);
+                    
+                    const panel2 = new THREE.Mesh(panelGeometry, panelMaterial);
+                    panel2.position.x = -satData.size * 1.2;
+                    satellite.add(panel2);
+                }
+                
+                // Add antenna for communication satellites
+                if (satData.name.includes('GPS') || satData.name.includes('Starlink')) {
+                    const antennaGeometry = new THREE.CylinderGeometry(0.005, 0.005, satData.size * 0.8);
+                    const antennaMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x888888,
+                        roughness: 0.3,
+                        metalness: 0.9
+                    });
+                    const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+                    antenna.position.y = satData.size * 0.6;
+                    satellite.add(antenna);
+                }
             }
             
             satellite.userData = {
