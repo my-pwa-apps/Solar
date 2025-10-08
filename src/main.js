@@ -1727,7 +1727,8 @@ class Apollo11Animation {
         this.originalCameraParent = null;
         this.cameraMode = 0;
         this.cameraChangeTime = 0;
-        this.cameraChangeDuration = 4; // Switch camera every 4 seconds
+        this.cameraChangeDuration = 6; // Switch camera every 6 seconds (slower)
+        this.hiddenObjects = null;
         
         // Mission phases with durations (in animation seconds)
         this.phases = [
@@ -2014,6 +2015,66 @@ class Apollo11Animation {
         this.phase = 0;
         this.cameraMode = 0;
         
+        // Hide all celestial objects except Earth and Moon
+        this.hiddenObjects = [];
+        if (this.solarSystem.sun) {
+            this.solarSystem.sun.visible = false;
+            this.hiddenObjects.push(this.solarSystem.sun);
+        }
+        
+        // Hide all planets except Earth
+        for (const [name, planet] of Object.entries(this.solarSystem.planets)) {
+            if (name !== 'earth' && planet) {
+                planet.visible = false;
+                this.hiddenObjects.push(planet);
+            }
+        }
+        
+        // Hide all moons except Moon
+        for (const [name, moon] of Object.entries(this.solarSystem.moons)) {
+            if (name !== 'moon' && moon) {
+                moon.visible = false;
+                this.hiddenObjects.push(moon);
+            }
+        }
+        
+        // Hide other objects (asteroids, comets, spacecraft, etc.)
+        ['asteroidBelt', 'kuiperBelt', 'starfield'].forEach(prop => {
+            if (this.solarSystem[prop]) {
+                this.solarSystem[prop].visible = false;
+                this.hiddenObjects.push(this.solarSystem[prop]);
+            }
+        });
+        
+        if (this.solarSystem.nebulae) {
+            this.solarSystem.nebulae.forEach(obj => {
+                if (obj) {
+                    obj.visible = false;
+                    this.hiddenObjects.push(obj);
+                }
+            });
+        }
+        
+        if (this.solarSystem.galaxies) {
+            this.solarSystem.galaxies.forEach(obj => {
+                if (obj) {
+                    obj.visible = false;
+                    this.hiddenObjects.push(obj);
+                }
+            });
+        }
+        
+        if (this.solarSystem.distantStars) {
+            this.solarSystem.distantStars.forEach(obj => {
+                if (obj) {
+                    obj.visible = false;
+                    this.hiddenObjects.push(obj);
+                }
+            });
+        }
+        
+        console.log(`🙈 Hidden ${this.hiddenObjects.length} objects for Apollo mission`);
+        
         // Create rocket
         this.rocket = this.createRocket();
         
@@ -2099,6 +2160,15 @@ class Apollo11Animation {
         this.csm = null;
         this.lm = null;
         
+        // Restore visibility of all hidden objects
+        if (this.hiddenObjects) {
+            this.hiddenObjects.forEach(obj => {
+                if (obj) obj.visible = true;
+            });
+            console.log(`👁️ Restored visibility of ${this.hiddenObjects.length} objects`);
+            this.hiddenObjects = null;
+        }
+        
         // Restore camera
         if (this.originalCameraParent) {
             this.originalCameraParent.add(this.camera);
@@ -2139,11 +2209,17 @@ class Apollo11Animation {
         // Update rocket position and camera based on phase
         const phaseProgress = (this.progress - this.phases[this.phase].start) / this.phases[this.phase].duration;
         
-        // Cycle camera viewpoints every few seconds
+        // Slower camera cycling for smoother experience
         this.cameraChangeTime += deltaTime;
         if (this.cameraChangeTime >= this.cameraChangeDuration) {
             this.cameraChangeTime = 0;
-            this.cameraMode = (this.cameraMode + 1) % this.cameraViewpoints.length;
+            // Only cycle between trajectory and chase views during journey phases
+            if (this.phase >= 3 && this.phase <= 6) {
+                // During coast/approach, stick to wide trajectory view
+                this.cameraMode = 0; // wide_trajectory
+            } else {
+                this.cameraMode = (this.cameraMode + 1) % 3; // Only first 3 viewpoints
+            }
         }
         
         switch (this.phase) {
@@ -2605,86 +2681,72 @@ class Apollo11Animation {
     applyCameraView(rocketPos, planetPos, showSeparation = false, targetPos = null) {
         if (!this.rocket) return;
         
+        const earth = this.solarSystem.planets['earth'];
+        const moon = this.solarSystem.moons['moon'];
+        if (!earth || !moon) return;
+        
         const viewpoint = this.cameraViewpoints[this.cameraMode];
         let cameraPos, lookAtTarget;
         
-        // Get Sun position to avoid blocking
-        const sun = this.solarSystem.sun;
-        const sunPos = sun ? sun.position : new THREE.Vector3(0, 0, 0);
-        
         switch (viewpoint) {
             case 'wide_trajectory':
-                // Wide view showing trajectory - position perpendicular to Sun-Earth line
+                // Wide view showing full Earth-Moon trajectory
                 if (targetPos) {
-                    // Earth to Moon trajectory view
-                    const midPoint = new THREE.Vector3().addVectors(planetPos, targetPos).multiplyScalar(0.5);
-                    const dist = planetPos.distanceTo(targetPos);
+                    // Show full Earth to Moon path
+                    const earthToMoon = targetPos.clone().sub(planetPos);
+                    const distance = earthToMoon.length();
+                    const midPoint = planetPos.clone().add(earthToMoon.multiplyScalar(0.5));
                     
-                    // Calculate perpendicular to Sun-Earth line
-                    const sunToMid = midPoint.clone().sub(sunPos).normalize();
-                    const perpendicular = new THREE.Vector3().crossVectors(
-                        sunToMid, 
-                        new THREE.Vector3(0, 1, 0)
-                    ).normalize();
+                    // Position camera to side and above to see the full journey
+                    const up = new THREE.Vector3(0, 1, 0);
+                    const earthToMoonDir = targetPos.clone().sub(planetPos).normalize();
+                    const sideDir = new THREE.Vector3().crossVectors(earthToMoonDir, up).normalize();
                     
-                    // Position camera perpendicular to avoid Sun
+                    // Camera positioned to see both Earth and Moon
                     cameraPos = midPoint.clone()
-                        .add(perpendicular.multiplyScalar(dist * 0.8))
-                        .add(new THREE.Vector3(0, dist * 0.4, 0));
-                } else {
-                    // Earth vicinity view
-                    const dist = rocketPos.distanceTo(planetPos);
+                        .add(sideDir.multiplyScalar(distance * 0.6))
+                        .add(up.multiplyScalar(distance * 0.4));
                     
-                    // Calculate perpendicular to Sun-Earth line
-                    const sunToEarth = planetPos.clone().sub(sunPos).normalize();
-                    const perpendicular = new THREE.Vector3().crossVectors(
-                        sunToEarth,
-                        new THREE.Vector3(0, 1, 0)
-                    ).normalize();
+                    // Look at midpoint between Earth and Moon
+                    lookAtTarget = midPoint;
+                } else {
+                    // Earth vicinity - keep Earth and rocket in view
+                    const dist = Math.max(rocketPos.distanceTo(planetPos), 50);
+                    const earthToRocket = rocketPos.clone().sub(planetPos).normalize();
+                    const up = new THREE.Vector3(0, 1, 0);
+                    const sideDir = new THREE.Vector3().crossVectors(earthToRocket, up).normalize();
                     
                     cameraPos = planetPos.clone()
-                        .add(perpendicular.multiplyScalar(dist * 1.5))
-                        .add(new THREE.Vector3(0, dist * 0.6, 0));
+                        .add(earthToRocket.multiplyScalar(dist * 0.3))
+                        .add(sideDir.multiplyScalar(dist * 0.8))
+                        .add(up.multiplyScalar(dist * 0.5));
+                    
+                    lookAtTarget = planetPos.clone().add(earthToRocket.multiplyScalar(dist * 0.3));
                 }
-                lookAtTarget = rocketPos;
                 break;
                 
             case 'close_chase':
-                // Close chase camera
-                cameraPos = rocketPos.clone().add(
-                    new THREE.Vector3(0, 3, -10).applyQuaternion(this.rocket.quaternion)
-                );
-                lookAtTarget = rocketPos;
+                // Close chase camera following rocket
+                const chaseOffset = new THREE.Vector3(0, 5, -20);
+                chaseOffset.applyQuaternion(this.rocket.quaternion);
+                cameraPos = rocketPos.clone().add(chaseOffset);
+                
+                // Look slightly ahead of rocket to show direction
+                const forwardOffset = new THREE.Vector3(0, 0, 10);
+                forwardOffset.applyQuaternion(this.rocket.quaternion);
+                lookAtTarget = rocketPos.clone().add(forwardOffset);
                 break;
                 
             case 'side_view':
-                // Side angle view
-                cameraPos = rocketPos.clone().add(new THREE.Vector3(15, 5, 0));
-                lookAtTarget = rocketPos;
-                break;
+                // Side view showing rocket with Earth or Moon context
+                const contextPoint = targetPos || planetPos;
+                const toContext = contextPoint.clone().sub(rocketPos).normalize();
+                const up2 = new THREE.Vector3(0, 1, 0);
+                const sideDir2 = new THREE.Vector3().crossVectors(toContext, up2).normalize();
                 
-            case 'front_view':
-                // Front view (onboard looking back)
-                cameraPos = rocketPos.clone().add(
-                    new THREE.Vector3(0, 2, 8).applyQuaternion(this.rocket.quaternion)
-                );
-                lookAtTarget = planetPos;
-                break;
-                
-            case 'orbital_overview':
-                // High orbital view - avoid Sun direction
-                const dist = rocketPos.distanceTo(planetPos);
-                
-                // Position perpendicular to Sun-planet line
-                const sunToPlanet = planetPos.clone().sub(sunPos).normalize();
-                const perpendicular2 = new THREE.Vector3().crossVectors(
-                    sunToPlanet,
-                    new THREE.Vector3(0, 1, 0)
-                ).normalize();
-                
-                cameraPos = planetPos.clone()
-                    .add(perpendicular2.multiplyScalar(dist * 1.0))
-                    .add(new THREE.Vector3(0, dist * 1.2, 0));
+                cameraPos = rocketPos.clone()
+                    .add(sideDir2.multiplyScalar(25))
+                    .add(up2.multiplyScalar(10));
                 lookAtTarget = rocketPos;
                 break;
                 
@@ -2697,48 +2759,28 @@ class Apollo11Animation {
     }
     
     applyCameraViewLanding(lmPos, moonPos, altitude) {
-        const viewpoint = this.cameraMode % 3;
+        const moon = this.solarSystem.moons['moon'];
+        if (!moon) return;
         
-        // Get Sun position to avoid blocking
-        const sun = this.solarSystem.sun;
-        const sunPos = sun ? sun.position : new THREE.Vector3(0, 0, 0);
+        // Simple, focused landing camera
+        // Position to see both Moon surface and LM descending
+        const moonRadius = moon.userData.radius || 1.737;
+        const distFromMoon = Math.max(altitude * 2, moonRadius * 1.5);
         
-        switch (viewpoint) {
-            case 0:
-                // Following from behind and above - avoid Sun direction
-                const sunToMoon = moonPos.clone().sub(sunPos).normalize();
-                const perpendicular = new THREE.Vector3().crossVectors(
-                    sunToMoon,
-                    new THREE.Vector3(0, 1, 0)
-                ).normalize();
-                
-                const followOffset = perpendicular.multiplyScalar(altitude * 1.5)
-                    .add(new THREE.Vector3(0, altitude * 0.8, 0));
-                this.camera.position.copy(lmPos).add(followOffset);
-                this.camera.lookAt(lmPos);
-                break;
-                
-            case 1:
-                // Side view - perpendicular to Sun
-                const sunToMoon2 = moonPos.clone().sub(sunPos).normalize();
-                const side = new THREE.Vector3().crossVectors(
-                    sunToMoon2,
-                    new THREE.Vector3(0, 1, 0)
-                ).normalize();
-                
-                const sideOffset = side.multiplyScalar(altitude * 1.8)
-                    .add(new THREE.Vector3(0, altitude * 0.5, 0));
-                this.camera.position.copy(lmPos).add(sideOffset);
-                this.camera.lookAt(lmPos);
-                break;
-                
-            case 2:
-                // Onboard view looking down
-                const onboardOffset = new THREE.Vector3(0, 1, 0);
-                this.camera.position.copy(lmPos).add(onboardOffset);
-                this.camera.lookAt(moonPos);
-                break;
-        }
+        // Camera positioned to side and slightly above
+        const lmToMoon = moonPos.clone().sub(lmPos).normalize();
+        const up = new THREE.Vector3(0, 1, 0);
+        const sideDir = new THREE.Vector3().crossVectors(lmToMoon, up).normalize();
+        
+        const cameraPos = lmPos.clone()
+            .add(sideDir.multiplyScalar(distFromMoon * 0.8))
+            .add(up.multiplyScalar(distFromMoon * 0.4));
+        
+        this.camera.position.copy(cameraPos);
+        
+        // Look at a point between LM and Moon surface
+        const lookAtPoint = lmPos.clone().add(lmToMoon.multiplyScalar(altitude * 0.3));
+        this.camera.lookAt(lookAtPoint);
     }
     
     // Helper: Get optimal camera position avoiding Sun
@@ -2865,7 +2907,8 @@ class Apollo11Animation {
         const timeEl = document.getElementById('apollo-time');
         
         if (phaseEl) {
-            phaseEl.textContent = `Phase: ${this.phases[this.phase].name}`;
+            const cameraViewName = this.cameraViewpoints[this.cameraMode] || 'trajectory';
+            phaseEl.textContent = `Phase: ${this.phases[this.phase].name} | View: ${cameraViewName.replace('_', ' ')}`;
         }
         
         if (timeEl) {
