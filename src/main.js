@@ -480,8 +480,19 @@ class SceneManager {
             // Custom VR Button - Explicitly request immersive-vr mode
             const vrButton = document.createElement('button');
             vrButton.id = 'VRButton';
-            vrButton.style.cssText = 'position: absolute; bottom: 20px; left: calc(50% - 50px); width: 100px; cursor: pointer; padding: 12px 6px; border: 1px solid #fff; border-radius: 4px; background: rgba(0,0,0,0.8); color: #fff; font: normal 13px sans-serif; text-align: center; opacity: 0.8; outline: none; z-index: 999;';
-            vrButton.textContent = 'ENTER VR';
+            vrButton.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
+            vrButton.innerHTML = '🥽'; // VR headset emoji
+            vrButton.title = 'Enter VR Mode';
+            
+            // Hover effect
+            vrButton.onmouseenter = () => {
+                vrButton.style.opacity = '1';
+                vrButton.style.transform = 'scale(1.1)';
+            };
+            vrButton.onmouseleave = () => {
+                vrButton.style.opacity = '0.9';
+                vrButton.style.transform = 'scale(1)';
+            };
             
             vrButton.onclick = async () => {
                 if (navigator.xr) {
@@ -507,11 +518,22 @@ class SceneManager {
                 vrContainer.classList.remove('hidden');
             }
 
-            // Custom AR Button - Explicitly request immersive-ar mode
+            // Custom AR Button - Icon style
             const arButton = document.createElement('button');
             arButton.id = 'ARButton';
-            arButton.style.cssText = 'position: absolute; bottom: 20px; left: calc(50% + 60px); width: 100px; cursor: pointer; padding: 12px 6px; border: 1px solid #fff; border-radius: 4px; background: rgba(0,0,0,0.8); color: #fff; font: normal 13px sans-serif; text-align: center; opacity: 0.8; outline: none; z-index: 999;';
-            arButton.textContent = 'ENTER AR';
+            arButton.style.cssText = 'position: fixed; bottom: 80px; right: 150px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
+            arButton.innerHTML = '📱'; // Mobile device for AR
+            arButton.title = 'Enter AR Mode';
+            
+            // Hover effect
+            arButton.onmouseenter = () => {
+                arButton.style.opacity = '1';
+                arButton.style.transform = 'scale(1.1)';
+            };
+            arButton.onmouseleave = () => {
+                arButton.style.opacity = '0.9';
+                arButton.style.transform = 'scale(1)';
+            };
             
             arButton.onclick = async () => {
                 if (navigator.xr) {
@@ -1682,6 +1704,563 @@ class UIManager {
         
         // Hide loading
         this.hideLoading();
+    }
+}
+
+// ===========================
+// APOLLO 11 MISSION ANIMATION
+// ===========================
+class Apollo11Animation {
+    constructor(scene, camera, solarSystem) {
+        this.scene = scene;
+        this.camera = camera;
+        this.solarSystem = solarSystem;
+        this.isActive = false;
+        this.progress = 0;
+        this.phase = 0;
+        this.rocket = null;
+        this.originalCameraParent = null;
+        this.cameraMode = 0; // 0: ground, 1: chase, 2: onboard, 3: orbital, 4: lunar approach, 5: landing
+        
+        // Mission phases with durations (in animation seconds)
+        this.phases = [
+            { name: 'Launch', duration: 15, start: 0 },
+            { name: 'Earth Orbit', duration: 10, start: 15 },
+            { name: 'Trans-Lunar Injection', duration: 20, start: 25 },
+            { name: 'Coast to Moon', duration: 30, start: 45 },
+            { name: 'Lunar Orbit', duration: 15, start: 75 },
+            { name: 'Descent', duration: 20, start: 90 },
+            { name: 'Landing', duration: 10, start: 110 }
+        ];
+        
+        this.totalDuration = 120; // Total animation in seconds
+    }
+    
+    createRocket() {
+        const rocket = new THREE.Group();
+        rocket.name = 'SaturnV';
+        
+        // Saturn V dimensions (scaled down for visibility)
+        const scale = 0.3;
+        
+        // First Stage (S-IC) - 42m tall, 10m diameter
+        const s1Geometry = new THREE.CylinderGeometry(5 * scale, 5.5 * scale, 42 * scale, 16);
+        const s1Material = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const stage1 = new THREE.Mesh(s1Geometry, s1Material);
+        stage1.position.y = 21 * scale;
+        rocket.add(stage1);
+        
+        // Second Stage (S-II) - 25m tall
+        const s2Geometry = new THREE.CylinderGeometry(5 * scale, 5 * scale, 25 * scale, 16);
+        const s2Material = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const stage2 = new THREE.Mesh(s2Geometry, s2Material);
+        stage2.position.y = 54.5 * scale;
+        rocket.add(stage2);
+        
+        // Third Stage (S-IVB) - 18m tall
+        const s3Geometry = new THREE.CylinderGeometry(3.3 * scale, 3.3 * scale, 18 * scale, 16);
+        const s3Material = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const stage3 = new THREE.Mesh(s3Geometry, s3Material);
+        stage3.position.y = 76 * scale;
+        rocket.add(stage3);
+        
+        // Command/Service Module (CSM) - 11m tall
+        const csmGeometry = new THREE.CylinderGeometry(2 * scale, 3.3 * scale, 11 * scale, 16);
+        const csmMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xcccccc,
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        const csm = new THREE.Mesh(csmGeometry, csmMaterial);
+        csm.position.y = 90.5 * scale;
+        rocket.add(csm);
+        
+        // Lunar Module (LM) - stored behind CSM
+        const lmGeometry = new THREE.OctahedronGeometry(2 * scale);
+        const lmMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffd700,
+            metalness: 0.6,
+            roughness: 0.4
+        });
+        const lm = new THREE.Mesh(lmGeometry, lmMaterial);
+        lm.position.y = 85 * scale;
+        rocket.add(lm);
+        
+        // Engine glow (for launch)
+        const glowGeometry = new THREE.CylinderGeometry(5 * scale, 7 * scale, 15 * scale, 16);
+        const glowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff6600,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false
+        });
+        const engineGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+        engineGlow.position.y = -7.5 * scale;
+        engineGlow.name = 'engineGlow';
+        rocket.add(engineGlow);
+        
+        // Exhaust particles
+        const exhaustGroup = new THREE.Group();
+        exhaustGroup.name = 'exhaust';
+        for (let i = 0; i < 50; i++) {
+            const particleGeometry = new THREE.SphereGeometry(0.5 * scale, 8, 8);
+            const particleMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff9900,
+                transparent: true,
+                opacity: 0,
+                depthWrite: false
+            });
+            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle.userData.offset = Math.random() * Math.PI * 2;
+            exhaustGroup.add(particle);
+        }
+        rocket.add(exhaustGroup);
+        
+        return rocket;
+    }
+    
+    start() {
+        if (this.isActive) return;
+        
+        console.log('🚀 Starting Apollo 11 Mission Animation');
+        this.isActive = true;
+        this.progress = 0;
+        this.phase = 0;
+        this.cameraMode = 0;
+        
+        // Create rocket
+        this.rocket = this.createRocket();
+        
+        // Position at Kennedy Space Center (approximate)
+        // Earth radius + small offset for launch pad
+        const earth = this.solarSystem.planets['earth'];
+        if (earth) {
+            const earthRadius = earth.userData.radius || 6.371;
+            const launchPadAltitude = 0.01; // 10km above surface
+            
+            // Kennedy Space Center: 28.5°N, 80.5°W
+            const lat = 28.5 * Math.PI / 180;
+            const lon = -80.5 * Math.PI / 180;
+            
+            const r = earthRadius + launchPadAltitude;
+            this.rocket.position.set(
+                r * Math.cos(lat) * Math.cos(lon),
+                r * Math.sin(lat),
+                r * Math.cos(lat) * Math.sin(lon)
+            );
+            
+            // Point rocket away from Earth center (upward)
+            this.rocket.lookAt(
+                this.rocket.position.x * 2,
+                this.rocket.position.y * 2,
+                this.rocket.position.z * 2
+            );
+        }
+        
+        this.scene.add(this.rocket);
+        
+        // Store original camera state
+        this.originalCameraParent = this.camera.parent;
+        
+        // Show mission UI
+        this.showMissionUI();
+    }
+    
+    stop() {
+        if (!this.isActive) return;
+        
+        console.log('🛑 Stopping Apollo 11 Mission Animation');
+        this.isActive = false;
+        
+        // Remove rocket
+        if (this.rocket) {
+            this.scene.remove(this.rocket);
+            this.rocket = null;
+        }
+        
+        // Restore camera
+        if (this.originalCameraParent) {
+            this.originalCameraParent.add(this.camera);
+        }
+        
+        // Hide mission UI
+        this.hideMissionUI();
+    }
+    
+    update(deltaTime) {
+        if (!this.isActive || !this.rocket) return;
+        
+        // Update progress
+        this.progress += deltaTime;
+        
+        if (this.progress >= this.totalDuration) {
+            this.stop();
+            return;
+        }
+        
+        // Determine current phase
+        for (let i = 0; i < this.phases.length; i++) {
+            if (this.progress >= this.phases[i].start && 
+                (i === this.phases.length - 1 || this.progress < this.phases[i + 1].start)) {
+                this.phase = i;
+                break;
+            }
+        }
+        
+        // Update rocket position and camera based on phase
+        const phaseProgress = (this.progress - this.phases[this.phase].start) / this.phases[this.phase].duration;
+        
+        switch (this.phase) {
+            case 0: // Launch
+                this.updateLaunch(phaseProgress);
+                break;
+            case 1: // Earth Orbit
+                this.updateEarthOrbit(phaseProgress);
+                break;
+            case 2: // Trans-Lunar Injection
+                this.updateTLI(phaseProgress);
+                break;
+            case 3: // Coast to Moon
+                this.updateCoast(phaseProgress);
+                break;
+            case 4: // Lunar Orbit
+                this.updateLunarOrbit(phaseProgress);
+                break;
+            case 5: // Descent
+                this.updateDescent(phaseProgress);
+                break;
+            case 6: // Landing
+                this.updateLanding(phaseProgress);
+                break;
+        }
+        
+        // Update engine glow and exhaust
+        this.updateEffects(phaseProgress);
+        
+        // Update mission UI
+        this.updateMissionUI();
+    }
+    
+    updateLaunch(progress) {
+        const earth = this.solarSystem.planets['earth'];
+        if (!earth) return;
+        
+        const earthRadius = earth.userData.radius || 6.371;
+        const altitude = 0.01 + progress * 2; // Rise from surface to 200km
+        
+        // Kennedy Space Center position
+        const lat = 28.5 * Math.PI / 180;
+        const lon = -80.5 * Math.PI / 180;
+        
+        // Add pitch program (tilt eastward as it rises)
+        const pitch = Math.min(progress * 1.2, 1.4); // Pitch over to ~80 degrees
+        
+        const r = earthRadius + altitude;
+        const x = r * Math.cos(lat) * Math.cos(lon);
+        const y = r * Math.sin(lat);
+        const z = r * Math.cos(lat) * Math.sin(lon);
+        
+        this.rocket.position.set(x, y, z);
+        
+        // Point rocket in direction of motion with pitch
+        const upVector = new THREE.Vector3(x, y, z).normalize();
+        const eastVector = new THREE.Vector3(-Math.sin(lon), 0, Math.cos(lon));
+        const pitchVector = upVector.clone().multiplyScalar(Math.cos(pitch))
+            .add(eastVector.multiplyScalar(Math.sin(pitch)));
+        
+        this.rocket.lookAt(
+            this.rocket.position.x + pitchVector.x,
+            this.rocket.position.y + pitchVector.y,
+            this.rocket.position.z + pitchVector.z
+        );
+        
+        // Camera: ground view initially, then chase view
+        if (progress < 0.3) {
+            // Ground view
+            const groundDist = earthRadius + 0.005;
+            const cameraPos = new THREE.Vector3(
+                groundDist * Math.cos(lat) * Math.cos(lon),
+                groundDist * Math.sin(lat),
+                groundDist * Math.cos(lat) * Math.sin(lon)
+            );
+            this.camera.position.copy(cameraPos);
+            this.camera.lookAt(this.rocket.position);
+        } else {
+            // Chase view
+            const chaseOffset = new THREE.Vector3(0, -5, -15);
+            chaseOffset.applyQuaternion(this.rocket.quaternion);
+            this.camera.position.copy(this.rocket.position).add(chaseOffset);
+            this.camera.lookAt(this.rocket.position);
+        }
+    }
+    
+    updateEarthOrbit(progress) {
+        const earth = this.solarSystem.planets['earth'];
+        if (!earth) return;
+        
+        const earthRadius = earth.userData.radius || 6.371;
+        const orbitRadius = earthRadius + 1.91; // 191km altitude parking orbit
+        
+        // Circular orbit
+        const angle = progress * Math.PI * 2;
+        this.rocket.position.set(
+            orbitRadius * Math.cos(angle),
+            orbitRadius * Math.sin(angle) * 0.1, // Slight inclination
+            orbitRadius * Math.sin(angle)
+        );
+        
+        // Point in direction of motion
+        const velocity = new THREE.Vector3(
+            -Math.sin(angle),
+            Math.cos(angle) * 0.1,
+            Math.cos(angle)
+        ).normalize();
+        
+        this.rocket.lookAt(
+            this.rocket.position.x + velocity.x,
+            this.rocket.position.y + velocity.y,
+            this.rocket.position.z + velocity.z
+        );
+        
+        // Orbital view
+        const offset = new THREE.Vector3(orbitRadius * 2, orbitRadius * 3, orbitRadius * 2);
+        this.camera.position.copy(earth.position).add(offset);
+        this.camera.lookAt(this.rocket.position);
+    }
+    
+    updateTLI(progress) {
+        const earth = this.solarSystem.planets['earth'];
+        const moon = this.solarSystem.moons['moon'];
+        if (!earth || !moon) return;
+        
+        const earthRadius = earth.userData.radius || 6.371;
+        const startRadius = earthRadius + 1.91;
+        
+        // Start from orbit position, accelerate away from Earth
+        const startAngle = 0;
+        const escapeVector = new THREE.Vector3(
+            Math.cos(startAngle),
+            0.1,
+            Math.sin(startAngle)
+        ).normalize();
+        
+        const distance = startRadius + progress * 50; // Move away from Earth
+        
+        this.rocket.position.copy(escapeVector.multiplyScalar(distance));
+        
+        // Point toward Moon
+        const toMoon = moon.position.clone().sub(this.rocket.position).normalize();
+        this.rocket.lookAt(
+            this.rocket.position.x + toMoon.x,
+            this.rocket.position.y + toMoon.y,
+            this.rocket.position.z + toMoon.z
+        );
+        
+        // Onboard view looking at Earth
+        const viewOffset = new THREE.Vector3(0, 2, 5);
+        viewOffset.applyQuaternion(this.rocket.quaternion);
+        this.camera.position.copy(this.rocket.position).add(viewOffset);
+        this.camera.lookAt(earth.position);
+    }
+    
+    updateCoast(progress) {
+        const earth = this.solarSystem.planets['earth'];
+        const moon = this.solarSystem.moons['moon'];
+        if (!earth || !moon) return;
+        
+        // Interpolate from Earth to Moon
+        const earthToMoon = moon.position.clone().sub(earth.position);
+        this.rocket.position.copy(earth.position).add(
+            earthToMoon.clone().multiplyScalar(progress)
+        );
+        
+        // Point toward Moon
+        const toMoon = moon.position.clone().sub(this.rocket.position).normalize();
+        this.rocket.lookAt(
+            this.rocket.position.x + toMoon.x,
+            this.rocket.position.y + toMoon.y,
+            this.rocket.position.z + toMoon.z
+        );
+        
+        // Chase view
+        const chaseOffset = new THREE.Vector3(0, 10, -30);
+        chaseOffset.applyQuaternion(this.rocket.quaternion);
+        this.camera.position.copy(this.rocket.position).add(chaseOffset);
+        this.camera.lookAt(this.rocket.position);
+    }
+    
+    updateLunarOrbit(progress) {
+        const moon = this.solarSystem.moons['moon'];
+        if (!moon) return;
+        
+        const moonRadius = moon.userData.radius || 1.737;
+        const orbitRadius = moonRadius + 1.1; // 110km altitude
+        
+        // Circular orbit around Moon
+        const angle = progress * Math.PI * 4; // 2 orbits
+        this.rocket.position.copy(moon.position).add(new THREE.Vector3(
+            orbitRadius * Math.cos(angle),
+            orbitRadius * Math.sin(angle) * 0.2,
+            orbitRadius * Math.sin(angle)
+        ));
+        
+        // Point in direction of motion
+        const velocity = new THREE.Vector3(
+            -Math.sin(angle),
+            Math.cos(angle) * 0.2,
+            Math.cos(angle)
+        ).normalize();
+        
+        this.rocket.lookAt(
+            this.rocket.position.x + velocity.x,
+            this.rocket.position.y + velocity.y,
+            this.rocket.position.z + velocity.z
+        );
+        
+        // Orbital view of Moon
+        const offset = new THREE.Vector3(orbitRadius * 2, orbitRadius * 2, orbitRadius * 2);
+        this.camera.position.copy(moon.position).add(offset);
+        this.camera.lookAt(this.rocket.position);
+    }
+    
+    updateDescent(progress) {
+        const moon = this.solarSystem.moons['moon'];
+        if (!moon) return;
+        
+        const moonRadius = moon.userData.radius || 1.737;
+        const startAltitude = 1.1; // 110km
+        const endAltitude = 0.001; // Near surface
+        
+        const altitude = startAltitude - progress * (startAltitude - endAltitude);
+        
+        // Sea of Tranquility: 0.67°N, 23.47°E
+        const lat = 0.67 * Math.PI / 180;
+        const lon = 23.47 * Math.PI / 180;
+        
+        const r = moonRadius + altitude;
+        this.rocket.position.copy(moon.position).add(new THREE.Vector3(
+            r * Math.cos(lat) * Math.cos(lon),
+            r * Math.sin(lat),
+            r * Math.cos(lat) * Math.sin(lon)
+        ));
+        
+        // Point downward toward landing site
+        this.rocket.lookAt(moon.position);
+        
+        // Landing view - camera follows from behind and above
+        const landingOffset = new THREE.Vector3(0, altitude * 0.5, -altitude * 0.8);
+        this.camera.position.copy(this.rocket.position).add(landingOffset);
+        this.camera.lookAt(this.rocket.position);
+    }
+    
+    updateLanding(progress) {
+        const moon = this.solarSystem.moons['moon'];
+        if (!moon) return;
+        
+        const moonRadius = moon.userData.radius || 1.737;
+        
+        // Final touchdown
+        const lat = 0.67 * Math.PI / 180;
+        const lon = 23.47 * Math.PI / 180;
+        
+        // Small vertical movement for touchdown
+        const finalAltitude = 0.001 * (1 - progress);
+        
+        const r = moonRadius + finalAltitude;
+        this.rocket.position.copy(moon.position).add(new THREE.Vector3(
+            r * Math.cos(lat) * Math.cos(lon),
+            r * Math.sin(lat),
+            r * Math.cos(lat) * Math.sin(lon)
+        ));
+        
+        this.rocket.lookAt(moon.position);
+        
+        // Ground-level view from nearby
+        const groundCam = this.rocket.position.clone().add(new THREE.Vector3(2, 0.5, 3));
+        this.camera.position.copy(groundCam);
+        this.camera.lookAt(this.rocket.position);
+    }
+    
+    updateEffects(phaseProgress) {
+        const engineGlow = this.rocket.getObjectByName('engineGlow');
+        const exhaust = this.rocket.getObjectByName('exhaust');
+        
+        // Engine effects active during launch and TLI
+        const isThrusting = this.phase === 0 || this.phase === 2;
+        
+        if (engineGlow) {
+            engineGlow.material.opacity = isThrusting ? 0.8 : 0;
+        }
+        
+        if (exhaust && isThrusting) {
+            exhaust.children.forEach((particle, i) => {
+                const t = (this.progress * 10 + particle.userData.offset) % (Math.PI * 2);
+                particle.position.y = -10 - Math.sin(t) * 5;
+                particle.position.x = Math.cos(t + i * 0.3) * 2;
+                particle.position.z = Math.sin(t + i * 0.3) * 2;
+                particle.material.opacity = Math.max(0, 0.6 - Math.sin(t) * 0.3);
+            });
+        } else if (exhaust) {
+            exhaust.children.forEach(particle => {
+                particle.material.opacity = 0;
+            });
+        }
+    }
+    
+    showMissionUI() {
+        let ui = document.getElementById('apollo-mission-ui');
+        if (!ui) {
+            ui = document.createElement('div');
+            ui.id = 'apollo-mission-ui';
+            ui.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 10px; border: 2px solid #4a90e2; z-index: 1000; font-family: monospace;';
+            ui.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">🚀 APOLLO 11 MISSION</div>
+                    <div id="apollo-phase" style="font-size: 14px; margin-bottom: 5px;">Phase: Launch</div>
+                    <div id="apollo-time" style="font-size: 12px; color: #4a90e2;">00:00:00</div>
+                    <button id="apollo-stop" style="margin-top: 10px; padding: 5px 15px; background: #d32f2f; color: white; border: none; border-radius: 5px; cursor: pointer;">Stop Mission</button>
+                </div>
+            `;
+            document.body.appendChild(ui);
+            
+            document.getElementById('apollo-stop').onclick = () => this.stop();
+        }
+        ui.style.display = 'block';
+    }
+    
+    hideMissionUI() {
+        const ui = document.getElementById('apollo-mission-ui');
+        if (ui) {
+            ui.style.display = 'none';
+        }
+    }
+    
+    updateMissionUI() {
+        const phaseEl = document.getElementById('apollo-phase');
+        const timeEl = document.getElementById('apollo-time');
+        
+        if (phaseEl) {
+            phaseEl.textContent = `Phase: ${this.phases[this.phase].name}`;
+        }
+        
+        if (timeEl) {
+            const minutes = Math.floor(this.progress / 60);
+            const seconds = Math.floor(this.progress % 60);
+            const ms = Math.floor((this.progress % 1) * 100);
+            timeEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(ms).padStart(2, '0')}`;
+        }
     }
 }
 
@@ -7066,6 +7645,13 @@ class App {
             // Setup UI for Solar System
             this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
             
+            // Setup Apollo 11 Animation
+            this.apollo11Animation = new Apollo11Animation(
+                this.sceneManager.scene,
+                this.sceneManager.camera,
+                this.solarSystemModule
+            );
+            
             // Setup controls
             this.setupControls();
 
@@ -7095,6 +7681,11 @@ class App {
                 // Update XR controller movement and laser pointers
                 this.sceneManager.updateXRMovement();
                 this.sceneManager.updateLaserPointers();
+                
+                // Update Apollo 11 animation if active
+                if (this.apollo11Animation) {
+                    this.apollo11Animation.update(deltaTime);
+                }
                 
                 // Update Solar System module every frame
                 if (this.solarSystemModule) {
@@ -7279,6 +7870,34 @@ class App {
             });
         }
 
+        // Apollo 11 Mission button
+        const apolloButton = document.getElementById('apollo-button');
+        if (apolloButton) {
+            apolloButton.addEventListener('click', () => {
+                if (this.apollo11Animation) {
+                    if (!this.apollo11Animation.isActive) {
+                        apolloButton.style.background = 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)';
+                        apolloButton.innerHTML = '⏹️ Stop Mission';
+                        this.apollo11Animation.start();
+                    } else {
+                        apolloButton.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
+                        apolloButton.innerHTML = '🚀 Apollo 11 Mission';
+                        this.apollo11Animation.stop();
+                    }
+                }
+            });
+            
+            // Hover effects
+            apolloButton.addEventListener('mouseenter', () => {
+                apolloButton.style.transform = 'scale(1.05)';
+                apolloButton.style.boxShadow = '0 4px 12px rgba(74, 144, 226, 0.4)';
+            });
+            apolloButton.addEventListener('mouseleave', () => {
+                apolloButton.style.transform = 'scale(1)';
+                apolloButton.style.boxShadow = 'none';
+            });
+        }
+        
         // Canvas click for object selection
         this.sceneManager.renderer.domElement.addEventListener('click', (e) => {
             this.handleCanvasClick(e);
