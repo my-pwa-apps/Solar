@@ -6358,8 +6358,12 @@ class SolarSystemModule {
     createHyperrealisticISS(satData) {
         // Create detailed ISS model with all major modules
         // Real ISS: 109m long × 73m wide × 20m tall, 419,725 kg
+        // Earth radius in scene = 1.0 represents 6,371 km
+        // ISS real length = 109m = 0.109 km
+        // Scale: 0.109 / 6371 = 0.0000171 (too small to see!)
+        // For visibility: Use satData.size (0.03) * 2 = 0.06 for better visibility
         const iss = new THREE.Group();
-        const scale = satData.size / 3; // Scale factor for visibility
+        const scale = satData.size * 2; // Scale factor: 0.03 * 2 = 0.06 for visibility
         
         // Materials
         const moduleMaterial = new THREE.MeshStandardMaterial({
@@ -6484,15 +6488,24 @@ class SolarSystemModule {
         canadarm.position.set(scale * 1, scale * 1.5, 0);
         iss.add(canadarm);
         
-        // 7. Add glow marker for visibility
-        const glowGeometry = new THREE.SphereGeometry(scale * 0.8, 16, 16);
+        // 7. Add glow marker for visibility from distance
+        const glowGeometry = new THREE.SphereGeometry(scale * 1.5, 16, 16);
         const glowMaterial = new THREE.MeshBasicMaterial({
-            color: satData.color,
+            color: 0xFFFFFF, // White glow for ISS visibility
             transparent: true,
-            opacity: 0.6
+            opacity: 0.4
         });
         const glow = new THREE.Mesh(glowGeometry, glowMaterial);
         iss.add(glow);
+        
+        // Add a brighter marker point at center
+        const markerGeometry = new THREE.SphereGeometry(scale * 0.3, 8, 8);
+        const markerMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFD700, // Gold marker
+            transparent: false
+        });
+        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+        iss.add(marker);
         
         // Enable shadows for realism
         iss.traverse((child) => {
@@ -7173,15 +7186,21 @@ class SolarSystemModule {
                     satellite.position.y = earthPosition.y + userData.distance * sinAngle * sinIncl;
                     satellite.position.z = earthPosition.z + userData.distance * sinAngle * cosIncl;
                     
-                    // Debug: Log satellite positions for yellow/gold satellites
-                    if (DEBUG.enabled && (satellite.material.color.getHex() === 0xFFFF00 || satellite.material.color.getHex() === 0xFFD700)) {
-                        if (Math.random() < 0.001) {
+                    // Debug: Log satellite positions
+                    if (DEBUG.enabled && Math.random() < 0.001) {
+                        // Check if it's a mesh with material (not Group like ISS)
+                        const isColorMatch = satellite.material && 
+                            (satellite.material.color.getHex() === 0xFFFF00 || 
+                             satellite.material.color.getHex() === 0xFFD700);
+                        if (isColorMatch || userData.name.includes('ISS')) {
                             console.log(`🛰️ ${userData.name}: Earth at (${earthPosition.x.toFixed(1)}, ${earthPosition.y.toFixed(1)}, ${earthPosition.z.toFixed(1)}), Satellite at (${satellite.position.x.toFixed(1)}, ${satellite.position.y.toFixed(1)}, ${satellite.position.z.toFixed(1)}), distance=${userData.distance}`);
                         }
                     }
                     
-                    // Rotate satellite to face Earth
-                    satellite.lookAt(earthPosition);
+                    // Rotate satellite to face Earth (only if not ISS - ISS has fixed orientation)
+                    if (!userData.name.includes('ISS')) {
+                        satellite.lookAt(earthPosition);
+                    }
                 }
             });
         }
