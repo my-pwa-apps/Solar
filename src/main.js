@@ -1762,43 +1762,57 @@ class Apollo11Animation {
         // Saturn V dimensions (scaled for visibility)
         const scale = 0.35;
         
-        // First Stage (S-IC) - 42m tall, 10m diameter - Black and white checkerboard pattern
-        const s1Group = new THREE.Group();
-        s1Group.name = 'stage1';
-        
-        const s1Geometry = new THREE.CylinderGeometry(5 * scale, 5.5 * scale, 42 * scale, 24);
-        const s1Material = new THREE.MeshStandardMaterial({ 
+        // Reusable materials (optimization)
+        const whiteMetal = new THREE.MeshStandardMaterial({ 
             color: 0xf5f5f5,
             metalness: 0.4,
             roughness: 0.6,
             envMapIntensity: 0.5
         });
-        const stage1Body = new THREE.Mesh(s1Geometry, s1Material);
+        const blackMetal = new THREE.MeshStandardMaterial({ 
+            color: 0x1a1a1a,
+            metalness: 0.3,
+            roughness: 0.7
+        });
+        const darkEngine = new THREE.MeshStandardMaterial({ 
+            color: 0x2a2a2a,
+            metalness: 0.9,
+            roughness: 0.2
+        });
+        const goldFoil = new THREE.MeshStandardMaterial({ 
+            color: 0xd4af37,
+            metalness: 0.8,
+            roughness: 0.4,
+            envMapIntensity: 1.0
+        });
+        const brightGold = new THREE.MeshStandardMaterial({ 
+            color: 0xffd700,
+            metalness: 0.8,
+            roughness: 0.5,
+            envMapIntensity: 1.2
+        });
+        
+        // First Stage (S-IC) - 42m tall, 10m diameter - Black and white checkerboard pattern
+        const s1Group = new THREE.Group();
+        s1Group.name = 'stage1';
+        
+        const s1Geometry = new THREE.CylinderGeometry(5 * scale, 5.5 * scale, 42 * scale, 24);
+        const stage1Body = new THREE.Mesh(s1Geometry, whiteMetal);
         s1Group.add(stage1Body);
         
-        // Add black stripes for detail
+        // Add black stripes for detail (reuse geometry)
+        const stripeGeometry = new THREE.CylinderGeometry(5.1 * scale, 5.6 * scale, 2 * scale, 24);
         for (let i = 0; i < 3; i++) {
-            const stripeGeometry = new THREE.CylinderGeometry(5.1 * scale, 5.6 * scale, 2 * scale, 24);
-            const stripeMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x1a1a1a,
-                metalness: 0.3,
-                roughness: 0.7
-            });
-            const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+            const stripe = new THREE.Mesh(stripeGeometry, blackMetal);
             stripe.position.y = -15 * scale + i * 15 * scale;
             s1Group.add(stripe);
         }
         
-        // F-1 Engines (5 engines at base)
+        // F-1 Engines (5 engines at base - reuse geometry)
+        const f1EngineGeometry = new THREE.CylinderGeometry(1 * scale, 1.2 * scale, 3 * scale, 12);
         for (let i = 0; i < 5; i++) {
             const angle = (i * Math.PI * 2) / 5;
-            const engineGeometry = new THREE.CylinderGeometry(1 * scale, 1.2 * scale, 3 * scale, 12);
-            const engineMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x2a2a2a,
-                metalness: 0.9,
-                roughness: 0.3
-            });
-            const engine = new THREE.Mesh(engineGeometry, engineMaterial);
+            const engine = new THREE.Mesh(f1EngineGeometry, darkEngine);
             engine.position.set(
                 Math.cos(angle) * 2.5 * scale,
                 -22 * scale,
@@ -1816,25 +1830,14 @@ class Apollo11Animation {
         s2Group.name = 'stage2';
         
         const s2Geometry = new THREE.CylinderGeometry(5 * scale, 5 * scale, 25 * scale, 24);
-        const s2Material = new THREE.MeshStandardMaterial({ 
-            color: 0xffffff,
-            metalness: 0.5,
-            roughness: 0.4,
-            envMapIntensity: 0.6
-        });
-        const stage2Body = new THREE.Mesh(s2Geometry, s2Material);
+        const stage2Body = new THREE.Mesh(s2Geometry, whiteMetal);
         s2Group.add(stage2Body);
         
-        // J-2 Engines (5 engines)
+        // J-2 Engines (5 engines - reuse geometry)
+        const j2EngineGeometry = new THREE.CylinderGeometry(0.6 * scale, 0.8 * scale, 2 * scale, 12);
         for (let i = 0; i < 5; i++) {
             const angle = (i * Math.PI * 2) / 5;
-            const engineGeometry = new THREE.CylinderGeometry(0.6 * scale, 0.8 * scale, 2 * scale, 12);
-            const engineMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x1a1a1a,
-                metalness: 0.9,
-                roughness: 0.2
-            });
-            const engine = new THREE.Mesh(engineGeometry, engineMaterial);
+            const engine = new THREE.Mesh(j2EngineGeometry, darkEngine);
             engine.position.set(
                 Math.cos(angle) * 2 * scale,
                 -13.5 * scale,
@@ -1852,23 +1855,12 @@ class Apollo11Animation {
         s3Group.name = 'stage3';
         
         const s3Geometry = new THREE.CylinderGeometry(3.3 * scale, 3.3 * scale, 18 * scale, 24);
-        const s3Material = new THREE.MeshStandardMaterial({ 
-            color: 0xf0f0f0,
-            metalness: 0.6,
-            roughness: 0.3,
-            envMapIntensity: 0.7
-        });
-        const stage3Body = new THREE.Mesh(s3Geometry, s3Material);
+        const stage3Body = new THREE.Mesh(s3Geometry, whiteMetal);
         s3Group.add(stage3Body);
         
         // Single J-2 engine
         const s3EngineGeometry = new THREE.CylinderGeometry(0.8 * scale, 1 * scale, 2.5 * scale, 12);
-        const s3EngineMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x2a2a2a,
-            metalness: 0.9,
-            roughness: 0.2
-        });
-        const s3Engine = new THREE.Mesh(s3EngineGeometry, s3EngineMaterial);
+        const s3Engine = new THREE.Mesh(s3EngineGeometry, darkEngine);
         s3Engine.position.y = -10 * scale;
         s3Group.add(s3Engine);
         
@@ -1882,35 +1874,24 @@ class Apollo11Animation {
         
         // Command Module (cone shape)
         const cmGeometry = new THREE.ConeGeometry(2 * scale, 4 * scale, 16);
-        const cmMaterial = new THREE.MeshStandardMaterial({ 
+        const silverMetal = new THREE.MeshStandardMaterial({ 
             color: 0xc0c0c0,
             metalness: 0.7,
             roughness: 0.3
         });
-        const commandModule = new THREE.Mesh(cmGeometry, cmMaterial);
+        const commandModule = new THREE.Mesh(cmGeometry, silverMetal);
         commandModule.position.y = 7 * scale;
         csmGroup.add(commandModule);
         
         // Service Module (cylinder with gold foil)
         const smGeometry = new THREE.CylinderGeometry(2 * scale, 2 * scale, 7 * scale, 16);
-        const smMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xd4af37, // Gold
-            metalness: 0.8,
-            roughness: 0.4,
-            envMapIntensity: 1.0
-        });
-        const serviceModule = new THREE.Mesh(smGeometry, smMaterial);
+        const serviceModule = new THREE.Mesh(smGeometry, goldFoil);
         serviceModule.position.y = 2 * scale;
         csmGroup.add(serviceModule);
         
         // Service Propulsion Engine
         const speGeometry = new THREE.CylinderGeometry(0.7 * scale, 0.9 * scale, 2 * scale, 12);
-        const speMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x1a1a1a,
-            metalness: 0.9,
-            roughness: 0.2
-        });
-        const spe = new THREE.Mesh(speGeometry, speMaterial);
+        const spe = new THREE.Mesh(speGeometry, darkEngine);
         spe.position.y = -2.5 * scale;
         csmGroup.add(spe);
         
@@ -1924,35 +1905,24 @@ class Apollo11Animation {
         
         // Descent stage (octagonal)
         const descentGeometry = new THREE.CylinderGeometry(2.5 * scale, 2.5 * scale, 2 * scale, 8);
-        const descentMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xffd700, // Gold
-            metalness: 0.8,
-            roughness: 0.5,
-            envMapIntensity: 1.2
-        });
-        const descentStage = new THREE.Mesh(descentGeometry, descentMaterial);
+        const descentStage = new THREE.Mesh(descentGeometry, brightGold);
         lmGroup.add(descentStage);
         
         // Ascent stage (smaller octagon on top)
         const ascentGeometry = new THREE.CylinderGeometry(1.8 * scale, 1.8 * scale, 2.5 * scale, 8);
-        const ascentMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xffdf00,
-            metalness: 0.7,
-            roughness: 0.4
-        });
-        const ascentStage = new THREE.Mesh(ascentGeometry, ascentMaterial);
+        const ascentStage = new THREE.Mesh(ascentGeometry, brightGold);
         ascentStage.position.y = 2.25 * scale;
         lmGroup.add(ascentStage);
         
-        // Landing legs (4 legs)
+        // Landing legs (4 legs - reuse geometry)
+        const legGeometry = new THREE.CylinderGeometry(0.1 * scale, 0.1 * scale, 3 * scale, 8);
+        const legMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x8b7355,
+            metalness: 0.6,
+            roughness: 0.5
+        });
         for (let i = 0; i < 4; i++) {
             const angle = (i * Math.PI * 2) / 4 + Math.PI / 4;
-            const legGeometry = new THREE.CylinderGeometry(0.1 * scale, 0.1 * scale, 3 * scale, 8);
-            const legMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x8b7355,
-                metalness: 0.6,
-                roughness: 0.5
-            });
             const leg = new THREE.Mesh(legGeometry, legMaterial);
             leg.position.set(
                 Math.cos(angle) * 2 * scale,
@@ -1965,12 +1935,7 @@ class Apollo11Animation {
         
         // Descent engine
         const lmEngineGeometry = new THREE.CylinderGeometry(0.6 * scale, 0.8 * scale, 1.5 * scale, 12);
-        const lmEngineMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x2a2a2a,
-            metalness: 0.9,
-            roughness: 0.2
-        });
-        const lmEngine = new THREE.Mesh(lmEngineGeometry, lmEngineMaterial);
+        const lmEngine = new THREE.Mesh(lmEngineGeometry, darkEngine);
         lmEngine.position.y = -1.75 * scale;
         lmGroup.add(lmEngine);
         
@@ -2009,18 +1974,28 @@ class Apollo11Animation {
         lmGlow.position.y = -1 * scale;
         lmGroup.add(lmGlow);
         
-        // Enhanced exhaust particles
+        // Enhanced exhaust particles (optimized with shared geometry)
         const exhaustGroup = new THREE.Group();
         exhaustGroup.name = 'exhaust';
+        const particleGeometry = new THREE.SphereGeometry(0.3 * scale, 6, 6);
+        const orangeParticleMat = new THREE.MeshBasicMaterial({ 
+            color: 0xff6600,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false
+        });
+        const yellowParticleMat = new THREE.MeshBasicMaterial({ 
+            color: 0xffaa00,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false
+        });
+        
         for (let i = 0; i < 100; i++) {
-            const particleGeometry = new THREE.SphereGeometry(0.3 * scale, 6, 6);
-            const particleMaterial = new THREE.MeshBasicMaterial({ 
-                color: i < 50 ? 0xff6600 : 0xffaa00,
-                transparent: true,
-                opacity: 0,
-                depthWrite: false
-            });
-            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+            const particle = new THREE.Mesh(
+                particleGeometry, 
+                i < 50 ? orangeParticleMat : yellowParticleMat
+            );
             particle.userData.offset = Math.random() * Math.PI * 2;
             particle.userData.speed = 0.5 + Math.random() * 1.5;
             exhaustGroup.add(particle);
@@ -2083,19 +2058,58 @@ class Apollo11Animation {
         console.log('🛑 Stopping Apollo 11 Mission Animation');
         this.isActive = false;
         
-        // Remove rocket
+        // Remove all separated stages from scene
+        if (this.stage1 && this.stage1.parent === this.scene) {
+            this.scene.remove(this.stage1);
+        }
+        if (this.stage2 && this.stage2.parent === this.scene) {
+            this.scene.remove(this.stage2);
+        }
+        if (this.stage3 && this.stage3.parent === this.scene) {
+            this.scene.remove(this.stage3);
+        }
+        
+        // Remove rocket and all children
         if (this.rocket) {
             this.scene.remove(this.rocket);
+            // Dispose geometries and materials to free memory
+            this.rocket.traverse((child) => {
+                if (child.geometry) {
+                    child.geometry.dispose();
+                }
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => mat.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
             this.rocket = null;
         }
+        
+        // Clear references
+        this.stage1 = null;
+        this.stage2 = null;
+        this.stage3 = null;
+        this.csm = null;
+        this.lm = null;
         
         // Restore camera
         if (this.originalCameraParent) {
             this.originalCameraParent.add(this.camera);
+            this.originalCameraParent = null;
         }
         
         // Hide mission UI
         this.hideMissionUI();
+        
+        // Reset button state
+        const apolloButton = document.getElementById('apollo-button');
+        if (apolloButton) {
+            apolloButton.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
+            apolloButton.innerHTML = '🚀 Apollo 11 Mission';
+        }
     }
     
     update(deltaTime) {
@@ -2207,7 +2221,7 @@ class Apollo11Animation {
     
     updateStage2Separation(progress) {
         const earth = this.solarSystem.planets['earth'];
-        if (!earth) return;
+        if (!earth || !this.rocket) return;
         
         const earthRadius = earth.userData.radius || 6.371;
         const altitude = 1.51 + progress * 0.4; // 150km to 190km
@@ -2230,7 +2244,7 @@ class Apollo11Animation {
             this.rocket.position.z + velocity.z
         );
         
-        // Stage 1 separation
+        // Stage 1 separation (only once)
         if (this.stage1 && progress > 0.2 && this.stage1.parent === this.rocket) {
             this.scene.add(this.stage1);
             const worldPos = new THREE.Vector3();
@@ -2240,10 +2254,11 @@ class Apollo11Animation {
             this.stage1.getWorldQuaternion(worldQuat);
             this.stage1.quaternion.copy(worldQuat);
             this.stage1.userData.separationVelocity = velocity.clone().multiplyScalar(-0.5);
+            console.log('🚀 Stage 1 separated');
         }
         
         // Move separated stage
-        if (this.stage1 && this.stage1.userData.separationVelocity) {
+        if (this.stage1?.userData?.separationVelocity) {
             this.stage1.position.add(this.stage1.userData.separationVelocity.clone().multiplyScalar(0.02));
             this.stage1.rotation.x += 0.02;
         }
@@ -2253,7 +2268,7 @@ class Apollo11Animation {
     
     updateEarthOrbit(progress) {
         const earth = this.solarSystem.planets['earth'];
-        if (!earth) return;
+        if (!earth || !this.rocket) return;
         
         const earthRadius = earth.userData.radius || 6.371;
         const orbitRadius = earthRadius + 1.91; // 191km altitude parking orbit
@@ -2279,7 +2294,7 @@ class Apollo11Animation {
             this.rocket.position.z + velocity.z
         );
         
-        // Stage 2 separation near end
+        // Stage 2 separation near end (only once)
         if (this.stage2 && progress > 0.7 && this.stage2.parent === this.rocket) {
             this.scene.add(this.stage2);
             const worldPos = new THREE.Vector3();
@@ -2289,9 +2304,10 @@ class Apollo11Animation {
             this.stage2.getWorldQuaternion(worldQuat);
             this.stage2.quaternion.copy(worldQuat);
             this.stage2.userData.separationVelocity = velocity.clone().multiplyScalar(-0.3);
+            console.log('🚀 Stage 2 separated');
         }
         
-        if (this.stage2 && this.stage2.userData.separationVelocity) {
+        if (this.stage2?.userData?.separationVelocity) {
             this.stage2.position.add(this.stage2.userData.separationVelocity.clone().multiplyScalar(0.01));
             this.stage2.rotation.y += 0.015;
         }
@@ -2302,7 +2318,7 @@ class Apollo11Animation {
     updateTLI(progress) {
         const earth = this.solarSystem.planets['earth'];
         const moon = this.solarSystem.moons['moon'];
-        if (!earth || !moon) return;
+        if (!earth || !moon || !this.rocket) return;
         
         const earthRadius = earth.userData.radius || 6.371;
         const startRadius = earthRadius + 1.91;
@@ -2332,7 +2348,7 @@ class Apollo11Animation {
     updateExtraction(progress) {
         const earth = this.solarSystem.planets['earth'];
         const moon = this.solarSystem.moons['moon'];
-        if (!earth || !moon) return;
+        if (!earth || !moon || !this.rocket) return;
         
         // Position continues on trajectory
         const earthToMoon = moon.position.clone().sub(earth.position);
@@ -2353,7 +2369,7 @@ class Apollo11Animation {
             this.lm.position.y = 85 * 0.35 + extractDist;
         }
         
-        // Separate and discard Stage 3
+        // Separate and discard Stage 3 (only once)
         if (this.stage3 && progress > 0.6 && this.stage3.parent === this.rocket) {
             this.scene.add(this.stage3);
             const worldPos = new THREE.Vector3();
@@ -2363,9 +2379,10 @@ class Apollo11Animation {
             this.stage3.getWorldQuaternion(worldQuat);
             this.stage3.quaternion.copy(worldQuat);
             this.stage3.userData.separationVelocity = earthToMoon.clone().normalize().multiplyScalar(-0.2);
+            console.log('🚀 Stage 3 separated');
         }
         
-        if (this.stage3 && this.stage3.userData.separationVelocity) {
+        if (this.stage3?.userData?.separationVelocity) {
             this.stage3.position.add(this.stage3.userData.separationVelocity.clone().multiplyScalar(0.01));
             this.stage3.rotation.x += 0.01;
         }
@@ -2579,7 +2596,10 @@ class Apollo11Animation {
     }
     
     applyCameraView(rocketPos, planetPos, showSeparation = false, targetPos = null) {
+        if (!this.rocket) return;
+        
         const viewpoint = this.cameraViewpoints[this.cameraMode];
+        let cameraPos, lookAtTarget;
         
         switch (viewpoint) {
             case 'wide_trajectory':
@@ -2587,48 +2607,49 @@ class Apollo11Animation {
                 if (targetPos) {
                     const midPoint = new THREE.Vector3().addVectors(planetPos, targetPos).multiplyScalar(0.5);
                     const dist = planetPos.distanceTo(targetPos);
-                    const offset = new THREE.Vector3(0, dist * 0.4, dist * 0.6);
-                    this.camera.position.copy(midPoint).add(offset);
-                    this.camera.lookAt(rocketPos);
+                    cameraPos = midPoint.clone().add(new THREE.Vector3(0, dist * 0.4, dist * 0.6));
                 } else {
                     const dist = rocketPos.distanceTo(planetPos);
-                    const offset = new THREE.Vector3(dist * 0.5, dist * 0.8, dist * 0.5);
-                    this.camera.position.copy(planetPos).add(offset);
-                    this.camera.lookAt(rocketPos);
+                    cameraPos = planetPos.clone().add(new THREE.Vector3(dist * 0.5, dist * 0.8, dist * 0.5));
                 }
+                lookAtTarget = rocketPos;
                 break;
                 
             case 'close_chase':
                 // Close chase camera
-                const chaseOffset = new THREE.Vector3(0, 3, -10);
-                chaseOffset.applyQuaternion(this.rocket.quaternion);
-                this.camera.position.copy(rocketPos).add(chaseOffset);
-                this.camera.lookAt(rocketPos);
+                cameraPos = rocketPos.clone().add(
+                    new THREE.Vector3(0, 3, -10).applyQuaternion(this.rocket.quaternion)
+                );
+                lookAtTarget = rocketPos;
                 break;
                 
             case 'side_view':
                 // Side angle view
-                const sideOffset = new THREE.Vector3(15, 5, 0);
-                this.camera.position.copy(rocketPos).add(sideOffset);
-                this.camera.lookAt(rocketPos);
+                cameraPos = rocketPos.clone().add(new THREE.Vector3(15, 5, 0));
+                lookAtTarget = rocketPos;
                 break;
                 
             case 'front_view':
                 // Front view (onboard looking back)
-                const frontOffset = new THREE.Vector3(0, 2, 8);
-                frontOffset.applyQuaternion(this.rocket.quaternion);
-                this.camera.position.copy(rocketPos).add(frontOffset);
-                this.camera.lookAt(planetPos);
+                cameraPos = rocketPos.clone().add(
+                    new THREE.Vector3(0, 2, 8).applyQuaternion(this.rocket.quaternion)
+                );
+                lookAtTarget = planetPos;
                 break;
                 
             case 'orbital_overview':
                 // High orbital view
                 const dist = rocketPos.distanceTo(planetPos);
-                const overviewOffset = new THREE.Vector3(dist * 0.3, dist * 1.2, dist * 0.3);
-                this.camera.position.copy(planetPos).add(overviewOffset);
-                this.camera.lookAt(rocketPos);
+                cameraPos = planetPos.clone().add(new THREE.Vector3(dist * 0.3, dist * 1.2, dist * 0.3));
+                lookAtTarget = rocketPos;
                 break;
+                
+            default:
+                return;
         }
+        
+        this.camera.position.copy(cameraPos);
+        this.camera.lookAt(lookAtTarget);
     }
     
     applyCameraViewLanding(lmPos, moonPos, altitude) {
