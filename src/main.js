@@ -2018,7 +2018,7 @@ class Apollo11Animation {
         this.rocket = this.createRocket();
         
         // Position at Kennedy Space Center (approximate)
-        // Earth radius + small offset for launch pad
+        // All positions are relative to Earth's world position
         const earth = this.solarSystem.planets['earth'];
         if (earth) {
             const earthRadius = earth.userData.radius || 6.371;
@@ -2029,17 +2029,21 @@ class Apollo11Animation {
             const lon = -80.5 * Math.PI / 180;
             
             const r = earthRadius + launchPadAltitude;
-            this.rocket.position.set(
+            const localPos = new THREE.Vector3(
                 r * Math.cos(lat) * Math.cos(lon),
                 r * Math.sin(lat),
                 r * Math.cos(lat) * Math.sin(lon)
             );
             
-            // Point rocket away from Earth center (upward)
+            // Position relative to Earth's world position
+            this.rocket.position.copy(earth.position).add(localPos);
+            
+            // Point rocket away from Earth center (upward from surface)
+            const upVector = localPos.clone().normalize();
             this.rocket.lookAt(
-                this.rocket.position.x * 2,
-                this.rocket.position.y * 2,
-                this.rocket.position.z * 2
+                this.rocket.position.x + upVector.x,
+                this.rocket.position.y + upVector.y,
+                this.rocket.position.z + upVector.z
             );
         }
         
@@ -2230,11 +2234,14 @@ class Apollo11Animation {
         const lon = -80.5 * Math.PI / 180 + progress * 0.3;
         
         const r = earthRadius + altitude;
-        const x = r * Math.cos(lat) * Math.cos(lon);
-        const y = r * Math.sin(lat);
-        const z = r * Math.cos(lat) * Math.sin(lon);
+        const localPos = new THREE.Vector3(
+            r * Math.cos(lat) * Math.cos(lon),
+            r * Math.sin(lat),
+            r * Math.cos(lat) * Math.sin(lon)
+        );
         
-        this.rocket.position.set(x, y, z);
+        // Position relative to Earth's world position
+        this.rocket.position.copy(earth.position).add(localPos);
         
         // Orbital velocity direction
         const velocity = new THREE.Vector3(-Math.sin(lon), 0, Math.cos(lon));
@@ -2601,16 +2608,43 @@ class Apollo11Animation {
         const viewpoint = this.cameraViewpoints[this.cameraMode];
         let cameraPos, lookAtTarget;
         
+        // Get Sun position to avoid blocking
+        const sun = this.solarSystem.sun;
+        const sunPos = sun ? sun.position : new THREE.Vector3(0, 0, 0);
+        
         switch (viewpoint) {
             case 'wide_trajectory':
-                // Wide view showing trajectory
+                // Wide view showing trajectory - position perpendicular to Sun-Earth line
                 if (targetPos) {
+                    // Earth to Moon trajectory view
                     const midPoint = new THREE.Vector3().addVectors(planetPos, targetPos).multiplyScalar(0.5);
                     const dist = planetPos.distanceTo(targetPos);
-                    cameraPos = midPoint.clone().add(new THREE.Vector3(0, dist * 0.4, dist * 0.6));
+                    
+                    // Calculate perpendicular to Sun-Earth line
+                    const sunToMid = midPoint.clone().sub(sunPos).normalize();
+                    const perpendicular = new THREE.Vector3().crossVectors(
+                        sunToMid, 
+                        new THREE.Vector3(0, 1, 0)
+                    ).normalize();
+                    
+                    // Position camera perpendicular to avoid Sun
+                    cameraPos = midPoint.clone()
+                        .add(perpendicular.multiplyScalar(dist * 0.8))
+                        .add(new THREE.Vector3(0, dist * 0.4, 0));
                 } else {
+                    // Earth vicinity view
                     const dist = rocketPos.distanceTo(planetPos);
-                    cameraPos = planetPos.clone().add(new THREE.Vector3(dist * 0.5, dist * 0.8, dist * 0.5));
+                    
+                    // Calculate perpendicular to Sun-Earth line
+                    const sunToEarth = planetPos.clone().sub(sunPos).normalize();
+                    const perpendicular = new THREE.Vector3().crossVectors(
+                        sunToEarth,
+                        new THREE.Vector3(0, 1, 0)
+                    ).normalize();
+                    
+                    cameraPos = planetPos.clone()
+                        .add(perpendicular.multiplyScalar(dist * 1.5))
+                        .add(new THREE.Vector3(0, dist * 0.6, 0));
                 }
                 lookAtTarget = rocketPos;
                 break;
@@ -2638,9 +2672,19 @@ class Apollo11Animation {
                 break;
                 
             case 'orbital_overview':
-                // High orbital view
+                // High orbital view - avoid Sun direction
                 const dist = rocketPos.distanceTo(planetPos);
-                cameraPos = planetPos.clone().add(new THREE.Vector3(dist * 0.3, dist * 1.2, dist * 0.3));
+                
+                // Position perpendicular to Sun-planet line
+                const sunToPlanet = planetPos.clone().sub(sunPos).normalize();
+                const perpendicular2 = new THREE.Vector3().crossVectors(
+                    sunToPlanet,
+                    new THREE.Vector3(0, 1, 0)
+                ).normalize();
+                
+                cameraPos = planetPos.clone()
+                    .add(perpendicular2.multiplyScalar(dist * 1.0))
+                    .add(new THREE.Vector3(0, dist * 1.2, 0));
                 lookAtTarget = rocketPos;
                 break;
                 
@@ -2655,17 +2699,35 @@ class Apollo11Animation {
     applyCameraViewLanding(lmPos, moonPos, altitude) {
         const viewpoint = this.cameraMode % 3;
         
+        // Get Sun position to avoid blocking
+        const sun = this.solarSystem.sun;
+        const sunPos = sun ? sun.position : new THREE.Vector3(0, 0, 0);
+        
         switch (viewpoint) {
             case 0:
-                // Following from behind and above
-                const followOffset = new THREE.Vector3(0, altitude * 0.8, -altitude * 1.2);
+                // Following from behind and above - avoid Sun direction
+                const sunToMoon = moonPos.clone().sub(sunPos).normalize();
+                const perpendicular = new THREE.Vector3().crossVectors(
+                    sunToMoon,
+                    new THREE.Vector3(0, 1, 0)
+                ).normalize();
+                
+                const followOffset = perpendicular.multiplyScalar(altitude * 1.5)
+                    .add(new THREE.Vector3(0, altitude * 0.8, 0));
                 this.camera.position.copy(lmPos).add(followOffset);
                 this.camera.lookAt(lmPos);
                 break;
                 
             case 1:
-                // Side view
-                const sideOffset = new THREE.Vector3(altitude * 1.5, altitude * 0.5, 0);
+                // Side view - perpendicular to Sun
+                const sunToMoon2 = moonPos.clone().sub(sunPos).normalize();
+                const side = new THREE.Vector3().crossVectors(
+                    sunToMoon2,
+                    new THREE.Vector3(0, 1, 0)
+                ).normalize();
+                
+                const sideOffset = side.multiplyScalar(altitude * 1.8)
+                    .add(new THREE.Vector3(0, altitude * 0.5, 0));
                 this.camera.position.copy(lmPos).add(sideOffset);
                 this.camera.lookAt(lmPos);
                 break;
@@ -2677,6 +2739,24 @@ class Apollo11Animation {
                 this.camera.lookAt(moonPos);
                 break;
         }
+    }
+    
+    // Helper: Get optimal camera position avoiding Sun
+    getCameraPositionAvoidingSun(focusPoint, referencePoint, distance) {
+        const sun = this.solarSystem.sun;
+        const sunPos = sun ? sun.position : new THREE.Vector3(0, 0, 0);
+        
+        // Calculate perpendicular to Sun-focus line
+        const sunToFocus = focusPoint.clone().sub(sunPos).normalize();
+        const perpendicular = new THREE.Vector3().crossVectors(
+            sunToFocus,
+            new THREE.Vector3(0, 1, 0)
+        ).normalize();
+        
+        // Position camera perpendicular to Sun, elevated above
+        return focusPoint.clone()
+            .add(perpendicular.multiplyScalar(distance * 0.8))
+            .add(new THREE.Vector3(0, distance * 0.5, 0));
     }
     
     updateEffects(phaseProgress) {
