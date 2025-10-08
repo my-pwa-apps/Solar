@@ -1760,8 +1760,8 @@ class Apollo11Animation {
         const rocket = new THREE.Group();
         rocket.name = 'SaturnV';
         
-        // Saturn V dimensions (scaled for visibility)
-        const scale = 0.35;
+        // Saturn V dimensions (scaled larger for better visibility)
+        const scale = 2.0; // Increased from 0.35 to make rocket visible
         
         // Reusable materials (optimization)
         const whiteMetal = new THREE.MeshStandardMaterial({ 
@@ -2281,7 +2281,9 @@ class Apollo11Animation {
         const y = r * Math.sin(lat);
         const z = r * Math.cos(lat) * Math.sin(lon);
         
-        this.rocket.position.set(x, y, z);
+        // Position relative to Earth's world position (not absolute)
+        const localPos = new THREE.Vector3(x, y, z);
+        this.rocket.position.copy(earth.position).add(localPos);
         
         // Point rocket in direction of motion with pitch
         const upVector = new THREE.Vector3(x, y, z).normalize();
