@@ -1760,8 +1760,10 @@ class Apollo11Animation {
         const rocket = new THREE.Group();
         rocket.name = 'SaturnV';
         
-        // Saturn V dimensions (scaled larger for better visibility)
-        const scale = 2.0; // Increased from 0.35 to make rocket visible
+        // Saturn V dimensions (scaled for visibility at Earth-Moon distance)
+        // Real Saturn V: 111m tall, but Earth-Moon distance is 384,400km
+        // Need dramatic scaling to see rocket in trajectory shots
+        const scale = 15.0; // Increased from 2.0 - makes rocket visible from wide camera angles
         
         // Reusable materials (optimization)
         const whiteMetal = new THREE.MeshStandardMaterial({ 
@@ -2002,6 +2004,14 @@ class Apollo11Animation {
             exhaustGroup.add(particle);
         }
         rocket.add(exhaustGroup);
+        
+        // Enable shadows for all rocket parts (for realistic lighting)
+        rocket.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
         
         return rocket;
     }
@@ -2267,7 +2277,8 @@ class Apollo11Animation {
         if (!earth) return;
         
         const earthRadius = earth.userData.radius || 6.371;
-        const altitude = 0.01 + progress * 1.5; // Rise from surface to 150km
+        // Real Apollo 11: Launch to 150km altitude in ~12 minutes at speeds up to 9,920 km/h
+        const altitude = 0.01 + progress * 1.5; // Rise from surface to 150km (scaled units)
         
         // Kennedy Space Center position
         const lat = 28.5 * Math.PI / 180;
@@ -2490,6 +2501,7 @@ class Apollo11Animation {
         const moon = this.solarSystem.moons['moon'];
         if (!earth || !moon) return;
         
+        // Real Apollo 11: 3 days coast to Moon (384,400 km) at average speed ~5,500 km/h
         // Smooth interpolation from Earth orbit to Moon
         const earthToMoon = moon.position.clone().sub(earth.position);
         const startDist = 80 / earthToMoon.length(); // Normalized start position
@@ -2694,61 +2706,74 @@ class Apollo11Animation {
             case 'wide_trajectory':
                 // Wide view showing full Earth-Moon trajectory
                 if (targetPos) {
-                    // Show full Earth to Moon path
+                    // Show full Earth to Moon path with rocket visible
                     const earthToMoon = targetPos.clone().sub(planetPos);
                     const distance = earthToMoon.length();
-                    const midPoint = planetPos.clone().add(earthToMoon.multiplyScalar(0.5));
                     
-                    // Position camera to side and above to see the full journey
+                    // Calculate where rocket is on the journey (0 = Earth, 1 = Moon)
+                    const rocketProgress = rocketPos.clone().sub(planetPos).length() / distance;
+                    
+                    // Dynamic camera position that follows the rocket along the trajectory
+                    // Position camera perpendicular to Earth-Moon line, keeping all three objects in view
                     const up = new THREE.Vector3(0, 1, 0);
-                    const earthToMoonDir = targetPos.clone().sub(planetPos).normalize();
+                    const earthToMoonDir = earthToMoon.clone().normalize();
                     const sideDir = new THREE.Vector3().crossVectors(earthToMoonDir, up).normalize();
                     
-                    // Camera positioned to see both Earth and Moon
-                    cameraPos = midPoint.clone()
-                        .add(sideDir.multiplyScalar(distance * 0.6))
-                        .add(up.multiplyScalar(distance * 0.4));
+                    // Focus point moves with rocket but biased toward center of journey
+                    const focusPoint = planetPos.clone().add(earthToMoon.clone().multiplyScalar(
+                        Math.min(0.5, rocketProgress * 0.6 + 0.2) // Smooth transition from Earth to mid-point
+                    ));
                     
-                    // Look at midpoint between Earth and Moon
-                    lookAtTarget = midPoint;
+                    // Camera distance scales with journey progress
+                    const camDistance = distance * (0.35 + rocketProgress * 0.15);
+                    
+                    cameraPos = focusPoint.clone()
+                        .add(sideDir.multiplyScalar(camDistance * 0.8))
+                        .add(up.multiplyScalar(camDistance * 0.5));
+                    
+                    // Look at focus point (weighted average of rocket and journey center)
+                    lookAtTarget = focusPoint;
                 } else {
-                    // Earth vicinity - keep Earth and rocket in view
+                    // Earth vicinity - keep Earth and rocket in view during launch/orbit
                     const dist = Math.max(rocketPos.distanceTo(planetPos), 50);
                     const earthToRocket = rocketPos.clone().sub(planetPos).normalize();
                     const up = new THREE.Vector3(0, 1, 0);
                     const sideDir = new THREE.Vector3().crossVectors(earthToRocket, up).normalize();
                     
+                    // Position camera to show both Earth and rocket during early phases
                     cameraPos = planetPos.clone()
-                        .add(earthToRocket.multiplyScalar(dist * 0.3))
-                        .add(sideDir.multiplyScalar(dist * 0.8))
-                        .add(up.multiplyScalar(dist * 0.5));
+                        .add(earthToRocket.multiplyScalar(dist * 0.4))
+                        .add(sideDir.multiplyScalar(dist * 1.2))
+                        .add(up.multiplyScalar(dist * 0.7));
                     
-                    lookAtTarget = planetPos.clone().add(earthToRocket.multiplyScalar(dist * 0.3));
+                    // Look at point between Earth and rocket
+                    lookAtTarget = planetPos.clone().add(earthToRocket.multiplyScalar(dist * 0.5));
                 }
                 break;
                 
             case 'close_chase':
-                // Close chase camera following rocket
-                const chaseOffset = new THREE.Vector3(0, 5, -20);
+                // Close chase camera following rocket (adjusted for larger scale)
+                const chaseOffset = new THREE.Vector3(0, 20, -80); // Scaled up for larger rocket
                 chaseOffset.applyQuaternion(this.rocket.quaternion);
                 cameraPos = rocketPos.clone().add(chaseOffset);
                 
                 // Look slightly ahead of rocket to show direction
-                const forwardOffset = new THREE.Vector3(0, 0, 10);
+                const forwardOffset = new THREE.Vector3(0, 0, 40); // Scaled up
                 forwardOffset.applyQuaternion(this.rocket.quaternion);
                 lookAtTarget = rocketPos.clone().add(forwardOffset);
                 break;
                 
             case 'side_view':
-                // Side view showing rocket with Earth or Moon context
+                // Side view showing rocket with Earth or Moon context (scaled for larger rocket)
                 const contextPoint = targetPos || planetPos;
                 const toContext = contextPoint.clone().sub(rocketPos).normalize();
                 const up2 = new THREE.Vector3(0, 1, 0);
                 const sideDir2 = new THREE.Vector3().crossVectors(toContext, up2).normalize();
                 
+                // Farther back to show context
                 cameraPos = rocketPos.clone()
-                    .add(sideDir2.multiplyScalar(25))
-                    .add(up2.multiplyScalar(10));
+                    .add(sideDir2.multiplyScalar(100)) // Increased from 25
+                    .add(up2.multiplyScalar(50)); // Increased from 10
                 lookAtTarget = rocketPos;
                 break;
                 
