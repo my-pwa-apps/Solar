@@ -1719,111 +1719,310 @@ class Apollo11Animation {
         this.progress = 0;
         this.phase = 0;
         this.rocket = null;
+        this.stage1 = null;
+        this.stage2 = null;
+        this.stage3 = null;
+        this.csm = null;
+        this.lm = null;
         this.originalCameraParent = null;
-        this.cameraMode = 0; // 0: ground, 1: chase, 2: onboard, 3: orbital, 4: lunar approach, 5: landing
+        this.cameraMode = 0;
+        this.cameraChangeTime = 0;
+        this.cameraChangeDuration = 4; // Switch camera every 4 seconds
         
         // Mission phases with durations (in animation seconds)
         this.phases = [
-            { name: 'Launch', duration: 15, start: 0 },
-            { name: 'Earth Orbit', duration: 10, start: 15 },
-            { name: 'Trans-Lunar Injection', duration: 20, start: 25 },
-            { name: 'Coast to Moon', duration: 30, start: 45 },
-            { name: 'Lunar Orbit', duration: 15, start: 75 },
-            { name: 'Descent', duration: 20, start: 90 },
-            { name: 'Landing', duration: 10, start: 110 }
+            { name: 'Launch & Stage 1', duration: 12, start: 0 },
+            { name: 'Stage 2 Separation', duration: 8, start: 12 },
+            { name: 'Earth Orbit & Stage 3', duration: 10, start: 20 },
+            { name: 'Trans-Lunar Injection', duration: 15, start: 30 },
+            { name: 'CSM/LM Extraction', duration: 8, start: 45 },
+            { name: 'Coast to Moon', duration: 25, start: 53 },
+            { name: 'Lunar Orbit Insertion', duration: 12, start: 78 },
+            { name: 'LM Separation', duration: 8, start: 90 },
+            { name: 'Powered Descent', duration: 15, start: 98 },
+            { name: 'Landing', duration: 7, start: 113 }
         ];
         
         this.totalDuration = 120; // Total animation in seconds
+        
+        // Camera viewpoints for cycling
+        this.cameraViewpoints = [
+            'wide_trajectory', // See the path from Earth to Moon
+            'close_chase',     // Close follow
+            'side_view',       // Side angle
+            'front_view',      // Front view
+            'orbital_overview' // Far overview
+        ];
     }
     
     createRocket() {
         const rocket = new THREE.Group();
         rocket.name = 'SaturnV';
         
-        // Saturn V dimensions (scaled down for visibility)
-        const scale = 0.3;
+        // Saturn V dimensions (scaled for visibility)
+        const scale = 0.35;
         
-        // First Stage (S-IC) - 42m tall, 10m diameter
-        const s1Geometry = new THREE.CylinderGeometry(5 * scale, 5.5 * scale, 42 * scale, 16);
+        // First Stage (S-IC) - 42m tall, 10m diameter - Black and white checkerboard pattern
+        const s1Group = new THREE.Group();
+        s1Group.name = 'stage1';
+        
+        const s1Geometry = new THREE.CylinderGeometry(5 * scale, 5.5 * scale, 42 * scale, 24);
         const s1Material = new THREE.MeshStandardMaterial({ 
-            color: 0xffffff,
-            metalness: 0.7,
-            roughness: 0.3
+            color: 0xf5f5f5,
+            metalness: 0.4,
+            roughness: 0.6,
+            envMapIntensity: 0.5
         });
-        const stage1 = new THREE.Mesh(s1Geometry, s1Material);
-        stage1.position.y = 21 * scale;
-        rocket.add(stage1);
+        const stage1Body = new THREE.Mesh(s1Geometry, s1Material);
+        s1Group.add(stage1Body);
         
-        // Second Stage (S-II) - 25m tall
-        const s2Geometry = new THREE.CylinderGeometry(5 * scale, 5 * scale, 25 * scale, 16);
+        // Add black stripes for detail
+        for (let i = 0; i < 3; i++) {
+            const stripeGeometry = new THREE.CylinderGeometry(5.1 * scale, 5.6 * scale, 2 * scale, 24);
+            const stripeMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a,
+                metalness: 0.3,
+                roughness: 0.7
+            });
+            const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+            stripe.position.y = -15 * scale + i * 15 * scale;
+            s1Group.add(stripe);
+        }
+        
+        // F-1 Engines (5 engines at base)
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * Math.PI * 2) / 5;
+            const engineGeometry = new THREE.CylinderGeometry(1 * scale, 1.2 * scale, 3 * scale, 12);
+            const engineMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x2a2a2a,
+                metalness: 0.9,
+                roughness: 0.3
+            });
+            const engine = new THREE.Mesh(engineGeometry, engineMaterial);
+            engine.position.set(
+                Math.cos(angle) * 2.5 * scale,
+                -22 * scale,
+                Math.sin(angle) * 2.5 * scale
+            );
+            s1Group.add(engine);
+        }
+        
+        s1Group.position.y = 21 * scale;
+        rocket.add(s1Group);
+        this.stage1 = s1Group;
+        
+        // Second Stage (S-II) - 25m tall - White with details
+        const s2Group = new THREE.Group();
+        s2Group.name = 'stage2';
+        
+        const s2Geometry = new THREE.CylinderGeometry(5 * scale, 5 * scale, 25 * scale, 24);
         const s2Material = new THREE.MeshStandardMaterial({ 
             color: 0xffffff,
-            metalness: 0.7,
-            roughness: 0.3
+            metalness: 0.5,
+            roughness: 0.4,
+            envMapIntensity: 0.6
         });
-        const stage2 = new THREE.Mesh(s2Geometry, s2Material);
-        stage2.position.y = 54.5 * scale;
-        rocket.add(stage2);
+        const stage2Body = new THREE.Mesh(s2Geometry, s2Material);
+        s2Group.add(stage2Body);
         
-        // Third Stage (S-IVB) - 18m tall
-        const s3Geometry = new THREE.CylinderGeometry(3.3 * scale, 3.3 * scale, 18 * scale, 16);
+        // J-2 Engines (5 engines)
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * Math.PI * 2) / 5;
+            const engineGeometry = new THREE.CylinderGeometry(0.6 * scale, 0.8 * scale, 2 * scale, 12);
+            const engineMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a,
+                metalness: 0.9,
+                roughness: 0.2
+            });
+            const engine = new THREE.Mesh(engineGeometry, engineMaterial);
+            engine.position.set(
+                Math.cos(angle) * 2 * scale,
+                -13.5 * scale,
+                Math.sin(angle) * 2 * scale
+            );
+            s2Group.add(engine);
+        }
+        
+        s2Group.position.y = 54.5 * scale;
+        rocket.add(s2Group);
+        this.stage2 = s2Group;
+        
+        // Third Stage (S-IVB) - 18m tall - White
+        const s3Group = new THREE.Group();
+        s3Group.name = 'stage3';
+        
+        const s3Geometry = new THREE.CylinderGeometry(3.3 * scale, 3.3 * scale, 18 * scale, 24);
         const s3Material = new THREE.MeshStandardMaterial({ 
-            color: 0xffffff,
-            metalness: 0.7,
-            roughness: 0.3
+            color: 0xf0f0f0,
+            metalness: 0.6,
+            roughness: 0.3,
+            envMapIntensity: 0.7
         });
-        const stage3 = new THREE.Mesh(s3Geometry, s3Material);
-        stage3.position.y = 76 * scale;
-        rocket.add(stage3);
+        const stage3Body = new THREE.Mesh(s3Geometry, s3Material);
+        s3Group.add(stage3Body);
         
-        // Command/Service Module (CSM) - 11m tall
-        const csmGeometry = new THREE.CylinderGeometry(2 * scale, 3.3 * scale, 11 * scale, 16);
-        const csmMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xcccccc,
-            metalness: 0.8,
+        // Single J-2 engine
+        const s3EngineGeometry = new THREE.CylinderGeometry(0.8 * scale, 1 * scale, 2.5 * scale, 12);
+        const s3EngineMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x2a2a2a,
+            metalness: 0.9,
             roughness: 0.2
         });
-        const csm = new THREE.Mesh(csmGeometry, csmMaterial);
-        csm.position.y = 90.5 * scale;
-        rocket.add(csm);
+        const s3Engine = new THREE.Mesh(s3EngineGeometry, s3EngineMaterial);
+        s3Engine.position.y = -10 * scale;
+        s3Group.add(s3Engine);
         
-        // Lunar Module (LM) - stored behind CSM
-        const lmGeometry = new THREE.OctahedronGeometry(2 * scale);
-        const lmMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xffd700,
-            metalness: 0.6,
+        s3Group.position.y = 76 * scale;
+        rocket.add(s3Group);
+        this.stage3 = s3Group;
+        
+        // Command/Service Module (CSM) - 11m tall - Silver and gold foil
+        const csmGroup = new THREE.Group();
+        csmGroup.name = 'csm';
+        
+        // Command Module (cone shape)
+        const cmGeometry = new THREE.ConeGeometry(2 * scale, 4 * scale, 16);
+        const cmMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xc0c0c0,
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        const commandModule = new THREE.Mesh(cmGeometry, cmMaterial);
+        commandModule.position.y = 7 * scale;
+        csmGroup.add(commandModule);
+        
+        // Service Module (cylinder with gold foil)
+        const smGeometry = new THREE.CylinderGeometry(2 * scale, 2 * scale, 7 * scale, 16);
+        const smMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xd4af37, // Gold
+            metalness: 0.8,
+            roughness: 0.4,
+            envMapIntensity: 1.0
+        });
+        const serviceModule = new THREE.Mesh(smGeometry, smMaterial);
+        serviceModule.position.y = 2 * scale;
+        csmGroup.add(serviceModule);
+        
+        // Service Propulsion Engine
+        const speGeometry = new THREE.CylinderGeometry(0.7 * scale, 0.9 * scale, 2 * scale, 12);
+        const speMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x1a1a1a,
+            metalness: 0.9,
+            roughness: 0.2
+        });
+        const spe = new THREE.Mesh(speGeometry, speMaterial);
+        spe.position.y = -2.5 * scale;
+        csmGroup.add(spe);
+        
+        csmGroup.position.y = 90.5 * scale;
+        rocket.add(csmGroup);
+        this.csm = csmGroup;
+        
+        // Lunar Module (LM) - Gold foil appearance
+        const lmGroup = new THREE.Group();
+        lmGroup.name = 'lm';
+        
+        // Descent stage (octagonal)
+        const descentGeometry = new THREE.CylinderGeometry(2.5 * scale, 2.5 * scale, 2 * scale, 8);
+        const descentMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffd700, // Gold
+            metalness: 0.8,
+            roughness: 0.5,
+            envMapIntensity: 1.2
+        });
+        const descentStage = new THREE.Mesh(descentGeometry, descentMaterial);
+        lmGroup.add(descentStage);
+        
+        // Ascent stage (smaller octagon on top)
+        const ascentGeometry = new THREE.CylinderGeometry(1.8 * scale, 1.8 * scale, 2.5 * scale, 8);
+        const ascentMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffdf00,
+            metalness: 0.7,
             roughness: 0.4
         });
-        const lm = new THREE.Mesh(lmGeometry, lmMaterial);
-        lm.position.y = 85 * scale;
-        rocket.add(lm);
+        const ascentStage = new THREE.Mesh(ascentGeometry, ascentMaterial);
+        ascentStage.position.y = 2.25 * scale;
+        lmGroup.add(ascentStage);
         
-        // Engine glow (for launch)
-        const glowGeometry = new THREE.CylinderGeometry(5 * scale, 7 * scale, 15 * scale, 16);
-        const glowMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xff6600,
-            transparent: true,
-            opacity: 0,
-            depthWrite: false
+        // Landing legs (4 legs)
+        for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI * 2) / 4 + Math.PI / 4;
+            const legGeometry = new THREE.CylinderGeometry(0.1 * scale, 0.1 * scale, 3 * scale, 8);
+            const legMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x8b7355,
+                metalness: 0.6,
+                roughness: 0.5
+            });
+            const leg = new THREE.Mesh(legGeometry, legMaterial);
+            leg.position.set(
+                Math.cos(angle) * 2 * scale,
+                -2 * scale,
+                Math.sin(angle) * 2 * scale
+            );
+            leg.rotation.z = Math.atan2(2, 2) * (i % 2 === 0 ? 1 : -1);
+            lmGroup.add(leg);
+        }
+        
+        // Descent engine
+        const lmEngineGeometry = new THREE.CylinderGeometry(0.6 * scale, 0.8 * scale, 1.5 * scale, 12);
+        const lmEngineMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x2a2a2a,
+            metalness: 0.9,
+            roughness: 0.2
         });
-        const engineGlow = new THREE.Mesh(glowGeometry, glowMaterial);
-        engineGlow.position.y = -7.5 * scale;
-        engineGlow.name = 'engineGlow';
-        rocket.add(engineGlow);
+        const lmEngine = new THREE.Mesh(lmEngineGeometry, lmEngineMaterial);
+        lmEngine.position.y = -1.75 * scale;
+        lmGroup.add(lmEngine);
         
-        // Exhaust particles
+        lmGroup.position.y = 85 * scale;
+        lmGroup.visible = false; // Hidden initially inside adapter
+        rocket.add(lmGroup);
+        this.lm = lmGroup;
+        
+        // Engine glow effects (multiple for different stages)
+        const createEngineGlow = (radius, name) => {
+            const glowGeometry = new THREE.CylinderGeometry(radius * scale, radius * 1.5 * scale, 8 * scale, 16);
+            const glowMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff6600,
+                transparent: true,
+                opacity: 0,
+                depthWrite: false
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.name = name;
+            return glow;
+        };
+        
+        const s1Glow = createEngineGlow(6, 'stage1Glow');
+        s1Glow.position.y = -4 * scale;
+        s1Group.add(s1Glow);
+        
+        const s2Glow = createEngineGlow(4, 'stage2Glow');
+        s2Glow.position.y = -4 * scale;
+        s2Group.add(s2Glow);
+        
+        const s3Glow = createEngineGlow(2, 'stage3Glow');
+        s3Glow.position.y = -4 * scale;
+        s3Group.add(s3Glow);
+        
+        const lmGlow = createEngineGlow(1.5, 'lmGlow');
+        lmGlow.position.y = -1 * scale;
+        lmGroup.add(lmGlow);
+        
+        // Enhanced exhaust particles
         const exhaustGroup = new THREE.Group();
         exhaustGroup.name = 'exhaust';
-        for (let i = 0; i < 50; i++) {
-            const particleGeometry = new THREE.SphereGeometry(0.5 * scale, 8, 8);
+        for (let i = 0; i < 100; i++) {
+            const particleGeometry = new THREE.SphereGeometry(0.3 * scale, 6, 6);
             const particleMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xff9900,
+                color: i < 50 ? 0xff6600 : 0xffaa00,
                 transparent: true,
                 opacity: 0,
                 depthWrite: false
             });
             const particle = new THREE.Mesh(particleGeometry, particleMaterial);
             particle.userData.offset = Math.random() * Math.PI * 2;
+            particle.userData.speed = 0.5 + Math.random() * 1.5;
             exhaustGroup.add(particle);
         }
         rocket.add(exhaustGroup);
@@ -1922,26 +2121,42 @@ class Apollo11Animation {
         // Update rocket position and camera based on phase
         const phaseProgress = (this.progress - this.phases[this.phase].start) / this.phases[this.phase].duration;
         
+        // Cycle camera viewpoints every few seconds
+        this.cameraChangeTime += deltaTime;
+        if (this.cameraChangeTime >= this.cameraChangeDuration) {
+            this.cameraChangeTime = 0;
+            this.cameraMode = (this.cameraMode + 1) % this.cameraViewpoints.length;
+        }
+        
         switch (this.phase) {
-            case 0: // Launch
+            case 0: // Launch & Stage 1
                 this.updateLaunch(phaseProgress);
                 break;
-            case 1: // Earth Orbit
+            case 1: // Stage 2 Separation
+                this.updateStage2Separation(phaseProgress);
+                break;
+            case 2: // Earth Orbit & Stage 3
                 this.updateEarthOrbit(phaseProgress);
                 break;
-            case 2: // Trans-Lunar Injection
+            case 3: // Trans-Lunar Injection
                 this.updateTLI(phaseProgress);
                 break;
-            case 3: // Coast to Moon
+            case 4: // CSM/LM Extraction
+                this.updateExtraction(phaseProgress);
+                break;
+            case 5: // Coast to Moon
                 this.updateCoast(phaseProgress);
                 break;
-            case 4: // Lunar Orbit
-                this.updateLunarOrbit(phaseProgress);
+            case 6: // Lunar Orbit Insertion
+                this.updateLunarOrbitInsertion(phaseProgress);
                 break;
-            case 5: // Descent
+            case 7: // LM Separation
+                this.updateLMSeparation(phaseProgress);
+                break;
+            case 8: // Powered Descent
                 this.updateDescent(phaseProgress);
                 break;
-            case 6: // Landing
+            case 9: // Landing
                 this.updateLanding(phaseProgress);
                 break;
         }
@@ -1958,14 +2173,14 @@ class Apollo11Animation {
         if (!earth) return;
         
         const earthRadius = earth.userData.radius || 6.371;
-        const altitude = 0.01 + progress * 2; // Rise from surface to 200km
+        const altitude = 0.01 + progress * 1.5; // Rise from surface to 150km
         
         // Kennedy Space Center position
         const lat = 28.5 * Math.PI / 180;
         const lon = -80.5 * Math.PI / 180;
         
         // Add pitch program (tilt eastward as it rises)
-        const pitch = Math.min(progress * 1.2, 1.4); // Pitch over to ~80 degrees
+        const pitch = Math.min(progress * 1.3, 1.5); // Pitch over
         
         const r = earthRadius + altitude;
         const x = r * Math.cos(lat) * Math.cos(lon);
@@ -1986,24 +2201,54 @@ class Apollo11Animation {
             this.rocket.position.z + pitchVector.z
         );
         
-        // Camera: ground view initially, then chase view
-        if (progress < 0.3) {
-            // Ground view
-            const groundDist = earthRadius + 0.005;
-            const cameraPos = new THREE.Vector3(
-                groundDist * Math.cos(lat) * Math.cos(lon),
-                groundDist * Math.sin(lat),
-                groundDist * Math.cos(lat) * Math.sin(lon)
-            );
-            this.camera.position.copy(cameraPos);
-            this.camera.lookAt(this.rocket.position);
-        } else {
-            // Chase view
-            const chaseOffset = new THREE.Vector3(0, -5, -15);
-            chaseOffset.applyQuaternion(this.rocket.quaternion);
-            this.camera.position.copy(this.rocket.position).add(chaseOffset);
-            this.camera.lookAt(this.rocket.position);
+        // Multiple camera angles
+        this.applyCameraView(this.rocket.position, earth.position);
+    }
+    
+    updateStage2Separation(progress) {
+        const earth = this.solarSystem.planets['earth'];
+        if (!earth) return;
+        
+        const earthRadius = earth.userData.radius || 6.371;
+        const altitude = 1.51 + progress * 0.4; // 150km to 190km
+        
+        const lat = 28.5 * Math.PI / 180;
+        const lon = -80.5 * Math.PI / 180 + progress * 0.3;
+        
+        const r = earthRadius + altitude;
+        const x = r * Math.cos(lat) * Math.cos(lon);
+        const y = r * Math.sin(lat);
+        const z = r * Math.cos(lat) * Math.sin(lon);
+        
+        this.rocket.position.set(x, y, z);
+        
+        // Orbital velocity direction
+        const velocity = new THREE.Vector3(-Math.sin(lon), 0, Math.cos(lon));
+        this.rocket.lookAt(
+            this.rocket.position.x + velocity.x,
+            this.rocket.position.y + velocity.y,
+            this.rocket.position.z + velocity.z
+        );
+        
+        // Stage 1 separation
+        if (this.stage1 && progress > 0.2 && this.stage1.parent === this.rocket) {
+            this.scene.add(this.stage1);
+            const worldPos = new THREE.Vector3();
+            this.stage1.getWorldPosition(worldPos);
+            this.stage1.position.copy(worldPos);
+            const worldQuat = new THREE.Quaternion();
+            this.stage1.getWorldQuaternion(worldQuat);
+            this.stage1.quaternion.copy(worldQuat);
+            this.stage1.userData.separationVelocity = velocity.clone().multiplyScalar(-0.5);
         }
+        
+        // Move separated stage
+        if (this.stage1 && this.stage1.userData.separationVelocity) {
+            this.stage1.position.add(this.stage1.userData.separationVelocity.clone().multiplyScalar(0.02));
+            this.stage1.rotation.x += 0.02;
+        }
+        
+        this.applyCameraView(this.rocket.position, earth.position, true);
     }
     
     updateEarthOrbit(progress) {
@@ -2014,17 +2259,17 @@ class Apollo11Animation {
         const orbitRadius = earthRadius + 1.91; // 191km altitude parking orbit
         
         // Circular orbit
-        const angle = progress * Math.PI * 2;
-        this.rocket.position.set(
+        const angle = progress * Math.PI * 3; // 1.5 orbits
+        this.rocket.position.copy(earth.position).add(new THREE.Vector3(
             orbitRadius * Math.cos(angle),
-            orbitRadius * Math.sin(angle) * 0.1, // Slight inclination
+            orbitRadius * Math.sin(angle) * 0.15, // Inclination
             orbitRadius * Math.sin(angle)
-        );
+        ));
         
         // Point in direction of motion
         const velocity = new THREE.Vector3(
             -Math.sin(angle),
-            Math.cos(angle) * 0.1,
+            Math.cos(angle) * 0.15,
             Math.cos(angle)
         ).normalize();
         
@@ -2034,10 +2279,24 @@ class Apollo11Animation {
             this.rocket.position.z + velocity.z
         );
         
-        // Orbital view
-        const offset = new THREE.Vector3(orbitRadius * 2, orbitRadius * 3, orbitRadius * 2);
-        this.camera.position.copy(earth.position).add(offset);
-        this.camera.lookAt(this.rocket.position);
+        // Stage 2 separation near end
+        if (this.stage2 && progress > 0.7 && this.stage2.parent === this.rocket) {
+            this.scene.add(this.stage2);
+            const worldPos = new THREE.Vector3();
+            this.stage2.getWorldPosition(worldPos);
+            this.stage2.position.copy(worldPos);
+            const worldQuat = new THREE.Quaternion();
+            this.stage2.getWorldQuaternion(worldQuat);
+            this.stage2.quaternion.copy(worldQuat);
+            this.stage2.userData.separationVelocity = velocity.clone().multiplyScalar(-0.3);
+        }
+        
+        if (this.stage2 && this.stage2.userData.separationVelocity) {
+            this.stage2.position.add(this.stage2.userData.separationVelocity.clone().multiplyScalar(0.01));
+            this.stage2.rotation.y += 0.015;
+        }
+        
+        this.applyCameraView(this.rocket.position, earth.position);
     }
     
     updateTLI(progress) {
@@ -2049,16 +2308,15 @@ class Apollo11Animation {
         const startRadius = earthRadius + 1.91;
         
         // Start from orbit position, accelerate away from Earth
-        const startAngle = 0;
-        const escapeVector = new THREE.Vector3(
-            Math.cos(startAngle),
-            0.1,
-            Math.sin(startAngle)
-        ).normalize();
+        const earthToMoon = moon.position.clone().sub(earth.position);
+        const startPos = earth.position.clone().add(
+            earthToMoon.clone().normalize().multiplyScalar(startRadius)
+        );
         
-        const distance = startRadius + progress * 50; // Move away from Earth
-        
-        this.rocket.position.copy(escapeVector.multiplyScalar(distance));
+        const distance = progress * 60; // Initial burn distance
+        this.rocket.position.copy(startPos).add(
+            earthToMoon.clone().normalize().multiplyScalar(distance)
+        );
         
         // Point toward Moon
         const toMoon = moon.position.clone().sub(this.rocket.position).normalize();
@@ -2068,11 +2326,61 @@ class Apollo11Animation {
             this.rocket.position.z + toMoon.z
         );
         
-        // Onboard view looking at Earth
-        const viewOffset = new THREE.Vector3(0, 2, 5);
-        viewOffset.applyQuaternion(this.rocket.quaternion);
-        this.camera.position.copy(this.rocket.position).add(viewOffset);
-        this.camera.lookAt(earth.position);
+        this.applyCameraView(this.rocket.position, earth.position, false, moon.position);
+    }
+    
+    updateExtraction(progress) {
+        const earth = this.solarSystem.planets['earth'];
+        const moon = this.solarSystem.moons['moon'];
+        if (!earth || !moon) return;
+        
+        // Position continues on trajectory
+        const earthToMoon = moon.position.clone().sub(earth.position);
+        const travelDist = 60 + progress * 20;
+        this.rocket.position.copy(earth.position).add(
+            earthToMoon.clone().normalize().multiplyScalar(travelDist)
+        );
+        
+        // Rotate CSM 180 degrees
+        if (this.csm) {
+            this.csm.rotation.y = progress * Math.PI;
+        }
+        
+        // Extract LM (make visible and move forward)
+        if (this.lm && progress > 0.3) {
+            this.lm.visible = true;
+            const extractDist = (progress - 0.3) * 10;
+            this.lm.position.y = 85 * 0.35 + extractDist;
+        }
+        
+        // Separate and discard Stage 3
+        if (this.stage3 && progress > 0.6 && this.stage3.parent === this.rocket) {
+            this.scene.add(this.stage3);
+            const worldPos = new THREE.Vector3();
+            this.stage3.getWorldPosition(worldPos);
+            this.stage3.position.copy(worldPos);
+            const worldQuat = new THREE.Quaternion();
+            this.stage3.getWorldQuaternion(worldQuat);
+            this.stage3.quaternion.copy(worldQuat);
+            this.stage3.userData.separationVelocity = earthToMoon.clone().normalize().multiplyScalar(-0.2);
+        }
+        
+        if (this.stage3 && this.stage3.userData.separationVelocity) {
+            this.stage3.position.add(this.stage3.userData.separationVelocity.clone().multiplyScalar(0.01));
+            this.stage3.rotation.x += 0.01;
+        }
+        
+        const toMoon = moon.position.clone().sub(this.rocket.position).normalize();
+        this.rocket.lookAt(
+            this.rocket.position.x + toMoon.x,
+            this.rocket.position.y + toMoon.y,
+            this.rocket.position.z + toMoon.z
+        );
+        
+        // Close-up camera for extraction
+        const sideOffset = new THREE.Vector3(15, 5, 0);
+        this.camera.position.copy(this.rocket.position).add(sideOffset);
+        this.camera.lookAt(this.rocket.position);
     }
     
     updateCoast(progress) {
@@ -2080,10 +2388,14 @@ class Apollo11Animation {
         const moon = this.solarSystem.moons['moon'];
         if (!earth || !moon) return;
         
-        // Interpolate from Earth to Moon
+        // Smooth interpolation from Earth orbit to Moon
         const earthToMoon = moon.position.clone().sub(earth.position);
+        const startDist = 80 / earthToMoon.length(); // Normalized start position
+        const endDist = 0.85; // Approach Moon
+        const travelProgress = startDist + (endDist - startDist) * progress;
+        
         this.rocket.position.copy(earth.position).add(
-            earthToMoon.clone().multiplyScalar(progress)
+            earthToMoon.clone().multiplyScalar(travelProgress)
         );
         
         // Point toward Moon
@@ -2094,27 +2406,74 @@ class Apollo11Animation {
             this.rocket.position.z + toMoon.z
         );
         
-        // Chase view
-        const chaseOffset = new THREE.Vector3(0, 10, -30);
-        chaseOffset.applyQuaternion(this.rocket.quaternion);
-        this.camera.position.copy(this.rocket.position).add(chaseOffset);
-        this.camera.lookAt(this.rocket.position);
+        // Wide trajectory view showing Earth to Moon path
+        this.applyCameraView(this.rocket.position, earth.position, false, moon.position);
     }
     
-    updateLunarOrbit(progress) {
+    updateLunarOrbitInsertion(progress) {
+        const moon = this.solarSystem.moons['moon'];
+        if (!moon) return;
+        
+        const moonRadius = moon.userData.radius || 1.737;
+        const approachDist = moonRadius + 5 - progress * 3.9; // Approach from 5 down to 1.1
+        
+        // Spiral approach
+        const angle = progress * Math.PI * 3;
+        this.rocket.position.copy(moon.position).add(new THREE.Vector3(
+            approachDist * Math.cos(angle),
+            approachDist * Math.sin(angle) * 0.3,
+            approachDist * Math.sin(angle)
+        ));
+        
+        // Point in direction of motion
+        const velocity = new THREE.Vector3(
+            -Math.sin(angle),
+            Math.cos(angle) * 0.3,
+            Math.cos(angle)
+        ).normalize();
+        
+        this.rocket.lookAt(
+            this.rocket.position.x + velocity.x,
+            this.rocket.position.y + velocity.y,
+            this.rocket.position.z + velocity.z
+        );
+        
+        this.applyCameraView(this.rocket.position, moon.position);
+    }
+    
+    updateLMSeparation(progress) {
         const moon = this.solarSystem.moons['moon'];
         if (!moon) return;
         
         const moonRadius = moon.userData.radius || 1.737;
         const orbitRadius = moonRadius + 1.1; // 110km altitude
         
-        // Circular orbit around Moon
-        const angle = progress * Math.PI * 4; // 2 orbits
+        // Continue in lunar orbit
+        const angle = progress * Math.PI * 2;
         this.rocket.position.copy(moon.position).add(new THREE.Vector3(
             orbitRadius * Math.cos(angle),
             orbitRadius * Math.sin(angle) * 0.2,
             orbitRadius * Math.sin(angle)
         ));
+        
+        // Separate LM from CSM
+        if (this.lm && this.csm && progress > 0.4) {
+            // Move LM away from CSM
+            const separationDist = (progress - 0.4) * 5;
+            const separationDir = new THREE.Vector3(
+                Math.cos(angle + Math.PI / 2),
+                0,
+                Math.sin(angle + Math.PI / 2)
+            );
+            
+            // LM moves to descent orbit
+            const lmOrbitRadius = orbitRadius - (progress - 0.4) * 0.5;
+            this.lm.position.copy(moon.position).add(new THREE.Vector3(
+                lmOrbitRadius * Math.cos(angle),
+                lmOrbitRadius * Math.sin(angle) * 0.2,
+                lmOrbitRadius * Math.sin(angle)
+            )).add(separationDir.multiplyScalar(separationDist));
+        }
         
         // Point in direction of motion
         const velocity = new THREE.Vector3(
@@ -2129,19 +2488,30 @@ class Apollo11Animation {
             this.rocket.position.z + velocity.z
         );
         
-        // Orbital view of Moon
-        const offset = new THREE.Vector3(orbitRadius * 2, orbitRadius * 2, orbitRadius * 2);
-        this.camera.position.copy(moon.position).add(offset);
-        this.camera.lookAt(this.rocket.position);
+        if (this.lm) {
+            this.lm.lookAt(moon.position);
+        }
+        
+        // Camera shows both spacecraft
+        const midPoint = new THREE.Vector3();
+        if (this.lm && progress > 0.4) {
+            midPoint.copy(this.rocket.position).add(this.lm.position).multiplyScalar(0.5);
+        } else {
+            midPoint.copy(this.rocket.position);
+        }
+        
+        const camOffset = new THREE.Vector3(0, orbitRadius * 1.5, orbitRadius * 2);
+        this.camera.position.copy(midPoint).add(camOffset);
+        this.camera.lookAt(midPoint);
     }
     
     updateDescent(progress) {
         const moon = this.solarSystem.moons['moon'];
-        if (!moon) return;
+        if (!moon || !this.lm) return;
         
         const moonRadius = moon.userData.radius || 1.737;
-        const startAltitude = 1.1; // 110km
-        const endAltitude = 0.001; // Near surface
+        const startAltitude = 0.15; // 15km powered descent
+        const endAltitude = 0.002; // 2km
         
         const altitude = startAltitude - progress * (startAltitude - endAltitude);
         
@@ -2149,25 +2519,29 @@ class Apollo11Animation {
         const lat = 0.67 * Math.PI / 180;
         const lon = 23.47 * Math.PI / 180;
         
+        // Arcing descent trajectory
+        const arcProgress = Math.sin(progress * Math.PI / 2); // Smooth arc
+        const horizontalOffset = (1 - arcProgress) * 0.3;
+        
         const r = moonRadius + altitude;
-        this.rocket.position.copy(moon.position).add(new THREE.Vector3(
-            r * Math.cos(lat) * Math.cos(lon),
+        this.lm.position.copy(moon.position).add(new THREE.Vector3(
+            (r + horizontalOffset) * Math.cos(lat) * Math.cos(lon),
             r * Math.sin(lat),
-            r * Math.cos(lat) * Math.sin(lon)
+            (r + horizontalOffset) * Math.cos(lat) * Math.sin(lon)
         ));
         
-        // Point downward toward landing site
-        this.rocket.lookAt(moon.position);
+        // Tilt LM for landing
+        const tiltAngle = progress * 0.3; // Slight tilt during descent
+        this.lm.lookAt(moon.position);
+        this.lm.rotation.x += tiltAngle;
         
-        // Landing view - camera follows from behind and above
-        const landingOffset = new THREE.Vector3(0, altitude * 0.5, -altitude * 0.8);
-        this.camera.position.copy(this.rocket.position).add(landingOffset);
-        this.camera.lookAt(this.rocket.position);
+        // Multiple camera angles during descent
+        this.applyCameraViewLanding(this.lm.position, moon.position, altitude);
     }
     
     updateLanding(progress) {
         const moon = this.solarSystem.moons['moon'];
-        if (!moon) return;
+        if (!moon || !this.lm) return;
         
         const moonRadius = moon.userData.radius || 1.737;
         
@@ -2175,42 +2549,180 @@ class Apollo11Animation {
         const lat = 0.67 * Math.PI / 180;
         const lon = 23.47 * Math.PI / 180;
         
-        // Small vertical movement for touchdown
-        const finalAltitude = 0.001 * (1 - progress);
+        // Small vertical movement for touchdown with dust kick-up effect
+        const finalAltitude = 0.002 * (1 - progress);
         
         const r = moonRadius + finalAltitude;
-        this.rocket.position.copy(moon.position).add(new THREE.Vector3(
+        this.lm.position.copy(moon.position).add(new THREE.Vector3(
             r * Math.cos(lat) * Math.cos(lon),
             r * Math.sin(lat),
             r * Math.cos(lat) * Math.sin(lon)
         ));
         
-        this.rocket.lookAt(moon.position);
+        this.lm.lookAt(moon.position);
         
-        // Ground-level view from nearby
-        const groundCam = this.rocket.position.clone().add(new THREE.Vector3(2, 0.5, 3));
-        this.camera.position.copy(groundCam);
-        this.camera.lookAt(this.rocket.position);
+        // Rotate slowly to rest
+        this.lm.rotation.z = Math.sin(progress * Math.PI) * 0.05;
+        
+        // Cinematic landing camera - multiple angles
+        if (progress < 0.5) {
+            // Side view
+            const sideOffset = new THREE.Vector3(3, 1, 0);
+            this.camera.position.copy(this.lm.position).add(sideOffset);
+            this.camera.lookAt(this.lm.position);
+        } else {
+            // Ground-level view showing final touchdown
+            const groundCam = this.lm.position.clone().add(new THREE.Vector3(2, 0.3, 2));
+            this.camera.position.copy(groundCam);
+            this.camera.lookAt(this.lm.position);
+        }
+    }
+    
+    applyCameraView(rocketPos, planetPos, showSeparation = false, targetPos = null) {
+        const viewpoint = this.cameraViewpoints[this.cameraMode];
+        
+        switch (viewpoint) {
+            case 'wide_trajectory':
+                // Wide view showing trajectory
+                if (targetPos) {
+                    const midPoint = new THREE.Vector3().addVectors(planetPos, targetPos).multiplyScalar(0.5);
+                    const dist = planetPos.distanceTo(targetPos);
+                    const offset = new THREE.Vector3(0, dist * 0.4, dist * 0.6);
+                    this.camera.position.copy(midPoint).add(offset);
+                    this.camera.lookAt(rocketPos);
+                } else {
+                    const dist = rocketPos.distanceTo(planetPos);
+                    const offset = new THREE.Vector3(dist * 0.5, dist * 0.8, dist * 0.5);
+                    this.camera.position.copy(planetPos).add(offset);
+                    this.camera.lookAt(rocketPos);
+                }
+                break;
+                
+            case 'close_chase':
+                // Close chase camera
+                const chaseOffset = new THREE.Vector3(0, 3, -10);
+                chaseOffset.applyQuaternion(this.rocket.quaternion);
+                this.camera.position.copy(rocketPos).add(chaseOffset);
+                this.camera.lookAt(rocketPos);
+                break;
+                
+            case 'side_view':
+                // Side angle view
+                const sideOffset = new THREE.Vector3(15, 5, 0);
+                this.camera.position.copy(rocketPos).add(sideOffset);
+                this.camera.lookAt(rocketPos);
+                break;
+                
+            case 'front_view':
+                // Front view (onboard looking back)
+                const frontOffset = new THREE.Vector3(0, 2, 8);
+                frontOffset.applyQuaternion(this.rocket.quaternion);
+                this.camera.position.copy(rocketPos).add(frontOffset);
+                this.camera.lookAt(planetPos);
+                break;
+                
+            case 'orbital_overview':
+                // High orbital view
+                const dist = rocketPos.distanceTo(planetPos);
+                const overviewOffset = new THREE.Vector3(dist * 0.3, dist * 1.2, dist * 0.3);
+                this.camera.position.copy(planetPos).add(overviewOffset);
+                this.camera.lookAt(rocketPos);
+                break;
+        }
+    }
+    
+    applyCameraViewLanding(lmPos, moonPos, altitude) {
+        const viewpoint = this.cameraMode % 3;
+        
+        switch (viewpoint) {
+            case 0:
+                // Following from behind and above
+                const followOffset = new THREE.Vector3(0, altitude * 0.8, -altitude * 1.2);
+                this.camera.position.copy(lmPos).add(followOffset);
+                this.camera.lookAt(lmPos);
+                break;
+                
+            case 1:
+                // Side view
+                const sideOffset = new THREE.Vector3(altitude * 1.5, altitude * 0.5, 0);
+                this.camera.position.copy(lmPos).add(sideOffset);
+                this.camera.lookAt(lmPos);
+                break;
+                
+            case 2:
+                // Onboard view looking down
+                const onboardOffset = new THREE.Vector3(0, 1, 0);
+                this.camera.position.copy(lmPos).add(onboardOffset);
+                this.camera.lookAt(moonPos);
+                break;
+        }
     }
     
     updateEffects(phaseProgress) {
-        const engineGlow = this.rocket.getObjectByName('engineGlow');
-        const exhaust = this.rocket.getObjectByName('exhaust');
+        // Determine which engines are firing
+        let activeGlow = null;
+        let glowIntensity = 0;
         
-        // Engine effects active during launch and TLI
-        const isThrusting = this.phase === 0 || this.phase === 2;
-        
-        if (engineGlow) {
-            engineGlow.material.opacity = isThrusting ? 0.8 : 0;
+        switch (this.phase) {
+            case 0: // Launch - Stage 1
+                activeGlow = this.stage1?.getObjectByName('stage1Glow');
+                glowIntensity = 0.9;
+                break;
+            case 1: // Stage 2 firing
+                activeGlow = this.stage2?.getObjectByName('stage2Glow');
+                glowIntensity = 0.8;
+                break;
+            case 2: // Earth orbit - Stage 3 occasional firing
+                activeGlow = this.stage3?.getObjectByName('stage3Glow');
+                glowIntensity = phaseProgress > 0.7 ? 0 : 0.3;
+                break;
+            case 3: // TLI - Stage 3 burn
+                activeGlow = this.stage3?.getObjectByName('stage3Glow');
+                glowIntensity = 0.85;
+                break;
+            case 6: // Lunar orbit insertion - CSM engine
+                glowIntensity = 0.6;
+                break;
+            case 8: // LM descent
+                activeGlow = this.lm?.getObjectByName('lmGlow');
+                glowIntensity = 0.7;
+                break;
+            case 9: // Landing - reduced thrust
+                activeGlow = this.lm?.getObjectByName('lmGlow');
+                glowIntensity = 0.4 * (1 - phaseProgress); // Reduce as landing
+                break;
         }
         
-        if (exhaust && isThrusting) {
+        // Update all glows
+        [this.stage1, this.stage2, this.stage3, this.lm].forEach(stage => {
+            if (stage) {
+                ['stage1Glow', 'stage2Glow', 'stage3Glow', 'lmGlow'].forEach(glowName => {
+                    const glow = stage.getObjectByName(glowName);
+                    if (glow) {
+                        if (glow === activeGlow) {
+                            glow.material.opacity = glowIntensity;
+                        } else {
+                            glow.material.opacity = 0;
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Update exhaust particles
+        const exhaust = this.rocket.getObjectByName('exhaust');
+        if (exhaust && glowIntensity > 0) {
             exhaust.children.forEach((particle, i) => {
-                const t = (this.progress * 10 + particle.userData.offset) % (Math.PI * 2);
-                particle.position.y = -10 - Math.sin(t) * 5;
-                particle.position.x = Math.cos(t + i * 0.3) * 2;
-                particle.position.z = Math.sin(t + i * 0.3) * 2;
-                particle.material.opacity = Math.max(0, 0.6 - Math.sin(t) * 0.3);
+                const t = (this.progress * 15 + particle.userData.offset) % (Math.PI * 2);
+                const speed = particle.userData.speed;
+                particle.position.y = -15 - Math.sin(t) * 8 * speed;
+                particle.position.x = Math.cos(t + i * 0.2) * 3 * speed;
+                particle.position.z = Math.sin(t + i * 0.2) * 3 * speed;
+                particle.material.opacity = Math.max(0, glowIntensity * 0.7 - Math.abs(Math.sin(t)) * 0.4);
+                
+                // Color variation - white hot to orange
+                const heatColor = i < 50 ? 0xff6600 : 0xffaa00;
+                particle.material.color.setHex(heatColor);
             });
         } else if (exhaust) {
             exhaust.children.forEach(particle => {
