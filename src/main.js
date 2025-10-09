@@ -1678,7 +1678,9 @@ class UIManager {
             explorerTitle: document.getElementById('explorer-title'),
             explorerContent: document.getElementById('explorer-content'),
             helpContent: document.getElementById('help-content'),
-            loadingText: document.getElementById('loading-text')
+            loadingText: document.getElementById('loading-text'),
+            loadingProgressBar: document.getElementById('loading-progress-bar'),
+            loadingPercentage: document.getElementById('loading-percentage')
         };
         
         this.validateElements();
@@ -1700,6 +1702,23 @@ class UIManager {
         }
         if (this.elements.loading) {
             this.elements.loading.classList.remove('hidden');
+        }
+    }
+
+    updateLoadingProgress(progress, message = null) {
+        // Update progress bar (0-100)
+        if (this.elements.loadingProgressBar) {
+            this.elements.loadingProgressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+        }
+        
+        // Update percentage text
+        if (this.elements.loadingPercentage) {
+            this.elements.loadingPercentage.textContent = `${Math.round(progress)}%`;
+        }
+        
+        // Update message if provided
+        if (message && this.elements.loadingText) {
+            this.elements.loadingText.textContent = message;
         }
     }
 
@@ -1845,6 +1864,9 @@ class SolarSystemModule {
         // Orbits visibility: true = visible by default
         this.orbitsVisible = true;
         
+        // Constellations visibility: true = visible by default
+        this.constellationsVisible = true;
+        
         // Geometry cache for reuse
         this.geometryCache = new Map();
         
@@ -1929,31 +1951,41 @@ class SolarSystemModule {
         const initStartTime = performance.now();
         
         // PHASE 1: Critical content - Sun and all planets (needed for navigation/animation)
-        if (this.uiManager) this.uiManager.showLoading('Creating the Sun...');
+        if (this.uiManager) this.uiManager.updateLoadingProgress(25, '☀️ Creating the Sun...');
         await this.createSun(scene);
         
-        if (this.uiManager) this.uiManager.showLoading('Building inner planets...');
+        if (this.uiManager) this.uiManager.updateLoadingProgress(35, '🪐 Building inner planets...');
         await this.createInnerPlanets(scene);
         
         // CRITICAL: Create outer planets synchronously so they're clickable/navigable
-        if (this.uiManager) this.uiManager.showLoading('Building outer planets...');
+        if (this.uiManager) this.uiManager.updateLoadingProgress(55, '🪐 Building outer planets...');
         await this.createOuterPlanets(scene);
         
         // PHASE 2: Decorative content (can load in background after planets are ready)
+        if (this.uiManager) this.uiManager.updateLoadingProgress(65, '☄️ Creating asteroid belt...');
+        
         // Use non-blocking setTimeout to allow rendering to start with all planets loaded
         setTimeout(async () => {
             await this.createAsteroidBelt(scene);
+            if (this.uiManager) this.uiManager.updateLoadingProgress(68, '❄️ Creating Kuiper belt...');
+            
             await this.createKuiperBelt(scene);
+            if (this.uiManager) this.uiManager.updateLoadingProgress(72, '⭐ Adding starfield...');
             
             // PHASE 3: Background decorations
             this.createStarfield(scene);
+            if (this.uiManager) this.uiManager.updateLoadingProgress(75, '🌌 Creating constellations...');
+            
             this.createOrbitalPaths(scene);
             this.createDistantStars(scene);
             this.createNebulae(scene);
             this.createConstellations(scene);
+            if (this.uiManager) this.uiManager.updateLoadingProgress(80, '🌠 Adding galaxies...');
+            
             this.createGalaxies(scene);
             this.createNearbyStars(scene);
             this.createExoplanets(scene);
+            if (this.uiManager) this.uiManager.updateLoadingProgress(85, '☄️ Creating comets...');
             
             // PHASE 4: Dynamic objects
             this.createComets(scene);
@@ -6923,7 +6955,89 @@ class SolarSystemModule {
             }
         });
         
+        // Recreate orbital paths with new distances
+        this.updateOrbitalPaths();
+        
         console.log(`Scale mode: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
+    }
+    
+    updateOrbitalPaths() {
+        // Remove existing orbital paths
+        this.orbits.forEach(orbit => {
+            if (orbit.parent) {
+                orbit.parent.remove(orbit);
+            }
+            if (orbit.geometry) orbit.geometry.dispose();
+            if (orbit.material) orbit.material.dispose();
+        });
+        this.orbits = [];
+        
+        // Recreate orbital paths for all planets
+        const planetsToOrbit = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+        
+        planetsToOrbit.forEach(planetName => {
+            const planet = this.planets[planetName];
+            if (planet && planet.userData) {
+                const distance = planet.userData.distance;
+                const points = [];
+                const segments = 128;
+                
+                for (let i = 0; i <= segments; i++) {
+                    const angle = (i / segments) * Math.PI * 2;
+                    points.push(new THREE.Vector3(
+                        distance * Math.cos(angle),
+                        0,
+                        distance * Math.sin(angle)
+                    ));
+                }
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: 0x444444,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                
+                const orbit = new THREE.Line(geometry, material);
+                orbit.visible = this.orbitsVisible;
+                orbit.userData = { type: 'orbit', planet: planetName };
+                
+                planet.parent.add(orbit);
+                this.orbits.push(orbit);
+            }
+        });
+        
+        // Also update Pluto if it exists
+        if (this.planets.pluto && this.planets.pluto.userData) {
+            const distance = this.planets.pluto.userData.distance;
+            const points = [];
+            const segments = 128;
+            
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                points.push(new THREE.Vector3(
+                    distance * Math.cos(angle),
+                    0,
+                    distance * Math.sin(angle)
+                ));
+            }
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: 0x444444,
+                transparent: true,
+                opacity: 0.3
+            });
+            
+            const orbit = new THREE.Line(geometry, material);
+            orbit.visible = this.orbitsVisible;
+            orbit.userData = { type: 'orbit', planet: 'pluto' };
+            
+            this.planets.pluto.parent.add(orbit);
+            this.orbits.push(orbit);
+        }
+        
+        console.log(`🛤️ Orbital paths updated for ${this.orbits.length} planets`);
     }
 
     getObjectInfo(object) {
@@ -7601,27 +7715,38 @@ class App {
             this.uiManager = new UIManager();
             
             this.uiManager.showLoading('Initializing Space Explorer...');
+            this.uiManager.updateLoadingProgress(0, '🎬 Setting up scene...');
             
             // Setup global UI functions
             this.setupGlobalFunctions();
+            this.uiManager.updateLoadingProgress(10, '🖱️ Initializing controls...');
             
             // Setup help button
             this.setupHelpButton();
+            this.uiManager.updateLoadingProgress(15, '🌌 Loading solar system...');
 
             // Load Solar System module directly
             const moduleStartTime = performance.now();
             this.solarSystemModule = new SolarSystemModule(this.uiManager);
+            this.uiManager.updateLoadingProgress(20, '☀️ Creating Sun...');
+            
             await this.solarSystemModule.init(this.sceneManager.scene);
             
             if (DEBUG.PERFORMANCE) {
                 console.log(`⚡ Module loaded in ${(performance.now() - moduleStartTime).toFixed(0)}ms`);
             }
             
+            this.uiManager.updateLoadingProgress(90, '🎨 Finalizing UI...');
+            
             // Setup UI for Solar System
             this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
             
+            this.uiManager.updateLoadingProgress(95, '⚙️ Configuring controls...');
+            
             // Setup controls
             this.setupControls();
+            
+            this.uiManager.updateLoadingProgress(100, '✨ Ready!');
 
             // Start animation loop
             console.log('🎬 About to start animation loop...');
@@ -7819,6 +7944,11 @@ class App {
         // Constellation toggle button
         const constellationsButton = document.getElementById('toggle-constellations');
         if (constellationsButton) {
+            // Set initial state based on default visibility
+            if (this.solarSystemModule && this.solarSystemModule.constellationsVisible) {
+                constellationsButton.classList.add('toggle-on');
+            }
+            
             constellationsButton.addEventListener('click', () => {
                 if (this.solarSystemModule) {
                     const visible = !this.solarSystemModule.constellationsVisible;

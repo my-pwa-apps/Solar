@@ -828,19 +828,30 @@ select:focus-visible {
 /* Loading progress bar */
 #loading-progress {
     width: 100%;
-    height: 4px;
+    height: 6px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    margin-top: 15px;
+    border-radius: 3px;
+    margin-top: 20px;
     overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 #loading-progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #4a90e2, #9b59b6);
+    background: linear-gradient(90deg, var(--fluent-accent), #9b59b6);
     width: 0%;
-    transition: width 0.3s ease;
-    animation: shimmer 2s infinite;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 3px;
+    box-shadow: 0 0 10px rgba(0, 120, 212, 0.5);
+}
+
+#loading-percentage {
+    margin-top: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fluent-accent);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    text-shadow: 0 0 10px rgba(0, 120, 212, 0.4);
 }
 
 @keyframes shimmer {
