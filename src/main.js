@@ -206,7 +206,7 @@ const CONFIG = {
     },
     CONTROLS: {
         dampingFactor: 0.05,
-        minDistance: 5,
+        minDistance: 0.001,  // Changed from 5 to 0.001 - allows extreme close-up of ISS and small objects
         maxDistance: 10000,
         enablePan: true,
         zoomSpeed: 1.2
@@ -5173,7 +5173,7 @@ class SolarSystemModule {
         // Real ISS: 109m long × 73m wide × 20m tall, 419,725 kg
         // 16 pressurized modules + truss + solar arrays + radiators
         const iss = new THREE.Group();
-        const scale = 0.0003; // Increased visibility scale (was 0.00005)
+        const scale = 0.001; // Increased from 0.0003 for better visibility when zoomed in
         
         // Materials
         const moduleMaterial = new THREE.MeshStandardMaterial({
