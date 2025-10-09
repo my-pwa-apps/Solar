@@ -484,87 +484,97 @@ class SceneManager {
             // Setup VR UI Panel
             this.setupVRUI();
             
-            // Custom VR Button - Explicitly request immersive-vr mode
-            const vrButton = document.createElement('button');
-            vrButton.id = 'VRButton';
-            vrButton.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
-            vrButton.innerHTML = '🥽'; // VR headset emoji
-            vrButton.title = 'Enter VR Mode';
-            
-            // Hover effect
-            vrButton.onmouseenter = () => {
-                vrButton.style.opacity = '1';
-                vrButton.style.transform = 'scale(1.1)';
-            };
-            vrButton.onmouseleave = () => {
-                vrButton.style.opacity = '0.9';
-                vrButton.style.transform = 'scale(1)';
-            };
-            
-            vrButton.onclick = async () => {
-                if (navigator.xr) {
-                    try {
-                        // Explicitly request immersive-vr mode
-                        const session = await navigator.xr.requestSession('immersive-vr', {
-                            requiredFeatures: ['local-floor']
-                        });
-                        await this.renderer.xr.setSession(session);
-                        console.log('✅ VR session started via custom button');
-                    } catch (error) {
-                        console.error('❌ Failed to start VR session:', error);
-                        alert('Could not enter VR mode: ' + error.message);
+            // Custom VR Button - Only show if VR is supported
+            if (navigator.xr) {
+                navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+                    if (supported) {
+                        const vrButton = document.createElement('button');
+                        vrButton.id = 'VRButton';
+                        vrButton.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
+                        vrButton.innerHTML = '🥽'; // VR headset emoji
+                        vrButton.title = 'Enter VR Mode';
+                        
+                        // Hover effect
+                        vrButton.onmouseenter = () => {
+                            vrButton.style.opacity = '1';
+                            vrButton.style.transform = 'scale(1.1)';
+                        };
+                        vrButton.onmouseleave = () => {
+                            vrButton.style.opacity = '0.9';
+                            vrButton.style.transform = 'scale(1)';
+                        };
+                        
+                        vrButton.onclick = async () => {
+                            try {
+                                // Explicitly request immersive-vr mode
+                                const session = await navigator.xr.requestSession('immersive-vr', {
+                                    requiredFeatures: ['local-floor']
+                                });
+                                await this.renderer.xr.setSession(session);
+                                console.log('✅ VR session started via custom button');
+                            } catch (error) {
+                                console.error('❌ Failed to start VR session:', error);
+                                alert('Could not enter VR mode: ' + error.message);
+                            }
+                        };
+                        
+                        const vrContainer = document.getElementById('vr-button');
+                        if (vrContainer) {
+                            vrContainer.appendChild(vrButton);
+                            vrContainer.classList.remove('hidden');
+                            console.log('✅ VR is supported - button shown');
+                        }
+                    } else {
+                        console.log('ℹ️ VR not supported on this device');
                     }
-                } else {
-                    alert('WebXR not supported');
-                }
-            };
-            
-            const vrContainer = document.getElementById('vr-button');
-            if (vrContainer) {
-                vrContainer.appendChild(vrButton);
-                vrContainer.classList.remove('hidden');
+                });
             }
 
-            // Custom AR Button - Icon style
-            const arButton = document.createElement('button');
-            arButton.id = 'ARButton';
-            arButton.style.cssText = 'position: fixed; bottom: 80px; right: 150px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
-            arButton.innerHTML = '📱'; // Mobile device for AR
-            arButton.title = 'Enter AR Mode';
-            
-            // Hover effect
-            arButton.onmouseenter = () => {
-                arButton.style.opacity = '1';
-                arButton.style.transform = 'scale(1.1)';
-            };
-            arButton.onmouseleave = () => {
-                arButton.style.opacity = '0.9';
-                arButton.style.transform = 'scale(1)';
-            };
-            
-            arButton.onclick = async () => {
-                if (navigator.xr) {
-                    try {
-                        // Explicitly request immersive-ar mode
-                        const session = await navigator.xr.requestSession('immersive-ar', {
-                            requiredFeatures: ['local-floor'],
-                            optionalFeatures: ['dom-overlay', 'hit-test']
-                        });
-                        await this.renderer.xr.setSession(session);
-                        console.log('✅ AR session started via custom button');
-                    } catch (error) {
-                        console.error('❌ Failed to start AR session:', error);
-                        alert('Could not enter AR mode: ' + error.message);
+            // Custom AR Button - Only show if AR is supported
+            if (navigator.xr) {
+                navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+                    if (supported) {
+                        const arButton = document.createElement('button');
+                        arButton.id = 'ARButton';
+                        arButton.style.cssText = 'position: fixed; bottom: 80px; right: 150px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
+                        arButton.innerHTML = '📱'; // Mobile device for AR
+                        arButton.title = 'Enter AR Mode';
+                        
+                        // Hover effect
+                        arButton.onmouseenter = () => {
+                            arButton.style.opacity = '1';
+                            arButton.style.transform = 'scale(1.1)';
+                        };
+                        arButton.onmouseleave = () => {
+                            arButton.style.opacity = '0.9';
+                            arButton.style.transform = 'scale(1)';
+                        };
+                        
+                        arButton.onclick = async () => {
+                            try {
+                                // Explicitly request immersive-ar mode
+                                const session = await navigator.xr.requestSession('immersive-ar', {
+                                    requiredFeatures: ['local-floor'],
+                                    optionalFeatures: ['dom-overlay', 'hit-test']
+                                });
+                                await this.renderer.xr.setSession(session);
+                                console.log('✅ AR session started via custom button');
+                            } catch (error) {
+                                console.error('❌ Failed to start AR session:', error);
+                                alert('Could not enter AR mode: ' + error.message);
+                            }
+                        };
+                        
+                        const arContainer = document.getElementById('ar-button');
+                        if (arContainer) {
+                            arContainer.appendChild(arButton);
+                            arContainer.classList.remove('hidden');
+                            console.log('✅ AR is supported - button shown');
+                        }
+                    } else {
+                        console.log('ℹ️ AR not supported on this device');
                     }
-                } else {
-                    alert('WebXR not supported');
-                }
-            };
-            
-            const arContainer = document.getElementById('ar-button');
-            if (arContainer) {
-                arContainer.appendChild(arButton);
-                arContainer.classList.remove('hidden');
+                });
             }
 
             // Handle XR session start
@@ -5163,15 +5173,17 @@ class SolarSystemModule {
             
             // Convert RA/Dec to 3D positions at distance 10000
             constData.stars.forEach(star => {
-                // Convert RA (0-360�) and Dec (-90 to +90�) to radians
+                // Convert RA (0-360°) and Dec (-90 to +90°) to radians
                 const raRad = (star.ra * Math.PI) / 180;
                 const decRad = (star.dec * Math.PI) / 180;
                 const distance = 10000;
                 
                 // Spherical to Cartesian coordinates
-                const x = distance * Math.cos(decRad) * Math.cos(raRad);
+                // We view from INSIDE the celestial sphere (like from Earth)
+                // So we INVERT the coordinates to see them correctly
+                const x = -distance * Math.cos(decRad) * Math.cos(raRad);
                 const y = distance * Math.sin(decRad);
-                const z = distance * Math.cos(decRad) * Math.sin(raRad);
+                const z = -distance * Math.cos(decRad) * Math.sin(raRad);
                 
                 // Create star
                 const starSize = 15 * Math.pow(2.5, -star.mag);  // Brighter = larger
@@ -7840,11 +7852,72 @@ class App {
                             targetObject = this.solarSystemModule.planets[value];
                             break;
                         case 'moon':
-                            targetObject = this.solarSystemModule.moons.moon;
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌙 Moon');
                             break;
                         case 'pluto':
                             targetObject = this.solarSystemModule.planets.pluto;
                             break;
+                        // Moons
+                        case 'phobos':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌑 Phobos');
+                            break;
+                        case 'deimos':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌑 Deimos');
+                            break;
+                        case 'io':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌋 Io');
+                            break;
+                        case 'europa':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '❄️ Europa');
+                            break;
+                        case 'ganymede':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌙 Ganymede');
+                            break;
+                        case 'callisto':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌙 Callisto');
+                            break;
+                        case 'titan':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌊 Titan');
+                            break;
+                        case 'enceladus':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '💦 Enceladus');
+                            break;
+                        case 'rhea':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '💫 Rhea');
+                            break;
+                        case 'titania':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🏔️ Titania');
+                            break;
+                        case 'miranda':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🏔️ Miranda');
+                            break;
+                        case 'triton':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '❄️ Triton');
+                            break;
+                        case 'charon':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌙 Charon');
+                            break;
+                        // Nearby Stars
+                        case 'alpha-centauri':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '⭐ Alpha Centauri A');
+                            break;
+                        case 'proxima-centauri':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🔴 Proxima Centauri');
+                            break;
+                        // Exoplanets
+                        case 'proxima-b':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌍 Proxima Centauri b');
+                            break;
+                        case 'kepler-452b':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌎 Kepler-452b');
+                            break;
+                        case 'trappist-1e':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌏 TRAPPIST-1e');
+                            break;
+                        case 'kepler-186f':
+                            targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌍 Kepler-186f');
+                            break;
+                        // Deep Space
                         case 'iss':
                             targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name === 'International Space Station');
                             break;
