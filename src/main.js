@@ -4515,6 +4515,12 @@ class SolarSystemModule {
         const asteroidBeltGroup = new THREE.Group();
         asteroidBeltGroup.name = 'asteroidBelt';
         
+        // Asteroid belt is between Mars and Jupiter
+        // Educational: Mars=60, Jupiter=100, so belt at 75-90
+        // Realistic: Mars=227.9, Jupiter=778.6, so belt at ~300-500 AU (2.2-3.2 AU real)
+        const baseDistance = this.realisticScale ? 350 : 75;
+        const distanceSpread = this.realisticScale ? 150 : 15;
+        
         // Large asteroids (visible as small irregular rocks)
         const largeCount = 150;
         const largeGeometry = new THREE.BufferGeometry();
@@ -4524,7 +4530,7 @@ class SolarSystemModule {
         
         for (let i = 0; i < largeCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 75 + Math.random() * 15;
+            const distance = baseDistance + Math.random() * distanceSpread;
             const height = (Math.random() - 0.5) * 4;
             
             largePositions[i * 3] = distance * Math.cos(angle);
@@ -4579,7 +4585,7 @@ class SolarSystemModule {
         
         for (let i = 0; i < mediumCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 73 + Math.random() * 19; // Wider spread
+            const distance = (baseDistance - 2) + Math.random() * (distanceSpread + 4); // Wider spread
             const height = (Math.random() - 0.5) * 5;
             
             mediumPositions[i * 3] = distance * Math.cos(angle);
@@ -4618,7 +4624,7 @@ class SolarSystemModule {
         
         for (let i = 0; i < dustCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 70 + Math.random() * 25; // Widest spread
+            const distance = (baseDistance - 5) + Math.random() * (distanceSpread + 10); // Widest spread
             const height = (Math.random() - 0.5) * 6;
             
             dustPositions[i * 3] = distance * Math.cos(angle);
@@ -4669,6 +4675,12 @@ class SolarSystemModule {
         const kuiperBeltGroup = new THREE.Group();
         kuiperBeltGroup.name = 'kuiperBelt';
         
+        // Kuiper belt is beyond Neptune (30-50 AU real)
+        // Educational: Neptune=250, Pluto=300, so belt at 280-380
+        // Realistic: Neptune=4495, Pluto=5906, so belt at ~5000-7500
+        const baseDistance = this.realisticScale ? 5000 : 280;
+        const distanceSpread = this.realisticScale ? 2500 : 100;
+        
         // Large Kuiper Belt Objects (KBOs) - Pluto-like dwarf planets
         const largeKBOCount = 200;
         const largeKBOGeometry = new THREE.BufferGeometry();
@@ -4678,7 +4690,7 @@ class SolarSystemModule {
         
         for (let i = 0; i < largeKBOCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 280 + Math.random() * 100;
+            const distance = baseDistance + Math.random() * distanceSpread;
             const height = (Math.random() - 0.5) * 35; // Larger vertical spread
             
             largeKBOPositions[i * 3] = distance * Math.cos(angle);
@@ -4733,7 +4745,7 @@ class SolarSystemModule {
         
         for (let i = 0; i < mediumKBOCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 275 + Math.random() * 110;
+            const distance = (baseDistance - 5) + Math.random() * (distanceSpread + 15);
             const height = (Math.random() - 0.5) * 40;
             
             mediumKBOPositions[i * 3] = distance * Math.cos(angle);
@@ -4773,7 +4785,7 @@ class SolarSystemModule {
         
         for (let i = 0; i < smallKBOCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 270 + Math.random() * 120; // Widest spread
+            const distance = (baseDistance - 10) + Math.random() * (distanceSpread + 30); // Widest spread
             const height = (Math.random() - 0.5) * 45;
             
             smallKBOPositions[i * 3] = distance * Math.cos(angle);
@@ -4812,7 +4824,7 @@ class SolarSystemModule {
         
         for (let i = 0; i < scatteredCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const distance = 350 + Math.random() * 80; // Further out
+            const distance = (baseDistance + 70) + Math.random() * (distanceSpread * 0.8); // Further out
             const height = (Math.random() - 0.5) * 60; // Much larger inclination
             
             scatteredPositions[i * 3] = distance * Math.cos(angle);
@@ -7471,6 +7483,9 @@ class SolarSystemModule {
         // Recreate orbital paths with new distances
         this.updateOrbitalPaths();
         
+        // Update asteroid belt and Kuiper belt positions
+        this.updateBelts();
+        
         if (DEBUG.enabled) console.log(`Scale: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
     }
     
@@ -7551,6 +7566,66 @@ class SolarSystemModule {
         }
         
         if (DEBUG.enabled) console.log(`🛤️ Orbits updated: ${this.orbits.length}`);
+    }
+    
+    updateBelts() {
+        // Update asteroid belt positions based on scale
+        if (this.asteroidBelt && this.asteroidBelt.children) {
+            const baseDistance = this.realisticScale ? 350 : 75;
+            const distanceSpread = this.realisticScale ? 150 : 15;
+            
+            this.asteroidBelt.children.forEach(particleSystem => {
+                if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
+                    const positions = particleSystem.geometry.attributes.position.array;
+                    const particleCount = positions.length / 3;
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        const angle = Math.atan2(positions[i * 3 + 2], positions[i * 3]);
+                        const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
+                        const height = positions[i * 3 + 1];
+                        
+                        // Recalculate distance with new scale
+                        const normalizedDist = (currentDist - 70) / 25; // Normalize from old range
+                        const newDistance = baseDistance + (normalizedDist * distanceSpread);
+                        
+                        positions[i * 3] = newDistance * Math.cos(angle);
+                        positions[i * 3 + 2] = newDistance * Math.sin(angle);
+                    }
+                    
+                    particleSystem.geometry.attributes.position.needsUpdate = true;
+                }
+            });
+        }
+        
+        // Update Kuiper belt positions based on scale
+        if (this.kuiperBelt && this.kuiperBelt.children) {
+            const baseDistance = this.realisticScale ? 5000 : 280;
+            const distanceSpread = this.realisticScale ? 2500 : 100;
+            
+            this.kuiperBelt.children.forEach(particleSystem => {
+                if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
+                    const positions = particleSystem.geometry.attributes.position.array;
+                    const particleCount = positions.length / 3;
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        const angle = Math.atan2(positions[i * 3 + 2], positions[i * 3]);
+                        const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
+                        const height = positions[i * 3 + 1];
+                        
+                        // Recalculate distance with new scale
+                        const normalizedDist = (currentDist - 270) / 120; // Normalize from old range
+                        const newDistance = baseDistance + (normalizedDist * distanceSpread);
+                        
+                        positions[i * 3] = newDistance * Math.cos(angle);
+                        positions[i * 3 + 2] = newDistance * Math.sin(angle);
+                    }
+                    
+                    particleSystem.geometry.attributes.position.needsUpdate = true;
+                }
+            });
+        }
+        
+        if (DEBUG.enabled) console.log(`🪨 Belts updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
     }
 
     getObjectInfo(object) {
@@ -8652,12 +8727,12 @@ class App {
                         case 'kepler-186f':
                             targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌍 Kepler-186f');
                             break;
-                        // Spacecraft & Probes
+                        // Spacecraft & Satellites
                         case 'iss':
-                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('International Space Station'));
+                            targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name.includes('ISS') || s.userData.name.includes('International Space Station'));
                             break;
                         case 'hubble':
-                            targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name.includes('Hubble Space Telescope'));
+                            targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name.includes('Hubble'));
                             break;
                         case 'voyager-1':
                             targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Voyager 1'));
