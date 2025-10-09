@@ -6996,6 +6996,79 @@ class TopicManager {
 }
 */ // END OF UNUSED TopicManager CLASS
 
+// Function to toggle pause
+let isPaused = false;
+function togglePause() {
+    isPaused = !isPaused;
+    if (isPaused) {
+        // Logic to pause the game
+        // For example, set app.timeSpeed = 0 or call a pause function
+        if (window.app) {
+            window.app.timeSpeed = 0;
+            if (window.app.sceneManager) {
+                window.app.sceneManager.vrStatusMessage = '⏸️ Paused';
+                window.app.sceneManager.requestVRMenuRefresh();
+            }
+        }
+    } else {
+        // Logic to resume the game
+        if (window.app) {
+            window.app.timeSpeed = 1;
+            if (window.app.sceneManager) {
+                window.app.sceneManager.vrStatusMessage = '▶️ Playing';
+                window.app.sceneManager.requestVRMenuRefresh();
+            }
+        }
+    }
+}
+
+// Update the VR navigation setup to include thumbstick press
+function setupVRNavigation() {
+    // This assumes you have a way to get the VR controllers
+    if (window.app && window.app.sceneManager && window.app.sceneManager.controllers) {
+        window.app.sceneManager.controllers.forEach(controller => {
+            // Listen for thumbstick press (WebXR Gamepad API)
+            if (controller && controller.gamepad) {
+                controller.addEventListener('selectstart', () => {
+                    // Existing selectstart logic if needed
+                });
+                // Listen for thumbstick press
+                controller.addEventListener('thumbstickdown', togglePause); // Custom event, see below
+            }
+        });
+    }
+}
+
+// Polyfill for thumbstick press event (since WebXR does not emit 'thumbstickdown' directly)
+function setupThumbstickListeners() {
+    if (window.app && window.app.sceneManager && window.app.sceneManager.controllers) {
+        window.app.sceneManager.controllers.forEach(controller => {
+            if (controller && controller.gamepad) {
+                let lastThumbstickPressed = false;
+                function checkThumbstick() {
+                    const gp = controller.gamepad;
+                    if (gp && gp.buttons && gp.buttons.length > 2) {
+                        const pressed = gp.buttons[3]?.pressed; // Button 3 is usually thumbstick
+                        if (pressed && !lastThumbstickPressed) {
+                            // Dispatch custom event
+                            controller.dispatchEvent({ type: 'thumbstickdown' });
+                        }
+                        lastThumbstickPressed = pressed;
+                    }
+                    requestAnimationFrame(checkThumbstick);
+                }
+                checkThumbstick();
+            }
+        });
+    }
+}
+
+// Call the setup functions after VR controllers are initialized
+setTimeout(() => {
+    setupVRNavigation();
+    setupThumbstickListeners();
+}, 2000); // Delay to ensure controllers are available
+
 // ===========================
 // MAIN APPLICATION
 // ===========================

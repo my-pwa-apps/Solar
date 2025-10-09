@@ -24,12 +24,6 @@
         <div class="logo">
             <h1>🚀 Space Explorer</h1>
         </div>
-        <nav class="nav-select" aria-label="Primary navigation">
-            <label for="nav-quick-nav" class="visually-hidden">Quick navigation</label>
-            <select id="nav-quick-nav" aria-label="Quick navigation">
-                <option value="">Navigate to…</option>
-            </select>
-        </nav>
     </header>
     <main id="canvas-container" role="main" aria-label="3D visualization canvas"></main>
     
@@ -97,5 +91,26 @@
     
     <!-- Main Application Script with cache buster -->
     <script type="module" src="./src/main.js?v=20251009-1630"></script>
+
+    <nav>
+        <select id="object-dropdown" aria-label="Select an object">
+            <option value="mercury">Mercury</option>
+            <option value="venus">Venus</option>
+            <option value="earth">Earth</option>
+            <option value="moon">Moon</option>
+            <option value="mars">Mars</option>
+            <option value="jupiter">Jupiter</option>
+            <option value="saturn">Saturn</option>
+            <option value="uranus">Uranus</option>
+            <option value="neptune">Neptune</option>
+            <option value="pluto">Pluto</option>
+            <option value="sun">Sun</option>
+            <option value="stars">Stars</option>
+            <option value="galaxies">Galaxies</option>
+            <option value="nebulae">Nebulae</option>
+            <option value="satellites">Satellites</option>
+            <option value="space-station">Space Station</option>
+        </select>
+    </nav>
 </body>
 </html>
