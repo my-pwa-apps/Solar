@@ -1882,6 +1882,8 @@ class SolarSystemModule {
             this.createNebulae(scene);
             this.createConstellations(scene);
             this.createGalaxies(scene);
+            this.createNearbyStars(scene);
+            this.createExoplanets(scene);
             
             // PHASE 4: Dynamic objects
             this.createComets(scene);
@@ -2109,7 +2111,7 @@ class SolarSystemModule {
 
         // Phobos: ~22 km / 12,742 km = 0.0017 (tiny!)
         this.createMoon(this.planets.mars, {
-            name: 'Phobos',
+            name: '🌑 Phobos',
             radius: 0.002, // Minimum visible size
             color: 0x666666,
             distance: 1.5,
@@ -2118,7 +2120,7 @@ class SolarSystemModule {
         });
         // Deimos: ~12 km / 12,742 km = 0.0009
         this.createMoon(this.planets.mars, {
-            name: 'Deimos',
+            name: '🌑 Deimos',
             radius: 0.0015, // Minimum visible size
             color: 0x888888,
             distance: 2.5,
@@ -2147,7 +2149,7 @@ class SolarSystemModule {
         // Jupiter's Galilean moons (realistic sizes)
         // Io: 3,643 km / 12,742 km = 0.286
         this.createMoon(this.planets.jupiter, {
-            name: 'Io',
+            name: '🌋 Io',
             radius: 0.286,
             color: 0xFFFF00,
             distance: 8,
@@ -2156,7 +2158,7 @@ class SolarSystemModule {
         });
         // Europa: 3,122 km / 12,742 km = 0.245
         this.createMoon(this.planets.jupiter, {
-            name: 'Europa',
+            name: '❄️ Europa',
             radius: 0.245,
             color: 0xCCBB99,
             distance: 10,
@@ -2165,7 +2167,7 @@ class SolarSystemModule {
         });
         // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
         this.createMoon(this.planets.jupiter, {
-            name: 'Ganymede',
+            name: '🌙 Ganymede',
             radius: 0.413,
             color: 0x996633,
             distance: 12,
@@ -2174,7 +2176,7 @@ class SolarSystemModule {
         });
         // Callisto: 4,821 km / 12,742 km = 0.378
         this.createMoon(this.planets.jupiter, {
-            name: 'Callisto',
+            name: '🌙 Callisto',
             radius: 0.378,
             color: 0x777777,
             distance: 14,
@@ -2201,7 +2203,7 @@ class SolarSystemModule {
 
         // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
         this.createMoon(this.planets.saturn, {
-            name: 'Titan',
+            name: '🌊 Titan',
             radius: 0.404,
             color: 0xFFAA33,
             distance: 10,
@@ -2210,7 +2212,7 @@ class SolarSystemModule {
         });
         // Enceladus: 504 km / 12,742 km = 0.040
         this.createMoon(this.planets.saturn, {
-            name: 'Enceladus',
+            name: '💦 Enceladus',
             radius: 0.040,
             color: 0xFFFFFF,
             distance: 7,
@@ -2219,7 +2221,7 @@ class SolarSystemModule {
         });
         // Rhea: 1,527 km / 12,742 km = 0.120
         this.createMoon(this.planets.saturn, {
-            name: 'Rhea',
+            name: '💫 Rhea',
             radius: 0.120,
             color: 0xCCCCCC,
             distance: 12,
@@ -2245,7 +2247,7 @@ class SolarSystemModule {
 
         // Titania: 1,578 km / 12,742 km = 0.124
         this.createMoon(this.planets.uranus, {
-            name: 'Titania',
+            name: '🏔️ Titania',
             radius: 0.124,
             color: 0xAAAAAA,
             distance: 5,
@@ -2254,7 +2256,7 @@ class SolarSystemModule {
         });
         // Miranda: 472 km / 12,742 km = 0.037
         this.createMoon(this.planets.uranus, {
-            name: 'Miranda',
+            name: '🏔️ Miranda',
             radius: 0.037,
             color: 0x999999,
             distance: 3.5,
@@ -2280,7 +2282,7 @@ class SolarSystemModule {
 
         // Triton: 2,707 km / 12,742 km = 0.212
         this.createMoon(this.planets.neptune, {
-            name: 'Triton',
+            name: '❄️ Triton',
             radius: 0.212,
             color: 0xFFCCCC,
             distance: 5,
@@ -2306,7 +2308,7 @@ class SolarSystemModule {
 
         // Charon: 1,212 km / 12,742 km = 0.095 (half the size of Pluto!)
         this.createMoon(this.planets.pluto, {
-            name: 'Charon',
+            name: '🌙 Charon',
             radius: 0.095,
             color: 0xAAAAAA,
             distance: 1.2,
@@ -5366,6 +5368,204 @@ class SolarSystemModule {
             this.objects.push(group);
             this.galaxies.push(group);
         }
+    }
+
+    createNearbyStars(scene) {
+        // Create Alpha Centauri system (our nearest stellar neighbor)
+        this.nearbyStars = [];
+        
+        // Alpha Centauri A & B (binary system) - 4.37 light-years away
+        const alphaCentauriGroup = new THREE.Group();
+        
+        // Alpha Centauri A (Sun-like star)
+        const alphaAGeo = new THREE.SphereGeometry(12, 64, 64);
+        const alphaAMat = new THREE.MeshBasicMaterial({
+            color: 0xFFFAE3,
+            emissive: 0xFFFAE3,
+            emissiveIntensity: 1.5,
+            toneMapped: false
+        });
+        const alphaA = new THREE.Mesh(alphaAGeo, alphaAMat);
+        alphaA.position.set(8000, 1000, -6000);
+        
+        // Glow for Alpha Centauri A
+        const glowAGeo = new THREE.SphereGeometry(18, 32, 32);
+        const glowAMat = new THREE.MeshBasicMaterial({
+            color: 0xFFFFAA,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending
+        });
+        const glowA = new THREE.Mesh(glowAGeo, glowAMat);
+        alphaA.add(glowA);
+        
+        alphaA.userData = {
+            name: '⭐ Alpha Centauri A',
+            type: 'Star',
+            description: '⭐ Alpha Centauri A is very similar to our Sun! It\'s part of a triple star system that is our closest stellar neighbor at 4.37 light-years away. With its companion Alpha Centauri B, they orbit each other every 80 years.',
+            distance: '4.37 light-years',
+            realSize: '1.22 times the Sun\'s diameter',
+            funFact: 'Alpha Centauri is visible from the Southern Hemisphere and is the third brightest star in our night sky!'
+        };
+        
+        alphaCentauriGroup.add(alphaA);
+        
+        // Proxima Centauri (red dwarf, technically closest star) - 4.24 light-years
+        const proximaGeo = new THREE.SphereGeometry(6, 32, 32);
+        const proximaMat = new THREE.MeshBasicMaterial({
+            color: 0xFF6347,
+            emissive: 0xFF4444,
+            emissiveIntensity: 1.2,
+            toneMapped: false
+        });
+        const proxima = new THREE.Mesh(proximaGeo, proximaMat);
+        proxima.position.set(8500, 800, -6200);
+        
+        // Glow for Proxima
+        const glowPGeo = new THREE.SphereGeometry(10, 32, 32);
+        const glowPMat = new THREE.MeshBasicMaterial({
+            color: 0xFF6666,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending
+        });
+        const glowP = new THREE.Mesh(glowPGeo, glowPMat);
+        proxima.add(glowP);
+        
+        proxima.userData = {
+            name: '🔴 Proxima Centauri',
+            type: 'Red Dwarf Star',
+            description: '🔴 Proxima Centauri is a small red dwarf star and the closest star to our Solar System at just 4.24 light-years! It\'s much cooler and dimmer than our Sun, but it has at least two planets, including potentially habitable Proxima Centauri b.',
+            distance: '4.24 light-years (40 trillion km!)',
+            realSize: '0.14 times the Sun\'s diameter',
+            funFact: 'Despite being our closest star, Proxima is too dim to see with the naked eye!'
+        };
+        
+        alphaCentauriGroup.add(proxima);
+        
+        scene.add(alphaCentauriGroup);
+        this.objects.push(alphaA);
+        this.objects.push(proxima);
+        this.nearbyStars.push(alphaA);
+        this.nearbyStars.push(proxima);
+        
+        console.log('⭐ Created Alpha Centauri system');
+    }
+
+    createExoplanets(scene) {
+        // Create famous discovered exoplanets
+        this.exoplanets = [];
+        
+        const exoplanetsData = [
+            {
+                name: '🌍 Proxima Centauri b',
+                position: { x: 8520, y: 800, z: -6200 },
+                radius: 1.1,
+                color: 0x4A7BA7,
+                description: '🌍 Proxima Centauri b is the closest known exoplanet to Earth! It orbits in the habitable zone of Proxima Centauri, meaning liquid water could exist on its surface. Discovered in 2016, it\'s only 4.24 light-years away.',
+                distance: '4.24 light-years',
+                realSize: '~1.17 Earth masses',
+                funFact: 'With current technology, it would take 6,300 years to reach Proxima b!'
+            },
+            {
+                name: '🌎 Kepler-452b',
+                position: { x: -9000, y: 2500, z: 8500 },
+                radius: 1.6,
+                color: 0x5D8AA8,
+                description: '🌎 Kepler-452b is called "Earth\'s cousin"! It\'s about 60% larger than Earth and orbits a Sun-like star in the habitable zone. Its year is 385 days long. Could it have life? We don\'t know yet!',
+                distance: '1,400 light-years',
+                realSize: '1.6 times Earth\'s radius',
+                funFact: 'Kepler-452b is 6 billion years old - 1.5 billion years older than Earth!'
+            },
+            {
+                name: '🌏 TRAPPIST-1e',
+                position: { x: 7000, y: -3000, z: -9000 },
+                radius: 0.92,
+                color: 0x3A7CA5,
+                description: '🌏 TRAPPIST-1e is part of an amazing system with 7 Earth-sized planets! It orbits a cool red dwarf star and is in the habitable zone. The system is so compact that all 7 planets would fit inside Mercury\'s orbit!',
+                distance: '40 light-years',
+                realSize: '0.92 times Earth\'s radius',
+                funFact: 'From TRAPPIST-1e, you could see the other planets as large as our Moon in the sky!'
+            },
+            {
+                name: '🌍 Kepler-186f',
+                position: { x: -8000, y: -2000, z: 9500 },
+                radius: 1.1,
+                color: 0x2E5F6F,
+                description: '🌍 Kepler-186f was the first Earth-sized planet discovered in another star\'s habitable zone! It receives about one-third the light Earth gets from the Sun, so plants there (if any!) might appear black or red instead of green.',
+                distance: '500 light-years',
+                realSize: '1.1 times Earth\'s radius',
+                funFact: 'Kepler-186f orbits a red dwarf, so its sky would glow orange-red!'
+            }
+        ];
+        
+        exoplanetsData.forEach(exoData => {
+            const geometry = new THREE.SphereGeometry(exoData.radius, 32, 32);
+            
+            // Create Earth-like texture for exoplanets
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            // Base ocean color
+            ctx.fillStyle = `rgb(${(exoData.color >> 16) & 255}, ${(exoData.color >> 8) & 255}, ${exoData.color & 255})`;
+            ctx.fillRect(0, 0, 512, 256);
+            
+            // Add some land masses
+            ctx.fillStyle = 'rgba(100, 140, 80, 0.7)';
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random() * 512, Math.random() * 256, 20 + Math.random() * 40, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Add clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            for (let i = 0; i < 15; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random() * 512, Math.random() * 256, 10 + Math.random() * 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.8,
+                metalness: 0.1,
+                emissive: exoData.color,
+                emissiveIntensity: 0.1
+            });
+            
+            const planet = new THREE.Mesh(geometry, material);
+            planet.position.set(exoData.position.x, exoData.position.y, exoData.position.z);
+            
+            // Add subtle glow
+            const glowGeo = new THREE.SphereGeometry(exoData.radius * 1.2, 32, 32);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0x88AAFF,
+                transparent: true,
+                opacity: 0.15,
+                blending: THREE.AdditiveBlending
+            });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            planet.add(glow);
+            
+            planet.userData = {
+                name: exoData.name,
+                type: 'Exoplanet',
+                description: exoData.description,
+                distance: exoData.distance,
+                realSize: exoData.realSize,
+                funFact: exoData.funFact
+            };
+            
+            scene.add(planet);
+            this.objects.push(planet);
+            this.exoplanets.push(planet);
+        });
+        
+        console.log(`🪐 Created ${this.exoplanets.length} famous exoplanets!`);
     }
 
     createComets(scene) {
