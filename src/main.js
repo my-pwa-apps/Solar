@@ -4908,6 +4908,141 @@ class SolarSystemModule {
         
         // Constellation data: star positions (RA/Dec converted to 3D) and connections
         const constellationsData = [
+            // === ZODIAC CONSTELLATIONS (12 Signs) ===
+            {
+                name: 'Aries ♈ (The Ram)',
+                description: '♈ Aries is the first sign of the zodiac! Look for the bright stars Hamal and Sheratan. In Greek mythology, Aries represents the golden ram that saved Phrixus and Helle.',
+                stars: [
+                    { name: 'Hamal', ra: 31.8, dec: 23.5, mag: 2.0, color: 0xFFA500 },
+                    { name: 'Sheratan', ra: 28.7, dec: 20.8, mag: 2.6, color: 0xFFFFE0 },
+                    { name: 'Mesarthim', ra: 28.4, dec: 19.3, mag: 3.9, color: 0xFFFFF0 }
+                ],
+                lines: [[0,1], [1,2]]  // Ram's head
+            },
+            {
+                name: 'Taurus ♉ (The Bull)',
+                description: '♉ Taurus contains the bright red star Aldebaran, the bull\'s eye! Also home to the Pleiades star cluster. In mythology, Zeus transformed into a bull to win Europa.',
+                stars: [
+                    { name: 'Aldebaran', ra: 68.9, dec: 16.5, mag: 0.9, color: 0xFF6347 },  // Red giant
+                    { name: 'Elnath', ra: 81.6, dec: 28.6, mag: 1.7, color: 0xE0FFFF },
+                    { name: 'Alcyone', ra: 56.9, dec: 24.1, mag: 2.9, color: 0xE0FFFF },  // Pleiades
+                    { name: 'Zeta Tauri', ra: 84.4, dec: 21.1, mag: 3.0, color: 0xFFFFE0 }
+                ],
+                lines: [[0,1], [0,2], [1,3]]  // Bull's head and horns
+            },
+            {
+                name: 'Gemini ♊ (The Twins)',
+                description: '♊ Gemini features the bright twins Castor and Pollux! In mythology, they were inseparable brothers, the Dioscuri, known for their bond and bravery.',
+                stars: [
+                    { name: 'Pollux', ra: 116.3, dec: 28.0, mag: 1.2, color: 0xFFA500 },
+                    { name: 'Castor', ra: 113.6, dec: 31.9, mag: 1.6, color: 0xFFFFF0 },
+                    { name: 'Alhena', ra: 99.4, dec: 16.4, mag: 1.9, color: 0xFFFFF0 },
+                    { name: 'Mebsuta', ra: 100.0, dec: 25.1, mag: 3.0, color: 0xFFFFE0 }
+                ],
+                lines: [[0,1], [0,2], [1,3], [2,3]]  // Twin figures
+            },
+            {
+                name: 'Cancer ♋ (The Crab)',
+                description: '♋ Cancer is faint but contains the beautiful Beehive Cluster (M44)! In mythology, Cancer was the crab sent by Hera to distract Hercules during his battle.',
+                stars: [
+                    { name: 'Altarf', ra: 124.1, dec: 9.2, mag: 3.5, color: 0xFFA500 },
+                    { name: 'Acubens', ra: 134.6, dec: 11.9, mag: 4.3, color: 0xFFFFF0 },
+                    { name: 'Asellus Australis', ra: 130.1, dec: 18.2, mag: 3.9, color: 0xFFA500 },
+                    { name: 'Asellus Borealis', ra: 131.2, dec: 21.5, mag: 4.7, color: 0xFFFFF0 }
+                ],
+                lines: [[0,1], [0,2], [2,3]]  // Crab shape
+            },
+            {
+                name: 'Leo ♌ (The Lion)',
+                description: '♌ Leo is home to the bright star Regulus! The "Sickle" asterism forms the lion\'s head. In mythology, Leo represents the Nemean Lion slain by Hercules.',
+                stars: [
+                    { name: 'Regulus', ra: 152.1, dec: 11.9, mag: 1.4, color: 0xE0FFFF },
+                    { name: 'Denebola', ra: 177.4, dec: 14.6, mag: 2.1, color: 0xFFFFF0 },
+                    { name: 'Algieba', ra: 154.9, dec: 19.8, mag: 2.0, color: 0xFFA500 },
+                    { name: 'Zosma', ra: 168.5, dec: 20.5, mag: 2.6, color: 0xFFFFF0 }
+                ],
+                lines: [[0,2], [0,3], [3,1], [2,3]]  // Lion's body
+            },
+            {
+                name: 'Virgo ♍ (The Maiden)',
+                description: '♍ Virgo is the second largest constellation! The bright star Spica represents wheat in the maiden\'s hand. Home to thousands of galaxies in the Virgo Cluster.',
+                stars: [
+                    { name: 'Spica', ra: 201.3, dec: -11.2, mag: 1.0, color: 0xE0FFFF },
+                    { name: 'Vindemiatrix', ra: 195.5, dec: 10.9, mag: 2.8, color: 0xFFFFE0 },
+                    { name: 'Porrima', ra: 190.4, dec: -1.4, mag: 2.7, color: 0xFFFFF0 },
+                    { name: 'Zavijava', ra: 177.7, dec: 1.8, mag: 3.6, color: 0xFFFFF0 }
+                ],
+                lines: [[0,2], [2,3], [3,1]]  // Maiden figure
+            },
+            {
+                name: 'Libra ♎ (The Scales)',
+                description: '♎ Libra represents the scales of justice! Its brightest stars are Zubenelgenubi and Zubeneschamali, meaning "southern claw" and "northern claw" in Arabic.',
+                stars: [
+                    { name: 'Zubeneschamali', ra: 229.3, dec: -9.4, mag: 2.6, color: 0xE0FFFF },
+                    { name: 'Zubenelgenubi', ra: 222.7, dec: -16.0, mag: 2.8, color: 0xFFFFE0 },
+                    { name: 'Brachium', ra: 233.9, dec: -25.3, mag: 3.3, color: 0xFFA500 }
+                ],
+                lines: [[0,1], [1,2]]  // Scale balance
+            },
+            {
+                name: 'Scorpius ♏ (The Scorpion)',
+                description: '♏ Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
+                stars: [
+                    { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 },  // Red supergiant
+                    { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF },
+                    { name: 'Sargas', ra: 264.3, dec: -43.0, mag: 1.9, color: 0xFFFFE0 },
+                    { name: 'Dschubba', ra: 240.1, dec: -22.6, mag: 2.3, color: 0xE0FFFF },
+                    { name: 'Graffias', ra: 241.4, dec: -19.8, mag: 2.6, color: 0xFFFFE0 }
+                ],
+                lines: [[4,3], [3,0], [0,1], [1,2]]  // Scorpion curve
+            },
+            {
+                name: 'Sagittarius ♐ (The Archer)',
+                description: '♐ Sagittarius aims his arrow at the heart of Scorpius! The "Teapot" asterism is easy to spot. Points toward the center of our Milky Way galaxy!',
+                stars: [
+                    { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF },
+                    { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF },
+                    { name: 'Ascella', ra: 290.7, dec: -29.9, mag: 2.6, color: 0xFFFFF0 },
+                    { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 },
+                    { name: 'Kaus Borealis', ra: 276.9, dec: -25.4, mag: 2.8, color: 0xFFA500 }
+                ],
+                lines: [[0,3], [3,4], [4,1], [1,2], [2,0]]  // Teapot shape
+            },
+            {
+                name: 'Capricornus ♑ (The Sea-Goat)',
+                description: '♑ Capricornus is one of the oldest constellations! Represents a creature with the head of a goat and tail of a fish. Associated with the god Pan in Greek mythology.',
+                stars: [
+                    { name: 'Deneb Algedi', ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 },
+                    { name: 'Dabih', ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 },
+                    { name: 'Nashira', ra: 325.0, dec: -16.7, mag: 3.7, color: 0xFFFFF0 },
+                    { name: 'Algedi', ra: 304.5, dec: -12.5, mag: 3.6, color: 0xFFFFE0 }
+                ],
+                lines: [[1,3], [1,0], [0,2]]  // Sea-goat body
+            },
+            {
+                name: 'Aquarius ♒ (The Water-Bearer)',
+                description: '♒ Aquarius represents the water-bearer pouring from his urn! Home to several famous deep-sky objects including the Helix Nebula. One of the oldest named constellations.',
+                stars: [
+                    { name: 'Sadalsuud', ra: 322.9, dec: -5.6, mag: 2.9, color: 0xFFFFE0 },
+                    { name: 'Sadalmelik', ra: 331.4, dec: -0.3, mag: 3.0, color: 0xFFFFE0 },
+                    { name: 'Skat', ra: 346.2, dec: -15.8, mag: 3.3, color: 0xFFFFF0 },
+                    { name: 'Albali', ra: 315.9, dec: -9.5, mag: 3.8, color: 0xFFFFF0 }
+                ],
+                lines: [[3,0], [0,1], [1,2]]  // Water flow
+            },
+            {
+                name: 'Pisces ♓ (The Fish)',
+                description: '♓ Pisces shows two fish tied together! Represents Aphrodite and Eros who transformed into fish to escape the monster Typhon. Contains the vernal equinox point!',
+                stars: [
+                    { name: 'Alpherg', ra: 2.0, dec: 2.8, mag: 3.8, color: 0xFFFFE0 },
+                    { name: 'Alrescha', ra: 8.0, dec: 2.8, mag: 3.8, color: 0xFFFFF0 },
+                    { name: 'Fumalsamakah', ra: 351.0, dec: 6.9, mag: 4.5, color: 0xFFFFF0 },
+                    { name: 'Delta Piscium', ra: 357.5, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }
+                ],
+                lines: [[2,3], [3,0], [0,1]]  // Two fish connected
+            },
+            
+            // === FAMOUS NON-ZODIAC CONSTELLATIONS ===
             {
                 name: 'Orion (The Hunter)',
                 description: '? Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
@@ -4937,6 +5072,20 @@ class SolarSystemModule {
                 lines: [[0,1], [1,2], [2,3], [3,4], [4,5], [5,6]]  // Dipper shape
             },
             {
+                name: 'Little Dipper (Ursa Minor)',
+                description: '⭐ The Little Dipper contains Polaris, the North Star! Polaris marks the end of the Little Dipper\'s handle and stays nearly fixed in the northern sky. Essential for celestial navigation!',
+                stars: [
+                    { name: 'Polaris', ra: 37.95, dec: 89.26, mag: 2.0, color: 0xFFFACD },  // North Star!
+                    { name: 'Yildun', ra: 263.05, dec: 86.58, mag: 4.4, color: 0xFFFFF0 },
+                    { name: 'Epsilon UMi', ra: 256.47, dec: 81.83, mag: 4.2, color: 0xFFFFE0 },
+                    { name: 'Kochab', ra: 222.68, dec: 74.16, mag: 2.1, color: 0xFFA500 },  // Orange giant
+                    { name: 'Pherkad', ra: 230.18, dec: 71.83, mag: 3.0, color: 0xFFFFF0 },
+                    { name: 'Zeta UMi', ra: 228.32, dec: 77.79, mag: 4.3, color: 0xFFFFF0 },
+                    { name: 'Eta UMi', ra: 246.81, dec: 75.75, mag: 5.0, color: 0xFFFFF0 }
+                ],
+                lines: [[0,1], [1,6], [6,2], [2,5], [5,3], [3,4]]  // Little Dipper shape
+            },
+            {
                 name: 'Southern Cross (Crux)',
                 description: '✨ The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
                 stars: [
@@ -4960,16 +5109,49 @@ class SolarSystemModule {
                 lines: [[0,1], [1,2], [2,3], [3,4]]  // W shape
             },
             {
-                name: 'Scorpius (The Scorpion)',
-                description: '🦂 Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
+                name: 'Cygnus (The Swan)',
+                description: '� Cygnus the Swan flies along the Milky Way! Also called the Northern Cross. In mythology, Zeus disguised himself as a swan. Home to many deep-sky objects!',
                 stars: [
-                    { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 },  // Red supergiant
-                    { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF },
-                    { name: 'Sargas', ra: 264.3, dec: -43.0, mag: 1.9, color: 0xFFFFE0 },
-                    { name: 'Dschubba', ra: 240.1, dec: -22.6, mag: 2.3, color: 0xE0FFFF },
-                    { name: 'Graffias', ra: 241.4, dec: -19.8, mag: 2.6, color: 0xFFFFE0 }
+                    { name: 'Deneb', ra: 310.4, dec: 45.3, mag: 1.3, color: 0xE0FFFF },  // Supergiant
+                    { name: 'Albireo', ra: 292.7, dec: 27.9, mag: 3.1, color: 0xFFA500 },  // Beautiful double star
+                    { name: 'Sadr', ra: 305.6, dec: 40.3, mag: 2.2, color: 0xFFFFE0 },
+                    { name: 'Gienah', ra: 312.3, dec: 33.9, mag: 2.5, color: 0xFFFFF0 },
+                    { name: 'Delta Cygni', ra: 296.2, dec: 45.1, mag: 2.9, color: 0xE0FFFF }
                 ],
-                lines: [[4,3], [3,0], [0,1], [1,2]]  // Scorpion curve
+                lines: [[0,2], [2,1], [2,3], [2,4]]  // Cross/Swan shape
+            },
+            {
+                name: 'Lyra (The Lyre)',
+                description: '🎵 Lyra represents the lyre of Orpheus! Contains Vega, the 5th brightest star in the night sky. Also home to the Ring Nebula, a famous planetary nebula!',
+                stars: [
+                    { name: 'Vega', ra: 279.2, dec: 38.8, mag: 0.0, color: 0xE0FFFF },  // Very bright!
+                    { name: 'Sheliak', ra: 282.5, dec: 33.4, mag: 3.5, color: 0xE0FFFF },
+                    { name: 'Sulafat', ra: 284.7, dec: 32.7, mag: 3.2, color: 0xE0FFFF },
+                    { name: 'Delta Lyrae', ra: 283.8, dec: 36.9, mag: 4.3, color: 0xE0FFFF }
+                ],
+                lines: [[0,3], [0,1], [1,2]]  // Lyre shape
+            },
+            {
+                name: 'Andromeda (The Princess)',
+                description: '👸 Andromeda was the princess chained to a rock and rescued by Perseus! This constellation contains the Andromeda Galaxy (M31), our nearest large galaxy neighbor!',
+                stars: [
+                    { name: 'Alpheratz', ra: 2.1, dec: 29.1, mag: 2.1, color: 0xE0FFFF },
+                    { name: 'Mirach', ra: 17.4, dec: 35.6, mag: 2.1, color: 0xFF6347 },  // Red giant
+                    { name: 'Almach', ra: 30.9, dec: 42.3, mag: 2.2, color: 0xFFA500 },
+                    { name: 'Delta Andromedae', ra: 8.5, dec: 31.1, mag: 3.3, color: 0xFFFFF0 }
+                ],
+                lines: [[0,3], [3,1], [1,2]]  // Princess figure
+            },
+            {
+                name: 'Perseus (The Hero)',
+                description: '⚔️ Perseus the hero who slayed Medusa! Home to the bright star Mirfak and the famous variable star Algol ("Demon Star"). Contains the Double Cluster!',
+                stars: [
+                    { name: 'Mirfak', ra: 51.1, dec: 49.9, mag: 1.8, color: 0xFFFFE0 },
+                    { name: 'Algol', ra: 47.0, dec: 40.9, mag: 2.1, color: 0xE0FFFF },  // The Demon Star
+                    { name: 'Atik', ra: 54.1, dec: 32.3, mag: 2.9, color: 0xE0FFFF },
+                    { name: 'Gamma Persei', ra: 48.0, dec: 53.5, mag: 2.9, color: 0xFFFFE0 }
+                ],
+                lines: [[3,0], [0,1], [1,2]]  // Hero with sword
             }
         ];
         
@@ -6425,6 +6607,14 @@ class SolarSystemModule {
         console.log(`🛤️ Orbit paths ${visible ? 'shown' : 'hidden'}`);
     }
     
+    toggleConstellations(visible) {
+        this.constellationsVisible = visible;
+        this.constellations.forEach(constellation => {
+            constellation.visible = visible;
+        });
+        console.log(`⭐ Constellations ${visible ? 'shown' : 'hidden'}`);
+    }
+    
     updateScale() {
         // Update all planetary positions based on scale mode
         const scaleFactors = this.realisticScale ? {
@@ -6843,16 +7033,46 @@ class TopicManager {
             btn.addEventListener('click', () => this.handleTopicChange(btn), { passive: true });
         });
 
-        // Time speed control (dropdown selector)
-        const timeSpeedSelect = document.getElementById('time-speed');
-        if (timeSpeedSelect) {
-            timeSpeedSelect.addEventListener('change', (e) => {
-                this.timeSpeed = parseFloat(e.target.value);
-                console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
+        // Time speed control (slider)
+        const timeSpeedSlider = document.getElementById('time-speed');
+        const timeSpeedLabel = document.getElementById('time-speed-label');
+        
+        // Convert slider value (0-10) to speed multiplier
+        // 0 = paused (0x), 5 = normal (1x), 10 = fast (5x)
+        const sliderToSpeed = (value) => {
+            if (value === 0) return 0; // Paused
+            if (value <= 5) {
+                // 1-5: Slow motion (0.2x to 1x)
+                return 0.2 * value;
+            } else {
+                // 6-10: Accelerated (1.5x to 5x)
+                return 1 + (value - 5) * 0.8;
+            }
+        };
+        
+        const updateSpeed = (value) => {
+            const speed = sliderToSpeed(parseFloat(value));
+            this.timeSpeed = speed;
+            
+            // Update label
+            if (timeSpeedLabel) {
+                if (speed === 0) {
+                    timeSpeedLabel.textContent = 'Paused';
+                } else {
+                    timeSpeedLabel.textContent = `${speed.toFixed(1)}x`;
+                }
+            }
+            
+            console.log(`⏱️ Speed changed to: ${speed}x`);
+        };
+        
+        if (timeSpeedSlider) {
+            timeSpeedSlider.addEventListener('input', (e) => {
+                updateSpeed(e.target.value);
             }, { passive: true });
             
-            // Set initial speed
-            this.timeSpeed = parseFloat(timeSpeedSelect.value);
+            // Set initial speed (value 5 = 1x speed)
+            updateSpeed(timeSpeedSlider.value);
         }
 
         // Scale toggle button
@@ -7269,16 +7489,46 @@ class App {
     }
     
     setupControls() {
-        // Time speed control (dropdown selector)
-        const timeSpeedSelect = document.getElementById('time-speed');
-        if (timeSpeedSelect) {
-            timeSpeedSelect.addEventListener('change', (e) => {
-                this.timeSpeed = parseFloat(e.target.value);
-                console.log(`⏱️ Speed mode changed to: ${e.target.options[e.target.selectedIndex].text} (${this.timeSpeed}x)`);
+        // Time speed control (slider)
+        const timeSpeedSlider = document.getElementById('time-speed');
+        const timeSpeedLabel = document.getElementById('time-speed-label');
+        
+        // Convert slider value (0-10) to speed multiplier
+        // 0 = paused (0x), 5 = normal (1x), 10 = fast (5x)
+        const sliderToSpeed = (value) => {
+            if (value === 0) return 0; // Paused
+            if (value <= 5) {
+                // 1-5: Slow motion (0.2x to 1x)
+                return 0.2 * value;
+            } else {
+                // 6-10: Accelerated (1.5x to 5x)
+                return 1 + (value - 5) * 0.8;
+            }
+        };
+        
+        const updateSpeed = (value) => {
+            const speed = sliderToSpeed(parseFloat(value));
+            this.timeSpeed = speed;
+            
+            // Update label
+            if (timeSpeedLabel) {
+                if (speed === 0) {
+                    timeSpeedLabel.textContent = 'Paused';
+                } else {
+                    timeSpeedLabel.textContent = `${speed.toFixed(1)}x`;
+                }
+            }
+            
+            console.log(`⏱️ Speed changed to: ${speed}x`);
+        };
+        
+        if (timeSpeedSlider) {
+            timeSpeedSlider.addEventListener('input', (e) => {
+                updateSpeed(e.target.value);
             });
             
-            // Set initial speed
-            this.timeSpeed = parseFloat(timeSpeedSelect.value);
+            // Set initial speed (value 5 = 1x speed)
+            updateSpeed(timeSpeedSlider.value);
         }
         
         // Orbit toggle button
@@ -7290,6 +7540,19 @@ class App {
                     this.solarSystemModule.toggleOrbits(visible);
                     orbitsButton.classList.toggle('toggle-on', visible);
                     console.log(`🛤️ Orbits toggled: ${visible ? 'ON' : 'OFF'}`);
+                }
+            });
+        }
+        
+        // Constellation toggle button
+        const constellationsButton = document.getElementById('toggle-constellations');
+        if (constellationsButton) {
+            constellationsButton.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    const visible = !this.solarSystemModule.constellationsVisible;
+                    this.solarSystemModule.toggleConstellations(visible);
+                    constellationsButton.classList.toggle('toggle-on', visible);
+                    console.log(`⭐ Constellations toggled: ${visible ? 'ON' : 'OFF'}`);
                 }
             });
         }
@@ -7484,24 +7747,24 @@ class App {
                     break;
                 case '+':
                 case '=':
-                    // Cycle speed modes forward: Paused -> Educational -> Realtime -> Paused
-                    const speedSelect = document.getElementById('time-speed');
-                    if (speedSelect) {
-                        const currentIndex = speedSelect.selectedIndex;
-                        const nextIndex = (currentIndex + 1) % speedSelect.options.length;
-                        speedSelect.selectedIndex = nextIndex;
-                        speedSelect.dispatchEvent(new Event('change'));
+                    // Increase speed
+                    const speedSliderUp = document.getElementById('time-speed');
+                    if (speedSliderUp) {
+                        const currentValue = parseFloat(speedSliderUp.value);
+                        const newValue = Math.min(10, currentValue + 0.5);
+                        speedSliderUp.value = newValue;
+                        speedSliderUp.dispatchEvent(new Event('input'));
                     }
                     break;
                 case '-':
                 case '_':
-                    // Cycle speed modes backward: Realtime -> Educational -> Paused -> Realtime
-                    const speedSelectDown = document.getElementById('time-speed');
-                    if (speedSelectDown) {
-                        const currentIndex = speedSelectDown.selectedIndex;
-                        const prevIndex = currentIndex === 0 ? speedSelectDown.options.length - 1 : currentIndex - 1;
-                        speedSelectDown.selectedIndex = prevIndex;
-                        speedSelectDown.dispatchEvent(new Event('change'));
+                    // Decrease speed
+                    const speedSliderDown = document.getElementById('time-speed');
+                    if (speedSliderDown) {
+                        const currentValue = parseFloat(speedSliderDown.value);
+                        const newValue = Math.max(0, currentValue - 0.5);
+                        speedSliderDown.value = newValue;
+                        speedSliderDown.dispatchEvent(new Event('input'));
                     }
                     break;
                 case 'escape':
@@ -7510,20 +7773,20 @@ class App {
                     break;
                 case ' ':
                 case 'space':
-                    // SPACE = Toggle between Paused and Educational
+                    // SPACE = Toggle between Paused and Normal speed
                     e.preventDefault();
-                    const spaceSpeedSelect = document.getElementById('time-speed');
-                    if (spaceSpeedSelect) {
+                    const spaceSpeedSlider = document.getElementById('time-speed');
+                    if (spaceSpeedSlider) {
                         if (this.timeSpeed === 0) {
-                            // If paused, go to Educational
-                            spaceSpeedSelect.value = '1';
-                            console.log('▶️ PLAY (Educational Speed)');
+                            // If paused, go to normal (5 = 1x speed)
+                            spaceSpeedSlider.value = '5';
+                            console.log('▶️ PLAY (Normal Speed)');
                         } else {
                             // If playing, pause
-                            spaceSpeedSelect.value = '0';
+                            spaceSpeedSlider.value = '0';
                             console.log('⏸️ PAUSE');
                         }
-                        spaceSpeedSelect.dispatchEvent(new Event('change'));
+                        spaceSpeedSlider.dispatchEvent(new Event('input'));
                     }
                     break;
                 case 'i':

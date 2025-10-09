@@ -353,6 +353,15 @@
     box-shadow: 0 0 8px rgba(74, 144, 226, 0.7);
 }
 
+#time-speed-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fluent-accent);
+    min-width: 45px;
+    text-align: center;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
 /* Fluent Buttons */
 .footer-controls button,
 .footer-controls select,
