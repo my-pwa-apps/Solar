@@ -386,16 +386,13 @@ class SceneManager {
         this.scene.add(this.camera);
         
         if (DEBUG.enabled) {
-            console.log('🌌 Scene ambient lighting: Enhanced (ambient 0.6, hemisphere 0.4, camera 0.8)');
-            console.log('   - Dark sides clearly visible for navigation');
-            console.log('   - Sun is still primary light source');
+            if (DEBUG.enabled) console.log('🌌 Ambient lighting: Enhanced');
         }
     }
 
     setupXR() {
         try {
-            console.log('🥽 Setting up XR...');
-            console.log('📦 Scene children at XR setup:', this.scene?.children?.length || 0);
+            if (DEBUG.VR) console.log('🥽 Setting up XR');
             
             // Create a dolly (rig) for VR movement (but don't add camera yet - only in VR mode)
             this.dolly = new THREE.Group();
@@ -404,8 +401,6 @@ class SceneManager {
             
             // Store original camera parent for switching back
             this.cameraOriginalParent = this.camera.parent;
-            
-            console.log('🎥 Dolly created at:', this.dolly.position);
             
             // Initialize XR controllers
             this.controllers = [];
@@ -511,7 +506,7 @@ class SceneManager {
                                     requiredFeatures: ['local-floor']
                                 });
                                 await this.renderer.xr.setSession(session);
-                                console.log('✅ VR session started via custom button');
+
                             } catch (error) {
                                 console.error('❌ Failed to start VR session:', error);
                                 alert('Could not enter VR mode: ' + error.message);
@@ -522,10 +517,7 @@ class SceneManager {
                         if (vrContainer) {
                             vrContainer.appendChild(vrButton);
                             vrContainer.classList.remove('hidden');
-                            console.log('✅ VR is supported - button shown');
                         }
-                    } else {
-                        console.log('ℹ️ VR not supported on this device');
                     }
                 });
             }
@@ -558,7 +550,6 @@ class SceneManager {
                                     optionalFeatures: ['dom-overlay', 'hit-test']
                                 });
                                 await this.renderer.xr.setSession(session);
-                                console.log('✅ AR session started via custom button');
                             } catch (error) {
                                 console.error('❌ Failed to start AR session:', error);
                                 alert('Could not enter AR mode: ' + error.message);
@@ -569,10 +560,7 @@ class SceneManager {
                         if (arContainer) {
                             arContainer.appendChild(arButton);
                             arContainer.classList.remove('hidden');
-                            console.log('✅ AR is supported - button shown');
                         }
-                    } else {
-                        console.log('ℹ️ AR not supported on this device');
                     }
                 });
             }
@@ -580,14 +568,7 @@ class SceneManager {
             // Handle XR session start
             this.renderer.xr.addEventListener('sessionstart', () => {
                 const session = this.renderer.xr.getSession();
-                console.log('🥽 XR SESSION STARTED - Mode:', session.mode);
-                console.log('🌐 Environment Blend Mode:', session.environmentBlendMode);
-                
-                if (session.mode === 'immersive-ar') {
-                    console.warn('⚠️ AR mode detected! If you want VR, use the "ENTER VR" button.');
-                } else if (session.mode === 'immersive-vr') {
-                    console.log('✅ VR mode confirmed!');
-                }
+                if (DEBUG.VR) console.log(`🥽 XR SESSION: ${session.mode}`);
                 
                 // Move camera to dolly for VR
                 if (this.dolly && this.camera) {
@@ -601,7 +582,6 @@ class SceneManager {
                     this.camera.position.set(0, 0, 0);
                     // Position dolly for good initial view
                     this.dolly.position.set(0, 50, 150);
-                    console.log('🎥 Camera moved to dolly at:', this.dolly.position);
                 }
                 
                 // Set background based on session type
@@ -609,11 +589,9 @@ class SceneManager {
                     session.environmentBlendMode === 'additive' || 
                     session.environmentBlendMode === 'alpha-blend') {
                     this.scene.background = null; // Transparent for AR
-                    console.log('📱 AR MODE: Transparent background');
                 } else {
                     // VR mode - keep starfield background
                     this.scene.background = new THREE.Color(0x000011);
-                    console.log('🥽 VR MODE: Dark space background');
                 }
                 
                 // Show welcome message and instructions
@@ -631,15 +609,11 @@ class SceneManager {
                 if (this.vrUIPanel) {
                     this.vrUIPanel.visible = false;
                 }
-                
-                // Log scene state
-                console.log('🌟 Scene children count:', this.scene.children.length);
-                console.log('☀️ Sun in scene:', this.solarSystemModule?.sun ? 'YES' : 'NO');
             });
 
             // Handle XR session end
             this.renderer.xr.addEventListener('sessionend', () => {
-                console.log('🥽 XR SESSION ENDED');
+                if (DEBUG.VR) console.log('🥽 XR SESSION ENDED');
                 
                 // Restore camera to scene
                 if (this.dolly && this.camera && this.camera.parent === this.dolly) {
@@ -647,7 +621,6 @@ class SceneManager {
                     this.scene.add(this.camera);
                     // Restore camera position from dolly position
                     this.camera.position.copy(this.dolly.position);
-                    console.log('🎥 Camera restored to scene at:', this.camera.position);
                 }
                 
                 this.scene.background = new THREE.Color(0x000000);
@@ -4687,7 +4660,7 @@ class SolarSystemModule {
         this.asteroidBelt = asteroidBeltGroup;
         this.objects.push(asteroidBeltGroup);
         
-        console.log(`🪨 Created hyper-realistic asteroid belt: ${largeCount} large + ${mediumCount} medium + ${dustCount} dust particles`);
+        if (DEBUG.enabled) console.log(`🪨 Asteroid belt: ${largeCount + mediumCount + dustCount} particles`);
     }
 
     createKuiperBelt(scene) {
@@ -4882,7 +4855,7 @@ class SolarSystemModule {
         this.kuiperBelt = kuiperBeltGroup;
         this.objects.push(kuiperBeltGroup);
         
-        console.log(`🧊 Created hyper-realistic Kuiper Belt: ${largeKBOCount} large KBOs + ${mediumKBOCount} medium + ${smallKBOCount} small + ${scatteredCount} scattered disk objects`);
+        if (DEBUG.enabled) console.log(`🧊 Kuiper Belt: ${largeKBOCount + mediumKBOCount + smallKBOCount + scatteredCount} objects`);
     }
 
     createOrbitalPaths(scene) {
@@ -6225,14 +6198,12 @@ class SolarSystemModule {
             this.objects.push(cometGroup);
             this.comets.push(cometGroup);
             
-            console.log(`☄️ Created hyper-realistic ${cometData.name} (nucleus: ${cometData.size.toFixed(3)})`);
+            if (DEBUG.enabled) console.log(`☄️ ${cometData.name} created`);
         });
     }
 
     createHyperrealisticISS(satData) {
-        console.log('🚀🛰️ ===============================================');
-        console.log('🚀🛰️ CREATING NEW ISS WITH ALL 17 MODULES!!!');
-        console.log('🚀🛰️ ===============================================');
+        if (DEBUG.enabled) console.log('🛰️ Creating ISS with all modules');
         
         // Complete ISS model with ALL modules as of October 2025
         // Real ISS: 109m long × 73m wide × 20m tall, 419,725 kg
@@ -6957,26 +6928,26 @@ class SolarSystemModule {
                 radius: craft.size
             };
             
-            console.log(`🚀 Created hyper-realistic ${craft.name} (size: ${craft.size.toFixed(2)})`);
+            if (DEBUG.enabled) console.log(`🚀 ${craft.name} created`);
             
             // Position spacecraft
             if (craft.orbitPlanet) {
                 // Orbiter around planet
                 const planet = this.planets[craft.orbitPlanet];
                 if (planet) {
-                    spacecraft.position.x = craft.distance * Math.cos(craft.angle);
-                    spacecraft.position.z = craft.distance * Math.sin(craft.angle);
-                    planet.add(spacecraft);
+                    spacecraftGroup.position.x = craft.distance * Math.cos(craft.angle);
+                    spacecraftGroup.position.z = craft.distance * Math.sin(craft.angle);
+                    planet.add(spacecraftGroup);
                 }
             } else {
                 // Deep space probe - position in solar system
-                spacecraft.position.x = craft.distance * Math.cos(craft.angle);
-                spacecraft.position.z = craft.distance * Math.sin(craft.angle);
-                scene.add(spacecraft);
+                spacecraftGroup.position.x = craft.distance * Math.cos(craft.angle);
+                spacecraftGroup.position.z = craft.distance * Math.sin(craft.angle);
+                scene.add(spacecraftGroup);
             }
             
-            this.objects.push(spacecraft);
-            this.spacecraft.push(spacecraft);
+            this.objects.push(spacecraftGroup);
+            this.spacecraft.push(spacecraftGroup);
         });
         
         console.log(`🚀 Created ${this.spacecraft.length} spacecraft and probes!`);
@@ -7500,7 +7471,7 @@ class SolarSystemModule {
         // Recreate orbital paths with new distances
         this.updateOrbitalPaths();
         
-        console.log(`Scale mode: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
+        if (DEBUG.enabled) console.log(`Scale: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
     }
     
     updateOrbitalPaths() {
@@ -7579,7 +7550,7 @@ class SolarSystemModule {
             this.orbits.push(orbit);
         }
         
-        console.log(`🛤️ Orbital paths updated for ${this.orbits.length} planets`);
+        if (DEBUG.enabled) console.log(`🛤️ Orbits updated: ${this.orbits.length}`);
     }
 
     getObjectInfo(object) {
@@ -7656,7 +7627,7 @@ class SolarSystemModule {
         
         // Store reference for tracking
         this.focusedObject = object;
-        console.log(`🎯 Focusing on ${object.userData.name} (actual radius: ${actualRadius.toFixed(2)}, distance: ${distance.toFixed(2)})`);
+        if (DEBUG.enabled) console.log(`🎯 Focus: ${object.userData.name} (r:${actualRadius.toFixed(2)}, d:${distance.toFixed(2)})`);
         
         // Pause time for fast-orbiting spacecraft (orbiters with high speed)
         const app = window.app;
@@ -7665,7 +7636,7 @@ class SolarSystemModule {
         
         if (isFastOrbiter && app && !wasTimePaused) {
             app.timeSpeed = 0;
-            console.log(`⏸️ Paused time to focus on fast-orbiting ${object.userData.name}`);
+            if (DEBUG.enabled) console.log(`⏸️ Time paused for ${object.userData.name}`);
             
             // Update UI to show paused state
             const speedSlider = document.getElementById('time-speed');
@@ -7679,7 +7650,6 @@ class SolarSystemModule {
         const maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
         controls.minDistance = minDist;
         controls.maxDistance = maxDist;
-        console.log(`  📏 Zoom limits: ${minDist.toFixed(1)} to ${maxDist.toFixed(1)}`);
         
         // Enable full rotation around object
         controls.enableRotate = true;
@@ -7715,14 +7685,6 @@ class SolarSystemModule {
             
             if (progress < 1) {
                 requestAnimationFrame(animate);
-            } else {
-                // Animation complete - controls are now centered on object
-                // User can now freely rotate, zoom, and pan around the focused object
-                if (isFastOrbiter && app && app.timeSpeed === 0) {
-                    console.log(`⏸️ Time paused for ${object.userData.name} - Press + or move speed slider to resume`);
-                } else {
-                    console.log(`✅ Focused on ${object.userData.name} - Use mouse to rotate, scroll to zoom`);
-                }
             }
         };
         
