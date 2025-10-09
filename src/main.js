@@ -5165,6 +5165,10 @@ class SolarSystemModule {
     }
 
     createHyperrealisticISS(satData) {
+        console.log('🚀🛰️ ===============================================');
+        console.log('🚀🛰️ CREATING NEW ISS WITH ALL 17 MODULES!!!');
+        console.log('🚀🛰️ ===============================================');
+        
         // Complete ISS model with ALL modules as of October 2025
         // Real ISS: 109m long × 73m wide × 20m tall, 419,725 kg
         // 16 pressurized modules + truss + solar arrays + radiators
