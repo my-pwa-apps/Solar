@@ -744,14 +744,32 @@ class SceneManager {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        ctx.fillStyle = 'rgba(10, 10, 30, 0.94)';
+        // Fluent Design: Acrylic background with gradient
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        bgGradient.addColorStop(0, 'rgba(30, 30, 40, 0.95)');
+        bgGradient.addColorStop(0.5, 'rgba(20, 20, 35, 0.97)');
+        bgGradient.addColorStop(1, 'rgba(15, 15, 30, 0.98)');
+        ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.fillStyle = '#FFD700';
+        // Fluent Design: Add subtle noise texture for acrylic effect
+        for (let i = 0; i < 300; i++) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.03})`;
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = Math.random() * 2;
+            ctx.fillRect(x, y, size, size);
+        }
+
+        // Fluent Design: Title with glow effect
+        ctx.shadowColor = '#0078D4';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#0078D4';
         ctx.font = 'bold 52px "Segoe UI", Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.vrMenuTitle, canvas.width / 2, 70);
+        ctx.shadowBlur = 0;
 
         const columnWidth = 210;
         const columnSpacing = 20;
@@ -778,24 +796,49 @@ class SceneManager {
             const x = startX + col * (columnWidth + columnSpacing);
             const y = startY + row * rowHeight;
 
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-            ctx.fillRect(x + 6, y + 6, width, buttonHeight);
+            // Fluent Design: Soft shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 4;
 
-            ctx.fillStyle = active ? baseColor : blendWithWhite(baseColor, 0.45);
+            // Fluent Design: Acrylic button with gradient
+            const buttonGradient = ctx.createLinearGradient(x, y, x, y + buttonHeight);
+            if (active) {
+                // Active state: Accent color gradient
+                buttonGradient.addColorStop(0, baseColor);
+                buttonGradient.addColorStop(1, blendWithWhite(baseColor, -0.1));
+            } else {
+                // Inactive state: Subtle gradient
+                buttonGradient.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+                buttonGradient.addColorStop(1, 'rgba(255, 255, 255, 0.04)');
+            }
+            ctx.fillStyle = buttonGradient;
             ctx.fillRect(x, y, width, buttonHeight);
 
-            ctx.strokeStyle = active ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.75)';
-            ctx.lineWidth = active ? 4 : 3;
+            // Fluent Design: Border with accent color
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = active ? baseColor : 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = active ? 3 : 1.5;
             ctx.strokeRect(x, y, width, buttonHeight);
 
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
+            // Fluent Design: Inner highlight
+            if (!active) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x + 1, y + 1, width - 2, buttonHeight - 2);
+            }
+
+            // Button text with proper contrast
+            ctx.fillStyle = active ? '#ffffff' : 'rgba(255, 255, 255, 0.9)';
+            ctx.font = active ? 'bold 28px "Segoe UI", Arial, sans-serif' : '600 28px "Segoe UI", Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(label, x + width / 2, y + buttonHeight / 2);
 
+            // Flash effect for interactions
             if (this.vrFlashAction === action) {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.fillStyle = 'rgba(0, 120, 212, 0.4)';
                 ctx.fillRect(x, y, width, buttonHeight);
             }
 
@@ -809,7 +852,7 @@ class SceneManager {
             row: 0,
             label: state.timeSpeed === 0 ? '⏸️ Paused' : '⏸️ Pause',
             action: 'speed0',
-            baseColor: '#e74c3c',
+            baseColor: '#D13438',
             active: state.timeSpeed === 0
         });
 
@@ -818,7 +861,7 @@ class SceneManager {
             row: 0,
             label: state.timeSpeed > 0 ? '▶️ Playing' : '▶️ Play',
             action: 'speed1',
-            baseColor: '#2ecc71',
+            baseColor: '#107C10',
             active: state.timeSpeed > 0
         });
 
@@ -827,7 +870,7 @@ class SceneManager {
             row: 0,
             label: '🔄 Reset View',
             action: 'reset',
-            baseColor: '#16a085'
+            baseColor: '#0078D4'
         });
 
         drawButton({
@@ -835,7 +878,7 @@ class SceneManager {
             row: 0,
             label: state.lasersVisible ? '🎯 Lasers ON' : '🎯 Lasers OFF',
             action: 'togglelasers',
-            baseColor: '#1abc9c',
+            baseColor: '#00B7C3',
             active: state.lasersVisible
         });
 
@@ -844,7 +887,7 @@ class SceneManager {
             row: 1,
             label: state.orbitsVisible ? '🛤️ Orbits ON' : '🛤️ Orbits OFF',
             action: 'orbits',
-            baseColor: '#3498db',
+            baseColor: '#0078D4',
             active: state.orbitsVisible
         });
 
@@ -853,7 +896,7 @@ class SceneManager {
             row: 1,
             label: state.labelsVisible ? '📊 Labels ON' : '📊 Labels OFF',
             action: 'labels',
-            baseColor: '#9b59b6',
+            baseColor: '#8764B8',
             active: state.labelsVisible
         });
 
@@ -862,7 +905,7 @@ class SceneManager {
             row: 1,
             label: state.realisticScale ? '📏 Realistic' : '📏 Educational',
             action: 'scale',
-            baseColor: '#e67e22',
+            baseColor: '#FF8C00',
             active: state.realisticScale
         });
 
@@ -873,7 +916,7 @@ class SceneManager {
             row: 1,
             label: '🌍 Focus Earth',
             action: 'focus:earth',
-            baseColor: '#27ae60',
+            baseColor: '#10893E',
             active: earthName ? state.focusedObject?.userData?.name === earthName : false
         });
 
@@ -888,7 +931,7 @@ class SceneManager {
                 row,
                 label: target.label,
                 action: `focus:${target.id}`,
-                baseColor: '#34495e',
+                baseColor: '#005A9E',
                 active: isActive
             });
             this.vrQuickNavMap.set(target.id, target.object);
@@ -902,7 +945,7 @@ class SceneManager {
             colSpan: 2,
             label: '❌ Close Menu',
             action: 'hide',
-            baseColor: '#7f8c8d'
+            baseColor: '#69797E'
         });
 
         drawButton({
@@ -911,17 +954,34 @@ class SceneManager {
             colSpan: 2,
             label: '🚪 Exit VR',
             action: 'exitvr',
-            baseColor: '#c0392b'
+            baseColor: '#D13438'
         });
 
         const statusHeight = 90;
         const statusY = canvas.height - statusHeight;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.78)';
+        
+        // Fluent Design: Status bar with gradient
+        const statusGradient = ctx.createLinearGradient(0, statusY, 0, canvas.height);
+        statusGradient.addColorStop(0, 'rgba(0, 120, 212, 0.15)');
+        statusGradient.addColorStop(1, 'rgba(0, 120, 212, 0.25)');
+        ctx.fillStyle = statusGradient;
         ctx.fillRect(0, statusY, canvas.width, statusHeight);
 
-        ctx.fillStyle = '#4FC3F7';
-        ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
+        // Fluent Design: Top border
+        ctx.strokeStyle = 'rgba(0, 120, 212, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, statusY);
+        ctx.lineTo(canvas.width, statusY);
+        ctx.stroke();
+
+        // Status text with subtle glow
+        ctx.shadowColor = '#0078D4';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '600 28px "Segoe UI", Arial, sans-serif';
         ctx.fillText(state.statusMessage, canvas.width / 2, statusY + statusHeight / 2);
+        ctx.shadowBlur = 0;
 
         this.vrButtons = buttons;
         if (this.vrUIPanel) {
@@ -4348,7 +4408,7 @@ class SolarSystemModule {
         let moonMaterial;
         const moonName = config.name.toLowerCase();
         
-        if (moonName === 'moon') {
+        if (moonName.includes('moon') && !moonName.includes('ganymede') && !moonName.includes('callisto')) {
             // Earth's Moon: REAL NASA texture with deep craters and maria
             const moonTexture = this.createMoonTextureReal(2048);
             const moonBump = this.createMoonBumpMap(2048);
@@ -4363,7 +4423,7 @@ class SolarSystemModule {
                 roughness: 0.98,
                 metalness: 0.02
             });
-        } else if (moonName === 'io') {
+        } else if (moonName.includes('io')) {
             // Io: Yellow/orange volcanic surface
             moonMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffdd44,
@@ -4372,14 +4432,14 @@ class SolarSystemModule {
                 emissive: 0xff6600,
                 emissiveIntensity: 0.15
             });
-        } else if (moonName === 'europa') {
+        } else if (moonName.includes('europa')) {
             // Europa: Icy white/cream with blue tint
             moonMaterial = new THREE.MeshStandardMaterial({
                 color: 0xeeddcc,
                 roughness: 0.3,
                 metalness: 0.2
             });
-        } else if (moonName === 'titan') {
+        } else if (moonName.includes('titan')) {
             // Titan: Orange atmosphere
             moonMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffa033,
@@ -4388,14 +4448,14 @@ class SolarSystemModule {
                 emissive: 0x663300,
                 emissiveIntensity: 0.1
             });
-        } else if (moonName === 'enceladus') {
+        } else if (moonName.includes('enceladus')) {
             // Enceladus: Bright white ice
             moonMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffffff,
                 roughness: 0.2,
                 metalness: 0.3
             });
-        } else if (moonName === 'triton') {
+        } else if (moonName.includes('triton')) {
             // Triton: Pinkish nitrogen ice
             moonMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffcccc,
@@ -6470,7 +6530,7 @@ class SolarSystemModule {
                             
                             // Debug: Log moon position occasionally (Moon and Io)
                             if (DEBUG.enabled && Math.random() < 0.001) {
-                                if (moon.userData.name === 'Moon' || moon.userData.name === 'Io') {
+                                if (moon.userData.name.includes('Moon') || moon.userData.name.includes('Io')) {
                                     const worldPos = new THREE.Vector3();
                                     moon.getWorldPosition(worldPos);
                                     console.log(`🌙 ${moon.userData.name} orbiting ${planet.userData.name}: angle=${moon.userData.angle.toFixed(2)}, local=(${moon.position.x.toFixed(1)}, ${moon.position.y.toFixed(1)}, ${moon.position.z.toFixed(1)}), world=(${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)}, ${worldPos.z.toFixed(1)}), planet at=(${planet.position.x.toFixed(1)}, ${planet.position.y.toFixed(1)}, ${planet.position.z.toFixed(1)})`);
@@ -7919,10 +7979,10 @@ class App {
                             break;
                         // Deep Space
                         case 'iss':
-                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name === 'International Space Station');
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('International Space Station'));
                             break;
                         case 'hubble':
-                            targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name === 'Hubble Space Telescope');
+                            targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name.includes('Hubble Space Telescope'));
                             break;
                         case 'nebula':
                             targetObject = this.solarSystemModule.nebulae?.[0];
