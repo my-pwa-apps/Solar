@@ -4411,13 +4411,79 @@ class SolarSystemModule {
     }
 
     createStarfield(scene) {
+        // Enhanced starfield based on real astronomical data
+        // Uses Hertzsprung-Russell diagram for realistic stellar populations
         const starGeometry = new THREE.BufferGeometry();
-        const starCount = 5000;
+        const starCount = 8000; // Increased for richer sky
         const positions = new Float32Array(starCount * 3);
         const colors = new Float32Array(starCount * 3);
         const sizes = new Float32Array(starCount);
 
+        // Astronomical stellar distribution based on HR diagram
+        // O-type: 0.00003%, B-type: 0.13%, A-type: 0.6%, F-type: 3%, G-type: 7.6%, K-type: 12.1%, M-type: 76.45%
+        const stellarPopulation = [
+            // [probability, baseTemp, tempVariance, baseLuminosity, name]
+            { prob: 0.0000003, temp: 40000, variance: 10000, lum: 3.5, name: 'O-type (Blue Supergiants)' }, // Rare
+            { prob: 0.0013, temp: 18000, variance: 8000, lum: 2.8, name: 'B-type (Blue Giants)' },
+            { prob: 0.006, temp: 9000, variance: 1500, lum: 2.2, name: 'A-type (White)' },
+            { prob: 0.03, temp: 7000, variance: 500, lum: 1.8, name: 'F-type (Yellow-White)' },
+            { prob: 0.076, temp: 5800, variance: 300, lum: 1.4, name: 'G-type (Yellow, Sun-like)' },
+            { prob: 0.121, temp: 4800, variance: 500, lum: 1.2, name: 'K-type (Orange Dwarfs)' },
+            { prob: 0.7645, temp: 3200, variance: 700, lum: 0.9, name: 'M-type (Red Dwarfs)' }
+        ];
+
+        // Convert Kelvin temperature to RGB using Planck's law approximation
+        const kelvinToRGB = (temp) => {
+            // Simplified black body radiation color
+            temp = temp / 100;
+            let r, g, b;
+
+            // Red
+            if (temp <= 66) {
+                r = 255;
+            } else {
+                r = temp - 60;
+                r = 329.698727446 * Math.pow(r, -0.1332047592);
+                r = Math.max(0, Math.min(255, r));
+            }
+
+            // Green
+            if (temp <= 66) {
+                g = temp;
+                g = 99.4708025861 * Math.log(g) - 161.1195681661;
+            } else {
+                g = temp - 60;
+                g = 288.1221695283 * Math.pow(g, -0.0755148492);
+            }
+            g = Math.max(0, Math.min(255, g));
+
+            // Blue
+            if (temp >= 66) {
+                b = 255;
+            } else if (temp <= 19) {
+                b = 0;
+            } else {
+                b = temp - 10;
+                b = 138.5177312231 * Math.log(b) - 305.0447927307;
+                b = Math.max(0, Math.min(255, b));
+            }
+
+            return { r: r / 255, g: g / 255, b: b / 255 };
+        };
+
+        // Determine stellar type based on probability distribution
+        const getStarType = () => {
+            const rand = Math.random();
+            let cumulative = 0;
+            for (const type of stellarPopulation) {
+                cumulative += type.prob;
+                if (rand < cumulative) return type;
+            }
+            return stellarPopulation[stellarPopulation.length - 1]; // Default to M-type
+        };
+
         for (let i = 0; i < starCount; i++) {
+            // Uniform spherical distribution using Marsaglia method
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             const radius = 15000 + Math.random() * 10000;
@@ -4426,32 +4492,18 @@ class SolarSystemModule {
             positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
             positions[i * 3 + 2] = radius * Math.cos(phi);
 
-            // Realistic star colors (red, yellow, white, blue)
-            const starType = Math.random();
-            if (starType < 0.2) {
-                // Red stars
-                colors[i * 3] = 1;
-                colors[i * 3 + 1] = 0.3 + Math.random() * 0.3;
-                colors[i * 3 + 2] = 0.1;
-            } else if (starType < 0.5) {
-                // Yellow stars
-                colors[i * 3] = 1;
-                colors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
-                colors[i * 3 + 2] = 0.5 + Math.random() * 0.3;
-            } else if (starType < 0.85) {
-                // White stars
-                const white = 0.9 + Math.random() * 0.1;
-                colors[i * 3] = white;
-                colors[i * 3 + 1] = white;
-                colors[i * 3 + 2] = white;
-            } else {
-                // Blue stars
-                colors[i * 3] = 0.6 + Math.random() * 0.2;
-                colors[i * 3 + 1] = 0.7 + Math.random() * 0.2;
-                colors[i * 3 + 2] = 1;
-            }
+            // Assign realistic color based on stellar type
+            const starType = getStarType();
+            const temp = starType.temp + (Math.random() - 0.5) * starType.variance;
+            const rgb = kelvinToRGB(temp);
 
-            sizes[i] = 1 + Math.random() * 2;
+            colors[i * 3] = rgb.r;
+            colors[i * 3 + 1] = rgb.g;
+            colors[i * 3 + 2] = rgb.b;
+
+            // Size based on luminosity with some variance
+            const luminosity = starType.lum + Math.random() * 0.5;
+            sizes[i] = luminosity;
         }
 
         starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -4471,6 +4523,10 @@ class SolarSystemModule {
         this.starfield.name = 'starfield';
         this.starfield.frustumCulled = false;
         scene.add(this.starfield);
+
+        if (DEBUG.enabled) {
+            console.log('⭐ Starfield created with 8,000 stars based on H-R diagram stellar distribution');
+        }
     }
 
     async loadTextureWithFallback(url, fallbackColor) {
@@ -5109,22 +5165,23 @@ class SolarSystemModule {
     }
 
     createHyperrealisticISS(satData) {
-        // Create detailed ISS model with all major modules
+        // Complete ISS model with ALL modules as of October 2025
         // Real ISS: 109m long × 73m wide × 20m tall, 419,725 kg
-        // Earth radius in scene = 1.0 represents 6,371 km
-        // ISS real length = 109m = 0.109 km
-        // Scale: 0.109 / 6371 = 0.0000171 (too small to see!)
-    // Realistic scale: ISS (109m) vs Earth (radius 6,371km)
-    // Scene Earth radius = 1.0, so ISS should be 0.000017
-    // Slightly increased for visibility when zoomed in
-    const iss = new THREE.Group();
-    const scale = 0.00005; // Realistic, but still visible when zoomed in
+        // 16 pressurized modules + truss + solar arrays + radiators
+        const iss = new THREE.Group();
+        const scale = 0.00005; // Realistic scale, visible when zoomed
         
         // Materials
         const moduleMaterial = new THREE.MeshStandardMaterial({
             color: 0xE8E8E8, // White/silver modules
             roughness: 0.5,
             metalness: 0.7
+        });
+        
+        const russianMaterial = new THREE.MeshStandardMaterial({
+            color: 0xD4AF37, // Gold/bronze (Russian modules)
+            roughness: 0.4,
+            metalness: 0.8
         });
         
         const solarPanelMaterial = new THREE.MeshStandardMaterial({
@@ -5141,134 +5198,249 @@ class SolarSystemModule {
             metalness: 0.8
         });
         
-        // 1. Integrated Truss Structure (ITS) - Main backbone (109m long)
-        const trussGeometry = new THREE.BoxGeometry(scale * 36, scale * 0.5, scale * 0.5);
-        const mainTruss = new THREE.Mesh(trussGeometry, trussMaterial);
+        // Helper function to create a module
+        const createModule = (length, diameter, material, name) => {
+            const geometry = new THREE.CylinderGeometry(scale * diameter, scale * diameter, scale * length, 16);
+            const module = new THREE.Mesh(geometry, material);
+            module.name = name;
+            return module;
+        };
+        
+        // ========== INTEGRATED TRUSS STRUCTURE (ITS) ==========
+        // Main backbone - 109m long
+        const mainTrussGeometry = new THREE.BoxGeometry(scale * 109, scale * 0.5, scale * 0.5);
+        const mainTruss = new THREE.Mesh(mainTrussGeometry, trussMaterial);
         mainTruss.position.set(0, 0, 0);
+        mainTruss.name = 'Main Truss';
         iss.add(mainTruss);
         
-        // 2. Pressurized Modules (connected along truss)
-        // Zarya (FGB) - Russian control module
-        const zaryaGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 4.2, 16);
-        const zarya = new THREE.Mesh(zaryaGeometry, moduleMaterial);
+        // ========== RUSSIAN SEGMENT (launched 1998-2021) ==========
+        // 1. Zarya (FGB) - First module, launched Nov 20, 1998
+        const zarya = createModule(12.6, 4.1, russianMaterial, 'Zarya (FGB)');
         zarya.rotation.z = Math.PI / 2;
-        zarya.position.set(-scale * 2, 0, 0);
+        zarya.position.set(-scale * 20, 0, 0);
         iss.add(zarya);
         
-        // Unity (Node 1) - US connecting module
-        const unityGeometry = new THREE.CylinderGeometry(scale * 1.5, scale * 1.5, scale * 1.8, 16);
-        const unity = new THREE.Mesh(unityGeometry, moduleMaterial);
-        unity.rotation.z = Math.PI / 2;
-        unity.position.set(scale * 0.5, 0, 0);
-        iss.add(unity);
-        
-        // Destiny Lab - US laboratory
-        const destinyGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 2.8, 16);
-        const destiny = new THREE.Mesh(destinyGeometry, moduleMaterial);
-        destiny.rotation.z = Math.PI / 2;
-        destiny.position.set(scale * 2.5, 0, 0);
-        iss.add(destiny);
-        
-        // Columbus - European laboratory
-        const columbusGeometry = new THREE.CylinderGeometry(scale * 1.3, scale * 1.3, scale * 2.2, 16);
-        const columbus = new THREE.Mesh(columbusGeometry, moduleMaterial);
-        columbus.rotation.x = Math.PI / 2;
-        columbus.position.set(scale * 1, 0, -scale * 2);
-        iss.add(columbus);
-        
-        // Kibo - Japanese laboratory (largest module)
-        const kiboGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 3.6, 16);
-        const kibo = new THREE.Mesh(kiboGeometry, moduleMaterial);
-        kibo.rotation.x = Math.PI / 2;
-        kibo.position.set(scale * 2, 0, scale * 2.5);
-        iss.add(kibo);
-        
-        // 3. Russian Segment Modules
-        // Zvezda - Service module (living quarters)
-        const zvezdaGeometry = new THREE.CylinderGeometry(scale * 1.4, scale * 1.4, scale * 4.3, 16);
-        const zvezda = new THREE.Mesh(zvezdaGeometry, moduleMaterial);
+        // 2. Zvezda - Service module, launched Jul 12, 2000
+        const zvezda = createModule(13.1, 4.15, russianMaterial, 'Zvezda');
         zvezda.rotation.z = Math.PI / 2;
-        zvezda.position.set(-scale * 5, 0, 0);
+        zvezda.position.set(-scale * 30, 0, 0);
         iss.add(zvezda);
         
-        // Poisk & Rassvet - Docking modules
-        const poiskGeometry = new THREE.CylinderGeometry(scale * 0.8, scale * 0.8, scale * 1.3, 12);
-        const poisk = new THREE.Mesh(poiskGeometry, moduleMaterial);
-        poisk.position.set(-scale * 5, scale * 1.8, 0);
+        // 3. Pirs - Docking compartment, launched Sep 14, 2001 (deorbited Jul 2021)
+        // Now replaced by Nauka
+        
+        // 4. Poisk (MRM-2) - Docking module, launched Nov 10, 2009
+        const poisk = createModule(4.0, 2.55, russianMaterial, 'Poisk (MRM-2)');
+        poisk.position.set(-scale * 30, scale * 5, 0);
         iss.add(poisk);
         
-        // 4. Solar Arrays - 8 arrays total (73m wingspan)
-        const solarArrayGeometry = new THREE.BoxGeometry(scale * 11.5, scale * 0.05, scale * 3.5);
+        // 5. Rassvet (MRM-1) - Mini research module, launched May 14, 2010
+        const rassvet = createModule(6.0, 2.35, russianMaterial, 'Rassvet (MRM-1)');
+        rassvet.position.set(-scale * 20, -scale * 4, 0);
+        iss.add(rassvet);
         
-        // Port arrays (4 arrays on left side)
-        for (let i = 0; i < 2; i++) {
-            const array = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
-            array.position.set(-scale * 10 - i * scale * 2, scale * 2.5, 0);
-            iss.add(array);
-            
-            const array2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
-            array2.position.set(-scale * 10 - i * scale * 2, -scale * 2.5, 0);
-            iss.add(array2);
-        }
+        // 6. Nauka - Multipurpose laboratory, launched Jul 21, 2021
+        const nauka = createModule(13.0, 4.25, russianMaterial, 'Nauka');
+        nauka.rotation.z = Math.PI / 2;
+        nauka.position.set(-scale * 38, 0, scale * 2);
+        iss.add(nauka);
         
-        // Starboard arrays (4 arrays on right side)
-        for (let i = 0; i < 2; i++) {
-            const array = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
-            array.position.set(scale * 10 + i * scale * 2, scale * 2.5, 0);
-            iss.add(array);
-            
-            const array2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
-            array2.position.set(scale * 10 + i * scale * 2, -scale * 2.5, 0);
-            iss.add(array2);
-        }
+        // 7. Prichal - Docking module, launched Nov 24, 2021
+        const prichal = createModule(3.0, 2.0, russianMaterial, 'Prichal');
+        prichal.position.set(-scale * 38, -scale * 4, scale * 2);
+        iss.add(prichal);
         
-        // 5. Radiators - Heat dissipation panels
-        const radiatorGeometry = new THREE.BoxGeometry(scale * 10, scale * 0.05, scale * 1.5);
+        // ========== US SEGMENT ==========
+        // 8. Unity (Node 1) - First US module, launched Dec 4, 1998
+        const unity = createModule(5.5, 4.57, moduleMaterial, 'Unity (Node 1)');
+        unity.rotation.z = Math.PI / 2;
+        unity.position.set(-scale * 10, 0, 0);
+        iss.add(unity);
+        
+        // 9. Destiny - US Laboratory, launched Feb 7, 2001
+        const destiny = createModule(8.5, 4.27, moduleMaterial, 'Destiny Lab');
+        destiny.rotation.z = Math.PI / 2;
+        destiny.position.set(-scale * 2, 0, 0);
+        iss.add(destiny);
+        
+        // 10. Quest - Airlock, launched Jul 12, 2001
+        const quest = createModule(5.5, 4.0, moduleMaterial, 'Quest Airlock');
+        quest.position.set(-scale * 10, 0, -scale * 5);
+        iss.add(quest);
+        
+        // 11. Harmony (Node 2) - Connecting module, launched Oct 23, 2007
+        const harmony = createModule(7.2, 4.4, moduleMaterial, 'Harmony (Node 2)');
+        harmony.rotation.z = Math.PI / 2;
+        harmony.position.set(scale * 8, 0, 0);
+        iss.add(harmony);
+        
+        // 12. Tranquility (Node 3) - Life support, launched Feb 8, 2010
+        const tranquility = createModule(6.7, 4.48, moduleMaterial, 'Tranquility (Node 3)');
+        tranquility.position.set(scale * 8, 0, -scale * 6);
+        iss.add(tranquility);
+        
+        // 13. Cupola - Observation module, launched Feb 8, 2010
+        const cupolaGeometry = new THREE.ConeGeometry(scale * 2.0, scale * 1.5, 8);
+        const cupola = new THREE.Mesh(cupolaGeometry, moduleMaterial);
+        cupola.position.set(scale * 8, -scale * 5, -scale * 6);
+        cupola.name = 'Cupola';
+        iss.add(cupola);
+        
+        // 14. Leonardo (PMM) - Permanent Multipurpose Module, launched Feb 24, 2011
+        const leonardo = createModule(6.4, 4.57, moduleMaterial, 'Leonardo (PMM)');
+        leonardo.position.set(scale * 8, scale * 4, 0);
+        iss.add(leonardo);
+        
+        // ========== INTERNATIONAL PARTNER MODULES ==========
+        // 15. Columbus - European laboratory, launched Feb 7, 2008
+        const columbus = createModule(6.9, 4.48, moduleMaterial, 'Columbus (ESA)');
+        columbus.rotation.x = Math.PI / 2;
+        columbus.position.set(scale * 8, 0, scale * 6);
+        iss.add(columbus);
+        
+        // 16. Kibo (JEM) - Japanese Experiment Module, launched Mar 11 & May 31, 2008
+        const kiboMain = createModule(11.2, 4.4, moduleMaterial, 'Kibo PM');
+        kiboMain.rotation.x = Math.PI / 2;
+        kiboMain.position.set(scale * 12, 0, -scale * 10);
+        iss.add(kiboMain);
+        
+        // Kibo Logistics Module
+        const kiboLogistics = createModule(4.2, 4.4, moduleMaterial, 'Kibo ELM');
+        kiboLogistics.position.set(scale * 12, scale * 4, -scale * 10);
+        iss.add(kiboLogistics);
+        
+        // Kibo External Facility
+        const kiboExternal = new THREE.BoxGeometry(scale * 5, scale * 0.3, scale * 4);
+        const kiboExt = new THREE.Mesh(kiboExternal, moduleMaterial);
+        kiboExt.position.set(scale * 12, -scale * 3.5, -scale * 10);
+        kiboExt.name = 'Kibo EF';
+        iss.add(kiboExt);
+        
+        // ========== COMMERCIAL MODULES ==========
+        // 17. BEAM (Bigelow Expandable Activity Module) - launched Apr 8, 2016
+        const beam = createModule(4.0, 3.2, moduleMaterial, 'BEAM');
+        beam.position.set(scale * 8, -scale * 4, -scale * 6);
+        iss.add(beam);
+        
+        // ========== SOLAR ARRAYS ==========
+        // 8 solar arrays (4 pairs) - 73m total wingspan
+        const solarArrayGeometry = new THREE.BoxGeometry(scale * 11.58, scale * 0.05, scale * 34.2);
+        
+        // Port arrays (P4/P6)
+        const p6_1 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        p6_1.position.set(-scale * 40, scale * 8, 0);
+        p6_1.name = 'P6 Array 1';
+        iss.add(p6_1);
+        
+        const p6_2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        p6_2.position.set(-scale * 40, -scale * 8, 0);
+        p6_2.name = 'P6 Array 2';
+        iss.add(p6_2);
+        
+        const p4_1 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        p4_1.position.set(-scale * 25, scale * 8, 0);
+        p4_1.name = 'P4 Array 1';
+        iss.add(p4_1);
+        
+        const p4_2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        p4_2.position.set(-scale * 25, -scale * 8, 0);
+        p4_2.name = 'P4 Array 2';
+        iss.add(p4_2);
+        
+        // Starboard arrays (S4/S6)
+        const s4_1 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        s4_1.position.set(scale * 25, scale * 8, 0);
+        s4_1.name = 'S4 Array 1';
+        iss.add(s4_1);
+        
+        const s4_2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        s4_2.position.set(scale * 25, -scale * 8, 0);
+        s4_2.name = 'S4 Array 2';
+        iss.add(s4_2);
+        
+        const s6_1 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        s6_1.position.set(scale * 40, scale * 8, 0);
+        s6_1.name = 'S6 Array 1';
+        iss.add(s6_1);
+        
+        const s6_2 = new THREE.Mesh(solarArrayGeometry, solarPanelMaterial);
+        s6_2.position.set(scale * 40, -scale * 8, 0);
+        s6_2.name = 'S6 Array 2';
+        iss.add(s6_2);
+        
+        // ========== RADIATORS ==========
+        // Heat dissipation panels
+        const radiatorGeometry = new THREE.BoxGeometry(scale * 15, scale * 0.05, scale * 4.5);
         const radiatorMaterial = new THREE.MeshStandardMaterial({
             color: 0xC0C0C0,
             roughness: 0.3,
             metalness: 0.9
         });
         
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 6; i++) {
             const radiator = new THREE.Mesh(radiatorGeometry, radiatorMaterial);
-            radiator.position.set(-scale * 8 + i * scale * 16, 0, scale * 3);
+            radiator.position.set(-scale * 35 + i * scale * 12, 0, scale * 8);
+            radiator.name = `Radiator ${i + 1}`;
             iss.add(radiator);
         }
         
-        // 6. Canadarm2 - Robotic arm
-        const armGeometry = new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 5.7, 8);
-        const canadarm = new THREE.Mesh(armGeometry, trussMaterial);
+        // ========== ROBOTIC ARMS ==========
+        // Canadarm2 - 17.6m long
+        const canadarmGeometry = new THREE.CylinderGeometry(scale * 0.35, scale * 0.35, scale * 17.6, 12);
+        const canadarm = new THREE.Mesh(canadarmGeometry, trussMaterial);
         canadarm.rotation.z = Math.PI / 4;
-        canadarm.position.set(scale * 1, scale * 1.5, 0);
+        canadarm.position.set(scale * 5, scale * 10, 0);
+        canadarm.name = 'Canadarm2';
         iss.add(canadarm);
         
-        // 7. Add glow marker for visibility from distance
-        const glowGeometry = new THREE.SphereGeometry(scale * 1.5, 16, 16);
+        // Dextre (Special Purpose Dexterous Manipulator)
+        const dextreGeometry = new THREE.BoxGeometry(scale * 3.5, scale * 1.5, scale * 1.5);
+        const dextre = new THREE.Mesh(dextreGeometry, trussMaterial);
+        dextre.position.set(scale * 5, scale * 18, 0);
+        dextre.name = 'Dextre';
+        iss.add(dextre);
+        
+        // Japanese robotic arm (on Kibo)
+        const jemRMSGeometry = new THREE.CylinderGeometry(scale * 0.25, scale * 0.25, scale * 10, 10);
+        const jemRMS = new THREE.Mesh(jemRMSGeometry, trussMaterial);
+        jemRMS.rotation.x = Math.PI / 3;
+        jemRMS.position.set(scale * 12, scale * 5, -scale * 10);
+        jemRMS.name = 'JEM RMS';
+        iss.add(jemRMS);
+        
+        // ========== VISIBILITY AIDS ==========
+        // Glow for distance visibility
+        const glowGeometry = new THREE.SphereGeometry(scale * 2, 16, 16);
         const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFFFFFF, // White glow for ISS visibility
+            color: 0xFFFFFF,
             transparent: true,
-            opacity: 0.4
+            opacity: 0.3
         });
         const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.name = 'Visibility Glow';
         iss.add(glow);
         
-        // Add a brighter marker point at center
-        const markerGeometry = new THREE.SphereGeometry(scale * 0.3, 8, 8);
+        // Center marker
+        const markerGeometry = new THREE.SphereGeometry(scale * 0.5, 8, 8);
         const markerMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFFD700, // Gold marker
-            transparent: false
+            color: 0xFFD700
         });
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+        marker.name = 'Center Marker';
         iss.add(marker);
         
-        // Enable shadows for realism
+        // Enable shadows for all meshes
         iss.traverse((child) => {
             if (child instanceof THREE.Mesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
             }
         });
+        
+        if (DEBUG.enabled) {
+            console.log('🛰️ ISS created with 17 pressurized modules, 8 solar arrays, 6 radiators, and 3 robotic arms');
+        }
         
         return iss;
     }
@@ -5290,7 +5462,7 @@ class SolarSystemModule {
                 funFact: 'ISS is 109m long, 73m wide, masses 419,725 kg. Pressurized volume equals a Boeing 747! Visible to naked eye as brightest "star" after Venus.',
                 realSize: '109m × 73m × 20m, 419,725 kg',
                 orbitTime: '92.68 minutes',
-                modules: '16 pressurized modules: Zarya, Unity, Zvezda, Destiny, Quest, Pirs, Harmony, Columbus, Kibo, Poisk, Tranquility, Cupola, Rassvet, Leonardo, Bigelow, Nauka'
+                modules: '17 pressurized modules: Zarya, Unity, Zvezda, Destiny, Quest, Harmony, Columbus, Kibo (3 parts), Poisk, Tranquility, Cupola, Rassvet, Leonardo, BEAM, Nauka, Prichal. Plus 8 solar arrays, 6 radiators, 3 robotic arms (Canadarm2, Dextre, JEM RMS).'
             },
             { 
                 name: 'Hubble Space Telescope', 
