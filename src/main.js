@@ -6361,9 +6361,11 @@ class SolarSystemModule {
         // Earth radius in scene = 1.0 represents 6,371 km
         // ISS real length = 109m = 0.109 km
         // Scale: 0.109 / 6371 = 0.0000171 (too small to see!)
-        // For visibility: Use satData.size (0.03) * 2 = 0.06 for better visibility
-        const iss = new THREE.Group();
-        const scale = satData.size * 2; // Scale factor: 0.03 * 2 = 0.06 for visibility
+    // Realistic scale: ISS (109m) vs Earth (radius 6,371km)
+    // Scene Earth radius = 1.0, so ISS should be 0.000017
+    // Slightly increased for visibility when zoomed in
+    const iss = new THREE.Group();
+    const scale = 0.00005; // Realistic, but still visible when zoomed in
         
         // Materials
         const moduleMaterial = new THREE.MeshStandardMaterial({
