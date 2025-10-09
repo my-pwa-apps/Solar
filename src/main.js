@@ -5169,7 +5169,7 @@ class SolarSystemModule {
         // Real ISS: 109m long × 73m wide × 20m tall, 419,725 kg
         // 16 pressurized modules + truss + solar arrays + radiators
         const iss = new THREE.Group();
-        const scale = 0.00005; // Realistic scale, visible when zoomed
+        const scale = 0.0003; // Increased visibility scale (was 0.00005)
         
         // Materials
         const moduleMaterial = new THREE.MeshStandardMaterial({
@@ -5410,21 +5410,23 @@ class SolarSystemModule {
         iss.add(jemRMS);
         
         // ========== VISIBILITY AIDS ==========
-        // Glow for distance visibility
-        const glowGeometry = new THREE.SphereGeometry(scale * 2, 16, 16);
+        // Larger glow for distance visibility
+        const glowGeometry = new THREE.SphereGeometry(scale * 10, 16, 16);
         const glowMaterial = new THREE.MeshBasicMaterial({
             color: 0xFFFFFF,
             transparent: true,
-            opacity: 0.3
+            opacity: 0.5
         });
         const glow = new THREE.Mesh(glowGeometry, glowMaterial);
         glow.name = 'Visibility Glow';
         iss.add(glow);
         
-        // Center marker
-        const markerGeometry = new THREE.SphereGeometry(scale * 0.5, 8, 8);
+        // Larger center marker
+        const markerGeometry = new THREE.SphereGeometry(scale * 3, 8, 8);
         const markerMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFFD700
+            color: 0xFFD700,
+            emissive: 0xFFD700,
+            emissiveIntensity: 0.8
         });
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
         marker.name = 'Center Marker';
@@ -5438,9 +5440,16 @@ class SolarSystemModule {
             }
         });
         
-        if (DEBUG.enabled) {
-            console.log('🛰️ ISS created with 17 pressurized modules, 8 solar arrays, 6 radiators, and 3 robotic arms');
-        }
+        // Count all children for verification
+        let moduleCount = 0;
+        iss.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                moduleCount++;
+            }
+        });
+        
+        console.log(`🛰️ ISS created with ${moduleCount} mesh components (scale: ${scale})`);
+        console.log('   - 17 pressurized modules, 8 solar arrays, 6 radiators, 3 robotic arms');
         
         return iss;
     }
@@ -6113,14 +6122,10 @@ class SolarSystemModule {
                     satellite.position.y = earthPosition.y + userData.distance * sinAngle * sinIncl;
                     satellite.position.z = earthPosition.z + userData.distance * sinAngle * cosIncl;
                     
-                    // Debug: Log satellite positions
-                    if (DEBUG.enabled && Math.random() < 0.001) {
-                        // Check if it's a mesh with material (not Group like ISS)
-                        const isColorMatch = satellite.material && 
-                            (satellite.material.color.getHex() === 0xFFFF00 || 
-                             satellite.material.color.getHex() === 0xFFD700);
-                        if (isColorMatch || userData.name.includes('ISS')) {
-                            console.log(`🛰️ ${userData.name}: Earth at (${earthPosition.x.toFixed(1)}, ${earthPosition.y.toFixed(1)}, ${earthPosition.z.toFixed(1)}), Satellite at (${satellite.position.x.toFixed(1)}, ${satellite.position.y.toFixed(1)}, ${satellite.position.z.toFixed(1)}), distance=${userData.distance}`);
+                    // Debug: Log satellite positions (especially ISS)
+                    if (Math.random() < 0.001) {
+                        if (userData.name.includes('ISS')) {
+                            console.log(`🛰️ ISS: Earth at (${earthPosition.x.toFixed(1)}, ${earthPosition.y.toFixed(1)}, ${earthPosition.z.toFixed(1)}), ISS at (${satellite.position.x.toFixed(1)}, ${satellite.position.y.toFixed(1)}, ${satellite.position.z.toFixed(1)}), distance=${userData.distance}, visible=${satellite.visible}, children=${satellite.children.length}`);
                         }
                     }
                     
