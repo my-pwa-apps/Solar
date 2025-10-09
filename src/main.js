@@ -336,8 +336,15 @@ class SceneManager {
         this.labelRenderer.domElement.style.pointerEvents = 'none';
         container.appendChild(this.labelRenderer.domElement);
         
-        // Label visibility state - start hidden
-        this.labelsVisible = false;
+    // Label visibility state - start hidden
+    this.labelsVisible = false;
+
+    // VR UI state
+    this.vrStatusMessage = '🎮 Use Laser to Click Buttons';
+    this.vrFlashAction = null;
+    this.vrFlashTimeout = null;
+    this.vrMenuTitle = '🚀 Space Explorer VR';
+    this.vrQuickNavMap = new Map();
     }
 
     setupCamera() {
@@ -641,107 +648,308 @@ class SceneManager {
             console.warn('WebXR not supported:', error);
         }
     }
-    
+
     setupVRUI() {
-        // Create a minimal floating VR control panel matching desktop menu
+        if (!this.dolly) return;
+
+        if (this.vrUIPanel && this.vrUIPanel.parent) {
+            this.vrUIPanel.parent.remove(this.vrUIPanel);
+        }
+
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
-        canvas.height = 600; // Reduced height for minimal menu
+        canvas.height = 640;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
-        // Background with transparency
-        ctx.fillStyle = 'rgba(10, 10, 30, 0.9)';
-        ctx.fillRect(0, 0, 1024, 600);
-        
-        // Title
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 48px "Segoe UI", Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('🚀 Space Explorer VR', 512, 60);
-        
-        // Define buttons matching desktop menu (canvas is 1024x600)
-        this.vrButtons = [
-            // Row 1: Animation Speed (matching desktop time-speed select)
-            { x: 50, y: 100, w: 180, h: 70, label: '⏸️ Paused', action: 'speed0', color: '#e74c3c' },
-            { x: 240, y: 100, w: 180, h: 70, label: '▶️ Animated', action: 'speed1', color: '#2ecc71' },
-            
-            // Row 2: Visual Controls (matching desktop buttons)
-            { x: 50, y: 190, w: 180, h: 70, label: '🛤️ Orbits', action: 'orbits', color: '#3498db' },
-            { x: 240, y: 190, w: 180, h: 70, label: '📊 Labels', action: 'labels', color: '#9b59b6' },
-            { x: 430, y: 190, w: 200, h: 70, label: '� Scale', action: 'scale', color: '#e67e22' },
-            { x: 640, y: 190, w: 180, h: 70, label: '� Reset', action: 'reset', color: '#16a085' },
-            
-            // Row 3: Additional VR Controls
-            { x: 50, y: 280, w: 200, h: 70, label: '🎯 Lasers', action: 'togglelasers', color: '#1abc9c' },
-            { x: 260, y: 280, w: 280, h: 70, label: '🌍 Focus Earth', action: 'earth', color: '#27ae60' },
-            
-            // Row 4: Menu Control
-            { x: 50, y: 370, w: 400, h: 80, label: '❌ Close Menu', action: 'hide', color: '#7f8c8d' },
-            { x: 460, y: 370, w: 360, h: 80, label: '🚪 Exit VR', action: 'exitvr', color: '#c0392b' }
-        ];
-        
-        // Draw buttons
-        this.vrButtons.forEach(btn => {
-            // Button shadow
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(btn.x + 5, btn.y + 5, btn.w, btn.h);
-            
-            // Button background
-            ctx.fillStyle = btn.color;
-            ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-            
-            // Button border
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
-            
-            // Button text
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 10);
-        });
-        
-        // Status bar
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 470, 1024, 130);
-        ctx.fillStyle = '#0f0';
-        ctx.font = 'bold 26px "Segoe UI", Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('🎮 Use Laser to Click Buttons', 512, 515);
-        ctx.fillStyle = '#aaa';
-        ctx.font = '22px "Segoe UI", Arial, sans-serif';
-        ctx.fillText('Press GRIP button to open/close this menu', 512, 555);
-        
-        // No slider needed - simplified to match desktop menu
-        
-        // Create texture
+
+        this.vrUICanvas = canvas;
+        this.vrUIContext = ctx;
+        this.vrButtons = [];
+        this.vrQuickNavMap = new Map();
+        this.vrStatusMessage = this.vrStatusMessage || '🎮 Use Laser to Click Buttons';
+        this.vrMenuTitle = this.vrMenuTitle || '🚀 Space Explorer VR';
+
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
-        
-        // Create plane (adjusted for new aspect ratio)
-        const geometry = new THREE.PlaneGeometry(3, 1.76); // 1024x600 aspect ratio
-        const material = new THREE.MeshBasicMaterial({ 
-            map: texture, 
+
+        const aspect = canvas.width / canvas.height;
+        const panelHeight = 1.9;
+        const panelWidth = panelHeight * aspect;
+
+        const geometry = new THREE.PlaneGeometry(panelWidth, panelHeight);
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
             transparent: true,
             side: THREE.DoubleSide
         });
-        
+
         this.vrUIPanel = new THREE.Mesh(geometry, material);
         this.vrUIPanel.position.set(0, 1.6, -2.5);
         this.vrUIPanel.visible = false;
         this.dolly.add(this.vrUIPanel);
-        
-        // Store canvas for updates
-        this.vrUICanvas = canvas;
-        this.vrUIContext = ctx;
-        
+
         if (DEBUG.enabled || DEBUG.VR) {
-            console.log('🥽 ✅ VR UI Panel created with', this.vrButtons.length, 'buttons');
-            console.log('🥽 📊 Button layout:', this.vrButtons.map(b => `"${b.label}" at (${b.x},${b.y})`));
+            console.log('🥽 ✅ VR UI Panel created');
+        }
+
+        this.drawVRMenu();
+    }
+
+    requestVRMenuRefresh() {
+        if (!this.vrUIContext) return;
+        this.drawVRMenu();
+    }
+
+    getVRMenuState() {
+        const app = window.app || {};
+        const module = app.solarSystemModule;
+        return {
+            timeSpeed: app.timeSpeed ?? 1,
+            orbitsVisible: module?.orbitsVisible ?? true,
+            labelsVisible: this.labelsVisible,
+            realisticScale: module?.realisticScale ?? false,
+            lasersVisible: this.lasersVisible,
+            focusedObject: module?.focusedObject || null,
+            statusMessage: this.vrStatusMessage,
+            flashAction: this.vrFlashAction
+        };
+    }
+
+    getVRQuickNavTargets() {
+        const app = window.app || {};
+        const module = app.solarSystemModule;
+        if (module && typeof module.getQuickNavTargets === 'function') {
+            return module.getQuickNavTargets();
+        }
+        return [];
+    }
+
+    drawVRMenu() {
+        if (!this.vrUIContext || !this.vrUICanvas) return;
+
+        const ctx = this.vrUIContext;
+        const canvas = this.vrUICanvas;
+        const app = window.app || {};
+        const module = app.solarSystemModule;
+        const state = this.getVRMenuState();
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'rgba(10, 10, 30, 0.94)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 52px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.vrMenuTitle, canvas.width / 2, 70);
+
+        const columnWidth = 210;
+        const columnSpacing = 20;
+        const columns = 4;
+        const buttonHeight = 68;
+        const rowHeight = 90;
+        const startX = (canvas.width - (columnWidth * columns + columnSpacing * (columns - 1))) / 2;
+        const startY = 140;
+
+        const buttons = [];
+        this.vrQuickNavMap = new Map();
+
+        const blendWithWhite = (hex, amount = 0.3) => {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const r = (num >> 16) & 0xff;
+            const g = (num >> 8) & 0xff;
+            const b = num & 0xff;
+            const mix = (channel) => Math.round(channel + (255 - channel) * amount);
+            return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+        };
+
+        const drawButton = ({ col, row, colSpan = 1, label, action, baseColor = '#2c3e50', active = false }) => {
+            const width = columnWidth * colSpan + columnSpacing * (colSpan - 1);
+            const x = startX + col * (columnWidth + columnSpacing);
+            const y = startY + row * rowHeight;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            ctx.fillRect(x + 6, y + 6, width, buttonHeight);
+
+            ctx.fillStyle = active ? baseColor : blendWithWhite(baseColor, 0.45);
+            ctx.fillRect(x, y, width, buttonHeight);
+
+            ctx.strokeStyle = active ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.75)';
+            ctx.lineWidth = active ? 4 : 3;
+            ctx.strokeRect(x, y, width, buttonHeight);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, x + width / 2, y + buttonHeight / 2);
+
+            if (this.vrFlashAction === action) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.fillRect(x, y, width, buttonHeight);
+            }
+
+            buttons.push({ x, y, w: width, h: buttonHeight, action, label });
+        };
+
+        const earthName = module?.planets?.earth?.userData?.name;
+
+        drawButton({
+            col: 0,
+            row: 0,
+            label: state.timeSpeed === 0 ? '⏸️ Paused' : '⏸️ Pause',
+            action: 'speed0',
+            baseColor: '#e74c3c',
+            active: state.timeSpeed === 0
+        });
+
+        drawButton({
+            col: 1,
+            row: 0,
+            label: state.timeSpeed > 0 ? '▶️ Playing' : '▶️ Play',
+            action: 'speed1',
+            baseColor: '#2ecc71',
+            active: state.timeSpeed > 0
+        });
+
+        drawButton({
+            col: 2,
+            row: 0,
+            label: '🔄 Reset View',
+            action: 'reset',
+            baseColor: '#16a085'
+        });
+
+        drawButton({
+            col: 3,
+            row: 0,
+            label: state.lasersVisible ? '🎯 Lasers ON' : '🎯 Lasers OFF',
+            action: 'togglelasers',
+            baseColor: '#1abc9c',
+            active: state.lasersVisible
+        });
+
+        drawButton({
+            col: 0,
+            row: 1,
+            label: state.orbitsVisible ? '🛤️ Orbits ON' : '🛤️ Orbits OFF',
+            action: 'orbits',
+            baseColor: '#3498db',
+            active: state.orbitsVisible
+        });
+
+        drawButton({
+            col: 1,
+            row: 1,
+            label: state.labelsVisible ? '📊 Labels ON' : '📊 Labels OFF',
+            action: 'labels',
+            baseColor: '#9b59b6',
+            active: state.labelsVisible
+        });
+
+        drawButton({
+            col: 2,
+            row: 1,
+            label: state.realisticScale ? '📏 Realistic' : '📏 Educational',
+            action: 'scale',
+            baseColor: '#e67e22',
+            active: state.realisticScale
+        });
+
+        this.vrQuickNavMap.set('earth', module?.planets?.earth || null);
+
+        drawButton({
+            col: 3,
+            row: 1,
+            label: '🌍 Focus Earth',
+            action: 'focus:earth',
+            baseColor: '#27ae60',
+            active: earthName ? state.focusedObject?.userData?.name === earthName : false
+        });
+
+        const quickTargets = this.getVRQuickNavTargets().slice(0, 8);
+
+        quickTargets.forEach((target, index) => {
+            const row = 2 + Math.floor(index / columns);
+            const col = index % columns;
+            const isActive = state.focusedObject === target.object;
+            drawButton({
+                col,
+                row,
+                label: target.label,
+                action: `focus:${target.id}`,
+                baseColor: '#34495e',
+                active: isActive
+            });
+            this.vrQuickNavMap.set(target.id, target.object);
+        });
+
+        const extraRow = 2 + Math.ceil(quickTargets.length / columns);
+
+        drawButton({
+            col: 0,
+            row: extraRow,
+            colSpan: 2,
+            label: '❌ Close Menu',
+            action: 'hide',
+            baseColor: '#7f8c8d'
+        });
+
+        drawButton({
+            col: 2,
+            row: extraRow,
+            colSpan: 2,
+            label: '🚪 Exit VR',
+            action: 'exitvr',
+            baseColor: '#c0392b'
+        });
+
+        const statusHeight = 90;
+        const statusY = canvas.height - statusHeight;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.78)';
+        ctx.fillRect(0, statusY, canvas.width, statusHeight);
+
+        ctx.fillStyle = '#4FC3F7';
+        ctx.font = 'bold 28px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(state.statusMessage, canvas.width / 2, statusY + statusHeight / 2);
+
+        this.vrButtons = buttons;
+        if (this.vrUIPanel) {
+            this.vrUIPanel.material.map.needsUpdate = true;
         }
     }
-    
+
+    focusVRTarget(targetId) {
+        const app = window.app || this;
+        const module = app.solarSystemModule;
+        if (!module) return false;
+
+        let target = this.vrQuickNavMap.get(targetId);
+        if (!target && typeof module.getQuickNavTargets === 'function') {
+            const fallback = module.getQuickNavTargets().find(item => item.id === targetId);
+            target = fallback?.object;
+        }
+
+        if (!target) {
+            this.updateVRStatus('⚠️ Target not available');
+            return false;
+        }
+
+        module.focusOnObject(target, this.camera, this.controls);
+
+        if (typeof module.getObjectInfo === 'function') {
+            const info = module.getObjectInfo(target);
+            app.uiManager?.updateInfoPanel(info);
+        }
+
+        app.uiManager?.setQuickNavValue?.(targetId);
+
+        const name = target.userData?.name || 'Object';
+        this.updateVRStatus(`✓ Selected: ${name}`);
+        this.requestVRMenuRefresh();
+        return true;
+    }
+
     onSelectStart(controller, index) {
         // Handle controller trigger press
         if (DEBUG.VR) console.log(`🥽 Controller ${index} trigger pressed`);
@@ -776,8 +984,10 @@ class SceneManager {
             
             if (intersects.length > 0) {
                 const uv = intersects[0].uv;
-                const x = uv.x * 1024;
-                const y = (1 - uv.y) * 768;
+                const canvasWidth = this.vrUICanvas?.width || 1024;
+                const canvasHeight = this.vrUICanvas?.height || 640;
+                const x = uv.x * canvasWidth;
+                const y = (1 - uv.y) * canvasHeight;
                 console.log(`🥽 VR UI clicked at pixel (${Math.round(x)}, ${Math.round(y)})`);
                 
                 // Check which button was clicked
@@ -947,54 +1157,72 @@ class SceneManager {
     
     handleVRAction(action) {
         console.log(`🥽 🎯 Executing VR Action: "${action}"`);
-        
-        // Get current app state
+
         const app = window.app || this;
-        
         if (!app) {
             console.error('❌ VR Action failed: app not found');
             return;
         }
-        
-        switch(action) {
+
+        if (!action) {
+            this.updateVRStatus('⚠️ No action provided');
+            return;
+        }
+
+        const scheduleRefresh = (delay = 0) => {
+            if (delay > 0) {
+                setTimeout(() => this.requestVRMenuRefresh(), delay);
+            } else {
+                this.requestVRMenuRefresh();
+            }
+        };
+
+        if (action.startsWith('focus:')) {
+            const targetId = action.split(':')[1];
+            if (!targetId) {
+                this.updateVRStatus('⚠️ No target specified');
+                return;
+            }
+            const success = this.focusVRTarget(targetId);
+            if (success) {
+                scheduleRefresh(80);
+            }
+            return;
+        }
+
+        switch (action) {
             case 'speed0':
-                // Paused (matching desktop time-speed=0)
-                if (app) {
-                    app.timeSpeed = 0;
-                    this.updateVRStatus('⏸️ Paused');
-                    console.log('⏸️ VR: Paused');
-                }
+                app.timeSpeed = 0;
+                this.updateVRStatus('⏸️ Paused');
+                scheduleRefresh();
                 break;
-                
+
             case 'speed1':
-                // Animated (matching desktop time-speed=1)
-                if (app) {
-                    app.timeSpeed = 1;
-                    this.updateVRStatus('▶️ Animated');
-                    console.log('▶️ VR: Animated');
-                }
+                app.timeSpeed = 1;
+                this.updateVRStatus('▶️ Playing');
+                scheduleRefresh();
                 break;
-                
+
             case 'orbits':
-                // Toggle orbits (matching desktop toggle-orbits button)
                 document.getElementById('toggle-orbits')?.click();
-                this.updateVRStatus('🛤️ Orbits Toggled');
+                this.updateVRStatus('🛤️ Orbits toggled');
+                scheduleRefresh(120);
                 break;
-                
+
             case 'labels':
-                // Toggle labels (matching desktop toggle-details button)
                 document.getElementById('toggle-details')?.click();
-                this.updateVRStatus('📊 Labels Toggled');
+                this.updateVRStatus('📊 Labels toggled');
+                scheduleRefresh(120);
                 break;
+
             case 'scale':
-                // Toggle scale (matching desktop toggle-scale button)
                 document.getElementById('toggle-scale')?.click();
-                this.updateVRStatus('📏 Scale Toggled');
+                this.updateVRStatus('📏 Scale mode switched');
+                scheduleRefresh(120);
                 break;
-                
+
             case 'togglelasers':
                 this.lasersVisible = !this.lasersVisible;
-                // Toggle visibility of all laser pointers
                 this.controllers.forEach(controller => {
                     const laser = controller.getObjectByName('laser');
                     const pointer = controller.getObjectByName('pointer');
@@ -1002,151 +1230,65 @@ class SceneManager {
                     if (pointer) pointer.visible = this.lasersVisible;
                 });
                 this.updateVRStatus(`🎯 Lasers ${this.lasersVisible ? 'ON' : 'OFF'}`);
-                console.log(`🎯 VR Laser pointers ${this.lasersVisible ? 'visible' : 'hidden'}`);
+                scheduleRefresh();
                 break;
-                
+
             case 'reset':
                 this.resetCamera();
                 if (app.solarSystemModule) {
                     app.solarSystemModule.focusedObject = null;
                 }
-                this.updateVRStatus('🔄 View Reset');
+                this.updateVRStatus('🔄 View reset');
+                scheduleRefresh();
                 break;
+
             case 'earth':
-                if (app.solarSystemModule) {
-                    const earth = app.solarSystemModule.planets?.earth;
-                    if (earth) {
-                        app.solarSystemModule.focusOnObject(earth, this.camera, this.controls);
-                        this.updateVRStatus('🌍 Focused on Earth');
-                    }
-                }
+                this.handleVRAction('focus:earth');
                 break;
+
             case 'hide':
                 if (DEBUG.VR) console.log('🥽 Hiding VR menu');
                 if (this.vrUIPanel) {
                     this.vrUIPanel.visible = false;
-                    if (DEBUG.VR) console.log('🥽 ✅ VR menu hidden');
                 }
+                this.updateVRStatus('VR menu hidden');
                 break;
+
             case 'exitvr':
                 if (DEBUG.VR) console.log('🥽 Exiting VR mode');
-                // End the XR session
                 if (this.renderer.xr.isPresenting) {
                     const session = this.renderer.xr.getSession();
-                    if (session) {
-                        session.end().then(() => {
-                            console.log('🥽 ✅ VR session ended');
-                        }).catch(err => {
-                            console.error('🥽 ❌ Error ending VR session:', err);
-                        });
-                    }
+                    session?.end().then(() => console.log('🥽 ✅ VR session ended'))
+                        .catch(err => console.error('🥽 ❌ Error ending VR session:', err));
                 }
                 break;
+
             default:
                 console.warn(`🥽 ⚠️ Unknown VR action: "${action}"`);
                 this.updateVRStatus(`⚠️ Unknown action: ${action}`);
                 break;
         }
     }
-    
+
     flashVRButton(btn) {
-        const ctx = this.vrUIContext;
-        
-        // Flash white
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-        this.vrUIPanel.material.map.needsUpdate = true;
-        
-        // Restore after 150ms
-        setTimeout(() => {
-            this.setupVRUI();
-        }, 150);
+        this.vrFlashAction = btn?.action || null;
+        this.requestVRMenuRefresh();
+        if (this.vrFlashTimeout) {
+            clearTimeout(this.vrFlashTimeout);
+        }
+        this.vrFlashTimeout = setTimeout(() => {
+            this.vrFlashAction = null;
+            this.requestVRMenuRefresh();
+        }, 180);
     }
-    
+
     updateVRStatus(message) {
-        const ctx = this.vrUIContext;
-        
-        // Clear status bar area
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.fillRect(0, 640, 1024, 128);
-        
-        // Get current state
-        const app = window.app || this;
-        const speed = app.timeSpeed || 0;
-        const brightness = app.brightness || 50;
-        
-        // Mode text
-        let modeText = '▶️ Playing';
-        if (this.pauseMode === 'all') modeText = '⏸️ Paused All';
-        else if (this.pauseMode === 'orbital') modeText = '⏸️ Orbital Pause';
-        
-        // Status line
-        ctx.fillStyle = '#0f0';
-        ctx.font = 'bold 28px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Mode: ${modeText} | Speed: ${speed}x | Brightness: ${brightness}%`, 512, 685);
-        
-        // Info lines
-        ctx.fillStyle = '#fff';
-        ctx.font = '22px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
-        ctx.fillText(message || 'Ready', 512, 720);
-        ctx.fillText('Use Laser to Click Buttons or Drag Slider', 512, 750);
-        
-        this.vrUIPanel.material.map.needsUpdate = true;
+        this.vrStatusMessage = message || 'Ready';
+        this.requestVRMenuRefresh();
     }
-    
+
     updateVRUI() {
-        // Redraw speed mode selector with current speed
-        const app = window.app || this;
-        const speed = app.timeSpeed || 0;
-        const ctx = this.vrUIContext;
-        
-        // Clear selector area
-        const sliderY = 560;
-        const sliderX = 280;
-        const boxW = 200;
-        const boxH = 60;
-        const spacing = 20;
-        
-        ctx.fillStyle = 'rgba(10, 10, 30, 0.95)';
-        ctx.fillRect(0, sliderY - 80, 1024, 140);
-        
-        // Redraw label
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 32px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('⏱️ Speed Mode:', 50, sliderY - 20);
-        
-        // Two mode boxes
-        const modes = [
-            { label: '⏸️ Paused', value: 0, x: sliderX + boxW / 2 },
-            { label: '▶️ Animated', value: 1, x: sliderX + (boxW * 1.5) + spacing }
-        ];
-        
-        ctx.font = '24px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial, sans-serif';
-        ctx.textAlign = 'center';
-        
-        modes.forEach(mode => {
-            const isActive = speed === mode.value;
-            
-            // Box background
-            ctx.fillStyle = isActive ? '#3498db' : '#34495e';
-            ctx.fillRect(mode.x, sliderY, boxW, boxH);
-            
-            // Box border
-            ctx.strokeStyle = isActive ? '#fff' : '#7f8c8d';
-            ctx.lineWidth = isActive ? 4 : 2;
-            ctx.strokeRect(mode.x, sliderY, boxW, boxH);
-            
-            // Text
-            ctx.fillStyle = '#fff';
-            ctx.fillText(mode.label, mode.x + boxW / 2, sliderY + boxH / 2 + 8);
-        });
-        
-        // Update status bar
-        this.updateVRStatus();
-        
-        this.vrUIPanel.material.map.needsUpdate = true;
+        this.requestVRMenuRefresh();
     }
     
     updateLaserPointers() {
