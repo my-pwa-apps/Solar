@@ -4537,93 +4537,352 @@ class SolarSystemModule {
     }
 
     createAsteroidBelt(scene) {
-        const asteroidCount = 2000;
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(asteroidCount * 3);
-        const colors = new Float32Array(asteroidCount * 3);
-
-        for (let i = 0; i < asteroidCount; i++) {
+        // ===== HYPER-REALISTIC ASTEROID BELT =====
+        // Multiple size classes: dust, small, medium, large asteroids
+        const asteroidBeltGroup = new THREE.Group();
+        asteroidBeltGroup.name = 'asteroidBelt';
+        
+        // Large asteroids (visible as small irregular rocks)
+        const largeCount = 150;
+        const largeGeometry = new THREE.BufferGeometry();
+        const largePositions = new Float32Array(largeCount * 3);
+        const largeColors = new Float32Array(largeCount * 3);
+        const largeSizes = new Float32Array(largeCount);
+        
+        for (let i = 0; i < largeCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const distance = 75 + Math.random() * 15;
-            const height = (Math.random() - 0.5) * 3;
-
-            positions[i * 3] = distance * Math.cos(angle);
-            positions[i * 3 + 1] = height;
-            positions[i * 3 + 2] = distance * Math.sin(angle);
-
-            const gray = 0.4 + Math.random() * 0.3;
-            colors[i * 3] = gray;
-            colors[i * 3 + 1] = gray * 0.9;
-            colors[i * 3 + 2] = gray * 0.8;
+            const height = (Math.random() - 0.5) * 4;
+            
+            largePositions[i * 3] = distance * Math.cos(angle);
+            largePositions[i * 3 + 1] = height;
+            largePositions[i * 3 + 2] = distance * Math.sin(angle);
+            
+            // Varied rocky colors: dark gray, brown, reddish
+            const colorType = Math.random();
+            if (colorType < 0.4) {
+                // C-type: dark carbonaceous
+                const gray = 0.25 + Math.random() * 0.15;
+                largeColors[i * 3] = gray;
+                largeColors[i * 3 + 1] = gray * 0.95;
+                largeColors[i * 3 + 2] = gray * 0.9;
+            } else if (colorType < 0.7) {
+                // S-type: stony, gray-brown
+                const base = 0.4 + Math.random() * 0.2;
+                largeColors[i * 3] = base;
+                largeColors[i * 3 + 1] = base * 0.85;
+                largeColors[i * 3 + 2] = base * 0.7;
+            } else {
+                // M-type: metallic, lighter gray
+                const metal = 0.5 + Math.random() * 0.25;
+                largeColors[i * 3] = metal * 0.95;
+                largeColors[i * 3 + 1] = metal;
+                largeColors[i * 3 + 2] = metal * 0.9;
+            }
+            
+            largeSizes[i] = 0.5 + Math.random() * 0.8; // Varied sizes
         }
-
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        const material = new THREE.PointsMaterial({
-            size: 0.3,
+        
+        largeGeometry.setAttribute('position', new THREE.BufferAttribute(largePositions, 3));
+        largeGeometry.setAttribute('color', new THREE.BufferAttribute(largeColors, 3));
+        largeGeometry.setAttribute('size', new THREE.BufferAttribute(largeSizes, 1));
+        
+        const largeMaterial = new THREE.PointsMaterial({
             vertexColors: true,
+            sizeAttenuation: true,
             transparent: true,
-            opacity: 0.7
+            opacity: 0.9
         });
-
-        this.asteroidBelt = new THREE.Points(geometry, material);
-        this.asteroidBelt.name = 'asteroidBelt';
-        this.asteroidBelt.userData = {
+        
+        const largeAsteroids = new THREE.Points(largeGeometry, largeMaterial);
+        asteroidBeltGroup.add(largeAsteroids);
+        
+        // Medium asteroids (more numerous, smaller)
+        const mediumCount = 800;
+        const mediumGeometry = new THREE.BufferGeometry();
+        const mediumPositions = new Float32Array(mediumCount * 3);
+        const mediumColors = new Float32Array(mediumCount * 3);
+        const mediumSizes = new Float32Array(mediumCount);
+        
+        for (let i = 0; i < mediumCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 73 + Math.random() * 19; // Wider spread
+            const height = (Math.random() - 0.5) * 5;
+            
+            mediumPositions[i * 3] = distance * Math.cos(angle);
+            mediumPositions[i * 3 + 1] = height;
+            mediumPositions[i * 3 + 2] = distance * Math.sin(angle);
+            
+            const gray = 0.35 + Math.random() * 0.25;
+            const brownTint = Math.random() * 0.15;
+            mediumColors[i * 3] = gray;
+            mediumColors[i * 3 + 1] = gray * (0.9 - brownTint);
+            mediumColors[i * 3 + 2] = gray * (0.85 - brownTint * 1.5);
+            
+            mediumSizes[i] = 0.25 + Math.random() * 0.4;
+        }
+        
+        mediumGeometry.setAttribute('position', new THREE.BufferAttribute(mediumPositions, 3));
+        mediumGeometry.setAttribute('color', new THREE.BufferAttribute(mediumColors, 3));
+        mediumGeometry.setAttribute('size', new THREE.BufferAttribute(mediumSizes, 1));
+        
+        const mediumMaterial = new THREE.PointsMaterial({
+            vertexColors: true,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: 0.75
+        });
+        
+        const mediumAsteroids = new THREE.Points(mediumGeometry, mediumMaterial);
+        asteroidBeltGroup.add(mediumAsteroids);
+        
+        // Dust and small debris (very numerous, creates density)
+        const dustCount = 2500;
+        const dustGeometry = new THREE.BufferGeometry();
+        const dustPositions = new Float32Array(dustCount * 3);
+        const dustColors = new Float32Array(dustCount * 3);
+        const dustSizes = new Float32Array(dustCount);
+        
+        for (let i = 0; i < dustCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 70 + Math.random() * 25; // Widest spread
+            const height = (Math.random() - 0.5) * 6;
+            
+            dustPositions[i * 3] = distance * Math.cos(angle);
+            dustPositions[i * 3 + 1] = height;
+            dustPositions[i * 3 + 2] = distance * Math.sin(angle);
+            
+            const brightness = 0.3 + Math.random() * 0.3;
+            dustColors[i * 3] = brightness;
+            dustColors[i * 3 + 1] = brightness * 0.9;
+            dustColors[i * 3 + 2] = brightness * 0.85;
+            
+            dustSizes[i] = 0.1 + Math.random() * 0.15;
+        }
+        
+        dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+        dustGeometry.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
+        dustGeometry.setAttribute('size', new THREE.BufferAttribute(dustSizes, 1));
+        
+        const dustMaterial = new THREE.PointsMaterial({
+            vertexColors: true,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: 0.5
+        });
+        
+        const dust = new THREE.Points(dustGeometry, dustMaterial);
+        asteroidBeltGroup.add(dust);
+        
+        asteroidBeltGroup.userData = {
             name: 'Asteroid Belt',
             type: 'Asteroid Belt',
             description: '☄️ The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
             funFact: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
-            count: asteroidCount,
-            radius: 40 // Effective radius for focus camera positioning (belt is at ~140 AU)
+            count: largeCount + mediumCount + dustCount,
+            radius: 40
         };
-        scene.add(this.asteroidBelt);
-        this.objects.push(this.asteroidBelt);
+        
+        scene.add(asteroidBeltGroup);
+        this.asteroidBelt = asteroidBeltGroup;
+        this.objects.push(asteroidBeltGroup);
+        
+        console.log(`🪨 Created hyper-realistic asteroid belt: ${largeCount} large + ${mediumCount} medium + ${dustCount} dust particles`);
     }
 
     createKuiperBelt(scene) {
-        const kuiperCount = 3000;
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(kuiperCount * 3);
-        const colors = new Float32Array(kuiperCount * 3);
-
-        for (let i = 0; i < kuiperCount; i++) {
+        // ===== HYPER-REALISTIC KUIPER BELT =====
+        // Icy worlds with varied compositions: water ice, methane ice, nitrogen ice
+        const kuiperBeltGroup = new THREE.Group();
+        kuiperBeltGroup.name = 'kuiperBelt';
+        
+        // Large Kuiper Belt Objects (KBOs) - Pluto-like dwarf planets
+        const largeKBOCount = 200;
+        const largeKBOGeometry = new THREE.BufferGeometry();
+        const largeKBOPositions = new Float32Array(largeKBOCount * 3);
+        const largeKBOColors = new Float32Array(largeKBOCount * 3);
+        const largeKBOSizes = new Float32Array(largeKBOCount);
+        
+        for (let i = 0; i < largeKBOCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const distance = 280 + Math.random() * 100;
-            const height = (Math.random() - 0.5) * 30;
-
-            positions[i * 3] = distance * Math.cos(angle);
-            positions[i * 3 + 1] = height;
-            positions[i * 3 + 2] = distance * Math.sin(angle);
-
-            const iceColor = 0.7 + Math.random() * 0.3;
-            colors[i * 3] = iceColor * 0.9;
-            colors[i * 3 + 1] = iceColor * 0.95;
-            colors[i * 3 + 2] = iceColor;
+            const height = (Math.random() - 0.5) * 35; // Larger vertical spread
+            
+            largeKBOPositions[i * 3] = distance * Math.cos(angle);
+            largeKBOPositions[i * 3 + 1] = height;
+            largeKBOPositions[i * 3 + 2] = distance * Math.sin(angle);
+            
+            // Varied icy compositions
+            const iceType = Math.random();
+            if (iceType < 0.4) {
+                // Water ice: white-gray
+                const ice = 0.7 + Math.random() * 0.25;
+                largeKBOColors[i * 3] = ice * 0.9;
+                largeKBOColors[i * 3 + 1] = ice * 0.95;
+                largeKBOColors[i * 3 + 2] = ice;
+            } else if (iceType < 0.7) {
+                // Methane ice: reddish-brown (like Pluto)
+                const base = 0.6 + Math.random() * 0.2;
+                largeKBOColors[i * 3] = base;
+                largeKBOColors[i * 3 + 1] = base * 0.75;
+                largeKBOColors[i * 3 + 2] = base * 0.6;
+            } else {
+                // Nitrogen/CO ice: bluish-white
+                const blue = 0.75 + Math.random() * 0.2;
+                largeKBOColors[i * 3] = blue * 0.85;
+                largeKBOColors[i * 3 + 1] = blue * 0.9;
+                largeKBOColors[i * 3 + 2] = blue;
+            }
+            
+            largeKBOSizes[i] = 0.6 + Math.random() * 1.0; // Larger than asteroids
         }
-
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        const material = new THREE.PointsMaterial({
-            size: 0.4,
+        
+        largeKBOGeometry.setAttribute('position', new THREE.BufferAttribute(largeKBOPositions, 3));
+        largeKBOGeometry.setAttribute('color', new THREE.BufferAttribute(largeKBOColors, 3));
+        largeKBOGeometry.setAttribute('size', new THREE.BufferAttribute(largeKBOSizes, 1));
+        
+        const largeKBOMaterial = new THREE.PointsMaterial({
             vertexColors: true,
+            sizeAttenuation: true,
             transparent: true,
-            opacity: 0.6
+            opacity: 0.85
         });
-
-        this.kuiperBelt = new THREE.Points(geometry, material);
-        this.kuiperBelt.name = 'kuiperBelt';
-        this.kuiperBelt.userData = {
+        
+        const largeKBOs = new THREE.Points(largeKBOGeometry, largeKBOMaterial);
+        kuiperBeltGroup.add(largeKBOs);
+        
+        // Medium icy bodies (cubewanos, classical KBOs)
+        const mediumKBOCount = 1200;
+        const mediumKBOGeometry = new THREE.BufferGeometry();
+        const mediumKBOPositions = new Float32Array(mediumKBOCount * 3);
+        const mediumKBOColors = new Float32Array(mediumKBOCount * 3);
+        const mediumKBOSizes = new Float32Array(mediumKBOCount);
+        
+        for (let i = 0; i < mediumKBOCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 275 + Math.random() * 110;
+            const height = (Math.random() - 0.5) * 40;
+            
+            mediumKBOPositions[i * 3] = distance * Math.cos(angle);
+            mediumKBOPositions[i * 3 + 1] = height;
+            mediumKBOPositions[i * 3 + 2] = distance * Math.sin(angle);
+            
+            // Mostly water ice with some variation
+            const ice = 0.65 + Math.random() * 0.25;
+            const tint = Math.random() * 0.1;
+            mediumKBOColors[i * 3] = ice * (0.9 - tint);
+            mediumKBOColors[i * 3 + 1] = ice * (0.92 + tint * 0.5);
+            mediumKBOColors[i * 3 + 2] = ice * (0.95 + tint);
+            
+            mediumKBOSizes[i] = 0.35 + Math.random() * 0.5;
+        }
+        
+        mediumKBOGeometry.setAttribute('position', new THREE.BufferAttribute(mediumKBOPositions, 3));
+        mediumKBOGeometry.setAttribute('color', new THREE.BufferAttribute(mediumKBOColors, 3));
+        mediumKBOGeometry.setAttribute('size', new THREE.BufferAttribute(mediumKBOSizes, 1));
+        
+        const mediumKBOMaterial = new THREE.PointsMaterial({
+            vertexColors: true,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const mediumKBOs = new THREE.Points(mediumKBOGeometry, mediumKBOMaterial);
+        kuiperBeltGroup.add(mediumKBOs);
+        
+        // Small icy debris and cometary nuclei
+        const smallKBOCount = 3000;
+        const smallKBOGeometry = new THREE.BufferGeometry();
+        const smallKBOPositions = new Float32Array(smallKBOCount * 3);
+        const smallKBOColors = new Float32Array(smallKBOCount * 3);
+        const smallKBOSizes = new Float32Array(smallKBOCount);
+        
+        for (let i = 0; i < smallKBOCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 270 + Math.random() * 120; // Widest spread
+            const height = (Math.random() - 0.5) * 45;
+            
+            smallKBOPositions[i * 3] = distance * Math.cos(angle);
+            smallKBOPositions[i * 3 + 1] = height;
+            smallKBOPositions[i * 3 + 2] = distance * Math.sin(angle);
+            
+            // Faint icy particles
+            const brightness = 0.6 + Math.random() * 0.3;
+            smallKBOColors[i * 3] = brightness * 0.88;
+            smallKBOColors[i * 3 + 1] = brightness * 0.93;
+            smallKBOColors[i * 3 + 2] = brightness * 0.98;
+            
+            smallKBOSizes[i] = 0.15 + Math.random() * 0.25;
+        }
+        
+        smallKBOGeometry.setAttribute('position', new THREE.BufferAttribute(smallKBOPositions, 3));
+        smallKBOGeometry.setAttribute('color', new THREE.BufferAttribute(smallKBOColors, 3));
+        smallKBOGeometry.setAttribute('size', new THREE.BufferAttribute(smallKBOSizes, 1));
+        
+        const smallKBOMaterial = new THREE.PointsMaterial({
+            vertexColors: true,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: 0.55
+        });
+        
+        const smallKBOs = new THREE.Points(smallKBOGeometry, smallKBOMaterial);
+        kuiperBeltGroup.add(smallKBOs);
+        
+        // Scattered disk objects (highly eccentric, distant)
+        const scatteredCount = 600;
+        const scatteredGeometry = new THREE.BufferGeometry();
+        const scatteredPositions = new Float32Array(scatteredCount * 3);
+        const scatteredColors = new Float32Array(scatteredCount * 3);
+        const scatteredSizes = new Float32Array(scatteredCount);
+        
+        for (let i = 0; i < scatteredCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 350 + Math.random() * 80; // Further out
+            const height = (Math.random() - 0.5) * 60; // Much larger inclination
+            
+            scatteredPositions[i * 3] = distance * Math.cos(angle);
+            scatteredPositions[i * 3 + 1] = height;
+            scatteredPositions[i * 3 + 2] = distance * Math.sin(angle);
+            
+            // Very faint, distant objects with subtle blue tint
+            const faint = 0.5 + Math.random() * 0.25;
+            scatteredColors[i * 3] = faint * 0.85;
+            scatteredColors[i * 3 + 1] = faint * 0.9;
+            scatteredColors[i * 3 + 2] = faint;
+            
+            scatteredSizes[i] = 0.3 + Math.random() * 0.4;
+        }
+        
+        scatteredGeometry.setAttribute('position', new THREE.BufferAttribute(scatteredPositions, 3));
+        scatteredGeometry.setAttribute('color', new THREE.BufferAttribute(scatteredColors, 3));
+        scatteredGeometry.setAttribute('size', new THREE.BufferAttribute(scatteredSizes, 1));
+        
+        const scatteredMaterial = new THREE.PointsMaterial({
+            vertexColors: true,
+            sizeAttenuation: true,
+            transparent: true,
+            opacity: 0.45
+        });
+        
+        const scatteredObjects = new THREE.Points(scatteredGeometry, scatteredMaterial);
+        kuiperBeltGroup.add(scatteredObjects);
+        
+        kuiperBeltGroup.userData = {
             name: 'Kuiper Belt',
             type: 'Kuiper Belt',
             description: '🧊 The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
             funFact: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
-            count: kuiperCount,
-            radius: 60  // Belt spans ~280-380 AU, radius for focus system
+            count: largeKBOCount + mediumKBOCount + smallKBOCount + scatteredCount,
+            radius: 60
         };
-        scene.add(this.kuiperBelt);
-        this.objects.push(this.kuiperBelt);
+        
+        scene.add(kuiperBeltGroup);
+        this.kuiperBelt = kuiperBeltGroup;
+        this.objects.push(kuiperBeltGroup);
+        
+        console.log(`🧊 Created hyper-realistic Kuiper Belt: ${largeKBOCount} large KBOs + ${mediumKBOCount} medium + ${smallKBOCount} small + ${scatteredCount} scattered disk objects`);
     }
 
     createOrbitalPaths(scene) {
@@ -5553,7 +5812,112 @@ class SolarSystemModule {
         this.nearbyStars.push(alphaA);
         this.nearbyStars.push(proxima);
         
-        console.log('⭐ Created Alpha Centauri system');
+        // Kepler-452 (Sun-like star for Kepler-452b) - 1,400 light-years away
+        const kepler452Geo = new THREE.SphereGeometry(13, 64, 64);
+        const kepler452Mat = new THREE.MeshBasicMaterial({
+            color: 0xFFFAD4,
+            emissive: 0xFFFAD4,
+            emissiveIntensity: 1.5,
+            toneMapped: false
+        });
+        const kepler452 = new THREE.Mesh(kepler452Geo, kepler452Mat);
+        kepler452.position.set(-9000, 2500, 8450); // Near Kepler-452b
+        
+        // Glow for Kepler-452
+        const glowK452Geo = new THREE.SphereGeometry(20, 32, 32);
+        const glowK452Mat = new THREE.MeshBasicMaterial({
+            color: 0xFFFFAA,
+            transparent: true,
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending
+        });
+        const glowK452 = new THREE.Mesh(glowK452Geo, glowK452Mat);
+        kepler452.add(glowK452);
+        
+        kepler452.userData = {
+            name: '⭐ Kepler-452 (Sun-like Star)',
+            type: 'G-type Star',
+            description: '⭐ Kepler-452 is a Sun-like star that hosts Earth\'s "cousin" planet Kepler-452b! It\'s 1.5 billion years older than our Sun and 20% brighter. The star is 1,400 light-years away in the constellation Cygnus.',
+            distance: '1,400 light-years',
+            realSize: '1.11 times the Sun\'s diameter',
+            funFact: 'Kepler-452 is 6 billion years old - it shows us what our Sun might be like in 1.5 billion years!'
+        };
+        
+        scene.add(kepler452);
+        this.objects.push(kepler452);
+        this.nearbyStars.push(kepler452);
+        
+        // TRAPPIST-1 (ultra-cool red dwarf) - 40 light-years away
+        const trappist1Geo = new THREE.SphereGeometry(5, 32, 32);
+        const trappist1Mat = new THREE.MeshBasicMaterial({
+            color: 0xFF5533,
+            emissive: 0xFF4422,
+            emissiveIntensity: 1.3,
+            toneMapped: false
+        });
+        const trappist1 = new THREE.Mesh(trappist1Geo, trappist1Mat);
+        trappist1.position.set(7000, -3000, -8950); // Near TRAPPIST-1e
+        
+        // Glow for TRAPPIST-1
+        const glowT1Geo = new THREE.SphereGeometry(9, 32, 32);
+        const glowT1Mat = new THREE.MeshBasicMaterial({
+            color: 0xFF6644,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending
+        });
+        const glowT1 = new THREE.Mesh(glowT1Geo, glowT1Mat);
+        trappist1.add(glowT1);
+        
+        trappist1.userData = {
+            name: '🔴 TRAPPIST-1 (Red Dwarf)',
+            type: 'Ultra-cool Red Dwarf',
+            description: '🔴 TRAPPIST-1 is an ultra-cool red dwarf with 7 Earth-sized planets! Three of them are in the habitable zone. The entire system is so compact that all 7 planets orbit closer to their star than Mercury does to our Sun.',
+            distance: '40 light-years',
+            realSize: '0.12 times the Sun\'s diameter (barely larger than Jupiter!)',
+            funFact: 'TRAPPIST-1 is named after the telescope that discovered it - The TRAnsiting Planets and PlanetesImals Small Telescope!'
+        };
+        
+        scene.add(trappist1);
+        this.objects.push(trappist1);
+        this.nearbyStars.push(trappist1);
+        
+        // Kepler-186 (red dwarf) - 500 light-years away
+        const kepler186Geo = new THREE.SphereGeometry(7, 32, 32);
+        const kepler186Mat = new THREE.MeshBasicMaterial({
+            color: 0xFF6B4A,
+            emissive: 0xFF5533,
+            emissiveIntensity: 1.2,
+            toneMapped: false
+        });
+        const kepler186 = new THREE.Mesh(kepler186Geo, kepler186Mat);
+        kepler186.position.set(-8000, -2000, 9450); // Near Kepler-186f
+        
+        // Glow for Kepler-186
+        const glowK186Geo = new THREE.SphereGeometry(11, 32, 32);
+        const glowK186Mat = new THREE.MeshBasicMaterial({
+            color: 0xFF7755,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending
+        });
+        const glowK186 = new THREE.Mesh(glowK186Geo, glowK186Mat);
+        kepler186.add(glowK186);
+        
+        kepler186.userData = {
+            name: '🔴 Kepler-186 (Red Dwarf)',
+            type: 'M-type Red Dwarf',
+            description: '🔴 Kepler-186 is a red dwarf star with 5 known planets! Kepler-186f was the first Earth-sized planet discovered in the habitable zone of another star. The star is cooler than our Sun, giving it an orange-red glow.',
+            distance: '500 light-years',
+            realSize: '0.54 times the Sun\'s diameter',
+            funFact: 'Plants on Kepler-186f would likely photosynthesize using infrared light and appear dark red or black!'
+        };
+        
+        scene.add(kepler186);
+        this.objects.push(kepler186);
+        this.nearbyStars.push(kepler186);
+        
+        console.log(`⭐ Created ${this.nearbyStars.length} nearby stars and exoplanet host stars`);
     }
 
     createExoplanets(scene) {
@@ -5687,56 +6051,98 @@ class SolarSystemModule {
         ];
 
         cometsData.forEach((cometData, index) => {
-            // Comet nucleus - icy, rocky core
-            const geometry = new THREE.SphereGeometry(cometData.size, 24, 24);
-            const material = new THREE.MeshStandardMaterial({
-                color: 0xe8f4f8, // Icy white-blue
-                roughness: 0.8,
-                metalness: 0.2,
-                emissive: 0x4488cc,
-                emissiveIntensity: 0.2
+            const cometGroup = new THREE.Group();
+            
+            // ===== HYPER-REALISTIC NUCLEUS =====
+            // Irregular, potato-shaped icy-rocky core with surface details
+            const nucleusGeometry = new THREE.IcosahedronGeometry(cometData.size, 2);
+            
+            // Deform vertices for irregular shape
+            const positions = nucleusGeometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                const vertex = new THREE.Vector3(positions[i], positions[i + 1], positions[i + 2]);
+                const distortion = 0.15 + Math.random() * 0.2; // Irregular shape
+                vertex.multiplyScalar(distortion + 1.0);
+                positions[i] = vertex.x;
+                positions[i + 1] = vertex.y;
+                positions[i + 2] = vertex.z;
+            }
+            nucleusGeometry.attributes.position.needsUpdate = true;
+            nucleusGeometry.computeVertexNormals();
+            
+            const nucleusMaterial = new THREE.MeshStandardMaterial({
+                color: 0x3a3a3a, // Dark gray-black (dirty ice + rock)
+                roughness: 0.95,
+                metalness: 0.05,
+                emissive: 0x1a1a1a,
+                emissiveIntensity: 0.1
             });
             
-            const comet = new THREE.Mesh(geometry, material);
+            const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
+            cometGroup.add(nucleus);
             
-            // Coma - glowing cloud of gas around nucleus
-            const comaGeo = new THREE.SphereGeometry(cometData.size * 3, 32, 32);
-            const comaMat = new THREE.MeshBasicMaterial({
-                color: 0x88ddff,
-                transparent: true,
-                opacity: 0.15,
-                side: THREE.BackSide,
-                blending: THREE.AdditiveBlending
-            });
-            const coma = new THREE.Mesh(comaGeo, comaMat);
-            comet.add(coma);
+            // Surface ice patches (bright spots)
+            for (let i = 0; i < 8; i++) {
+                const patchGeometry = new THREE.SphereGeometry(cometData.size * 0.15, 8, 8);
+                const patchMaterial = new THREE.MeshStandardMaterial({
+                    color: 0xe8f4f8,
+                    roughness: 0.7,
+                    metalness: 0.1,
+                    emissive: 0x6699cc,
+                    emissiveIntensity: 0.3
+                });
+                const patch = new THREE.Mesh(patchGeometry, patchMaterial);
+                patch.position.set(
+                    (Math.random() - 0.5) * cometData.size * 1.5,
+                    (Math.random() - 0.5) * cometData.size * 1.5,
+                    (Math.random() - 0.5) * cometData.size * 1.5
+                );
+                cometGroup.add(patch);
+            }
             
-            // Inner glow
-            const glowGeo = new THREE.SphereGeometry(cometData.size * 1.8, 24, 24);
-            const glowMat = new THREE.MeshBasicMaterial({
-                color: 0xccffff,
-                transparent: true,
-                opacity: 0.4,
-                side: THREE.BackSide,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false // Don't block objects behind the glow
-            });
-            const glow = new THREE.Mesh(glowGeo, glowMat);
-            comet.add(glow);
+            // Coma - glowing cloud with gradient opacity
+            const comaLayers = 3;
+            for (let layer = 0; layer < comaLayers; layer++) {
+                const layerSize = cometData.size * (2.5 + layer * 0.8);
+                const layerOpacity = 0.25 - layer * 0.08;
+                const comaGeo = new THREE.SphereGeometry(layerSize, 32, 32);
+                const comaMat = new THREE.MeshBasicMaterial({
+                    color: layer === 0 ? 0xaaddff : 0x88ccff,
+                    transparent: true,
+                    opacity: layerOpacity,
+                    side: THREE.BackSide,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                const coma = new THREE.Mesh(comaGeo, comaMat);
+                cometGroup.add(coma);
+            }
             
-            // Main tail (dust tail) - curved, yellowish
+            // ===== HYPER-REALISTIC DUST TAIL =====
+            // Curved, yellowish, with turbulent structure
+            const dustParticles = 400;
             const dustTailGeometry = new THREE.BufferGeometry();
-            const dustTailPositions = new Float32Array(200 * 3);
-            const dustTailColors = new Float32Array(200 * 3);
-            const dustTailSizes = new Float32Array(200);
+            const dustTailPositions = new Float32Array(dustParticles * 3);
+            const dustTailColors = new Float32Array(dustParticles * 3);
+            const dustTailSizes = new Float32Array(dustParticles);
             
-            for (let i = 0; i < 200; i++) {
-                const t = i / 200;
-                dustTailSizes[i] = 3 * (1 - t * 0.7); // Decrease size along tail
-                // Color gradient from white-blue to orange-yellow
-                dustTailColors[i * 3] = 0.8 + t * 0.2;     // R
-                dustTailColors[i * 3 + 1] = 0.9 - t * 0.3; // G  
-                dustTailColors[i * 3 + 2] = 1.0 - t * 0.6; // B
+            for (let i = 0; i < dustParticles; i++) {
+                const t = i / dustParticles;
+                const spread = t * 12; // Expanding spread
+                const curve = t * t * 15; // Parabolic curve
+                
+                dustTailPositions[i * 3] = curve + (Math.random() - 0.5) * spread * 0.5;
+                dustTailPositions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+                dustTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+                
+                // Size decreases with distance, with variation
+                dustTailSizes[i] = (4 + Math.random() * 2) * (1 - t * 0.8);
+                
+                // Gradient: bright white-yellow → orange-red → dark
+                const brightness = 1 - t * 0.7;
+                dustTailColors[i * 3] = Math.min(1, 0.9 + t * 0.3) * brightness;     // R
+                dustTailColors[i * 3 + 1] = Math.max(0.3, 0.85 - t * 0.4) * brightness; // G  
+                dustTailColors[i * 3 + 2] = Math.max(0, 1.0 - t * 0.9) * brightness;    // B
             }
             
             dustTailGeometry.setAttribute('position', new THREE.BufferAttribute(dustTailPositions, 3));
@@ -5747,55 +6153,79 @@ class SolarSystemModule {
                 vertexColors: true,
                 sizeAttenuation: true,
                 transparent: true,
-                opacity: 0.8,
-                blending: THREE.AdditiveBlending
+                opacity: 0.75,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
             });
             
             const dustTail = new THREE.Points(dustTailGeometry, dustTailMaterial);
-            comet.add(dustTail);
+            cometGroup.add(dustTail);
             
-            // Ion tail - straight, blue-white
+            // ===== HYPER-REALISTIC ION TAIL =====
+            // Straight, narrow, blue plasma stream
+            const ionParticles = 300;
             const ionTailGeometry = new THREE.BufferGeometry();
-            const ionTailPositions = new Float32Array(150 * 3);
-            const ionTailSizes = new Float32Array(150);
+            const ionTailPositions = new Float32Array(ionParticles * 3);
+            const ionTailColors = new Float32Array(ionParticles * 3);
+            const ionTailSizes = new Float32Array(ionParticles);
             
-            for (let i = 0; i < 150; i++) {
-                const t = i / 150;
-                ionTailSizes[i] = 2 * (1 - t * 0.8);
+            for (let i = 0; i < ionParticles; i++) {
+                const t = i / ionParticles;
+                const spread = t * 4; // Narrower than dust tail
+                const length = t * 25; // Longer than dust tail
+                
+                ionTailPositions[i * 3] = length + (Math.random() - 0.5) * 0.5;
+                ionTailPositions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+                ionTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+                
+                // Size variation with wispy structures
+                ionTailSizes[i] = (2.5 + Math.random() * 1.5) * (1 - t * 0.85);
+                
+                // Blue plasma gradient
+                const intensity = (1 - t * 0.6) * (0.7 + Math.random() * 0.3);
+                ionTailColors[i * 3] = 0.5 * intensity;      // R
+                ionTailColors[i * 3 + 1] = 0.8 * intensity;  // G
+                ionTailColors[i * 3 + 2] = 1.0 * intensity;  // B
             }
             
             ionTailGeometry.setAttribute('position', new THREE.BufferAttribute(ionTailPositions, 3));
+            ionTailGeometry.setAttribute('color', new THREE.BufferAttribute(ionTailColors, 3));
             ionTailGeometry.setAttribute('size', new THREE.BufferAttribute(ionTailSizes, 1));
             
             const ionTailMaterial = new THREE.PointsMaterial({
-                color: 0x88ccff,
+                vertexColors: true,
                 sizeAttenuation: true,
                 transparent: true,
-                opacity: 0.7,
-                blending: THREE.AdditiveBlending
+                opacity: 0.65,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
             });
             
             const ionTail = new THREE.Points(ionTailGeometry, ionTailMaterial);
-            comet.add(ionTail);
+            cometGroup.add(ionTail);
             
-            comet.userData = {
+            cometGroup.userData = {
                 name: cometData.name,
                 type: 'Comet',
                 radius: cometData.size,
+                actualSize: cometData.size, // Store actual size for zoom calculations
                 distance: cometData.distance,
                 angle: Math.random() * Math.PI * 2,
                 speed: cometData.speed,
                 eccentricity: cometData.eccentricity,
                 description: cometData.description,
-                realSize: '1-10 km nucleus',
+                realSize: '1-60 km nucleus',
                 funFact: 'Comets have two tails: a curved dust tail (yellowish) and a straight ion tail (blue) - both always point away from the Sun!',
                 dustTail: dustTail,
-                ionTail: ionTail
+                ionTail: ionTail,
+                isComet: true // Flag for special zoom handling
             };
             
-            scene.add(comet);
-            this.objects.push(comet);
-            this.comets.push(comet);
+            scene.add(cometGroup);
+            this.objects.push(cometGroup);
+            this.comets.push(cometGroup);
+            
+            console.log(`☄️ Created hyper-realistic ${cometData.name} (nucleus: ${cometData.size.toFixed(3)})`);
         });
     }
 
@@ -6325,82 +6755,191 @@ class SolarSystemModule {
                 realSize: '5,600 kg, 6.8m tall, 4m wide',
                 launched: 'October 15, 1997',
                 status: 'Mission Ended Sept 15, 2017 (Memorial)'
+            },
+            {
+                name: 'Pioneer 10',
+                distance: 320, // ~19.9 billion km from Sun (133 AU) - last contact Jan 2003
+                angle: Math.PI * 0.5, // Direction: toward Aldebaran in Taurus
+                speed: 0.00009, // Traveling at 12.2 km/s relative to Sun
+                size: 0.07,
+                color: 0xA0A0A0,
+                type: 'memorial',
+                description: '🛸 Pioneer 10 was the first spacecraft to travel through the asteroid belt and first to visit Jupiter (Dec 3, 1973)! Launched March 2, 1972, it carried the famous Pioneer plaque showing humans and Earth\'s location. Last contact: Jan 23, 2003 at 12.2 billion km.',
+                funFact: 'Pioneer 10 carries a gold plaque designed by Carl Sagan showing a man, woman, and Earth\'s location - a message to any aliens who might find it!',
+                realSize: '258 kg, 2.74m antenna dish',
+                launched: 'March 2, 1972',
+                status: 'Silent since Jan 2003 (Memorial)'
+            },
+            {
+                name: 'Pioneer 11',
+                distance: 290, // ~15.9 billion km from Sun (106 AU) - last contact Nov 1995
+                angle: Math.PI * 1.4, // Direction: toward constellation Aquila
+                speed: 0.00008, // Traveling at 11.4 km/s relative to Sun
+                size: 0.07,
+                color: 0x909090,
+                type: 'memorial',
+                description: '🛸 Pioneer 11 was the first spacecraft to visit Saturn (Sept 1, 1979)! Also flew by Jupiter (Dec 2, 1974). Launched April 5, 1973, it discovered Saturn\'s F ring and a new moon. Also carries the Pioneer plaque. Last contact: Nov 24, 1995 at 6.5 billion km.',
+                funFact: 'Pioneer 11 used Jupiter\'s gravity to slingshot to Saturn - the first gravity-assist maneuver to another planet!',
+                realSize: '259 kg, 2.74m antenna dish',
+                launched: 'April 5, 1973',
+                status: 'Silent since Nov 1995 (Memorial)'
             }
         ];
 
         spacecraftData.forEach(craft => {
-            // Create spacecraft body
-            let geometry, material;
+            // Create HYPER-REALISTIC spacecraft with detailed geometry
+            const spacecraftGroup = new THREE.Group();
             
+            // Main body - octagonal/box shape for probes
             if (craft.type === 'probe' || craft.type === 'orbiter') {
-                // Classic probe shape with antenna
-                geometry = new THREE.SphereGeometry(craft.size * 0.5, 16, 16);
-                material = new THREE.MeshStandardMaterial({
+                // Central bus/body - box shape
+                const bodyGeometry = new THREE.BoxGeometry(craft.size * 0.8, craft.size * 0.6, craft.size * 0.8);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
                     color: craft.color,
-                    roughness: 0.7,
-                    metalness: 0.6,
-                    emissive: craft.color,
-                    emissiveIntensity: 0.2
-                });
-            } else {
-                // Memorial/generic
-                geometry = new THREE.OctahedronGeometry(craft.size * 0.6);
-                material = new THREE.MeshStandardMaterial({
-                    color: craft.color,
-                    roughness: 0.5,
+                    roughness: 0.4,
                     metalness: 0.7,
                     emissive: craft.color,
-                    emissiveIntensity: 0.3
+                    emissiveIntensity: 0.1
                 });
-            }
-            
-            const spacecraft = new THREE.Mesh(geometry, material);
-            
-            // Add antenna dish for probes
-            if (craft.type === 'probe' || craft.type === 'orbiter') {
-                const dishGeometry = new THREE.CylinderGeometry(craft.size * 1.2, craft.size * 1.5, craft.size * 0.1, 16);
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                spacecraftGroup.add(body);
+                
+                // High-gain antenna dish - realistic parabolic shape
+                const dishGeometry = new THREE.CylinderGeometry(craft.size * 1.5, craft.size * 1.8, craft.size * 0.15, 24);
                 const dishMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xE0E0E0,
-                    roughness: 0.3,
-                    metalness: 0.9
+                    color: 0xF0F0F0,
+                    roughness: 0.2,
+                    metalness: 0.95,
+                    envMapIntensity: 1.5
                 });
                 const dish = new THREE.Mesh(dishGeometry, dishMaterial);
                 dish.rotation.x = Math.PI / 2;
-                dish.position.y = craft.size * 0.5;
-                spacecraft.add(dish);
+                dish.position.set(0, craft.size * 0.4, 0);
+                spacecraftGroup.add(dish);
                 
-                // Add support boom
-                const boomGeometry = new THREE.CylinderGeometry(craft.size * 0.05, craft.size * 0.05, craft.size * 2);
-                const boomMaterial = new THREE.MeshStandardMaterial({
-                    color: 0x808080,
+                // Dish support struts - tripod
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i / 3) * Math.PI * 2;
+                    const strutGeometry = new THREE.CylinderGeometry(craft.size * 0.02, craft.size * 0.02, craft.size * 0.5);
+                    const strutMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x404040,
+                        roughness: 0.7,
+                        metalness: 0.9
+                    });
+                    const strut = new THREE.Mesh(strutGeometry, strutMaterial);
+                    strut.position.set(
+                        Math.cos(angle) * craft.size * 0.5,
+                        craft.size * 0.15,
+                        Math.sin(angle) * craft.size * 0.5
+                    );
+                    strut.rotation.x = Math.PI / 2;
+                    strut.rotation.z = angle;
+                    spacecraftGroup.add(strut);
+                }
+                
+                // RTG (Radioisotope Thermoelectric Generator) boom - characteristic long boom
+                const rtgBoomGeometry = new THREE.CylinderGeometry(craft.size * 0.04, craft.size * 0.04, craft.size * 2.5);
+                const rtgBoomMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x606060,
                     roughness: 0.6,
+                    metalness: 0.85
+                });
+                const rtgBoom = new THREE.Mesh(rtgBoomGeometry, rtgBoomMaterial);
+                rtgBoom.position.set(craft.size * 1.2, 0, 0);
+                rtgBoom.rotation.z = Math.PI / 2;
+                spacecraftGroup.add(rtgBoom);
+                
+                // RTG unit at end of boom - cylindrical
+                const rtgGeometry = new THREE.CylinderGeometry(craft.size * 0.15, craft.size * 0.15, craft.size * 0.4, 8);
+                const rtgMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x2A2A2A,
+                    roughness: 0.5,
+                    metalness: 0.8,
+                    emissive: 0xFF4400,
+                    emissiveIntensity: 0.3 // RTGs glow slightly from heat
+                });
+                const rtg = new THREE.Mesh(rtgGeometry, rtgMaterial);
+                rtg.position.set(craft.size * 2.4, 0, 0);
+                rtg.rotation.z = Math.PI / 2;
+                spacecraftGroup.add(rtg);
+                
+                // Science instruments boom on opposite side
+                const scienceBoomGeometry = new THREE.CylinderGeometry(craft.size * 0.03, craft.size * 0.03, craft.size * 1.8);
+                const scienceBoomMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x505050,
+                    roughness: 0.7,
                     metalness: 0.8
                 });
-                const boom = new THREE.Mesh(boomGeometry, boomMaterial);
-                boom.position.x = craft.size * 0.8;
-                spacecraft.add(boom);
+                const scienceBoom = new THREE.Mesh(scienceBoomGeometry, scienceBoomMaterial);
+                scienceBoom.position.set(-craft.size * 0.9, 0, 0);
+                scienceBoom.rotation.z = Math.PI / 2;
+                spacecraftGroup.add(scienceBoom);
+                
+                // Instruments cluster - small boxes
+                for (let i = 0; i < 2; i++) {
+                    const instGeometry = new THREE.BoxGeometry(craft.size * 0.12, craft.size * 0.12, craft.size * 0.08);
+                    const instMaterial = new THREE.MeshStandardMaterial({
+                        color: 0x808080,
+                        roughness: 0.5,
+                        metalness: 0.7
+                    });
+                    const inst = new THREE.Mesh(instGeometry, instMaterial);
+                    inst.position.set(-craft.size * 1.8, i * craft.size * 0.15 - craft.size * 0.07, 0);
+                    spacecraftGroup.add(inst);
+                }
+                
+            } else {
+                // Memorial/generic - still make it detailed
+                const bodyGeometry = new THREE.OctahedronGeometry(craft.size * 0.7);
+                const bodyMaterial = new THREE.MeshStandardMaterial({
+                    color: craft.color,
+                    roughness: 0.4,
+                    metalness: 0.8,
+                    emissive: craft.color,
+                    emissiveIntensity: 0.2
+                });
+                const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                spacecraftGroup.add(body);
+                
+                // Add some detail
+                const panelGeometry = new THREE.BoxGeometry(craft.size * 0.3, craft.size * 0.05, craft.size * 1.0);
+                const panelMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x1A1A2E,
+                    roughness: 0.3,
+                    metalness: 0.9
+                });
+                const panel = new THREE.Mesh(panelGeometry, panelMaterial);
+                panel.position.set(craft.size * 0.5, 0, 0);
+                spacecraftGroup.add(panel);
             }
             
-            // Add glow marker - MUCH BIGGER for distant spacecraft!
-            // For distant probes (distance > 100), make glow proportional to distance so they're visible
-            const glowSize = craft.distance > 100 ? 
-                Math.max(craft.size * 1.8, craft.distance * 0.03) : // Min 3% of distance for far objects
-                craft.size * 1.8; // Normal size for nearby objects
-            
-            console.log(`?? ${craft.name} glow size: ${glowSize.toFixed(2)} (distance: ${craft.distance}, base size: ${craft.size})`);
-            
+            // Add subtle visibility glow - proportional to actual size
+            const glowSize = craft.size * 2.5; // Subtle glow for visibility
             const glowGeometry = new THREE.SphereGeometry(glowSize, 16, 16);
             const glowMaterial = new THREE.MeshBasicMaterial({
                 color: craft.color,
                 transparent: true,
-                opacity: 0.25, // Increased from 0.15 for better visibility
+                opacity: 0.3,
                 blending: THREE.AdditiveBlending,
-                depthWrite: false // Don't block objects behind the glow
+                depthWrite: false
             });
             const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-            spacecraft.add(glow);
+            spacecraftGroup.add(glow);
             
-            spacecraft.userData = {
+            // Add small bright navigation marker for distant spacecraft
+            if (craft.distance > 200) {
+                const markerGeometry = new THREE.SphereGeometry(craft.size * 0.5, 8, 8);
+                const markerMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xFFFFFF,
+                    transparent: true,
+                    opacity: 0.95,
+                    blending: THREE.AdditiveBlending
+                });
+                const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+                spacecraftGroup.add(marker);
+            }
+            
+            spacecraftGroup.userData = {
                 name: craft.name,
                 type: craft.type,
                 description: craft.description,
@@ -6414,8 +6953,11 @@ class SolarSystemModule {
                 orbitPlanet: craft.orbitPlanet,
                 isMoon: craft.isMoon || false,
                 isSpacecraft: true,
-                radius: glowSize // Use glow size as radius for focusing
+                actualSize: craft.size,
+                radius: craft.size
             };
+            
+            console.log(`🚀 Created hyper-realistic ${craft.name} (size: ${craft.size.toFixed(2)})`);
             
             // Position spacecraft
             if (craft.orbitPlanet) {
@@ -7082,22 +7624,59 @@ class SolarSystemModule {
             return;
         }
         
-        const radius = object.userData.radius || 10;
-        const distance = Math.max(radius * 5, 10);
+        // Determine actual object size (not inflated glow size)
+        const userData = object.userData;
+        let actualRadius;
+        
+        if (userData.isSpacecraft || userData.isComet) {
+            // Use actual size for spacecraft and comets, not glow/tail size
+            actualRadius = userData.actualSize || 0.1;
+        } else {
+            actualRadius = userData.radius || 10;
+        }
+        
+        // Calculate appropriate viewing distance based on object type
+        let distance;
+        if (userData.isSpacecraft && userData.distance > 100) {
+            // Distant spacecraft: zoom in close enough to see them clearly
+            distance = Math.max(actualRadius * 10, 5);
+        } else if (userData.isSpacecraft) {
+            // Nearby spacecraft: moderate zoom
+            distance = Math.max(actualRadius * 8, 3);
+        } else if (userData.isComet) {
+            // Comets: zoom to see nucleus and inner coma details
+            distance = Math.max(actualRadius * 12, 2);
+        } else {
+            // Regular objects: standard zoom
+            distance = Math.max(actualRadius * 5, 10);
+        }
+        
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
         
         // Store reference for tracking
         this.focusedObject = object;
-        console.log(`🎯 Focusing on ${object.userData.name} (radius: ${radius}, distance: ${distance})`);
+        console.log(`🎯 Focusing on ${object.userData.name} (actual radius: ${actualRadius.toFixed(2)}, distance: ${distance.toFixed(2)})`);
+        
+        // Pause time for fast-orbiting spacecraft (orbiters with high speed)
+        const app = window.app;
+        const isFastOrbiter = userData.isSpacecraft && userData.orbitPlanet && userData.speed > 1;
+        const wasTimePaused = app && app.timeSpeed === 0;
+        
+        if (isFastOrbiter && app && !wasTimePaused) {
+            app.timeSpeed = 0;
+            console.log(`⏸️ Paused time to focus on fast-orbiting ${object.userData.name}`);
+            
+            // Update UI to show paused state
+            const speedSlider = document.getElementById('time-speed');
+            const speedLabel = document.getElementById('time-speed-label');
+            if (speedSlider) speedSlider.value = 0;
+            if (speedLabel) speedLabel.textContent = 'Paused';
+        }
         
         // Configure controls for focused object inspection
-        const originalMinDistance = controls.minDistance;
-        const originalMaxDistance = controls.maxDistance;
-        
-        // Set dynamic zoom limits based on object size - allow very close zoom
-        const minDist = Math.max(radius * 0.5, 0.5); // Allow zooming to half the radius, minimum 0.5 units
-        const maxDist = Math.max(radius * 100, 1000); // Allow zooming far out
+        const minDist = Math.max(actualRadius * 0.5, 0.5); // Allow zooming to half the radius
+        const maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
         controls.minDistance = minDist;
         controls.maxDistance = maxDist;
         console.log(`  📏 Zoom limits: ${minDist.toFixed(1)} to ${maxDist.toFixed(1)}`);
@@ -7139,7 +7718,11 @@ class SolarSystemModule {
             } else {
                 // Animation complete - controls are now centered on object
                 // User can now freely rotate, zoom, and pan around the focused object
-                console.log(`?? Focused on ${object.userData.name} - Use mouse to rotate, scroll to zoom`);
+                if (isFastOrbiter && app && app.timeSpeed === 0) {
+                    console.log(`⏸️ Time paused for ${object.userData.name} - Press + or move speed slider to resume`);
+                } else {
+                    console.log(`✅ Focused on ${object.userData.name} - Use mouse to rotate, scroll to zoom`);
+                }
             }
         };
         
@@ -8107,18 +8690,56 @@ class App {
                         case 'kepler-186f':
                             targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === '🌍 Kepler-186f');
                             break;
-                        // Deep Space
+                        // Spacecraft & Probes
                         case 'iss':
                             targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('International Space Station'));
                             break;
                         case 'hubble':
                             targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name.includes('Hubble Space Telescope'));
                             break;
-                        case 'nebula':
-                            targetObject = this.solarSystemModule.nebulae?.[0];
+                        case 'voyager-1':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Voyager 1'));
                             break;
-                        case 'galaxy':
-                            targetObject = this.solarSystemModule.galaxies?.[0];
+                        case 'voyager-2':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Voyager 2'));
+                            break;
+                        case 'new-horizons':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('New Horizons'));
+                            break;
+                        case 'parker-solar-probe':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Parker Solar Probe'));
+                            break;
+                        case 'juno':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Juno'));
+                            break;
+                        case 'cassini':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Cassini'));
+                            break;
+                        case 'pioneer-10':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Pioneer 10'));
+                            break;
+                        case 'pioneer-11':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Pioneer 11'));
+                            break;
+                        // Nebulae
+                        case 'orion-nebula':
+                            targetObject = this.solarSystemModule.nebulae?.find(n => n.userData.name.includes('Orion'));
+                            break;
+                        case 'crab-nebula':
+                            targetObject = this.solarSystemModule.nebulae?.find(n => n.userData.name.includes('Crab'));
+                            break;
+                        case 'ring-nebula':
+                            targetObject = this.solarSystemModule.nebulae?.find(n => n.userData.name.includes('Ring'));
+                            break;
+                        // Galaxies
+                        case 'andromeda-galaxy':
+                            targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Andromeda'));
+                            break;
+                        case 'whirlpool-galaxy':
+                            targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Whirlpool'));
+                            break;
+                        case 'sombrero-galaxy':
+                            targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Sombrero'));
                             break;
                     }
                     
