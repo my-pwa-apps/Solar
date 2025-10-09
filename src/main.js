@@ -1637,7 +1637,8 @@ class UIManager {
         if (this.elements.loading) {
             this.elements.loading.classList.add('hidden');
         }
-        ['infoPanel', 'controls', 'explorer'].forEach(key => {
+        // Show controls and info panel (explorer removed - using header dropdown instead)
+        ['infoPanel', 'controls'].forEach(key => {
             if (this.elements[key]) {
                 this.elements[key].classList.remove('hidden');
             }
