@@ -14,8 +14,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 20px;
     flex-wrap: wrap;
     animation: slideDown 0.4s ease-out;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 @keyframes slideDown {
@@ -501,29 +508,24 @@
 
 /* Help Button */
 #help-button {
-    position: fixed;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     color: white;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 700;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
     font-family: 'Poppins', sans-serif;
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(245, 87, 108, 0.3);
     transition: all 0.3s ease;
-    z-index: 51;
-    opacity: 0.85;
+    white-space: nowrap;
 }
 
 #help-button:hover {
-    transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.5);
-    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.6);
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
 }
 
 /* Tooltip */

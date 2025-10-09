@@ -1361,7 +1361,7 @@ class SceneManager {
         
         // Ensure dolly exists
         if (!this.dolly) {
-            console.warn('?? Dolly not found!');
+            console.warn('🥽 Dolly not found!');
             return;
         }
         
@@ -1392,35 +1392,41 @@ class SceneManager {
             
             if (!gamepad) {
                 if (Math.random() < 0.01) {
-                    console.warn(`?? No gamepad for controller ${i}`);
+                    console.warn(`🥽 No gamepad for controller ${i}`);
                 }
                 continue;
             }
             
-            // DEBUG: Log ALL button presses to identify Quest 3S button mapping
-            if (Math.random() < 0.01) { // 1% chance = logs frequently
-                const pressed = [];
-                for (let b = 0; b < gamepad.buttons.length; b++) {
-                    if (gamepad.buttons[b].pressed) {
-                        pressed.push(`Button ${b}`);
+            // ============================================
+            // THUMBSTICK PRESS (Button 3) - TOGGLE PAUSE
+            // ============================================
+            const thumbstickButton = gamepad.buttons[3]; // Thumbstick press
+            if (thumbstickButton && thumbstickButton.pressed) {
+                // Check if this is a new press (not held from previous frame)
+                const prevState = this.previousButtonStates[i][3] || false;
+                if (!prevState) {
+                    // NEW PRESS - Toggle pause
+                    const app = window.app || this;
+                    if (app.timeSpeed === 0) {
+                        app.timeSpeed = 1;
+                        this.updateVRStatus('▶️ Playing');
+                        if (DEBUG.VR) console.log('🥽 Thumbstick pressed - PLAY');
+                    } else {
+                        app.timeSpeed = 0;
+                        this.updateVRStatus('⏸️ Paused');
+                        if (DEBUG.VR) console.log('🥽 Thumbstick pressed - PAUSE');
                     }
+                    this.requestVRMenuRefresh();
                 }
-                if (pressed.length > 0) {
-                    console.log(`?? ${handedness?.toUpperCase() || 'UNKNOWN'} pressed:`, pressed.join(', '));
-                }
+                this.previousButtonStates[i][3] = true;
+            } else {
+                this.previousButtonStates[i][3] = false;
             }
             
             // Check trigger for sprint (button 0 = trigger)
             if (gamepad.buttons.length > 0 && gamepad.buttons[0].pressed) {
                 sprintMultiplier = 3.0;
             }
-            
-            // ============================================
-            // GRIP BUTTON PAUSE REMOVED
-            // Reason: Conflicts with menu toggle in onSqueezeStart()
-            // Grip (button 1) is now ONLY used for menu toggle
-            // Use VR menu buttons for time control instead
-            // ============================================
             
             // Get thumbstick axes (Quest uses axes 2 & 3)
             let stickX = 0, stickY = 0;
@@ -7337,6 +7343,69 @@ class App {
         this.sceneManager.renderer.domElement.addEventListener('click', (e) => {
             this.handleCanvasClick(e);
         });
+        
+        // Navigation dropdown
+        const dropdown = document.getElementById('object-dropdown');
+        if (dropdown) {
+            dropdown.addEventListener('change', (e) => {
+                const value = e.target.value;
+                if (!value) return; // Ignore the placeholder option
+                
+                console.log(`🎯 Dropdown navigation to: ${value}`);
+                
+                // Reset dropdown to placeholder
+                dropdown.value = '';
+                
+                // Find and focus on the selected object
+                if (this.solarSystemModule) {
+                    let targetObject = null;
+                    
+                    // Map dropdown values to actual objects
+                    switch(value) {
+                        case 'sun':
+                            targetObject = this.solarSystemModule.sun;
+                            break;
+                        case 'mercury':
+                        case 'venus':
+                        case 'earth':
+                        case 'mars':
+                        case 'jupiter':
+                        case 'saturn':
+                        case 'uranus':
+                        case 'neptune':
+                            targetObject = this.solarSystemModule.planets[value];
+                            break;
+                        case 'moon':
+                            targetObject = this.solarSystemModule.moons.moon;
+                            break;
+                        case 'pluto':
+                            targetObject = this.solarSystemModule.planets.pluto;
+                            break;
+                        case 'iss':
+                            targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name === 'International Space Station');
+                            break;
+                        case 'hubble':
+                            targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name === 'Hubble Space Telescope');
+                            break;
+                        case 'nebula':
+                            targetObject = this.solarSystemModule.nebulae?.[0];
+                            break;
+                        case 'galaxy':
+                            targetObject = this.solarSystemModule.galaxies?.[0];
+                            break;
+                    }
+                    
+                    if (targetObject) {
+                        const info = this.solarSystemModule.getObjectInfo(targetObject);
+                        this.uiManager.updateInfoPanel(info);
+                        this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
+                        console.log(`✅ Navigated to: ${info.name}`);
+                    } else {
+                        console.warn(`⚠️ Object not found: ${value}`);
+                    }
+                }
+            });
+        }
     }
     
     handleCanvasClick(event) {
