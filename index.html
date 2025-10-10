@@ -4,10 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Interactive 3D VR Space Explorer - Explore our Solar System in stunning detail">
+    <meta name="theme-color" content="#0078D4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Space Explorer">
     <title>🚀 Space Explorer - Interactive 3D Solar System</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
     
     <!-- Favicon (using data URI to prevent 404) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🌌</text></svg>">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png">
     
     <!-- Preload critical styles -->
     <link rel="preload" href="./src/styles/main.css" as="style">
@@ -155,6 +166,14 @@
     </footer>
     
     <div id="fps-counter" class="hidden" aria-live="polite">FPS: <span id="fps-value">60</span></div>
+    
+    <!-- Tracking Mode Indicator -->
+    <div id="tracking-indicator" role="status" aria-live="polite">
+        <div class="tracking-icon"></div>
+        <span class="tracking-text">Tracking Object</span>
+        <button class="tracking-close" aria-label="Stop tracking" title="Stop tracking">×</button>
+    </div>
+    
     <div id="help-modal" class="modal hidden" role="dialog" aria-labelledby="help-title" aria-modal="true">
         <div class="modal-content">
             <button class="close-btn" onclick="window.closeHelpModal()" aria-label="Close help dialog">✕</button>
@@ -173,6 +192,92 @@
     </script>
     
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=20251010-1530"></script>
+    <script type="module" src="./src/main.js?v=20251010-pwa"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        // Register Service Worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js', {
+                        scope: '/'
+                    });
+                    
+                    console.log('✅ Service Worker registered successfully:', registration.scope);
+                    
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        console.log('🔄 Service Worker update found');
+                        
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New service worker available, notify user
+                                if (confirm('🚀 New version available! Reload to update?')) {
+                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                    
+                    // Handle controller change (new service worker activated)
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        console.log('🔄 New Service Worker activated');
+                    });
+                    
+                } catch (error) {
+                    console.warn('❌ Service Worker registration failed:', error);
+                }
+            });
+        } else {
+            console.warn('⚠️ Service Workers not supported in this browser');
+        }
+        
+        // PWA Install prompt handling
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('💾 PWA install prompt ready');
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            // Show install button (you can add a UI button to trigger this)
+            window.showInstallPromotion = () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('✅ User accepted the install prompt');
+                        } else {
+                            console.log('❌ User dismissed the install prompt');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            };
+        });
+        
+        // Track when PWA is installed
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA was installed successfully');
+            deferredPrompt = null;
+        });
+        
+        // Handle URL parameters (for shortcuts)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('planet')) {
+            const planet = urlParams.get('planet');
+            console.log(`🌍 Shortcut: Navigating to ${planet}`);
+            // Will be handled by main app after load
+            window.startupPlanet = planet;
+        }
+        if (urlParams.has('vr') && urlParams.get('vr') === 'true') {
+            console.log('🥽 Shortcut: VR mode requested');
+            window.startupVR = true;
+        }
+    </script>
 </body>
 </html>

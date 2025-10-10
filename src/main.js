@@ -6987,6 +6987,9 @@ class SolarSystemModule {
             return;
         }
         
+        // Update camera tracking for focused objects (before other updates)
+        this.updateCameraTracking(camera, controls);
+        
         // Get pause mode from sceneManager
         const app = window.app || {};
         const sceneManager = app.sceneManager || {};
@@ -7715,24 +7718,22 @@ class SolarSystemModule {
         const targetPosition = new THREE.Vector3();
         object.getWorldPosition(targetPosition);
         
-        // Store reference for tracking
+        // Store reference for tracking with enhanced data
         this.focusedObject = object;
+        this.focusedObjectDistance = distance;
+        this.focusedObjectStartTime = performance.now();
+        this.cameraFollowMode = false; // Will be enabled after initial transition
+        
         if (DEBUG.enabled) console.log(`🎯 Focus: ${object.userData.name} (r:${actualRadius.toFixed(2)}, d:${distance.toFixed(2)})`);
         
-        // Pause time for fast-orbiting spacecraft (orbiters with high speed)
-        const app = window.app;
-        const isFastOrbiter = userData.isSpacecraft && userData.orbitPlanet && userData.speed > 1;
-        const wasTimePaused = app && app.timeSpeed === 0;
+        // Determine if this is a fast-moving object that needs special tracking
+        const isOrbiter = userData.orbitPlanet || (userData.isSpacecraft && userData.speed);
+        const isFastOrbiter = isOrbiter && userData.speed > 0.5;
         
-        if (isFastOrbiter && app && !wasTimePaused) {
-            app.timeSpeed = 0;
-            if (DEBUG.enabled) console.log(`⏸️ Time paused for ${object.userData.name}`);
-            
-            // Update UI to show paused state
-            const speedSlider = document.getElementById('time-speed');
-            const speedLabel = document.getElementById('time-speed-label');
-            if (speedSlider) speedSlider.value = 0;
-            if (speedLabel) speedLabel.textContent = 'Paused';
+        // For orbiters, enable continuous tracking
+        if (isOrbiter) {
+            this.cameraFollowMode = true;
+            if (DEBUG.enabled) console.log(`📡 Tracking mode enabled for ${object.userData.name}`);
         }
         
         // Configure controls for focused object inspection
@@ -7765,9 +7766,7 @@ class SolarSystemModule {
             const eased = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
             
             // Update target position if object is moving
-            if (object.userData.angle !== undefined) {
-                object.getWorldPosition(targetPosition);
-            }
+            object.getWorldPosition(targetPosition);
             
             camera.position.lerpVectors(startPos, endPos, eased);
             controls.target.copy(targetPosition);
@@ -7775,14 +7774,53 @@ class SolarSystemModule {
             
             if (progress < 1) {
                 requestAnimationFrame(animate);
+            } else {
+                // Transition complete - enable smooth following
+                if (isOrbiter) {
+                    this.cameraFollowMode = true;
+                }
             }
         };
         
         animate();
+    }
+    
+    updateCameraTracking(camera, controls) {
+        // Update tracking indicator UI
+        const trackingIndicator = document.getElementById('tracking-indicator');
+        if (!trackingIndicator) return;
         
-        // Store original limits to restore later if needed
-        object.userData._originalMinDistance = originalMinDistance;
-        object.userData._originalMaxDistance = originalMaxDistance;
+        // Show/hide tracking indicator based on tracking mode
+        if (!this.focusedObject || !this.cameraFollowMode) {
+            trackingIndicator.classList.remove('active');
+            return;
+        }
+        
+        // Show tracking indicator with object name
+        trackingIndicator.classList.add('active');
+        const trackingText = trackingIndicator.querySelector('.tracking-text');
+        if (trackingText && this.focusedObject.userData && this.focusedObject.userData.name) {
+            trackingText.textContent = `Tracking: ${this.focusedObject.userData.name}`;
+        }
+        
+        // Update camera to follow focused object smoothly
+        const object = this.focusedObject;
+        const targetPosition = new THREE.Vector3();
+        object.getWorldPosition(targetPosition);
+        
+        // Smoothly update controls target to follow the object
+        const currentTarget = controls.target.clone();
+        const smoothFactor = 0.1; // Adjust for smoother/faster following (0.1 = smooth, 1.0 = instant)
+        
+        controls.target.lerpVectors(currentTarget, targetPosition, smoothFactor);
+        
+        // Calculate offset from target to camera
+        const offset = camera.position.clone().sub(currentTarget);
+        
+        // Move camera to maintain the same relative position
+        camera.position.copy(targetPosition).add(offset);
+        
+        controls.update();
     }
 
     createLabels() {
@@ -8162,6 +8200,16 @@ class TopicManager {
                     this.solarSystemModule.focusedObject = null;
                 }
                 this.sceneManager.resetCamera();
+            }, { passive: true });
+        }
+
+        // Tracking indicator close button
+        const trackingClose = document.querySelector('#tracking-indicator .tracking-close');
+        if (trackingClose) {
+            trackingClose.addEventListener('click', () => {
+                if (this.solarSystemModule) {
+                    this.solarSystemModule.cameraFollowMode = false;
+                }
             }, { passive: true });
         }
 
