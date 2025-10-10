@@ -2221,20 +2221,19 @@ class SolarSystemModule {
  atmosphere: true
  });
 
- // Moon: 3,474 km / 12,742 km = 0.273
- // Real distance: 384,400 km / Earth radius (6,371 km) = ~60 Earth radii
- this.createMoon(this.planets.earth, {
- name: 'Moon',
- radius: 0.273,
- color: 0xAAAAAA,
- distance: 4, // Increased from 3 for better visibility
- speed: 0.05, // Increased from 0.03 for visible orbit
- rotationSpeed: 0.004, // Moon rotates (tidally locked)
- description: ' Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
- funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
- });
-
- // Mars: 6,779 km / 12,742 km = 0.532
+        // Moon: 3,474 km / 12,742 km = 0.273
+        // Real distance: 384,400 km / Earth radius (6,371 km) = ~60 Earth radii
+        // Real orbital period: 27.32 days vs Earth's 365.25 days = 13.37x faster
+        this.createMoon(this.planets.earth, {
+            name: 'Moon',
+            radius: 0.273,
+            color: 0xAAAAAA,
+            distance: 4, // Increased from 3 for better visibility
+            speed: 0.1337, // 13.37x Earth's speed (0.01 * 13.37) - completes ~13 orbits per Earth year
+            rotationSpeed: 0.004, // Moon rotates (tidally locked)
+            description: ' Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
+            funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
+        }); // Mars: 6,779 km / 12,742 km = 0.532
  this.planets.mars = this.createPlanet(scene, {
  name: 'Mars',
  radius: 0.532,
@@ -2247,29 +2246,29 @@ class SolarSystemModule {
  funFact: 'Mars has seasons like Earth, and its day is only 37 minutes longer than ours!',
  realSize: '6,779 km diameter',
  moons: 2
- });
+        });
 
- // Phobos: ~22 km / 12,742 km = 0.0017 (tiny!)
- this.createMoon(this.planets.mars, {
- name: ' Phobos',
- radius: 0.002, // Minimum visible size
- color: 0x666666,
- distance: 1.5,
- speed: 0.08,
- description: ' Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
- });
- // Deimos: ~12 km / 12,742 km = 0.0009
- this.createMoon(this.planets.mars, {
- name: ' Deimos',
- radius: 0.0015, // Minimum visible size
- color: 0x888888,
- distance: 2.5,
- speed: 0.04,
- description: ' Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
- });
- }
-
- createOuterPlanets(scene) {
+        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny!)
+        // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
+        this.createMoon(this.planets.mars, {
+            name: 'Phobos',
+            radius: 0.002, // Minimum visible size
+            color: 0x666666,
+            distance: 1.5,
+            speed: 17.22, // 2153x Mars's speed (0.008 * 2153) - orbits 3 times per Mars day!
+            description: 'Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
+        });
+        // Deimos: ~12 km / 12,742 km = 0.0009
+        // Orbital period: 1.263 days (30.3 hours) vs Mars's 687 days = 544x faster
+        this.createMoon(this.planets.mars, {
+            name: 'Deimos',
+            radius: 0.0015, // Minimum visible size
+            color: 0x888888,
+            distance: 2.5,
+            speed: 4.35, // 544x Mars's speed (0.008 * 544)
+            description: 'Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
+        });
+    } createOuterPlanets(scene) {
  // Jupiter: 139,820 km / 12,742 km = 10.97 (MASSIVE!)
  this.planets.jupiter = this.createPlanet(scene, {
  name: 'Jupiter',
@@ -2287,44 +2286,46 @@ class SolarSystemModule {
  });
 
  // Jupiter's Galilean moons (realistic sizes)
- // Io: 3,643 km / 12,742 km = 0.286
- this.createMoon(this.planets.jupiter, {
- name: ' Io',
- radius: 0.286,
- color: 0xFFFF00,
- distance: 8,
- speed: 0.06,
- description: ' Io is the most volcanically active body in the solar system!'
- });
- // Europa: 3,122 km / 12,742 km = 0.245
- this.createMoon(this.planets.jupiter, {
- name: ' Europa',
- radius: 0.245,
- color: 0xCCBB99,
- distance: 10,
- speed: 0.045,
- description: ' Europa has a global ocean beneath its ice - a potential place for life!'
- });
- // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
- this.createMoon(this.planets.jupiter, {
- name: ' Ganymede',
- radius: 0.413,
- color: 0x996633,
- distance: 12,
- speed: 0.035,
- description: ' Ganymede is the largest moon in the solar system, bigger than Mercury!'
- });
- // Callisto: 4,821 km / 12,742 km = 0.378
- this.createMoon(this.planets.jupiter, {
- name: ' Callisto',
- radius: 0.378,
- color: 0x777777,
- distance: 14,
- speed: 0.025,
- description: ' Callisto is the most heavily cratered object in the solar system!'
- });
-
- // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
+        // Io: 3,643 km / 12,742 km = 0.286
+        // Orbital period: 1.769 days vs Jupiter's 4333 days = 2449x faster
+        this.createMoon(this.planets.jupiter, {
+            name: 'Io',
+            radius: 0.286,
+            color: 0xFFFF00,
+            distance: 8,
+            speed: 4.898, // 2449x Jupiter's speed (0.002 * 2449)
+            description: 'Io is the most volcanically active body in the solar system!'
+        });
+        // Europa: 3,122 km / 12,742 km = 0.245
+        // Orbital period: 3.551 days vs Jupiter's 4333 days = 1220x faster
+        this.createMoon(this.planets.jupiter, {
+            name: 'Europa',
+            radius: 0.245,
+            color: 0xCCBB99,
+            distance: 10,
+            speed: 2.44, // 1220x Jupiter's speed (0.002 * 1220)
+            description: 'Europa has a global ocean beneath its ice - a potential place for life!'
+        });
+        // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
+        // Orbital period: 7.155 days vs Jupiter's 4333 days = 606x faster
+        this.createMoon(this.planets.jupiter, {
+            name: 'Ganymede',
+            radius: 0.413,
+            color: 0x996633,
+            distance: 12,
+            speed: 1.212, // 606x Jupiter's speed (0.002 * 606)
+            description: 'Ganymede is the largest moon in the solar system, bigger than Mercury!'
+        });
+        // Callisto: 4,821 km / 12,742 km = 0.378
+        // Orbital period: 16.689 days vs Jupiter's 4333 days = 260x faster
+        this.createMoon(this.planets.jupiter, {
+            name: 'Callisto',
+            radius: 0.378,
+            color: 0x777777,
+            distance: 14,
+            speed: 0.52, // 260x Jupiter's speed (0.002 * 260)
+            description: 'Callisto is the most heavily cratered object in the solar system!'
+        }); // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
  this.planets.saturn = this.createPlanet(scene, {
  name: 'Saturn',
  radius: 9.14,
@@ -2341,35 +2342,37 @@ class SolarSystemModule {
  prominentRings: true
  });
 
- // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
- this.createMoon(this.planets.saturn, {
- name: ' Titan',
- radius: 0.404,
- color: 0xFFAA33,
- distance: 10,
- speed: 0.03,
- description: ' Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
- });
- // Enceladus: 504 km / 12,742 km = 0.040
- this.createMoon(this.planets.saturn, {
- name: ' Enceladus',
- radius: 0.040,
- color: 0xFFFFFF,
- distance: 7,
- speed: 0.05,
- description: ' Enceladus shoots water geysers into space from its subsurface ocean!'
- });
- // Rhea: 1,527 km / 12,742 km = 0.120
- this.createMoon(this.planets.saturn, {
- name: ' Rhea',
- radius: 0.120,
- color: 0xCCCCCC,
- distance: 12,
- speed: 0.025,
- description: ' Rhea may have its own ring system!'
- });
 
- // Uranus: 50,724 km / 12,742 km = 3.98
+        // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
+        // Orbital period: 15.945 days vs Saturn's 10759 days = 675x faster
+        this.createMoon(this.planets.saturn, {
+            name: 'Titan',
+            radius: 0.404,
+            color: 0xFFAA33,
+            distance: 10,
+            speed: 0.608, // 675x Saturn's speed (0.0009 * 675)
+            description: 'Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
+        });
+        // Enceladus: 504 km / 12,742 km = 0.040
+        // Orbital period: 1.370 days vs Saturn's 10759 days = 7854x faster
+        this.createMoon(this.planets.saturn, {
+            name: 'Enceladus',
+            radius: 0.040,
+            color: 0xFFFFFF,
+            distance: 7,
+            speed: 7.07, // 7854x Saturn's speed (0.0009 * 7854)
+            description: 'Enceladus shoots water geysers into space from its subsurface ocean!'
+        });
+        // Rhea: 1,527 km / 12,742 km = 0.120
+        // Orbital period: 4.518 days vs Saturn's 10759 days = 2382x faster
+        this.createMoon(this.planets.saturn, {
+            name: 'Rhea',
+            radius: 0.120,
+            color: 0xCCCCCC,
+            distance: 12,
+            speed: 2.144, // 2382x Saturn's speed (0.0009 * 2382)
+            description: 'Rhea may have its own ring system!'
+        }); // Uranus: 50,724 km / 12,742 km = 3.98
  this.planets.uranus = this.createPlanet(scene, {
  name: 'Uranus',
  radius: 3.98,
@@ -2385,26 +2388,26 @@ class SolarSystemModule {
  rings: true
  });
 
- // Titania: 1,578 km / 12,742 km = 0.124
- this.createMoon(this.planets.uranus, {
- name: ' Titania',
- radius: 0.124,
- color: 0xAAAAAA,
- distance: 5,
- speed: 0.04,
- description: ' Titania is Uranus\' largest moon with massive canyons!'
- });
- // Miranda: 472 km / 12,742 km = 0.037
- this.createMoon(this.planets.uranus, {
- name: ' Miranda',
- radius: 0.037,
- color: 0x999999,
- distance: 3.5,
- speed: 0.06,
- description: ' Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
- });
-
- // Neptune: 49,244 km / 12,742 km = 3.86
+        // Titania: 1,578 km / 12,742 km = 0.124
+        // Orbital period: 8.706 days vs Uranus's 30687 days = 3526x faster
+        this.createMoon(this.planets.uranus, {
+            name: 'Titania',
+            radius: 0.124,
+            color: 0xAAAAAA,
+            distance: 5,
+            speed: 1.410, // 3526x Uranus's speed (0.0004 * 3526)
+            description: 'Titania is Uranus\' largest moon with massive canyons!'
+        });
+        // Miranda: 472 km / 12,742 km = 0.037
+        // Orbital period: 1.413 days vs Uranus's 30687 days = 21722x faster
+        this.createMoon(this.planets.uranus, {
+            name: 'Miranda',
+            radius: 0.037,
+            color: 0x999999,
+            distance: 3.5,
+            speed: 8.689, // 21722x Uranus's speed (0.0004 * 21722)
+            description: 'Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
+        }); // Neptune: 49,244 km / 12,742 km = 3.86
  this.planets.neptune = this.createPlanet(scene, {
  name: 'Neptune',
  radius: 3.86,
@@ -2420,17 +2423,16 @@ class SolarSystemModule {
  rings: true
  });
 
- // Triton: 2,707 km / 12,742 km = 0.212
- this.createMoon(this.planets.neptune, {
- name: ' Triton',
- radius: 0.212,
- color: 0xFFCCCC,
- distance: 5,
- speed: -0.05,
- description: ' Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
- });
-
- // Pluto: 2,377 km / 12,742 km = 0.187
+        // Triton: 2,707 km / 12,742 km = 0.212
+        // Orbital period: 5.877 days (retrograde) vs Neptune's 60190 days = 10242x faster
+        this.createMoon(this.planets.neptune, {
+            name: 'Triton',
+            radius: 0.212,
+            color: 0xFFCCCC,
+            distance: 5,
+            speed: -1.024, // -10242x Neptune's speed (negative for retrograde orbit)
+            description: 'Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
+        }); // Pluto: 2,377 km / 12,742 km = 0.187
  this.planets.pluto = this.createPlanet(scene, {
  name: 'Pluto',
  radius: 0.187,
@@ -2442,22 +2444,21 @@ class SolarSystemModule {
  description: '? Pluto is a dwarf planet in the Kuiper Belt. It has a heart-shaped glacier (Tombaugh Regio), mountains of water ice, and five moons. Pluto and its largest moon Charon are tidally locked - they always show the same face to each other!',
  funFact: 'A year on Pluto lasts 248 Earth years! It hasn\'t completed one orbit since its discovery in 1930.',
  realSize: '2,377 km diameter',
- moons: 1,
- dwarf: true
- });
+        moons: 1,
+            dwarf: true
+        });
 
- // Charon: 1,212 km / 12,742 km = 0.095 (half the size of Pluto!)
- this.createMoon(this.planets.pluto, {
- name: ' Charon',
- radius: 0.095,
- color: 0xAAAAAA,
- distance: 1.2,
- speed: 0.02,
- description: ' Charon is so large relative to Pluto that they form a binary system!'
- });
- }
-
- createProceduralTexture(type, size = 512) {
+        // Charon: 1,212 km / 12,742 km = 0.095 (half the size of Pluto!)
+        // Orbital period: 6.387 days vs Pluto's 90560 days = 14178x faster
+        this.createMoon(this.planets.pluto, {
+            name: 'Charon',
+            radius: 0.095,
+            color: 0xAAAAAA,
+            distance: 1.2,
+            speed: 0.567, // 14178x Pluto's speed (0.00004 * 14178)
+            description: 'Charon is so large relative to Pluto that they form a binary system!'
+        });
+    } createProceduralTexture(type, size = 512) {
  // Create canvas for procedural texture
  const canvas = document.createElement('canvas');
  canvas.width = size;
