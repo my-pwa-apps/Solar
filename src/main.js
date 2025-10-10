@@ -5256,7 +5256,8 @@ class SolarSystemModule {
                 distance: 'Thousands of light-years',
                 funFact: nebData.name === 'Orion Nebula' ? 'New stars are being born here right now!' :
                          nebData.name === 'Crab Nebula' ? 'It\'s expanding at 1,500 km/s!' :
-                         'Planetary nebulae have nothing to do with planets - they just look round like planets through old telescopes!'
+                         'Planetary nebulae have nothing to do with planets - they just look round like planets through old telescopes!',
+                basePosition: { x: nebData.position.x, y: nebData.position.y, z: nebData.position.z }
             };
             
             scene.add(group);
@@ -5724,7 +5725,8 @@ class SolarSystemModule {
                 realSize: '100,000+ light-years across',
                 funFact: galData.name === 'Andromeda Galaxy' ? 'Andromeda is approaching us at 110 km/s!' :
                          galData.name === 'Whirlpool Galaxy' ? 'You can see this galaxy with a good pair of binoculars!' :
-                         'Despite billions of stars, galaxies are mostly empty space!'
+                         'Despite billions of stars, galaxies are mostly empty space!',
+                basePosition: { x: galData.position.x, y: galData.position.y, z: galData.position.z }
             };
             
             scene.add(group);
@@ -7504,6 +7506,12 @@ class SolarSystemModule {
         // Update asteroid belt and Kuiper belt positions
         this.updateBelts();
         
+        // Update spacecraft positions
+        this.updateSpacecraftPositions();
+        
+        // Update nebulae and galaxies positions
+        this.updateDeepSpaceObjects();
+        
         if (DEBUG.enabled) console.log(`Scale: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
     }
     
@@ -7644,6 +7652,80 @@ class SolarSystemModule {
         }
         
         if (DEBUG.enabled) console.log(`🪨 Belts updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
+    }
+    
+    updateSpacecraftPositions() {
+        // Update spacecraft positions based on scale mode
+        if (!this.spacecraft || this.spacecraft.length === 0) return;
+        
+        // Scale factors for spacecraft distances
+        const spacecraftScaleFactors = this.realisticScale ? {
+            // Realistic scale - use much larger distances
+            'Voyager 1': 4500,        // 162 AU - way beyond planets
+            'Voyager 2': 4200,        // 135 AU
+            'New Horizons': 2950,     // 59 AU - beyond Neptune  
+            'Parker Solar Probe': 20, // Close to Sun
+            'Pioneer 10': 4800,       // 133 AU
+            'Pioneer 11': 4400        // 106 AU
+        } : {
+            // Educational scale - compressed for visibility
+            'Voyager 1': 300,
+            'Voyager 2': 280,
+            'New Horizons': 85,
+            'Parker Solar Probe': 12,
+            'Pioneer 10': 320,
+            'Pioneer 11': 290
+        };
+        
+        this.spacecraft.forEach(spacecraft => {
+            const userData = spacecraft.userData;
+            if (!userData || userData.orbitPlanet) return; // Skip orbiters - they stay relative to planet
+            
+            const newDistance = spacecraftScaleFactors[userData.name];
+            if (newDistance && userData.angle !== undefined) {
+                // Update stored distance
+                userData.distance = newDistance;
+                
+                // Update position
+                spacecraft.position.x = newDistance * Math.cos(userData.angle);
+                spacecraft.position.z = newDistance * Math.sin(userData.angle);
+                
+                if (DEBUG.enabled) console.log(`🚀 ${userData.name}: ${newDistance} units`);
+            }
+        });
+        
+        if (DEBUG.enabled) console.log(`🚀 Spacecraft positions updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
+    }
+    
+    updateDeepSpaceObjects() {
+        // Update nebulae and galaxies positions based on scale mode
+        const deepSpaceScale = this.realisticScale ? 2.5 : 1.0;
+        
+        // Update nebulae
+        if (this.nebulae && this.nebulae.length > 0) {
+            this.nebulae.forEach(nebula => {
+                if (nebula.userData && nebula.userData.basePosition) {
+                    // Scale position from stored base position
+                    nebula.position.x = nebula.userData.basePosition.x * deepSpaceScale;
+                    nebula.position.y = nebula.userData.basePosition.y * deepSpaceScale;
+                    nebula.position.z = nebula.userData.basePosition.z * deepSpaceScale;
+                }
+            });
+        }
+        
+        // Update galaxies
+        if (this.galaxies && this.galaxies.length > 0) {
+            this.galaxies.forEach(galaxy => {
+                if (galaxy.userData && galaxy.userData.basePosition) {
+                    // Scale position from stored base position
+                    galaxy.position.x = galaxy.userData.basePosition.x * deepSpaceScale;
+                    galaxy.position.y = galaxy.userData.basePosition.y * deepSpaceScale;
+                    galaxy.position.z = galaxy.userData.basePosition.z * deepSpaceScale;
+                }
+            });
+        }
+        
+        if (DEBUG.enabled) console.log(`🌌 Deep space objects updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
     }
 
     getObjectInfo(object) {
