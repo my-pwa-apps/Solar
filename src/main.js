@@ -1833,6 +1833,7 @@ class SolarSystemModule {
         this.comets = [];
         this.satellites = [];
         this.spacecraft = [];
+        this.constellations = [];
         
         // Scale mode: false = educational (compressed), true = realistic (vast)
         this.realisticScale = false;

@@ -877,21 +877,50 @@ input {
 
 /* Responsive Design for Footer */
 @media (max-width: 768px) {
+    #main-header {
+        padding: 4px 8px;
+        gap: 8px;
+        flex-wrap: nowrap; /* Force single line */
+        overflow-x: auto; /* Allow horizontal scrolling if needed */
+    }
+
+    .logo h1 {
+        font-size: 14px;
+    }
+
+    #nav-quick-nav {
+        padding: 4px 28px 4px 8px;
+        font-size: 12px;
+        min-width: 160px;
+    }
+
+    #help-button {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
     #main-footer {
-        padding: 6px 10px;
-        flex-direction: column;
-        gap: 10px;
+        padding: 4px 8px;
+        flex-direction: row; /* Keep horizontal */
+        flex-wrap: nowrap; /* Force single line */
+        gap: 8px;
+        overflow-x: auto; /* Allow horizontal scrolling for controls */
     }
     
     .footer-controls {
-        gap: 8px;
-        justify-content: center;
+        gap: 6px;
+        flex-wrap: nowrap; /* Ensure controls stay in a line */
+        justify-content: flex-start;
     }
     
     .footer-controls button,
     .footer-controls select {
-        padding: 6px 10px;
-        font-size: 11px;
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+
+    .control-group label {
+        display: none; /* Hide labels to save space */
     }
     
     .footer-xr-controls {
@@ -900,14 +929,10 @@ input {
     
     #vr-button button,
     #ar-button button {
-        width: 45px;
-        height: 45px;
-        font-size: 20px;
-        padding: 8px;
-    }
-    
-    .control-group label {
-        font-size: 11px;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        padding: 6px;
     }
 }
 
