@@ -1930,63 +1930,71 @@ class SolarSystemModule {
     async init(scene) {
         const initStartTime = performance.now();
         
-        // PHASE 1: Critical content - Sun and all planets (needed for navigation/animation)
-        if (this.uiManager) this.uiManager.updateLoadingProgress(25, '☀️ Creating the Sun...');
-        await this.createSun(scene);
-        
-        if (this.uiManager) this.uiManager.updateLoadingProgress(35, '🪐 Building inner planets...');
-        await this.createInnerPlanets(scene);
-        
-        // CRITICAL: Create outer planets synchronously so they're clickable/navigable
-        if (this.uiManager) this.uiManager.updateLoadingProgress(55, '🪐 Building outer planets...');
-        await this.createOuterPlanets(scene);
-        
-        // PHASE 2: Decorative content (can load in background after planets are ready)
-        if (this.uiManager) this.uiManager.updateLoadingProgress(65, '☄️ Creating asteroid belt...');
-        
-        // Use non-blocking setTimeout to allow rendering to start with all planets loaded
-        setTimeout(async () => {
-            await this.createAsteroidBelt(scene);
-            if (this.uiManager) this.uiManager.updateLoadingProgress(68, '❄️ Creating Kuiper belt...');
-            
-            await this.createKuiperBelt(scene);
-            if (this.uiManager) this.uiManager.updateLoadingProgress(72, '⭐ Adding starfield...');
-            
-            // PHASE 3: Background decorations
-            this.createStarfield(scene);
-            if (this.uiManager) this.uiManager.updateLoadingProgress(75, '🌌 Creating constellations...');
-            
-            this.createOrbitalPaths(scene);
-            this.createDistantStars(scene);
-            this.createNebulae(scene);
-            this.createConstellations(scene);
-            if (this.uiManager) this.uiManager.updateLoadingProgress(80, '🌠 Adding galaxies...');
-            
-            this.createGalaxies(scene);
-            this.createNearbyStars(scene);
-            this.createExoplanets(scene);
-            if (this.uiManager) this.uiManager.updateLoadingProgress(85, '☄️ Creating comets...');
-            
-            // PHASE 4: Dynamic objects
-            this.createComets(scene);
-            this.createSatellites(scene);
-            this.createSpacecraft(scene);
-            this.createLabels();
-            
-            // Refresh navigation menu now that all objects are created (after async nebulae/galaxies load)
-            if (this.uiManager && typeof this.refreshExplorerContent === 'function') {
-                this.refreshExplorerContent();
+        // Define all loading steps with progress and tasks
+        const loadingSteps = [
+            { progress: 5, message: '☀️ Igniting the Sun...', task: () => this.createSun(scene) },
+            { progress: 15, message: '☿ Creating Mercury...', task: () => this.createInnerPlanets(scene) },
+            { progress: 35, message: '🪐 Building outer planets...', task: () => this.createOuterPlanets(scene) },
+            { progress: 45, message: '☄️ Assembling asteroid belt...', task: () => this.createAsteroidBelt(scene) },
+            { progress: 50, message: '❄️ Forming Kuiper belt...', task: () => this.createKuiperBelt(scene) },
+            { progress: 55, message: '⭐ Sprinkling starfield...', task: () => this.createStarfield(scene) },
+            { progress: 60, message: '🛤️ Calculating orbital paths...', task: () => this.createOrbitalPaths(scene) },
+            { progress: 65, message: '✨ Weaving constellations...', task: () => this.createConstellations(scene) },
+            { progress: 70, message: '🌟 Placing distant stars...', task: () => this.createDistantStars(scene) },
+            { progress: 75, message: '🌌 Painting nebulae...', task: () => this.createNebulae(scene) },
+            { progress: 80, message: '� Adding galaxies...', task: () => this.createGalaxies(scene) },
+            { progress: 85, message: '⭐ Plotting nearby stars...', task: () => this.createNearbyStars(scene) },
+            { progress: 88, message: '🌍 Discovering exoplanets...', task: () => this.createExoplanets(scene) },
+            { progress: 91, message: '☄️ Launching comets...', task: () => this.createComets(scene) },
+            { progress: 94, message: '🛰️ Deploying satellites...', task: () => this.createSatellites(scene) },
+            { progress: 97, message: '🚀 Launching spacecraft...', task: () => this.createSpacecraft(scene) },
+            { progress: 100, message: '🏷️ Creating labels...', task: () => this.createLabels() }
+        ];
+
+        // Execute steps sequentially with UI updates
+        const executeStep = async (stepIndex) => {
+            if (stepIndex >= loadingSteps.length) {
+                // All steps complete
+                if (this.uiManager && typeof this.refreshExplorerContent === 'function') {
+                    this.refreshExplorerContent();
+                }
+                
+                const totalTime = performance.now() - initStartTime;
+                if (DEBUG.PERFORMANCE) {
+                    console.log(`⚡ Full initialization completed in ${totalTime.toFixed(0)}ms`);
+                    console.log(`📦 Total objects: Planets=${Object.keys(this.planets).length}, Satellites=${this.satellites.length}, Spacecraft=${this.spacecraft.length}`);
+                }
+                
+                // Signal that loading is complete
+                if (window.app && typeof window.app.startExperience === 'function') {
+                    window.app.startExperience();
+                }
+                return;
             }
-            
-            const totalTime = performance.now() - initStartTime;
-            if (DEBUG.PERFORMANCE) {
-                console.log(`⚡ Full initialization completed in ${totalTime.toFixed(0)}ms`);
-                console.log(`📦 Total objects: Planets=${Object.keys(this.planets).length}, Satellites=${this.satellites.length}, Spacecraft=${this.spacecraft.length}, Stars=${this.distantStars.length}, Nebulae=${this.nebulae.length}, Galaxies=${this.galaxies.length}`);
+
+            const step = loadingSteps[stepIndex];
+
+            // Update UI first
+            if (this.uiManager) {
+                this.uiManager.updateLoadingProgress(step.progress, step.message);
             }
-        }, 10);
-        
-        // All planets are now loaded - safe to start animation
-        return true;
+
+            // Yield to browser to allow UI repaint
+            await new Promise(resolve => requestAnimationFrame(resolve));
+
+            // Execute the loading task
+            try {
+                await step.task();
+            } catch (error) {
+                console.error(`❌ Error in loading step ${stepIndex}:`, error);
+            }
+
+            // Move to next step
+            await executeStep(stepIndex + 1);
+        };
+
+        // Start the loading sequence
+        await executeStep(0);
     }
 
     createSun(scene) {
@@ -8375,73 +8383,62 @@ class App {
             this.solarSystemModule = new SolarSystemModule(this.uiManager);
             this.uiManager.updateLoadingProgress(20, '☀️ Creating Sun...');
             
+            // The init method now handles its own async loading and will call startExperience() when done
             await this.solarSystemModule.init(this.sceneManager.scene);
             
             if (DEBUG.PERFORMANCE) {
-                console.log(`⚡ Module loaded in ${(performance.now() - moduleStartTime).toFixed(0)}ms`);
-            }
-            
-            this.uiManager.updateLoadingProgress(90, '🎨 Finalizing UI...');
-            
-            // Setup UI for Solar System
-            this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
-            
-            this.uiManager.updateLoadingProgress(95, '⚙️ Configuring controls...');
-            
-            // Setup controls
-            this.setupControls();
-            
-            this.uiManager.updateLoadingProgress(100, '✨ Ready!');
-
-            // Start animation loop
-            console.log('🎬 About to start animation loop...');
-            console.log('   - sceneManager exists:', !!this.sceneManager);
-            console.log('   - sceneManager.animate exists:', !!(this.sceneManager && this.sceneManager.animate));
-            console.log('   - solarSystemModule exists:', !!this.solarSystemModule);
-            console.log('🎥 Camera position:', this.sceneManager.camera.position);
-            console.log('🎥 Camera parent:', this.sceneManager.camera.parent?.type || 'Scene');
-            console.log('🎯 Controls target:', this.sceneManager.controls?.target);
-            console.log('☀️ Sun position:', this.solarSystemModule.sun?.position);
-            console.log('🌍 Earth position:', this.solarSystemModule.planets?.earth?.position);
-            console.log('💡 Lights in scene:', this.sceneManager.lights);
-            
-            this.sceneManager.animate(() => {
-                // Initialize timing on first frame to avoid huge initial deltaTime
-                if (!this.lastTime) {
-                    this.lastTime = performance.now();
-                    return; // Skip first frame, just initialize timing
-                }
-                
-                const currentTime = performance.now();
-                const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
-                this.lastTime = currentTime;
-                
-                // Update XR controller movement and laser pointers
-                this.sceneManager.updateXRMovement();
-                this.sceneManager.updateLaserPointers();
-                
-                // Update Solar System module every frame
-                if (this.solarSystemModule) {
-                    this.solarSystemModule.update(deltaTime, this.timeSpeed, 
-                        this.sceneManager.camera, this.sceneManager.controls);
-                }
-            });
-
-            const totalTime = performance.now() - appStartTime;
-            console.log(`🚀 Space Explorer initialized in ${totalTime.toFixed(0)}ms!`);
-            console.log(`📊 Performance: ${this.sceneManager.renderer.info.memory.geometries} geometries, ${this.sceneManager.renderer.info.memory.textures} textures`);
-            console.log(`🪐 Planets loaded: ${Object.keys(this.solarSystemModule.planets).length}`);
-            console.log(`📦 Objects in scene: ${this.solarSystemModule.objects.length}`);
-            console.log(`✅ Animation loop status: ${this.sceneManager.renderer.xr ? 'Active' : 'Unknown'}`);
-            
-            if (DEBUG.PERFORMANCE) {
-                console.log(`⚡ Breakdown: Scene ${(moduleStartTime - appStartTime).toFixed(0)}ms | Module ${(performance.now() - moduleStartTime - totalTime).toFixed(0)}ms`);
-                console.log(`💾 Storage: ${(await TEXTURE_CACHE.cache.size)} textures in memory`);
+                const totalTime = performance.now() - appStartTime;
+                console.log(`⚡ Module loaded in ${totalTime.toFixed(0)}ms`);
             }
         } catch (error) {
             console.error('❌ Failed to initialize Space Explorer:', error);
             this.sceneManager?.showError('Failed to start Space Explorer. Please refresh the page.');
         }
+    }
+    
+    startExperience() {
+        // Called by SolarSystemModule after all assets are loaded
+        console.log('🎬 Starting experience...');
+        
+        // Setup UI for Solar System
+        this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
+        
+        // Setup controls
+        this.setupControls();
+        
+        // Hide loading screen
+        this.uiManager.hideLoading();
+        
+        console.log('🎬 Starting animation loop...');
+        console.log('☀️ Sun position:', this.solarSystemModule.sun?.position);
+        console.log('🌍 Earth position:', this.solarSystemModule.planets?.earth?.position);
+        
+        // Start animation loop
+        this.sceneManager.animate(() => {
+            // Initialize timing on first frame
+            if (!this.lastTime) {
+                this.lastTime = performance.now();
+                return;
+            }
+            
+            const currentTime = performance.now();
+            const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
+            this.lastTime = currentTime;
+            
+            // Update XR controller movement and laser pointers
+            this.sceneManager.updateXRMovement();
+            this.sceneManager.updateLaserPointers();
+            
+            // Update Solar System module every frame
+            if (this.solarSystemModule) {
+                this.solarSystemModule.update(deltaTime, this.timeSpeed, 
+                    this.sceneManager.camera, this.sceneManager.controls);
+            }
+        });
+        
+        console.log(`🚀 Space Explorer ready!`);
+        console.log(`🪐 Planets loaded: ${Object.keys(this.solarSystemModule.planets).length}`);
+        console.log(`📦 Objects in scene: ${this.solarSystemModule.objects.length}`);
     }
 
     setupGlobalFunctions() {
