@@ -401,6 +401,12 @@ class SceneManager {
             
             // Store original camera parent for switching back
             this.cameraOriginalParent = this.camera.parent;
+
+            // Controller models
+            this.controllerModelFactory = new XRControllerModelFactory();
+            
+            // Initialize XR controllers
+            this.controllers = [];
             
             // Initialize XR controllers
             this.controllers = [];
