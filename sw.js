@@ -1,4 +1,4 @@
-// Space Explorer - Service Worker
+// Space Voyage - Service Worker
 // Version 1.0.0
 
 const CACHE_VERSION = '1.1.0';
@@ -194,7 +194,7 @@ self.addEventListener('fetch', (event) => {
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Space Explorer - Offline</title>
+            <title>Space Voyage - Offline</title>
             <style>
               body {
                 margin: 0;
@@ -316,7 +316,7 @@ self.addEventListener('push', (event) => {
   };
   
   event.waitUntil(
-    self.registration.showNotification('Space Explorer', options)
+    self.registration.showNotification('Space Voyage', options)
   );
 });
 

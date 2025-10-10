@@ -343,7 +343,7 @@ class SceneManager {
     this.vrStatusMessage = '🎮 Use Laser to Click Buttons';
     this.vrFlashAction = null;
     this.vrFlashTimeout = null;
-    this.vrMenuTitle = '🚀 Space Explorer VR';
+    this.vrMenuTitle = '🚀 Space Voyage VR';
     this.vrQuickNavMap = new Map();
     }
 
@@ -655,7 +655,7 @@ class SceneManager {
         this.vrButtons = [];
         this.vrQuickNavMap = new Map();
         this.vrStatusMessage = this.vrStatusMessage || '🎮 Use Laser to Click Buttons';
-        this.vrMenuTitle = this.vrMenuTitle || '🚀 Space Explorer VR';
+        this.vrMenuTitle = this.vrMenuTitle || '🚀 Space Voyage VR';
 
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
@@ -8643,8 +8643,8 @@ class App {
                 console.log(`⚡ Module loaded in ${totalTime.toFixed(0)}ms`);
             }
         } catch (error) {
-            console.error('❌ Failed to initialize Space Explorer:', error);
-            this.sceneManager?.showError('Failed to start Space Explorer. Please refresh the page.');
+            console.error('❌ Failed to initialize Space Voyage:', error);
+            this.sceneManager?.showError('Failed to start Space Voyage. Please refresh the page.');
         }
     }
     
@@ -8688,7 +8688,7 @@ class App {
             }
         });
         
-        console.log(`🚀 Space Explorer ready!`);
+        console.log(`🚀 Space Voyage ready!`);
         console.log(`🪐 Planets loaded: ${Object.keys(this.solarSystemModule.planets).length}`);
         console.log(`📦 Objects in scene: ${this.solarSystemModule.objects.length}`);
     }

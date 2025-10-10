@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Ruimte Verkenner - Interactief 3D Zonnestelsel",
-  "short_name": "Ruimte Verkenner",
+  "name": "Ruimtereis - Interactief 3D Zonnestelsel",
+  "short_name": "Ruimtereis",
   "description": "Verken ons Zonnestelsel in verbluffende 3D met VR-ondersteuning. Navigeer door planeten, manen, ruimtevaartuigen, nevels en sterrenstelsels in deze interactieve educatieve ervaring.",
   "start_url": "./?lang=nl",
   "display": "standalone",
@@ -82,14 +82,14 @@
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Ruimte Verkenner - Zonnestelsel Weergave"
+      "label": "Ruimtereis - Zonnestelsel Weergave"
     },
     {
       "src": "./screenshots/solar2.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Ruimte Verkenner - Planeet Detail"
+      "label": "Ruimtereis - Planeet Detail"
     }
   ],
   "shortcuts": [

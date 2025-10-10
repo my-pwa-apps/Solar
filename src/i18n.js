@@ -1,10 +1,10 @@
 // Internationalization (i18n) - Multi-language support
-// Space Explorer - English & Dutch translations
+// Space Voyage - English & Dutch translations
 
 const translations = {
     en: {
         // App title and header
-        appTitle: "🚀 Space Explorer",
+        appTitle: "🚀 Space Voyage",
         subtitle: "Interactive 3D Solar System",
         
         // Navigation
@@ -74,7 +74,7 @@ const translations = {
         
         // Help modal
         help: "❓ Help",
-        helpTitle: "Space Explorer - Controls & Features",
+        helpTitle: "Space Voyage - Controls & Features",
         controls: "Controls",
         mouseControls: "Mouse Controls:",
         leftClick: "Left Click + Drag: Rotate view",
@@ -105,13 +105,13 @@ const translations = {
         offlineMessage: "You're offline. Some features may be limited.",
         
         // Install prompt
-        installTitle: "Install Space Explorer",
-        installMessage: "Install Space Explorer as an app for a better experience!",
+        installTitle: "Install Space Voyage",
+        installMessage: "Install Space Voyage as an app for a better experience!",
         installButton: "Install",
         installLater: "Maybe Later",
         
         // Errors
-        errorLoading: "Error loading Space Explorer",
+        errorLoading: "Error loading Space Voyage",
         errorMessage: "Please refresh the page to try again.",
         
         // Footer
@@ -190,7 +190,7 @@ const translations = {
     
     nl: {
         // App titel en header
-        appTitle: "🚀 Ruimte Verkenner",
+        appTitle: "🚀 Ruimtereis",
         subtitle: "Interactief 3D Zonnestelsel",
         
         // Navigatie
@@ -260,7 +260,7 @@ const translations = {
         
         // Help modal
         help: "❓ Hulp",
-        helpTitle: "Ruimte Verkenner - Besturing & Functies",
+        helpTitle: "Ruimtereis - Besturing & Functies",
         controls: "Besturing",
         mouseControls: "Muisbediening:",
         leftClick: "Linker Klik + Slepen: Draai weergave",
@@ -291,13 +291,13 @@ const translations = {
         offlineMessage: "Je bent offline. Sommige functies kunnen beperkt zijn.",
         
         // Installatie prompt
-        installTitle: "Installeer Ruimte Verkenner",
-        installMessage: "Installeer Ruimte Verkenner als app voor een betere ervaring!",
+        installTitle: "Installeer Ruimtereis",
+        installMessage: "Installeer Ruimtereis als app voor een betere ervaring!",
         installButton: "Installeren",
         installLater: "Misschien Later",
         
         // Fouten
-        errorLoading: "Fout bij laden Ruimte Verkenner",
+        errorLoading: "Fout bij laden Ruimtereis",
         errorMessage: "Ververs de pagina om het opnieuw te proberen.",
         
         // Footer

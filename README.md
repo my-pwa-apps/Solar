@@ -1,8 +1,8 @@
-# 🚀 Space Explorer - Interactive 3D Solar System
+# 🚀 Space Voyage - Interactive 3D Solar System
 
 An immersive, educational Progressive Web App for exploring our Solar System in stunning 3D with VR/AR support.
 
-![Space Explorer](https://img.shields.io/badge/PWA-Ready-success)
+![Space Voyage](https://img.shields.io/badge/PWA-Ready-success)
 ![Three.js](https://img.shields.io/badge/Three.js-v0.160.0-blue)
 ![WebXR](https://img.shields.io/badge/WebXR-Supported-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)

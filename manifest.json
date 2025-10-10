@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Space Explorer - Interactive 3D Solar System",
-  "short_name": "Space Explorer",
+  "name": "Space Voyage - Interactive 3D Solar System",
+  "short_name": "Space Voyage",
   "description": "Explore our Solar System in stunning 3D with VR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this interactive educational experience.",
   "start_url": "./",
   "display": "standalone",
@@ -82,14 +82,14 @@
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Space Explorer - Solar System View"
+      "label": "Space Voyage - Solar System View"
     },
     {
       "src": "./screenshots/solar2.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Space Explorer - Planetary Detail"
+      "label": "Space Voyage - Planetary Detail"
     }
   ],
   "shortcuts": [
