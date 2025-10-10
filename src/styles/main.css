@@ -64,7 +64,7 @@ body {
     transform: translate(-50%, -50%);
     text-align: center;
     font-weight: 400;
-    z-index: 1000;
+    z-index: 90;
     background: var(--fluent-bg-acrylic);
     -webkit-backdrop-filter: blur(30px) saturate(150%);
     backdrop-filter: blur(30px) saturate(150%);

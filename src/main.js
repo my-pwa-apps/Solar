@@ -8072,7 +8072,8 @@ class TopicManager {
         this.uiManager = uiManager;
         this.currentModule = null;
         this.currentTopicId = null;
-        this.timeSpeed = 1;
+        // Initialize with default slider value (5 = 1 week/sec = 604800)
+        this.timeSpeed = 604800;
         this.brightnessMultiplier = 0.5;
         this.clickTimeout = null;
         
