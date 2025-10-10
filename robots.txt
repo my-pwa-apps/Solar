@@ -1,0 +1,18 @@
+# robots.txt for Space Explorer
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://my-pwa-apps.github.io/Solar/sitemap.xml
+
+# Disallow service worker and config files
+Disallow: /sw.js
+Disallow: /manifest.json
+Disallow: /browserconfig.xml
+
+# Allow important pages
+Allow: /index.html
+Allow: /src/
+Allow: /icons/
+Allow: /screenshots/

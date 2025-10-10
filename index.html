@@ -2,13 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Interactive 3D VR Space Explorer - Explore our Solar System in stunning detail">
-    <meta name="theme-color" content="#0078D4">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <!-- Primary Meta Tags -->
+    <title>🚀 Space Explorer - Interactive 3D Solar System & VR Experience</title>
+    <meta name="title" content="Space Explorer - Interactive 3D Solar System & VR Experience">
+    <meta name="description" content="Explore our Solar System in stunning 3D with VR/AR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this free interactive educational experience.">
+    <meta name="keywords" content="space, solar system, 3D, VR, AR, planets, astronomy, education, interactive, WebXR, Three.js, stars, galaxies, NASA, spacecraft">
+    <meta name="author" content="Space Explorer">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://my-pwa-apps.github.io/Solar/">
+    <meta property="og:title" content="Space Explorer - Interactive 3D Solar System & VR Experience">
+    <meta property="og:description" content="Explore our Solar System in stunning 3D with VR/AR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this free interactive educational experience.">
+    <meta property="og:image" content="https://my-pwa-apps.github.io/Solar/screenshots/desktop-1.png">
+    <meta property="og:image:width" content="1920">
+    <meta property="og:image:height" content="1080">
+    <meta property="og:site_name" content="Space Explorer">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://my-pwa-apps.github.io/Solar/">
+    <meta name="twitter:title" content="Space Explorer - Interactive 3D Solar System & VR Experience">
+    <meta name="twitter:description" content="Explore our Solar System in stunning 3D with VR/AR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies.">
+    <meta name="twitter:image" content="https://my-pwa-apps.github.io/Solar/screenshots/desktop-1.png">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0078D4" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000011" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Space Explorer">
-    <title>🚀 Space Explorer - Interactive 3D Solar System</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Space Explorer">
+    <meta name="msapplication-TileColor" content="#0078D4">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    <meta name="format-detection" content="telephone=no">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
@@ -174,6 +209,33 @@
         <button class="tracking-close" aria-label="Stop tracking" title="Stop tracking">×</button>
     </div>
     
+    <!-- PWA Install Prompt -->
+    <div id="install-prompt" class="hidden" role="dialog" aria-labelledby="install-title">
+        <div class="install-content">
+            <div class="install-icon">📱</div>
+            <h3 id="install-title">Install Space Explorer</h3>
+            <p>Install this app for a better experience and offline access!</p>
+            <div class="install-buttons">
+                <button id="install-accept" class="btn-primary">Install</button>
+                <button id="install-dismiss" class="btn-secondary">Not Now</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Offline Indicator -->
+    <div id="offline-indicator" class="hidden" role="status" aria-live="polite">
+        <span class="offline-icon">📡</span>
+        <span class="offline-text">You're offline</span>
+    </div>
+    
+    <!-- Update Available Notification -->
+    <div id="update-notification" class="hidden" role="status" aria-live="polite">
+        <span class="update-icon">🔄</span>
+        <span class="update-text">Update available!</span>
+        <button id="update-reload" class="btn-update">Update</button>
+        <button id="update-dismiss" class="btn-dismiss">×</button>
+    </div>
+    
     <div id="help-modal" class="modal hidden" role="dialog" aria-labelledby="help-title" aria-modal="true">
         <div class="modal-content">
             <button class="close-btn" onclick="window.closeHelpModal()" aria-label="Close help dialog">✕</button>
@@ -213,11 +275,8 @@
                         
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New service worker available, notify user
-                                if (confirm('🚀 New version available! Reload to update?')) {
-                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
-                                    window.location.reload();
-                                }
+                                // Show update notification
+                                showUpdateNotification();
                             }
                         });
                     });
@@ -235,8 +294,44 @@
             console.warn('⚠️ Service Workers not supported in this browser');
         }
         
+        // Show update notification UI
+        function showUpdateNotification() {
+            const notification = document.getElementById('update-notification');
+            if (!notification) return;
+            
+            notification.classList.remove('hidden');
+            
+            // Update button - reload the page
+            document.getElementById('update-reload')?.addEventListener('click', () => {
+                window.location.reload();
+            }, { once: true });
+            
+            // Dismiss button
+            document.getElementById('update-dismiss')?.addEventListener('click', () => {
+                notification.classList.add('hidden');
+            }, { once: true });
+        }
+        
+        // Offline/Online detection
+        function updateOnlineStatus() {
+            const offlineIndicator = document.getElementById('offline-indicator');
+            if (!offlineIndicator) return;
+            
+            if (!navigator.onLine) {
+                offlineIndicator.classList.remove('hidden');
+            } else {
+                offlineIndicator.classList.add('hidden');
+            }
+        }
+        
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        window.addEventListener('load', updateOnlineStatus);
+        
         // PWA Install prompt handling
         let deferredPrompt;
+        let installPromptShown = false;
+        
         window.addEventListener('beforeinstallprompt', (e) => {
             console.log('💾 PWA install prompt ready');
             // Prevent the mini-infobar from appearing on mobile
@@ -244,26 +339,68 @@
             // Stash the event so it can be triggered later
             deferredPrompt = e;
             
-            // Show install button (you can add a UI button to trigger this)
-            window.showInstallPromotion = () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('✅ User accepted the install prompt');
-                        } else {
-                            console.log('❌ User dismissed the install prompt');
-                        }
-                        deferredPrompt = null;
-                    });
-                }
-            };
+            // Show install prompt after 30 seconds if not dismissed
+            if (!installPromptShown && !localStorage.getItem('installPromptDismissed')) {
+                setTimeout(() => {
+                    showInstallPrompt();
+                }, 30000);
+            }
         });
+        
+        // Show install prompt UI
+        function showInstallPrompt() {
+            if (!deferredPrompt || installPromptShown) return;
+            
+            installPromptShown = true;
+            const promptElement = document.getElementById('install-prompt');
+            if (!promptElement) return;
+            
+            promptElement.classList.remove('hidden');
+            
+            // Accept button
+            document.getElementById('install-accept')?.addEventListener('click', async () => {
+                promptElement.classList.add('hidden');
+                if (!deferredPrompt) return;
+                
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    console.log('✅ User accepted the install prompt');
+                } else {
+                    console.log('❌ User dismissed the install prompt');
+                }
+                
+                deferredPrompt = null;
+            }, { once: true });
+            
+            // Dismiss button
+            document.getElementById('install-dismiss')?.addEventListener('click', () => {
+                promptElement.classList.add('hidden');
+                localStorage.setItem('installPromptDismissed', 'true');
+                installPromptShown = false;
+            }, { once: true });
+        }
+        
+        // Public function to manually trigger install prompt
+        window.showInstallPromotion = showInstallPrompt;
         
         // Track when PWA is installed
         window.addEventListener('appinstalled', () => {
             console.log('✅ PWA was installed successfully');
+            const promptElement = document.getElementById('install-prompt');
+            if (promptElement) {
+                promptElement.classList.add('hidden');
+            }
             deferredPrompt = null;
+            
+            // Track installation (you can send to analytics)
+            if (window.gtag) {
+                gtag('event', 'pwa_installed', {
+                    event_category: 'engagement',
+                    event_label: 'PWA Installation'
+                });
+            }
         });
         
         // Handle URL parameters (for shortcuts)
@@ -277,6 +414,25 @@
         if (urlParams.has('vr') && urlParams.get('vr') === 'true') {
             console.log('🥽 Shortcut: VR mode requested');
             window.startupVR = true;
+        }
+        
+        // Check if running as installed PWA
+        function isPWA() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;
+        }
+        
+        if (isPWA()) {
+            console.log('📱 Running as installed PWA');
+            document.body.classList.add('pwa-mode');
+            
+            // Track PWA usage
+            if (window.gtag) {
+                gtag('event', 'pwa_used', {
+                    event_category: 'engagement',
+                    event_label: 'PWA Active Session'
+                });
+            }
         }
     </script>
 </body>
