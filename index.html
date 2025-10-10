@@ -42,19 +42,19 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Space Explorer">
     <meta name="msapplication-TileColor" content="#0078D4">
-    <meta name="msapplication-config" content="/browserconfig.xml">
+    <meta name="msapplication-config" content="./browserconfig.xml">
     <meta name="format-detection" content="telephone=no">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./icons/icon-72x72.png">
     
     <!-- Apple Touch Icons -->
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512x512.png">
     
     <!-- Preload critical styles -->
     <link rel="preload" href="./src/styles/main.css" as="style">
@@ -263,8 +263,8 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
                 try {
-                    const registration = await navigator.serviceWorker.register('/sw.js', {
-                        scope: '/'
+                    const registration = await navigator.serviceWorker.register('./sw.js', {
+                        scope: './'
                     });
                     
                     console.log('✅ Service Worker registered successfully:', registration.scope);

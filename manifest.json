@@ -2,71 +2,71 @@
   "name": "Space Explorer - Interactive 3D Solar System",
   "short_name": "Space Explorer",
   "description": "Explore our Solar System in stunning 3D with VR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this interactive educational experience.",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#000011",
   "theme_color": "#0078D4",
   "orientation": "any",
-  "scope": "/",
+  "scope": "./",
   "lang": "en-US",
   "categories": ["education", "entertainment"],
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
+      "src": "./icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-96x96.png",
+      "src": "./icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-128x128.png",
+      "src": "./icons/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-144x144.png",
+      "src": "./icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-152x152.png",
+      "src": "./icons/icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "./icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-384x384.png",
+      "src": "./icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "./icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192-maskable.png",
+      "src": "./icons/icon-192x192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-512x512-maskable.png",
+      "src": "./icons/icon-512x512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -74,14 +74,14 @@
   ],
   "screenshots": [
     {
-      "src": "/screenshots/desktop-1.png",
+      "src": "./screenshots/desktop-1.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Space Explorer - Solar System View"
     },
     {
-      "src": "/screenshots/mobile-1.png",
+      "src": "./screenshots/mobile-1.png",
       "sizes": "750x1334",
       "type": "image/png",
       "label": "Space Explorer - Mobile View"
@@ -92,10 +92,10 @@
       "name": "View Earth",
       "short_name": "Earth",
       "description": "Jump directly to Earth",
-      "url": "/?planet=earth",
+      "url": "./?planet=earth",
       "icons": [
         {
-          "src": "/icons/earth-96x96.png",
+          "src": "./icons/earth-96x96.png",
           "sizes": "96x96"
         }
       ]
@@ -104,10 +104,10 @@
       "name": "View Mars",
       "short_name": "Mars",
       "description": "Jump directly to Mars",
-      "url": "/?planet=mars",
+      "url": "./?planet=mars",
       "icons": [
         {
-          "src": "/icons/mars-96x96.png",
+          "src": "./icons/mars-96x96.png",
           "sizes": "96x96"
         }
       ]
@@ -116,10 +116,10 @@
       "name": "Enter VR Mode",
       "short_name": "VR",
       "description": "Start in VR mode",
-      "url": "/?vr=true",
+      "url": "./?vr=true",
       "icons": [
         {
-          "src": "/icons/vr-96x96.png",
+          "src": "./icons/vr-96x96.png",
           "sizes": "96x96"
         }
       ]
@@ -133,7 +133,7 @@
     "Educational Content"
   ],
   "share_target": {
-    "action": "/share",
+    "action": "./share",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {

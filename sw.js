@@ -13,14 +13,15 @@ const CACHE_LIMITS = {
 };
 
 // Files to cache immediately on install
+// Use relative paths that will work with any base URL (including GitHub Pages subdirectories)
 const STATIC_CACHE_FILES = [
-  '/',
-  '/index.html',
-  '/src/main.js',
-  '/src/styles/main.css',
-  '/src/styles/ui.css',
-  '/manifest.json',
-  '/browserconfig.xml'
+  './',
+  './index.html',
+  './src/main.js',
+  './src/styles/main.css',
+  './src/styles/ui.css',
+  './manifest.json',
+  './browserconfig.xml'
 ];
 
 // CDN files to cache (Three.js and dependencies)
