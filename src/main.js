@@ -8216,6 +8216,11 @@ class TopicManager {
             const speed = speedValues[index];
             this.timeSpeed = speed;
             
+            // Update App's timeSpeed as well
+            if (window.app) {
+                window.app.timeSpeed = speed;
+            }
+            
             // Update label
             if (timeSpeedLabel) {
                 timeSpeedLabel.textContent = speedLabels[index];
@@ -8475,7 +8480,7 @@ class App {
         this.uiManager = null;
         this.solarSystemModule = null;
         this.lastTime = 0;
-        this.timeSpeed = 1.0;
+        this.timeSpeed = 604800; // Default to slider value 5 (1 week/sec)
         this.brightness = 100; // Default brightness percentage
         
         // Make this app instance globally accessible for VR and other modules
