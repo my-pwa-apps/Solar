@@ -8664,47 +8664,8 @@ class App {
     }
     
     setupControls() {
-        // Time speed control (slider)
-        const timeSpeedSlider = document.getElementById('time-speed');
-        const timeSpeedLabel = document.getElementById('time-speed-label');
-        
-        // Convert slider value (0-10) to speed multiplier
-        // 0 = paused (0x), 5 = normal (1x), 10 = fast (5x)
-        const sliderToSpeed = (value) => {
-            if (value === 0) return 0; // Paused
-            if (value <= 5) {
-                // 1-5: Slow motion (0.2x to 1x)
-                return 0.2 * value;
-            } else {
-                // 6-10: Accelerated (1.5x to 5x)
-                return 1 + (value - 5) * 0.8;
-            }
-        };
-        
-        const updateSpeed = (value) => {
-            const speed = sliderToSpeed(parseFloat(value));
-            this.timeSpeed = speed;
-            
-            // Update label
-            if (timeSpeedLabel) {
-                if (speed === 0) {
-                    timeSpeedLabel.textContent = 'Paused';
-                } else {
-                    timeSpeedLabel.textContent = `${speed.toFixed(1)}x`;
-                }
-            }
-            
-            console.log(`⏱️ Speed changed to: ${speed}x`);
-        };
-        
-        if (timeSpeedSlider) {
-            timeSpeedSlider.addEventListener('input', (e) => {
-                updateSpeed(e.target.value);
-            });
-            
-            // Set initial speed (value 5 = 1x speed)
-            updateSpeed(timeSpeedSlider.value);
-        }
+        // Time speed control is handled by UIManager
+        // App.timeSpeed is updated by UIManager's updateSpeed function via window.app
         
         // Orbit toggle button
         const orbitsButton = document.getElementById('toggle-orbits');
