@@ -8050,42 +8050,60 @@ class TopicManager {
         const timeSpeedSlider = document.getElementById('time-speed');
         const timeSpeedLabel = document.getElementById('time-speed-label');
         
-        // Convert slider value (0-10) to speed multiplier
-        // 0 = paused (0x), 5 = normal (1x), 10 = fast (5x)
-        const sliderToSpeed = (value) => {
-            if (value === 0) return 0; // Paused
-            if (value <= 5) {
-                // 1-5: Slow motion (0.2x to 1x)
-                return 0.2 * value;
-            } else {
-                // 6-10: Accelerated (1.5x to 5x)
-                return 1 + (value - 5) * 0.8;
-            }
-        };
+        // Educational speed presets
+        const speedValues = [
+            0,           // 0: Paused
+            1,           // 1: Real-time
+            60,          // 2: 1 minute/sec
+            3600,        // 3: 1 hour/sec
+            86400,       // 4: 1 day/sec
+            604800,      // 5: 1 week/sec
+            2592000,     // 6: 1 month/sec (30 days)
+            7776000,     // 7: 3 months/sec
+            15552000,    // 8: 6 months/sec
+            31536000,    // 9: 1 year/sec
+            157680000,   // 10: 5 years/sec
+            315360000,   // 11: 10 years/sec
+            525600       // 12: 1 year/min (educational max)
+        ];
+
+        const speedLabels = [
+            'Paused',
+            'Real-time',
+            '1 min/sec',
+            '1 hr/sec',
+            '1 day/sec',
+            '1 week/sec',
+            '1 month/sec',
+            '3 months/sec',
+            '6 months/sec',
+            '1 year/sec',
+            '5 years/sec',
+            '10 years/sec',
+            '1 year/min'
+        ];
         
-        const updateSpeed = (value) => {
-            const speed = sliderToSpeed(parseFloat(value));
+        const updateSpeed = (index) => {
+            const speed = speedValues[index];
             this.timeSpeed = speed;
             
             // Update label
             if (timeSpeedLabel) {
-                if (speed === 0) {
-                    timeSpeedLabel.textContent = 'Paused';
-                } else {
-                    timeSpeedLabel.textContent = `${speed.toFixed(1)}x`;
-                }
+                timeSpeedLabel.textContent = speedLabels[index];
             }
             
-            console.log(`⏱️ Speed changed to: ${speed}x`);
+            if (DEBUG.enabled) {
+                console.log(`⏱️ Speed changed to: ${speedLabels[index]} (${speed}x)`);
+            }
         };
         
         if (timeSpeedSlider) {
             timeSpeedSlider.addEventListener('input', (e) => {
-                updateSpeed(e.target.value);
+                updateSpeed(parseInt(e.target.value, 10));
             }, { passive: true });
             
-            // Set initial speed (value 5 = 1x speed)
-            updateSpeed(timeSpeedSlider.value);
+            // Set initial speed
+            updateSpeed(parseInt(timeSpeedSlider.value, 10));
         }
 
         // Scale toggle button
