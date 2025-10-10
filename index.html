@@ -99,27 +99,27 @@
 <body>
     <header id="main-header" role="banner">
         <div class="logo">
-            <h1>🚀 Space Explorer</h1>
+            <h1 data-i18n="appTitle">🚀 Space Explorer</h1>
         </div>
         <div class="header-controls">
             <nav id="quick-nav" aria-label="Quick navigation">
                 <select id="object-dropdown" class="nav-dropdown" aria-label="Navigate to celestial object">
-                    <option value="" selected>🚀 Quick Navigation</option>
-                    <optgroup label="☀️ Our Star">
-                        <option value="sun">☀️ Sun</option>
+                    <option value="" selected data-i18n="quickNavigation">🚀 Quick Navigation</option>
+                    <optgroup label="☀️ Our Star" data-i18n="ourStar">
+                        <option value="sun" data-i18n="sun">☀️ Sun</option>
                     </optgroup>
-                    <optgroup label="☿ Mercury">
-                        <option value="mercury">☿ Mercury</option>
+                    <optgroup label="☿ Mercury" data-i18n="mercury">
+                        <option value="mercury" data-i18n="mercury">☿ Mercury</option>
                     </optgroup>
-                    <optgroup label="♀ Venus">
-                        <option value="venus">♀ Venus</option>
+                    <optgroup label="♀ Venus" data-i18n="venus">
+                        <option value="venus" data-i18n="venus">♀ Venus</option>
                     </optgroup>
-                    <optgroup label="🌍 Earth System">
-                        <option value="earth">🌍 Earth</option>
-                        <option value="moon">🌙 Moon</option>
+                    <optgroup label="🌍 Earth System" data-i18n="earthSystem">
+                        <option value="earth" data-i18n="earth">🌍 Earth</option>
+                        <option value="moon" data-i18n="moon">🌙 Moon</option>
                     </optgroup>
-                    <optgroup label="♂ Mars System">
-                        <option value="mars">♂ Mars</option>
+                    <optgroup label="♂ Mars System" data-i18n="marsSystem">
+                        <option value="mars" data-i18n="mars">♂ Mars</option>
                         <option value="phobos">🌑 Phobos</option>
                         <option value="deimos">🌑 Deimos</option>
                     </optgroup>
@@ -183,15 +183,15 @@
                     </optgroup>
                 </select>
             </nav>
-            <button id="help-button" aria-label="Show help" data-tooltip="Show help and controls (H)">❓ Help</button>
+            <button id="help-button" aria-label="Show help" data-tooltip="Show help and controls (H)" data-i18n="help">❓ Help</button>
         </div>
     </header>
     <main id="canvas-container" role="main" aria-label="3D visualization canvas"></main>
     
     <div id="loading" role="status" aria-live="polite">
-        <h2>✨ Loading Experience...</h2>
+        <h2 data-i18n="loadingTitle">✨ Loading Experience...</h2>
         <div class="loading-spinner"></div>
-        <p id="loading-text">Initializing...</p>
+        <p id="loading-text" data-i18n="initializing">Initializing...</p>
         <div id="loading-progress">
             <div id="loading-progress-bar"></div>
         </div>
@@ -199,12 +199,12 @@
     </div>
     <aside id="info-panel" class="hidden" role="complementary" aria-labelledby="object-name">
         <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel">✕</button>
-        <h2 id="object-name">Select an Object</h2>
+        <h2 id="object-name" data-i18n="selectObject">Select an Object</h2>
         <div class="info-content">
-            <p><strong>Type:</strong> <span id="object-type">-</span></p>
-            <p><strong>Distance:</strong> <span id="object-distance">-</span></p>
-            <p><strong>Size:</strong> <span id="object-size">-</span></p>
-            <div id="object-description" class="description-box">
+            <p><strong data-i18n="type">Type:</strong> <span id="object-type">-</span></p>
+            <p><strong data-i18n="distance">Distance:</strong> <span id="object-distance">-</span></p>
+            <p><strong data-i18n="size">Size:</strong> <span id="object-size">-</span></p>
+            <div id="object-description" class="description-box" data-i18n="clickToExplore">
                 Click on objects to explore and learn more
             </div>
         </div>
@@ -213,16 +213,16 @@
     <footer id="main-footer" role="contentinfo">
         <div class="footer-controls">
             <div class="control-group">
-                <label for="time-speed">⏱️ Speed:</label>
+                <label for="time-speed" data-i18n="speedLabel">⏱️ Speed:</label>
                 <input type="range" id="time-speed" min="0" max="10" value="1" step="0.5" aria-label="Animation speed" />
-                <span id="time-speed-label">1x Real-time</span>
+                <span id="time-speed-label" data-i18n="realTime">1x Real-time</span>
             </div>
             
-            <button id="toggle-orbits" aria-label="Toggle orbital paths" data-tooltip="Show/hide orbital paths (O)">🛤️ Orbits</button>
-            <button id="toggle-constellations" aria-label="Toggle constellations" data-tooltip="Show/hide star constellations (C)">⭐ Constellations</button>
-            <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)">📊 Labels OFF</button>
-            <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)">📏 Educational Scale</button>
-            <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)">🔄 Reset</button>
+            <button id="toggle-orbits" aria-label="Toggle orbital paths" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits">🛤️ Orbits</button>
+            <button id="toggle-constellations" aria-label="Toggle constellations" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">⭐ Constellations</button>
+            <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">📊 Labels OFF</button>
+            <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">📏 Educational Scale</button>
+            <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)" data-i18n="resetView">🔄 Reset</button>
         </div>
         
         <div class="footer-xr-controls">

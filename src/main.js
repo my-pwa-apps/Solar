@@ -4929,15 +4929,15 @@ class SolarSystemModule {
 
     createOrbitalPaths(scene) {
         const orbitalData = [
-            { distance: 20, color: 0x888888 },   // Mercury
-            { distance: 30, color: 0x888888 },   // Venus
-            { distance: 45, color: 0x4488FF },   // Earth
-            { distance: 60, color: 0x888888 },   // Mars
-            { distance: 100, color: 0x888888 },  // Jupiter
-            { distance: 150, color: 0x888888 },  // Saturn
-            { distance: 200, color: 0x888888 },  // Uranus
-            { distance: 250, color: 0x888888 },  // Neptune
-            { distance: 300, color: 0x666666 }   // Pluto
+            { distance: 20, color: 0x6688AA },   // Mercury
+            { distance: 30, color: 0x6688AA },   // Venus
+            { distance: 45, color: 0x6688AA },   // Earth
+            { distance: 60, color: 0x6688AA },   // Mars
+            { distance: 100, color: 0x6688AA },  // Jupiter
+            { distance: 150, color: 0x6688AA },  // Saturn
+            { distance: 200, color: 0x6688AA },  // Uranus
+            { distance: 250, color: 0x6688AA },  // Neptune
+            { distance: 300, color: 0x6688AA }   // Pluto
         ];
 
         orbitalData.forEach(orbit => {
@@ -4954,11 +4954,12 @@ class SolarSystemModule {
             const material = new THREE.LineBasicMaterial({
                 color: orbit.color,
                 transparent: true,
-                opacity: 0.2
+                opacity: 0.5  // Increased from 0.2 for better visibility
             });
 
             const orbitLine = new THREE.Line(geometry, material);
             orbitLine.rotation.x = Math.PI / 2;
+            orbitLine.visible = this.orbitsVisible;  // Respect initial visibility setting
             scene.add(orbitLine);
             this.orbits.push(orbitLine);
         });
@@ -7772,35 +7773,66 @@ class SolarSystemModule {
 
     getObjectInfo(object) {
         const userData = object.userData;
+        const t = window.t || ((key) => key);
+        
+        // Translate object name
+        const nameKey = userData.name?.toLowerCase().replace(/\s+/g, '');
+        let translatedName = userData.name || 'Unknown';
+        if (nameKey && window.t && window.t(nameKey) !== nameKey) {
+            translatedName = t(nameKey);
+        }
+        
+        // Translate object type
+        const typeKey = 'type' + userData.type?.replace(/\s+/g, '');
+        let translatedType = userData.type || 'Object';
+        if (typeKey && window.t && window.t(typeKey) !== typeKey) {
+            translatedType = t(typeKey);
+        }
         
         // Safely format distance
         let distanceText;
         if (userData.distance === 0) {
-            distanceText = 'Center of Solar System';
+            distanceText = t('centerSolarSystem');
         } else if (userData.parentPlanet) {
-            distanceText = `Orbits ${userData.parentPlanet}`;
+            // Translate parent planet name too
+            const parentKey = userData.parentPlanet?.toLowerCase().replace(/\s+/g, '');
+            const translatedParent = (parentKey && window.t && window.t(parentKey) !== parentKey) ? t(parentKey) : userData.parentPlanet;
+            distanceText = `${t('orbitsParent')} ${translatedParent}`;
         } else if (typeof userData.distance === 'number') {
-            distanceText = `${userData.distance.toFixed(1)} million km from Sun`;
+            distanceText = `${userData.distance.toFixed(1)} ${t('millionKmFromSun')}`;
         } else {
-            distanceText = 'Distance varies';
+            distanceText = t('distanceVaries');
+        }
+        
+        // Get translated description based on object name
+        let description = userData.description || t('noDescription');
+        const descKey = 'desc' + userData.name?.replace(/\s+/g, '');
+        if (window.t && window.t(descKey) !== descKey) {
+            description = t(descKey);
         }
         
         let info = {
-            name: userData.name || 'Unknown',
-            type: userData.type || 'Object',
+            name: translatedName,
+            type: translatedType,
             distance: distanceText,
             size: userData.realSize || (userData.radius ? `${userData.radius.toFixed(2)} units` : 'Unknown size'),
-            description: userData.description || 'No description available'
+            description: description
         };
 
-        // Add fun facts for kids
+        // Add fun facts for kids (translated)
         if (userData.funFact) {
-            info.description += `\n\n💡 ${userData.funFact}`;
+            const funFactKey = 'funFact' + userData.name?.replace(/\s+/g, '');
+            let funFact = userData.funFact;
+            if (window.t && window.t(funFactKey) !== funFactKey) {
+                funFact = t(funFactKey);
+            }
+            info.description += `\n\n💡 ${funFact}`;
         }
 
-        // Add moon count for planets
+        // Add moon count for planets (translated)
         if (userData.moonCount > 0) {
-            info.description += `\n\n🌙 This planet has ${userData.moonCount} major moon${userData.moonCount > 1 ? 's' : ''} shown here (many more small ones exist!)`;
+            const moonText = userData.moonCount > 1 ? t('majorMoons') : t('majorMoon');
+            info.description += `\n\n🌙 ${t('moonCount')} ${userData.moonCount} ${moonText} ${t('shownHere')}`;
         }
 
         return info;
@@ -8546,21 +8578,22 @@ class App {
             this.sceneManager = new SceneManager();
             this.uiManager = new UIManager();
             
-            this.uiManager.showLoading('Initializing Space Explorer...');
-            this.uiManager.updateLoadingProgress(0, '🎬 Setting up scene...');
+            const t = window.t || ((key) => key);
+            this.uiManager.showLoading(t('initializing'));
+            this.uiManager.updateLoadingProgress(0, t('settingUpScene'));
             
             // Setup global UI functions
             this.setupGlobalFunctions();
-            this.uiManager.updateLoadingProgress(10, '🖱️ Initializing controls...');
+            this.uiManager.updateLoadingProgress(10, t('initializingControls'));
             
             // Setup help button
             this.setupHelpButton();
-            this.uiManager.updateLoadingProgress(15, '🌌 Loading solar system...');
+            this.uiManager.updateLoadingProgress(15, t('loadingSolarSystem'));
 
             // Load Solar System module directly
             const moduleStartTime = performance.now();
             this.solarSystemModule = new SolarSystemModule(this.uiManager);
-            this.uiManager.updateLoadingProgress(20, '☀️ Creating Sun...');
+            this.uiManager.updateLoadingProgress(20, t('creatingSun'));
             
             // The init method now handles its own async loading and will call startExperience() when done
             await this.solarSystemModule.init(this.sceneManager.scene);
@@ -8751,10 +8784,11 @@ class App {
         if (scaleButton) {
             scaleButton.addEventListener('click', () => {
                 if (this.solarSystemModule) {
+                    const t = window.t || ((key) => key);
                     this.solarSystemModule.realisticScale = !this.solarSystemModule.realisticScale;
                     scaleButton.classList.toggle('active');
                     scaleButton.textContent = this.solarSystemModule.realisticScale ? 
-                        '📏 Realistic Scale' : '📏 Educational Scale';
+                        t('toggleScaleRealistic') : t('toggleScale');
                     
                     // Recalculate positions with new scale
                     this.solarSystemModule.updateScale();
@@ -8765,7 +8799,9 @@ class App {
         // Labels toggle button
         const labelsButton = document.getElementById('toggle-details');
         if (labelsButton) {
-            labelsButton.textContent = '📊 Labels OFF';
+            // Use translation function if available, otherwise fallback to English
+            const t = window.t || ((key) => key);
+            labelsButton.textContent = t('toggleLabels');
             labelsButton.classList.remove('toggle-on');
             
             labelsButton.addEventListener('click', () => {
@@ -8775,7 +8811,7 @@ class App {
                         this.solarSystemModule.toggleLabels(this.sceneManager.labelsVisible);
                         labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
                         labelsButton.textContent = this.sceneManager.labelsVisible ? 
-                            '📊 Labels ON' : '📊 Labels OFF';
+                            t('toggleLabelsOn') : t('toggleLabels');
                         console.log(`🏷️ Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
                     }
                 }
