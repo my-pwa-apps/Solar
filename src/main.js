@@ -1808,8 +1808,50 @@ class UIManager {
             console.error('❌ solarSystemModule or getExplorerContent method not found');
         }
         
+        // Setup time speed control
+        this.setupTimeSpeedControl();
+        
         // Hide loading
         this.hideLoading();
+    }
+    
+    setupTimeSpeedControl() {
+        const timeSpeedSlider = document.getElementById('time-speed');
+        const timeSpeedLabel = document.getElementById('time-speed-label');
+        
+        if (!timeSpeedSlider || !timeSpeedLabel) {
+            console.warn('Time speed controls not found');
+            return;
+        }
+        
+        // Original speed scale: 0 to 10 with 0.5 increments (matches keyboard shortcuts)
+        const updateSpeed = (value) => {
+            const speed = parseFloat(value);
+            
+            // Update app timeSpeed
+            if (window.app) {
+                window.app.timeSpeed = speed;
+            }
+            
+            // Update label
+            if (speed === 0) {
+                timeSpeedLabel.textContent = 'Paused';
+            } else if (speed === 1) {
+                timeSpeedLabel.textContent = '1x Real-time';
+            } else {
+                timeSpeedLabel.textContent = `${speed}x`;
+            }
+            
+            console.log(`⏱️ Speed changed to: ${speed}x`);
+        };
+        
+        // Add event listener
+        timeSpeedSlider.addEventListener('input', (e) => {
+            updateSpeed(e.target.value);
+        });
+        
+        // Initialize with current slider value
+        updateSpeed(timeSpeedSlider.value);
     }
 }
 // ===========================
@@ -8481,7 +8523,7 @@ class App {
         this.uiManager = null;
         this.solarSystemModule = null;
         this.lastTime = 0;
-        this.timeSpeed = 1000; // Default to slider value 5 (1000x speed)
+        this.timeSpeed = 1; // Default to 1x real-time (original default)
         this.brightness = 100; // Default brightness percentage
         
         // Make this app instance globally accessible for VR and other modules
