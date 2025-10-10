@@ -8154,8 +8154,8 @@ class TopicManager {
         this.uiManager = uiManager;
         this.currentModule = null;
         this.currentTopicId = null;
-        // Initialize with default slider value (5 = 1 day/sec = 86400)
-        this.timeSpeed = 86400;
+        // Initialize with default slider value (5 = 1000x speed)
+        this.timeSpeed = 1000;
         this.brightnessMultiplier = 0.5;
         this.clickTimeout = null;
         
@@ -8181,35 +8181,36 @@ class TopicManager {
         
         // Time speed presets (seconds of simulated time per real second)
         // Earth orbit = 31,557,600 seconds (1 year)
+        // For smooth animation: lower values = slower, more visible movement
         const speedValues = [
             0,           // 0: Paused
-            60,          // 1: 1 minute/sec (very slow)
-            600,         // 2: 10 minutes/sec
-            3600,        // 3: 1 hour/sec
-            21600,       // 4: 6 hours/sec
-            86400,       // 5: 1 day/sec (default - reasonable speed)
-            259200,      // 6: 3 days/sec
-            604800,      // 7: 1 week/sec
-            2592000,     // 8: 1 month/sec (30 days)
-            7776000,     // 9: 3 months/sec
-            15768000,    // 10: 6 months/sec
-            31536000,    // 11: 1 year/sec
+            0.1,         // 1: 0.1 sec/sec (nearly real-time, very slow)
+            1,           // 2: 1 sec/sec (real-time)
+            10,          // 3: 10 sec/sec
+            100,         // 4: 100 sec/sec
+            1000,        // 5: 1000 sec/sec (default - ~16 min/sec)
+            10000,       // 6: 10000 sec/sec (~2.7 hrs/sec)
+            100000,      // 7: 100000 sec/sec (~1 day/sec)
+            500000,      // 8: 500000 sec/sec (~5 days/sec)
+            1000000,     // 9: 1000000 sec/sec (~11 days/sec)
+            5000000,     // 10: 5000000 sec/sec (~58 days/sec)
+            10000000,    // 11: 10000000 sec/sec (~115 days/sec)
             525960       // 12: Earth orbit in 1 minute (max speed)
         ];
 
         const speedLabels = [
             'Paused',
-            '1 min/sec',
-            '10 min/sec',
-            '1 hr/sec',
-            '6 hrs/sec',
-            '1 day/sec',
-            '3 days/sec',
-            '1 week/sec',
-            '1 month/sec',
-            '3 months/sec',
-            '6 months/sec',
-            '1 year/sec',
+            '0.1x',
+            '1x Real-time',
+            '10x',
+            '100x',
+            '1000x',
+            '10,000x',
+            '~1 day/sec',
+            '~5 days/sec',
+            '~11 days/sec',
+            '~2 months/sec',
+            '~4 months/sec',
             'Earth orbit/min'
         ];
         
@@ -8227,9 +8228,8 @@ class TopicManager {
                 timeSpeedLabel.textContent = speedLabels[index];
             }
             
-            if (DEBUG.enabled) {
-                console.log(`⏱️ Speed changed to: ${speedLabels[index]} (${speed}x)`);
-            }
+            // Always log speed changes for debugging
+            console.log(`⏱️ Speed changed to: ${speedLabels[index]} (${speed}x)`);
         };
         
         if (timeSpeedSlider) {
@@ -8481,7 +8481,7 @@ class App {
         this.uiManager = null;
         this.solarSystemModule = null;
         this.lastTime = 0;
-        this.timeSpeed = 86400; // Default to slider value 5 (1 day/sec)
+        this.timeSpeed = 1000; // Default to slider value 5 (1000x speed)
         this.brightness = 100; // Default brightness percentage
         
         // Make this app instance globally accessible for VR and other modules
