@@ -74,17 +74,18 @@
   ],
   "screenshots": [
     {
-      "src": "./screenshots/desktop-1.png",
+      "src": "./screenshots/solar1.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Space Explorer - Solar System View"
     },
     {
-      "src": "./screenshots/mobile-1.png",
-      "sizes": "750x1334",
+      "src": "./screenshots/solar2.png",
+      "sizes": "1920x1080",
       "type": "image/png",
-      "label": "Space Explorer - Mobile View"
+      "form_factor": "wide",
+      "label": "Space Explorer - Planetary Detail"
     }
   ],
   "shortcuts": [
