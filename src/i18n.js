@@ -60,7 +60,6 @@ const translations = {
         description: "Description",
         
         // Loading screen
-        loadingTitle: "Loading Experience...",
         loading: "Loading...",
         initializing: "Initializing...",
         settingUpScene: "Setting up scene...",
@@ -248,7 +247,6 @@ const translations = {
         description: "Beschrijving",
         
         // Laadscherm
-        loadingTitle: "Ervaring Laden...",
         loading: "Laden...",
         initializing: "Initialiseren...",
         settingUpScene: "Scène opzetten...",
