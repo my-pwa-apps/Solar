@@ -7592,6 +7592,9 @@ class SolarSystemModule {
         // Update spacecraft positions
         this.updateSpacecraftPositions();
         
+        // Update comet positions
+        this.updateCometPositions();
+        
         // Update nebulae and galaxies positions
         this.updateDeepSpaceObjects();
         
@@ -7680,8 +7683,14 @@ class SolarSystemModule {
     updateBelts() {
         // Update asteroid belt positions based on scale
         if (this.asteroidBelt && this.asteroidBelt.children) {
-            const baseDistance = this.realisticScale ? 350 : 75;
-            const distanceSpread = this.realisticScale ? 150 : 15;
+            // Define scale parameters for both modes
+            const oldParams = this.realisticScale ? 
+                { base: 75, spread: 15 } :  // We're switching FROM educational TO realistic
+                { base: 350, spread: 150 }; // We're switching FROM realistic TO educational
+            
+            const newParams = this.realisticScale ? 
+                { base: 350, spread: 150 } : // Switching TO realistic
+                { base: 75, spread: 15 };    // Switching TO educational
             
             this.asteroidBelt.children.forEach(particleSystem => {
                 if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
@@ -7693,9 +7702,11 @@ class SolarSystemModule {
                         const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
                         const height = positions[i * 3 + 1];
                         
-                        // Recalculate distance with new scale
-                        const normalizedDist = (currentDist - 70) / 25; // Normalize from old range
-                        const newDistance = baseDistance + (normalizedDist * distanceSpread);
+                        // Normalize from current scale to 0-1 range
+                        const normalizedDist = Math.max(0, Math.min(1, (currentDist - oldParams.base) / oldParams.spread));
+                        
+                        // Apply to new scale
+                        const newDistance = newParams.base + (normalizedDist * newParams.spread);
                         
                         positions[i * 3] = newDistance * Math.cos(angle);
                         positions[i * 3 + 2] = newDistance * Math.sin(angle);
@@ -7708,8 +7719,14 @@ class SolarSystemModule {
         
         // Update Kuiper belt positions based on scale
         if (this.kuiperBelt && this.kuiperBelt.children) {
-            const baseDistance = this.realisticScale ? 5000 : 280;
-            const distanceSpread = this.realisticScale ? 2500 : 100;
+            // Define scale parameters for both modes
+            const oldParams = this.realisticScale ? 
+                { base: 280, spread: 100 } :  // We're switching FROM educational TO realistic
+                { base: 5000, spread: 2500 }; // We're switching FROM realistic TO educational
+            
+            const newParams = this.realisticScale ? 
+                { base: 5000, spread: 2500 } : // Switching TO realistic
+                { base: 280, spread: 100 };    // Switching TO educational
             
             this.kuiperBelt.children.forEach(particleSystem => {
                 if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
@@ -7721,9 +7738,11 @@ class SolarSystemModule {
                         const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
                         const height = positions[i * 3 + 1];
                         
-                        // Recalculate distance with new scale
-                        const normalizedDist = (currentDist - 270) / 120; // Normalize from old range
-                        const newDistance = baseDistance + (normalizedDist * distanceSpread);
+                        // Normalize from current scale to 0-1 range
+                        const normalizedDist = Math.max(0, Math.min(1, (currentDist - oldParams.base) / oldParams.spread));
+                        
+                        // Apply to new scale
+                        const newDistance = newParams.base + (normalizedDist * newParams.spread);
                         
                         positions[i * 3] = newDistance * Math.cos(angle);
                         positions[i * 3 + 2] = newDistance * Math.sin(angle);
@@ -7778,6 +7797,53 @@ class SolarSystemModule {
         });
         
         if (DEBUG.enabled) console.log(`🚀 Spacecraft positions updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
+    }
+    
+    updateCometPositions() {
+        // Update comet orbit distances based on scale mode
+        if (!this.comets || this.comets.length === 0) return;
+        
+        // Scale factors for comet distances (semi-major axis of their elliptical orbits)
+        const cometScaleFactors = this.realisticScale ? {
+            // Realistic scale - Halley's Comet: ~35 AU, Hale-Bopp: ~250 AU, NEOWISE: ~10 AU
+            'Halley\'s Comet': 5250,     // ~35 AU
+            'Comet Hale-Bopp': 37500,    // ~250 AU
+            'Comet NEOWISE': 1500        // ~10 AU
+        } : {
+            // Educational scale - compressed for visibility
+            'Halley\'s Comet': 200,
+            'Comet Hale-Bopp': 250,
+            'Comet NEOWISE': 180
+        };
+        
+        this.comets.forEach(comet => {
+            const userData = comet.userData;
+            if (!userData || !userData.name) return;
+            
+            const newDistance = cometScaleFactors[userData.name];
+            if (newDistance !== undefined) {
+                // Update stored distance (semi-major axis)
+                userData.distance = newDistance;
+                
+                // Recalculate position based on current angle and eccentricity
+                const e = userData.eccentricity;
+                const a = userData.distance;
+                const angle = userData.angle || 0;
+                
+                const cosAngle = Math.cos(angle);
+                const sinAngle = Math.sin(angle);
+                
+                // Elliptical orbit formula
+                const r = a * (1 - e * e) / (1 + e * cosAngle);
+                comet.position.x = r * cosAngle;
+                comet.position.z = r * sinAngle;
+                comet.position.y = Math.sin(angle * 0.5) * 20;
+                
+                if (DEBUG.enabled) console.log(`☄️ ${userData.name}: ${newDistance} units (e=${e})`);
+            }
+        });
+        
+        if (DEBUG.enabled) console.log(`☄️ Comet positions updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
     }
     
     updateDeepSpaceObjects() {
