@@ -32,7 +32,7 @@
     </script>
     
     <!-- Primary Meta Tags -->
-    <title>🚀 Space Voyage - Interactive 3D Solar System & VR Experience</title>
+    <title>Space Voyage - Interactive 3D Solar System & VR Experience</title>
     <meta name="title" content="Space Voyage - Interactive 3D Solar System & VR Experience">
     <meta name="description" content="Explore our Solar System in stunning 3D with VR/AR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this free interactive educational experience.">
     <meta name="keywords" content="space, solar system, 3D, VR, AR, planets, astronomy, education, interactive, WebXR, Three.js, stars, galaxies, NASA, spacecraft">
@@ -99,85 +99,85 @@
 <body>
     <header id="main-header" role="banner">
         <div class="logo">
-            <h1 data-i18n="appTitle">🚀 Space Voyage</h1>
+            <h1 data-i18n="appTitle">Space Voyage</h1>
         </div>
         <div class="header-controls">
             <nav id="quick-nav" aria-label="Quick navigation">
                 <select id="object-dropdown" class="nav-dropdown" aria-label="Navigate to celestial object">
-                    <option value="" selected data-i18n="quickNavigation">🚀 Quick Navigation</option>
-                    <optgroup label="☀️ Our Star" data-i18n="ourStar">
-                        <option value="sun" data-i18n="sun">☀️ Sun</option>
+                    <option value="" selected data-i18n="quickNavigation">Quick Navigation</option>
+                    <optgroup label="Our Star" data-i18n="ourStar">
+                        <option value="sun" data-i18n="sun">Sun</option>
                     </optgroup>
-                    <optgroup label="☿ Mercury" data-i18n="mercury">
-                        <option value="mercury" data-i18n="mercury">☿ Mercury</option>
+                    <optgroup label="Mercury" data-i18n="mercury">
+                        <option value="mercury" data-i18n="mercury">Mercury</option>
                     </optgroup>
-                    <optgroup label="♀ Venus" data-i18n="venus">
-                        <option value="venus" data-i18n="venus">♀ Venus</option>
+                    <optgroup label="Venus" data-i18n="venus">
+                        <option value="venus" data-i18n="venus">Venus</option>
                     </optgroup>
-                    <optgroup label="🌍 Earth System" data-i18n="earthSystem">
-                        <option value="earth" data-i18n="earth">🌍 Earth</option>
-                        <option value="moon" data-i18n="moon">🌙 Moon</option>
+                    <optgroup label="Earth System" data-i18n="earthSystem">
+                        <option value="earth" data-i18n="earth">Earth</option>
+                        <option value="moon" data-i18n="moon">Moon</option>
                     </optgroup>
-                    <optgroup label="♂ Mars System" data-i18n="marsSystem">
-                        <option value="mars" data-i18n="mars">♂ Mars</option>
-                        <option value="phobos">🌑 Phobos</option>
-                        <option value="deimos">🌑 Deimos</option>
+                    <optgroup label="Mars System" data-i18n="marsSystem">
+                        <option value="mars" data-i18n="mars">Mars</option>
+                        <option value="phobos">Phobos</option>
+                        <option value="deimos">Deimos</option>
                     </optgroup>
-                    <optgroup label="♃ Jupiter System">
-                        <option value="jupiter">♃ Jupiter</option>
-                        <option value="io">🌋 Io</option>
-                        <option value="europa">❄️ Europa</option>
-                        <option value="ganymede">🌙 Ganymede</option>
-                        <option value="callisto">🌙 Callisto</option>
+                    <optgroup label="Jupiter System">
+                        <option value="jupiter">Jupiter</option>
+                        <option value="io">Io</option>
+                        <option value="europa">Europa</option>
+                        <option value="ganymede">Ganymede</option>
+                        <option value="callisto">Callisto</option>
                     </optgroup>
-                    <optgroup label="♄ Saturn System">
-                        <option value="saturn">♄ Saturn</option>
-                        <option value="titan">🌊 Titan</option>
-                        <option value="enceladus">💦 Enceladus</option>
-                        <option value="rhea">💫 Rhea</option>
+                    <optgroup label="Saturn System">
+                        <option value="saturn">Saturn</option>
+                        <option value="titan">Titan</option>
+                        <option value="enceladus">Enceladus</option>
+                        <option value="rhea">Rhea</option>
                     </optgroup>
-                    <optgroup label="♅ Uranus System">
-                        <option value="uranus">♅ Uranus</option>
-                        <option value="titania">🏔️ Titania</option>
-                        <option value="miranda">🏔️ Miranda</option>
+                    <optgroup label="Uranus System">
+                        <option value="uranus">Uranus</option>
+                        <option value="titania">Titania</option>
+                        <option value="miranda">Miranda</option>
                     </optgroup>
-                    <optgroup label="♆ Neptune System">
-                        <option value="neptune">♆ Neptune</option>
-                        <option value="triton">❄️ Triton</option>
+                    <optgroup label="Neptune System">
+                        <option value="neptune">Neptune</option>
+                        <option value="triton">Triton</option>
                     </optgroup>
-                    <optgroup label="♇ Pluto System">
-                        <option value="pluto">♇ Pluto</option>
-                        <option value="charon">🌙 Charon</option>
+                    <optgroup label="Pluto System">
+                        <option value="pluto">Pluto</option>
+                        <option value="charon">Charon</option>
                     </optgroup>
-                    <optgroup label="⭐ Nearby Stars">
-                        <option value="alpha-centauri">⭐ Alpha Centauri</option>
-                        <option value="proxima-centauri">🔴 Proxima Centauri</option>
+                    <optgroup label="Nearby Stars">
+                        <option value="alpha-centauri">Alpha Centauri</option>
+                        <option value="proxima-centauri">Proxima Centauri</option>
                     </optgroup>
-                    <optgroup label="🪐 Exoplanets">
-                        <option value="proxima-b">🌍 Proxima Centauri b</option>
-                        <option value="kepler-452b">🌎 Kepler-452b</option>
-                        <option value="trappist-1e">🌏 TRAPPIST-1e</option>
-                        <option value="kepler-186f">🌍 Kepler-186f</option>
+                    <optgroup label="Exoplanets">
+                        <option value="proxima-b">Proxima Centauri b</option>
+                        <option value="kepler-452b">Kepler-452b</option>
+                        <option value="trappist-1e">TRAPPIST-1e</option>
+                        <option value="kepler-186f">Kepler-186f</option>
                     </optgroup>
-                    <optgroup label="🌌 Nebulae">
-                        <option value="orion-nebula">🌈 Orion Nebula</option>
-                        <option value="crab-nebula">💥 Crab Nebula</option>
-                        <option value="ring-nebula">💍 Ring Nebula</option>
+                    <optgroup label="Nebulae">
+                        <option value="orion-nebula">Orion Nebula</option>
+                        <option value="crab-nebula">Crab Nebula</option>
+                        <option value="ring-nebula">Ring Nebula</option>
                     </optgroup>
-                    <optgroup label="🌀 Galaxies">
-                        <option value="andromeda-galaxy">🌌 Andromeda Galaxy</option>
-                        <option value="whirlpool-galaxy">🌀 Whirlpool Galaxy</option>
-                        <option value="sombrero-galaxy">🎩 Sombrero Galaxy</option>
+                    <optgroup label="Galaxies">
+                        <option value="andromeda-galaxy">Andromeda Galaxy</option>
+                        <option value="whirlpool-galaxy">Whirlpool Galaxy</option>
+                        <option value="sombrero-galaxy">Sombrero Galaxy</option>
                     </optgroup>
-                    <optgroup label="🛰️ Spacecraft & Probes">
-                        <option value="iss">🛰️ ISS</option>
-                        <option value="hubble">🔭 Hubble</option>
-                        <option value="voyager-1">🚀 Voyager 1</option>
-                        <option value="voyager-2">🚀 Voyager 2</option>
-                        <option value="new-horizons">🚀 New Horizons</option>
-                        <option value="parker-solar-probe">☀️ Parker Solar Probe</option>
-                        <option value="juno">🛰️ Juno (Jupiter)</option>
-                        <option value="cassini">🛰️ Cassini (Saturn)</option>
+                    <optgroup label="Spacecraft & Probes">
+                        <option value="iss">ISS</option>
+                        <option value="hubble">Hubble</option>
+                        <option value="voyager-1">Voyager 1</option>
+                        <option value="voyager-2">Voyager 2</option>
+                        <option value="new-horizons">New Horizons</option>
+                        <option value="parker-solar-probe">Parker Solar Probe</option>
+                        <option value="juno">Juno (Jupiter)</option>
+                        <option value="cassini">Cassini (Saturn)</option>
                         <option value="pioneer-10">🛸 Pioneer 10</option>
                         <option value="pioneer-11">🛸 Pioneer 11</option>
                     </optgroup>
