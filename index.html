@@ -12,23 +12,16 @@
         const urlLang = urlParams.get('lang');
         const userLang = navigator.language || navigator.userLanguage;
         const langCode = urlLang || userLang.toLowerCase().split('-')[0];
+        const isNL = langCode === 'nl';
         
         // Set HTML lang attribute and load appropriate manifest
-        if (langCode === 'nl') {
-            document.documentElement.lang = 'nl';
-            // Dynamically set the manifest to Dutch version
-            const manifestLink = document.createElement('link');
-            manifestLink.rel = 'manifest';
-            manifestLink.href = './manifest.nl.json';
-            document.head.appendChild(manifestLink);
-        } else {
-            document.documentElement.lang = 'en';
-            // Use default English manifest
-            const manifestLink = document.createElement('link');
-            manifestLink.rel = 'manifest';
-            manifestLink.href = './manifest.json';
-            document.head.appendChild(manifestLink);
-        }
+        document.documentElement.lang = isNL ? 'nl' : 'en';
+        
+        // Dynamically set the manifest
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = isNL ? './manifest.nl.json' : './manifest.json';
+        document.head.appendChild(manifestLink);
     </script>
     
     <!-- Primary Meta Tags -->
@@ -38,15 +31,13 @@
     <meta name="keywords" content="space, solar system, 3D, VR, AR, planets, astronomy, education, interactive, WebXR, Three.js, stars, galaxies, NASA, spacecraft">
     <meta name="author" content="Space Voyage">
     <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
-    <meta name="revisit-after" content="7 days">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://my-pwa-apps.github.io/Solar/">
     <meta property="og:title" content="Space Voyage - Interactive 3D Solar System & VR Experience">
     <meta property="og:description" content="Explore our Solar System in stunning 3D with VR/AR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this free interactive educational experience.">
-    <meta property="og:image" content="https://my-pwa-apps.github.io/Solar/screenshots/desktop-1.png">
+    <meta property="og:image" content="https://my-pwa-apps.github.io/Solar/screenshots/solar1.png">
     <meta property="og:image:width" content="1920">
     <meta property="og:image:height" content="1080">
     <meta property="og:site_name" content="Space Voyage">
@@ -58,7 +49,7 @@
     <meta name="twitter:url" content="https://my-pwa-apps.github.io/Solar/">
     <meta name="twitter:title" content="Space Voyage - Interactive 3D Solar System & VR Experience">
     <meta name="twitter:description" content="Explore our Solar System in stunning 3D with VR/AR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies.">
-    <meta name="twitter:image" content="https://my-pwa-apps.github.io/Solar/screenshots/desktop-1.png">
+    <meta name="twitter:image" content="https://my-pwa-apps.github.io/Solar/screenshots/solar1.png">
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#0078D4" media="(prefers-color-scheme: light)">
@@ -89,19 +80,21 @@
     <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512x512.png">
     
+    <!-- Performance optimization -->
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    
     <!-- Preload critical resources -->
     <link rel="preload" href="./src/i18n.js" as="script">
     <link rel="preload" href="./src/styles/main.css" as="style">
     <link rel="preload" href="./src/styles/ui.css" as="style">
+    
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="./src/styles/main.css">
     <link rel="stylesheet" href="./src/styles/ui.css">
     
     <!-- Load translations early -->
     <script src="./src/i18n.js"></script>
-    
-    <!-- Performance optimization -->
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 </head>
 <body>
     <header id="main-header" role="banner">
@@ -185,12 +178,12 @@
                         <option value="parker-solar-probe">Parker Solar Probe</option>
                         <option value="juno">Juno (Jupiter)</option>
                         <option value="cassini">Cassini (Saturn)</option>
-                        <option value="pioneer-10">🛸 Pioneer 10</option>
-                        <option value="pioneer-11">🛸 Pioneer 11</option>
+                        <option value="pioneer-10">Pioneer 10</option>
+                        <option value="pioneer-11">Pioneer 11</option>
                     </optgroup>
                 </select>
             </nav>
-            <button id="help-button" aria-label="Show help" data-tooltip="Show help and controls (H)" data-i18n="help">❓ Help</button>
+            <button id="help-button" aria-label="Show help" data-tooltip="Show help and controls (H)" data-i18n="help">Help</button>
         </div>
     </header>
     <main id="canvas-container" role="main" aria-label="3D visualization canvas"></main>
@@ -219,16 +212,16 @@
     <footer id="main-footer" role="contentinfo">
         <div class="footer-controls">
             <div class="control-group">
-                <label for="time-speed" data-i18n="speedLabel">⏱️ Speed:</label>
+                <label for="time-speed" data-i18n="speedLabel">Speed:</label>
                 <input type="range" id="time-speed" min="0" max="10" value="1" step="0.5" aria-label="Animation speed" />
                 <span id="time-speed-label" data-i18n="realTime">1x Real-time</span>
             </div>
             
-            <button id="toggle-orbits" aria-label="Toggle orbital paths" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits">🛤️ Orbits</button>
-            <button id="toggle-constellations" aria-label="Toggle constellations" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">⭐ Constellations</button>
-            <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">📊 Labels OFF</button>
-            <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">📏 Educational Scale</button>
-            <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)" data-i18n="resetView">🔄 Reset</button>
+            <button id="toggle-orbits" aria-label="Toggle orbital paths" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits">Orbits</button>
+            <button id="toggle-constellations" aria-label="Toggle constellations" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">Constellations</button>
+            <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">Labels OFF</button>
+            <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">Educational Scale</button>
+            <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)" data-i18n="resetView">Reset</button>
         </div>
         
         <div class="footer-xr-controls">
@@ -250,11 +243,11 @@
     <div id="install-prompt" class="hidden" role="dialog" aria-labelledby="install-title">
         <div class="install-content">
             <div class="install-icon">📱</div>
-            <h3 id="install-title">Install Space Voyage</h3>
-            <p>Install this app for a better experience and offline access!</p>
+            <h3 id="install-title" data-i18n="installTitle">Install Space Voyage</h3>
+            <p data-i18n="installMessage">Install this app for a better experience and offline access!</p>
             <div class="install-buttons">
-                <button id="install-accept" class="btn-primary">Install</button>
-                <button id="install-dismiss" class="btn-secondary">Not Now</button>
+                <button id="install-accept" class="btn-primary" data-i18n="install">Install</button>
+                <button id="install-dismiss" class="btn-secondary" data-i18n="notNow">Not Now</button>
             </div>
         </div>
     </div>
@@ -262,21 +255,22 @@
     <!-- Offline Indicator -->
     <div id="offline-indicator" class="hidden" role="status" aria-live="polite">
         <span class="offline-icon">📡</span>
-        <span class="offline-text">You're offline</span>
+        <span class="offline-text" data-i18n="offlineMode">You're offline</span>
     </div>
     
     <!-- Update Available Notification -->
     <div id="update-notification" class="hidden" role="status" aria-live="polite">
         <span class="update-icon">🔄</span>
-        <span class="update-text">Update available!</span>
-        <button id="update-reload" class="btn-update">Update</button>
+        <span class="update-text" data-i18n="updateAvailable">Update available!</span>
+        <button id="update-reload" class="btn-update" data-i18n="update">Update</button>
         <button id="update-dismiss" class="btn-dismiss">×</button>
     </div>
     
+    <!-- Help Modal -->
     <div id="help-modal" class="modal hidden" role="dialog" aria-labelledby="help-title" aria-modal="true">
         <div class="modal-content">
             <button class="close-btn" onclick="window.closeHelpModal()" aria-label="Close help dialog">✕</button>
-            <h2 id="help-title">👋 Welcome to Space Voyage!</h2>
+            <h2 id="help-title" data-i18n="welcomeTitle">Welcome to Space Voyage!</h2>
             <div id="help-content" role="document"></div>
         </div>
     </div>
@@ -303,12 +297,12 @@
                         scope: './'
                     });
                     
-                    console.log('✅ Service Worker registered successfully:', registration.scope);
+                    console.log('Service Worker registered successfully:', registration.scope);
                     
                     // Check for updates
                     registration.addEventListener('updatefound', () => {
                         const newWorker = registration.installing;
-                        console.log('🔄 Service Worker update found');
+                        console.log('Service Worker update found');
                         
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
@@ -320,15 +314,15 @@
                     
                     // Handle controller change (new service worker activated)
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
-                        console.log('🔄 New Service Worker activated');
+                        console.log('New Service Worker activated');
                     });
                     
                 } catch (error) {
-                    console.warn('❌ Service Worker registration failed:', error);
+                    console.warn('Service Worker registration failed:', error);
                 }
             });
         } else {
-            console.warn('⚠️ Service Workers not supported in this browser');
+            console.warn('Service Workers not supported in this browser');
         }
         
         // Show update notification UI
@@ -370,7 +364,7 @@
         let installPromptShown = false;
         
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('💾 PWA install prompt ready');
+            console.log('PWA install prompt ready');
             // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
             // Stash the event so it can be triggered later
@@ -403,9 +397,9 @@
                 const { outcome } = await deferredPrompt.userChoice;
                 
                 if (outcome === 'accepted') {
-                    console.log('✅ User accepted the install prompt');
+                    console.log('User accepted the install prompt');
                 } else {
-                    console.log('❌ User dismissed the install prompt');
+                    console.log('User dismissed the install prompt');
                 }
                 
                 deferredPrompt = null;
@@ -424,7 +418,7 @@
         
         // Track when PWA is installed
         window.addEventListener('appinstalled', () => {
-            console.log('✅ PWA was installed successfully');
+            console.log('PWA was installed successfully');
             const promptElement = document.getElementById('install-prompt');
             if (promptElement) {
                 promptElement.classList.add('hidden');
@@ -460,7 +454,7 @@
         }
         
         if (isPWA()) {
-            console.log('📱 Running as installed PWA');
+            console.log('Running as installed PWA');
             document.body.classList.add('pwa-mode');
             
             // Track PWA usage

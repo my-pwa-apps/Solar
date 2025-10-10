@@ -1,4 +1,4 @@
-# 🚀 Space Voyage - Interactive 3D Solar System
+# Space Voyage - Interactive 3D Solar System
 
 An immersive, educational Progressive Web App for exploring our Solar System in stunning 3D with VR/AR support.
 
@@ -7,9 +7,9 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 ![WebXR](https://img.shields.io/badge/WebXR-Supported-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## ✨ Features
+## Features
 
-### 🌍 Comprehensive Solar System
+### Comprehensive Solar System
 - All 8 planets with scientifically accurate textures
 - Major moons (Moon, Io, Europa, Ganymede, Titan, and more)
 - Asteroid Belt and Kuiper Belt
@@ -17,7 +17,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Distant stars, nebulae, and galaxies
 - Constellations with accurate star positions
 
-### 🛰️ Space Missions
+### Space Missions
 - International Space Station (ISS)
 - Hubble Space Telescope
 - Voyager 1 & 2
@@ -27,7 +27,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Pioneer 10 & 11
 - New Horizons
 
-### 🥽 VR/AR Support
+### VR/AR Support
 - Full WebXR implementation
 - Realistic VR controller models
 - Haptic feedback
@@ -35,7 +35,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Interactive VR menu
 - Works with Meta Quest, HTC Vive, and more
 
-### 🎓 Educational Features
+### Educational Features
 - Detailed information panels for each object
 - Scientifically accurate orbital mechanics
 - Realistic day/night cycles
@@ -43,7 +43,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Real astronomical data
 - Educational scale mode
 
-### 📱 Progressive Web App
+### Progressive Web App
 - ✅ **Works 100% offline** with intelligent caching
 - ✅ **Installable** on desktop and mobile devices
 - ✅ **Native app experience** with standalone mode
@@ -55,7 +55,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - ✅ **App shortcuts** to Earth, Mars, and VR mode
 - ✅ **Security headers** and best practices
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Visit Live Demo
 *Coming soon after deployment*
@@ -79,7 +79,7 @@ npx http-server -p 8000
 2. Click the "Install" button in your browser
 3. App installs like a native application
 
-## 🎮 Controls
+## Controls
 
 ### Desktop
 - **Mouse Drag:** Rotate view
@@ -109,7 +109,7 @@ npx http-server -p 8000
 - **Two-finger Drag:** Pan
 - **Tap Objects:** Select
 
-## 🏗️ PWA Setup
+## PWA Setup
 
 To deploy as a Progressive Web App and pass PWABuilder certification:
 
@@ -131,7 +131,7 @@ Test your PWA at [PWABuilder.com](https://www.pwabuilder.com/) with your deploye
 - 📄 [`PWA_SETUP.md`](PWA_SETUP.md) - Detailed setup guide
 - 📄 [`PWA_CHECKLIST.md`](PWA_CHECKLIST.md) - Step-by-step checklist
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **3D Graphics:** Three.js v0.160.0
 - **VR/AR:** WebXR Device API
@@ -140,7 +140,7 @@ Test your PWA at [PWABuilder.com](https://www.pwabuilder.com/) with your deploye
 - **Module System:** ES6 Modules
 - **No Build Tools:** Pure JavaScript (no bundler required)
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Solar/
@@ -160,7 +160,7 @@ Solar/
 └── README.md              # This file
 ```
 
-## 🌟 Features in Detail
+## Features in Detail
 
 ### Time Control
 - 13 speed levels from real-time to 1 year/minute
@@ -189,7 +189,7 @@ Click any object to view:
 - Camera auto-focus
 - Smooth transitions
 
-## 📱 Browser Support
+## Browser Support
 
 - ✅ Chrome/Edge (Desktop & Mobile) - Full support
 - ✅ Firefox (Desktop & Mobile) - Full support
@@ -201,7 +201,7 @@ Click any object to view:
 - VR headset (Meta Quest, HTC Vive, etc.)
 - For AR: ARCore/ARKit compatible device
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Feel free to:
 - Report bugs
@@ -209,24 +209,24 @@ Contributions are welcome! Feel free to:
 - Submit pull requests
 - Improve documentation
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **NASA:** Planetary textures and scientific data
 - **Three.js:** Amazing 3D graphics library
 - **PWABuilder:** Progressive Web App tools
 - **WebXR Community:** VR/AR standards
 
-## 📞 Support
+## Support
 
 - 📖 Documentation: See markdown files in root directory
 - 🐛 Issues: Use GitHub Issues
 - 💬 Community: PWABuilder Discord
 
-## 🎯 Future Enhancements
+## Future Enhancements
 
 - [ ] More exoplanets and star systems
 - [ ] Planetary weather visualization
@@ -237,7 +237,7 @@ This project is licensed under the MIT License.
 - [ ] Quiz mode
 - [ ] Bookmark favorite views
 
-## 📊 Project Stats
+## Project Stats
 
 - **Objects:** 100+ celestial bodies and spacecraft
 - **Lines of Code:** ~9,000+
@@ -246,6 +246,4 @@ This project is licensed under the MIT License.
 
 ---
 
-**Made with ❤️ and ☕ for space enthusiasts and educators**
-
-🌟 Star this repo if you found it helpful!
+Made with passion for space enthusiasts and educators worldwide.

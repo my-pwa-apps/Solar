@@ -863,16 +863,11 @@ select:focus-visible {
     }
 }
 
-/* Smooth transitions */
-* {
-    transition-property: transform, opacity, background, box-shadow;
-    transition-duration: 0.3s;
-    transition-timing-function: ease;
-}
-
+/* Performance optimization: selective transitions only */
 button,
-input {
-    will-change: transform;
+input,
+select {
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Responsive Design for Footer */

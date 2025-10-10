@@ -1,10 +1,10 @@
 // Space Voyage - Service Worker
-// Version 1.0.0
+// Version 1.2.0
 
-const CACHE_VERSION = '1.1.0';
-const CACHE_NAME = `space-explorer-v${CACHE_VERSION}`;
-const RUNTIME_CACHE = `space-explorer-runtime-v${CACHE_VERSION}`;
-const IMAGE_CACHE = `space-explorer-images-v${CACHE_VERSION}`;
+const CACHE_VERSION = '1.2.0';
+const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
+const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
+const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
 
 // Cache size limits (in number of items)
 const CACHE_LIMITS = {
@@ -13,14 +13,15 @@ const CACHE_LIMITS = {
 };
 
 // Files to cache immediately on install
-// Use relative paths that will work with any base URL (including GitHub Pages subdirectories)
 const STATIC_CACHE_FILES = [
   './',
   './index.html',
   './src/main.js',
+  './src/i18n.js',
   './src/styles/main.css',
   './src/styles/ui.css',
   './manifest.json',
+  './manifest.nl.json',
   './browserconfig.xml'
 ];
 
@@ -34,13 +35,13 @@ const CDN_CACHE_FILES = [
 
 // Install event - cache static files
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
+  console.log('[SW] Installing Space Voyage v' + CACHE_VERSION);
   
   event.waitUntil(
     (async () => {
       try {
         const cache = await caches.open(CACHE_NAME);
-        console.log('[Service Worker] Caching static files');
+        console.log('[SW] Caching static files');
         
         // Cache static files
         await cache.addAll(STATIC_CACHE_FILES);
@@ -50,16 +51,16 @@ self.addEventListener('install', (event) => {
           try {
             await cache.add(url);
           } catch (err) {
-            console.warn(`[Service Worker] Could not cache: ${url}`, err);
+            console.warn(`[SW] Could not cache: ${url}`);
           }
         }
         
-        console.log('[Service Worker] Static files cached successfully');
+        console.log('[SW] Installation complete');
         
         // Force the waiting service worker to become the active service worker
         await self.skipWaiting();
       } catch (error) {
-        console.error('[Service Worker] Installation failed:', error);
+        console.error('[SW] Installation failed:', error);
       }
     })()
   );
@@ -67,24 +68,26 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
+  console.log('[SW] Activating Space Voyage v' + CACHE_VERSION);
   
   event.waitUntil(
     (async () => {
       // Clean up old caches
       const cacheNames = await caches.keys();
+      const validCaches = [CACHE_NAME, RUNTIME_CACHE, IMAGE_CACHE];
+      
       await Promise.all(
         cacheNames
-          .filter(name => name !== CACHE_NAME && name !== RUNTIME_CACHE)
+          .filter(name => !validCaches.includes(name))
           .map(name => {
-            console.log(`[Service Worker] Deleting old cache: ${name}`);
+            console.log(`[SW] Deleting old cache: ${name}`);
             return caches.delete(name);
           })
       );
       
       // Take control of all clients immediately
       await self.clients.claim();
-      console.log('[Service Worker] Activated successfully');
+      console.log('[SW] Activated successfully');
     })()
   );
 });
@@ -178,11 +181,11 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         }
       } catch (error) {
-        console.error('[Service Worker] Fetch failed:', error);
+        console.error('[SW] Fetch failed:', error);
         
         // If offline and no cache, return offline page
         const cache = await caches.open(CACHE_NAME);
-        const cachedResponse = await cache.match('/index.html');
+        const cachedResponse = await cache.match('./index.html');
         if (cachedResponse) {
           return cachedResponse;
         }
@@ -199,7 +202,7 @@ self.addEventListener('fetch', (event) => {
               body {
                 margin: 0;
                 padding: 0;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
                 background: linear-gradient(135deg, #000011 0%, #1a1a2e 100%);
                 color: white;
                 display: flex;
@@ -236,7 +239,7 @@ self.addEventListener('fetch', (event) => {
           </head>
           <body>
             <div class="offline-content">
-              <h1>🌌 Offline</h1>
+              <h1>Offline</h1>
               <p>You're currently offline. Please check your internet connection.</p>
               <button onclick="window.location.reload()">Try Again</button>
             </div>
@@ -274,10 +277,10 @@ async function trimCache(cacheName, maxItems) {
       // Remove oldest entries (FIFO)
       const keysToDelete = keys.slice(0, keys.length - maxItems);
       await Promise.all(keysToDelete.map(key => cache.delete(key)));
-      console.log(`[Service Worker] Trimmed ${keysToDelete.length} items from ${cacheName}`);
+      console.log(`[SW] Trimmed ${keysToDelete.length} items from ${cacheName}`);
     }
   } catch (error) {
-    console.error('[Service Worker] Cache trim failed:', error);
+    console.error('[SW] Cache trim failed:', error);
   }
 }
 
@@ -296,22 +299,22 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Background sync for offline actions (if needed in future)
+// Background sync for offline actions (future enhancement)
 self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync:', event.tag);
+  console.log('[SW] Background sync:', event.tag);
   // Future: sync user preferences, saved states, etc.
 });
 
-// Push notifications support (if needed in future)
+// Push notifications support (future enhancement)
 self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push notification received');
+  console.log('[SW] Push notification received');
   
   const options = {
     body: event.data ? event.data.text() : 'New update available!',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-96x96.png',
+    icon: './icons/icon-192x192.png',
+    badge: './icons/icon-96x96.png',
     vibrate: [200, 100, 200],
-    tag: 'space-explorer-notification',
+    tag: 'space-voyage-notification',
     requireInteraction: false
   };
   
@@ -325,8 +328,8 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
   event.waitUntil(
-    clients.openWindow('/')
+    clients.openWindow('./')
   );
 });
 
-console.log('[Service Worker] Loaded successfully');
+console.log('[SW] Space Voyage Service Worker v' + CACHE_VERSION + ' loaded');

@@ -1,7 +1,6 @@
 /* ===========================
    FLUENT DESIGN SYSTEM
    =========================== */
-@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
 
 /* ===========================
    GLOBAL RESET & BASE STYLES
@@ -27,7 +26,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, 'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif;
     overflow: hidden;
     background: #000;
     color: var(--fluent-text-primary);
@@ -44,17 +43,13 @@ body {
 }
 
 #canvas-container {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 1;
-    touch-action: none; /* Prevent unwanted touch gestures */
-    
-    /* Ensure full viewport coverage including notches */
-    width: 100%;
-    height: 100%;
+    touch-action: none;
 }
 
 /* ===========================

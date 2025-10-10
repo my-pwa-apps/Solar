@@ -1,4 +1,4 @@
-# robots.txt for Space Explorer
+# robots.txt for Space Voyage
 
 User-agent: *
 Allow: /
@@ -6,10 +6,13 @@ Allow: /
 # Sitemaps
 Sitemap: https://my-pwa-apps.github.io/Solar/sitemap.xml
 
-# Disallow service worker and config files
+# Disallow service worker and config files from indexing
 Disallow: /sw.js
 Disallow: /manifest.json
+Disallow: /manifest.nl.json
 Disallow: /browserconfig.xml
+Disallow: /netlify.toml
+Disallow: /vercel.json
 
 # Allow important pages
 Allow: /index.html

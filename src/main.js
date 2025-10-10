@@ -1,4 +1,4 @@
-// Scientific VR/AR Explorer - Optimized No-Build Version
+// Space Voyage - Interactive 3D Solar System & VR Experience
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
@@ -103,7 +103,7 @@ class TextureCache {
  const tx = this.db.transaction([this.storeName], 'readwrite');
  const store = tx.objectStore(this.storeName);
  await store.clear();
- console.log(' Texture cache cleared');
+ console.log('[Cache] Texture cache cleared');
  } catch (error) {
  console.warn('Cache clear error:', error);
  }
@@ -245,11 +245,11 @@ console.warn = function(...args) {
 
 // Log configuration (only if debug enabled)
 if (DEBUG.enabled) {
- console.log(' Solar System Explorer - Debug Mode Enabled');
- console.log(' Device:', IS_MOBILE ? 'Mobile' : 'Desktop');
- console.log(' Quality Preset:', QUALITY_PRESET);
- console.log(' Texture Size:', CONFIG.QUALITY.textureSize);
- console.log(' Sphere Segments:', CONFIG.QUALITY.sphereSegments);
+ console.log('[Space Voyage] Debug Mode Enabled');
+ console.log('[Device]', IS_MOBILE ? 'Mobile' : 'Desktop');
+ console.log('[Quality]', QUALITY_PRESET);
+ console.log('[Textures]', CONFIG.QUALITY.textureSize);
+ console.log('[Geometry]', CONFIG.QUALITY.sphereSegments + ' segments');
 }
 
 // ===========================
@@ -312,12 +312,12 @@ class SceneManager {
  // Add WebGL context loss/restore handlers
  this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
  event.preventDefault();
- console.warn(' WebGL context lost - attempting recovery...');
+ console.warn('[WebGL] Context lost - attempting recovery...');
  // Three.js setAnimationLoop handles this internally
  }, false);
  
  this.renderer.domElement.addEventListener('webglcontextrestored', () => {
- console.log(' WebGL context restored');
+ console.log('[WebGL] Context restored');
  // Three.js setAnimationLoop will automatically restart
  }, false);
  
@@ -386,13 +386,13 @@ class SceneManager {
  this.scene.add(this.camera);
  
  if (DEBUG.enabled) {
- if (DEBUG.enabled) console.log(' Ambient lighting: Enhanced');
+ if (DEBUG.enabled) console.log('[Lighting] Ambient lighting enhanced');
  }
  }
 
  setupXR() {
  try {
- if (DEBUG.VR) console.log(' Setting up XR');
+ if (DEBUG.VR) console.log('[XR] Setting up WebXR');
  
  // Create a dolly (rig) for VR movement (but don't add camera yet - only in VR mode)
  this.dolly = new THREE.Group();
@@ -514,7 +514,7 @@ class SceneManager {
  await this.renderer.xr.setSession(session);
 
  } catch (error) {
- console.error(' Failed to start VR session:', error);
+ console.error('[VR] Failed to start VR session:', error);
  alert('Could not enter VR mode: ' + error.message);
  }
  };
@@ -557,7 +557,7 @@ class SceneManager {
  });
  await this.renderer.xr.setSession(session);
  } catch (error) {
- console.error(' Failed to start AR session:', error);
+ console.error('[AR] Failed to start AR session:', error);
  alert('Could not enter AR mode: ' + error.message);
  }
  };
@@ -574,7 +574,7 @@ class SceneManager {
  // Handle XR session start
  this.renderer.xr.addEventListener('sessionstart', () => {
  const session = this.renderer.xr.getSession();
- if (DEBUG.VR) console.log(` XR SESSION: ${session.mode}`);
+ if (DEBUG.VR) console.log(`[XR] Session started: ${session.mode}`);
  
  // Move camera to dolly for VR
  if (this.dolly && this.camera) {
@@ -602,13 +602,13 @@ class SceneManager {
  
  // Show welcome message and instructions
  if (DEBUG.enabled || DEBUG.VR) {
- console.log(' CONTROLS:');
- console.log(' Left Stick: Move forward/back/strafe');
- console.log(' Right Stick: Turn left/right, move up/down');
- console.log(' Trigger: Sprint mode (hold while moving)');
- console.log(' Grip Button: Toggle VR menu (pause, controls, etc.)');
- console.log(' Point + Trigger: Select planets');
- console.log(' TIP: Press GRIP BUTTON to open VR menu!');
+ console.log('[VR Controls]');
+ console.log('  Left Stick: Move forward/back/strafe');
+ console.log('  Right Stick: Turn left/right, move up/down');
+ console.log('  Trigger: Sprint mode');
+ console.log('  Grip: Toggle VR menu');
+ console.log('  Point + Trigger: Select objects');
+ console.log('  TIP: Press GRIP BUTTON to open VR menu!');
  }
  
  // Hide VR UI panel initially - let user toggle with grip
@@ -619,7 +619,7 @@ class SceneManager {
 
  // Handle XR session end
  this.renderer.xr.addEventListener('sessionend', () => {
- if (DEBUG.VR) console.log(' XR SESSION ENDED');
+ if (DEBUG.VR) console.log('[XR] Session ended');
  
  // Restore camera to scene
  if (this.dolly && this.camera && this.camera.parent === this.dolly) {
@@ -677,7 +677,7 @@ class SceneManager {
  this.dolly.add(this.vrUIPanel);
 
  if (DEBUG.enabled || DEBUG.VR) {
- console.log(' VR UI Panel created');
+ console.log('[VR] UI Panel created');
  }
 
  this.drawVRMenu();
@@ -1001,7 +1001,7 @@ class SceneManager {
 
  onSelectStart(controller, index) {
  // Handle controller trigger press
- if (DEBUG.VR) console.log(` Controller ${index} trigger pressed`);
+ if (DEBUG.VR) console.log(`[VR] Controller ${index} trigger pressed`);
  controller.userData.selecting = true;
  
  // Check if grip button is also held for zoom
@@ -1028,7 +1028,7 @@ class SceneManager {
  
  // First, check for VR UI interaction
  if (this.vrUIPanel && this.vrUIPanel.visible) {
- if (DEBUG.VR) console.log(' VR UI Panel is visible - checking for button clicks');
+ if (DEBUG.VR) console.log('[VR] Checking UI button clicks');
  const intersects = raycaster.intersectObject(this.vrUIPanel);
  
  if (intersects.length > 0) {
@@ -1037,14 +1037,14 @@ class SceneManager {
  const canvasHeight = this.vrUICanvas?.height || 640;
  const x = uv.x * canvasWidth;
  const y = (1 - uv.y) * canvasHeight;
- console.log(` VR UI clicked at pixel (${Math.round(x)}, ${Math.round(y)})`);
+ console.log(`[VR] UI clicked at (${Math.round(x)}, ${Math.round(y)})`);
  
  // Check which button was clicked
  let buttonFound = false;
  this.vrButtons.forEach(btn => {
  if (x >= btn.x && x <= btn.x + btn.w && 
  y >= btn.y && y <= btn.y + btn.h) {
- console.log(` VR Button clicked: "${btn.label}" - Action: ${btn.action}`);
+ console.log(`[VR] Button clicked: "${btn.label}" - Action: ${btn.action}`);
  this.handleVRAction(btn.action);
  this.flashVRButton(btn);
  buttonFound = true;
@@ -1052,7 +1052,7 @@ class SceneManager {
  });
  
  if (!buttonFound) {
- console.log(` Clicked UI panel but no button at (${Math.round(x)}, ${Math.round(y)})`);
+ console.log(`[VR] No button at (${Math.round(x)}, ${Math.round(y)})`);
  }
  return; // Don't check for object selection if we clicked UI
  }
@@ -1063,7 +1063,7 @@ class SceneManager {
  
  if (intersects.length > 0) {
  const hitObject = intersects[0].object;
- if (DEBUG.VR) console.log(' VR Selected object:', hitObject.name || hitObject.type);
+ if (DEBUG.VR) console.log('[VR] Selected:', hitObject.name || hitObject.type);
  
  // Try to focus on the selected object
  const app = window.app || this;
@@ -1075,14 +1075,14 @@ class SceneManager {
  // If grip+trigger held, zoom VERY close for inspection
  if (gripHeld) {
  this.zoomToObject(hitObject, 'close');
- if (DEBUG.VR) console.log(' ZOOMING CLOSE to:', hitObject.name);
+ if (DEBUG.VR) console.log('[VR] Zooming to:', hitObject.name);
  if (this.vrUIPanel) {
  this.updateVRStatus(` Inspecting: ${hitObject.name}`);
  }
  } else {
  // Normal focus
  module.focusOnObject(hitObject, this.camera, this.controls);
- if (DEBUG.VR) console.log(' Focused on:', hitObject.name);
+ if (DEBUG.VR) console.log('[VR] Focused on:', hitObject.name);
  if (this.vrUIPanel) {
  this.updateVRStatus(` Selected: ${hitObject.name}`);
  }
@@ -1134,13 +1134,13 @@ class SceneManager {
  });
  
  if (DEBUG.VR) {
- console.log(' Lasers enabled for menu interaction');
- console.log(' VR Menu OPENED');
- console.log(' Position:', this.vrUIPanel.position);
- console.log(' Press grip button again to close');
+ console.log('[VR] Lasers enabled for menu interaction');
+ console.log('[VR] Menu OPENED');
+ console.log('[VR] Position:', this.vrUIPanel.position);
+ console.log('[VR] Press grip button again to close');
  }
  } else {
- if (DEBUG.VR) console.log(' VR Menu CLOSED');
+ if (DEBUG.VR) console.log('[VR] Menu CLOSED');
  // Lasers keep their current state when menu closes (user may have toggled them in menu)
  }
  
