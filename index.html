@@ -5,6 +5,32 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
+    <!-- Language Detection Script - Must load first -->
+    <script>
+        // Check URL parameter first, then browser language
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlLang = urlParams.get('lang');
+        const userLang = navigator.language || navigator.userLanguage;
+        const langCode = urlLang || userLang.toLowerCase().split('-')[0];
+        
+        // Set HTML lang attribute and load appropriate manifest
+        if (langCode === 'nl') {
+            document.documentElement.lang = 'nl';
+            // Dynamically set the manifest to Dutch version
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = './manifest.nl.json';
+            document.head.appendChild(manifestLink);
+        } else {
+            document.documentElement.lang = 'en';
+            // Use default English manifest
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = './manifest.json';
+            document.head.appendChild(manifestLink);
+        }
+    </script>
+    
     <!-- Primary Meta Tags -->
     <title>🚀 Space Explorer - Interactive 3D Solar System & VR Experience</title>
     <meta name="title" content="Space Explorer - Interactive 3D Solar System & VR Experience">
@@ -25,6 +51,7 @@
     <meta property="og:image:height" content="1080">
     <meta property="og:site_name" content="Space Explorer">
     <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="nl_NL">
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
@@ -45,8 +72,7 @@
     <meta name="msapplication-config" content="./browserconfig.xml">
     <meta name="format-detection" content="telephone=no">
     
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="./manifest.json">
+    <!-- PWA Manifest - Loaded dynamically based on language above -->
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-96x96.png">
@@ -56,11 +82,15 @@
     <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512x512.png">
     
-    <!-- Preload critical styles -->
+    <!-- Preload critical resources -->
+    <link rel="preload" href="./src/i18n.js" as="script">
     <link rel="preload" href="./src/styles/main.css" as="style">
     <link rel="preload" href="./src/styles/ui.css" as="style">
     <link rel="stylesheet" href="./src/styles/main.css">
     <link rel="stylesheet" href="./src/styles/ui.css">
+    
+    <!-- Load translations early -->
+    <script src="./src/i18n.js"></script>
     
     <!-- Performance optimization -->
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">

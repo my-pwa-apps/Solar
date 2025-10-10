@@ -1,9 +1,9 @@
 {
   "id": "/",
-  "name": "Space Explorer - Interactive 3D Solar System",
-  "short_name": "Space Explorer",
-  "description": "Explore our Solar System in stunning 3D with VR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this interactive educational experience.",
-  "start_url": "./",
+  "name": "Ruimte Verkenner - Interactief 3D Zonnestelsel",
+  "short_name": "Ruimte Verkenner",
+  "description": "Verken ons Zonnestelsel in verbluffende 3D met VR-ondersteuning. Navigeer door planeten, manen, ruimtevaartuigen, nevels en sterrenstelsels in deze interactieve educatieve ervaring.",
+  "start_url": "./?lang=nl",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "dir": "ltr",
@@ -11,7 +11,7 @@
   "theme_color": "#0078D4",
   "orientation": "any",
   "scope": "./",
-  "lang": "en-US",
+  "lang": "nl-NL",
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "categories": ["education", "entertainment"],
   "icons": [
@@ -82,22 +82,22 @@
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Space Explorer - Solar System View"
+      "label": "Ruimte Verkenner - Zonnestelsel Weergave"
     },
     {
       "src": "./screenshots/solar2.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Space Explorer - Planetary Detail"
+      "label": "Ruimte Verkenner - Planeet Detail"
     }
   ],
   "shortcuts": [
     {
-      "name": "View Earth",
-      "short_name": "Earth",
-      "description": "Jump directly to Earth",
-      "url": "./?planet=earth",
+      "name": "Bekijk Aarde",
+      "short_name": "Aarde",
+      "description": "Spring direct naar Aarde",
+      "url": "./?planet=earth&lang=nl",
       "icons": [
         {
           "src": "./icons/earth-96x96.png",
@@ -106,10 +106,10 @@
       ]
     },
     {
-      "name": "View Mars",
+      "name": "Bekijk Mars",
       "short_name": "Mars",
-      "description": "Jump directly to Mars",
-      "url": "./?planet=mars",
+      "description": "Spring direct naar Mars",
+      "url": "./?planet=mars&lang=nl",
       "icons": [
         {
           "src": "./icons/mars-96x96.png",
@@ -118,10 +118,10 @@
       ]
     },
     {
-      "name": "Enter VR Mode",
+      "name": "Start VR Modus",
       "short_name": "VR",
-      "description": "Start in VR mode",
-      "url": "./?vr=true",
+      "description": "Start in VR modus",
+      "url": "./?vr=true&lang=nl",
       "icons": [
         {
           "src": "./icons/vr-96x96.png",
