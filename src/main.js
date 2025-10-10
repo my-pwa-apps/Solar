@@ -7547,9 +7547,9 @@ class SolarSystemModule {
                 
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
                 const material = new THREE.LineBasicMaterial({
-                    color: 0x444444,
+                    color: 0x6688AA,
                     transparent: true,
-                    opacity: 0.3
+                    opacity: 0.5
                 });
                 
                 const orbit = new THREE.Line(geometry, material);
@@ -7578,9 +7578,9 @@ class SolarSystemModule {
             
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const material = new THREE.LineBasicMaterial({
-                color: 0x444444,
+                color: 0x6688AA,
                 transparent: true,
-                opacity: 0.3
+                opacity: 0.5
             });
             
             const orbit = new THREE.Line(geometry, material);
@@ -8709,6 +8709,11 @@ class App {
         // Orbit toggle button
         const orbitsButton = document.getElementById('toggle-orbits');
         if (orbitsButton) {
+            // Set initial state based on default visibility
+            if (this.solarSystemModule && this.solarSystemModule.orbitsVisible) {
+                orbitsButton.classList.add('toggle-on');
+            }
+            
             orbitsButton.addEventListener('click', () => {
                 if (this.solarSystemModule) {
                     const visible = !this.solarSystemModule.orbitsVisible;
