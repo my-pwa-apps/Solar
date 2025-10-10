@@ -441,15 +441,15 @@
         });
         
         // Handle URL parameters (for shortcuts)
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('planet')) {
-            const planet = urlParams.get('planet');
-            console.log(`🌍 Shortcut: Navigating to ${planet}`);
+        const shortcutParams = new URLSearchParams(window.location.search);
+        if (shortcutParams.has('planet')) {
+            const planet = shortcutParams.get('planet');
+            console.log(`Shortcut: Navigating to ${planet}`);
             // Will be handled by main app after load
             window.startupPlanet = planet;
         }
-        if (urlParams.has('vr') && urlParams.get('vr') === 'true') {
-            console.log('🥽 Shortcut: VR mode requested');
+        if (shortcutParams.has('vr') && shortcutParams.get('vr') === 'true') {
+            console.log('Shortcut: VR mode requested');
             window.startupVR = true;
         }
         
