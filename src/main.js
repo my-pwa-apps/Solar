@@ -1971,26 +1971,34 @@ class SolarSystemModule {
 
     async init(scene) {
         const initStartTime = performance.now();
+        const t = window.t || ((key) => key);
         
         // Define all loading steps with progress and tasks
         const loadingSteps = [
-            { progress: 5, message: '☀️ Igniting the Sun...', task: () => this.createSun(scene) },
-            { progress: 15, message: '☿ Creating Mercury...', task: () => this.createInnerPlanets(scene) },
-            { progress: 35, message: '🪐 Building outer planets...', task: () => this.createOuterPlanets(scene) },
-            { progress: 45, message: '☄️ Assembling asteroid belt...', task: () => this.createAsteroidBelt(scene) },
-            { progress: 50, message: '❄️ Forming Kuiper belt...', task: () => this.createKuiperBelt(scene) },
-            { progress: 55, message: '⭐ Sprinkling starfield...', task: () => this.createStarfield(scene) },
-            { progress: 60, message: '🛤️ Calculating orbital paths...', task: () => this.createOrbitalPaths(scene) },
-            { progress: 65, message: '✨ Weaving constellations...', task: () => this.createConstellations(scene) },
-            { progress: 70, message: '🌟 Placing distant stars...', task: () => this.createDistantStars(scene) },
-            { progress: 75, message: '🌌 Painting nebulae...', task: () => this.createNebulae(scene) },
-            { progress: 80, message: '� Adding galaxies...', task: () => this.createGalaxies(scene) },
-            { progress: 85, message: '⭐ Plotting nearby stars...', task: () => this.createNearbyStars(scene) },
-            { progress: 88, message: '🌍 Discovering exoplanets...', task: () => this.createExoplanets(scene) },
-            { progress: 91, message: '☄️ Launching comets...', task: () => this.createComets(scene) },
-            { progress: 94, message: '🛰️ Deploying satellites...', task: () => this.createSatellites(scene) },
-            { progress: 97, message: '🚀 Launching spacecraft...', task: () => this.createSpacecraft(scene) },
-            { progress: 100, message: '🏷️ Creating labels...', task: () => this.createLabels() }
+            { progress: 5, message: t('creatingSun'), task: () => this.createSun(scene) },
+            { progress: 8, message: t('creatingMercury'), task: () => {} },
+            { progress: 12, message: t('creatingVenus'), task: () => {} },
+            { progress: 16, message: t('creatingEarth'), task: () => {} },
+            { progress: 20, message: t('creatingMars'), task: () => this.createInnerPlanets(scene) },
+            { progress: 25, message: t('creatingJupiter'), task: () => {} },
+            { progress: 30, message: t('creatingSaturn'), task: () => {} },
+            { progress: 35, message: t('creatingUranus'), task: () => {} },
+            { progress: 40, message: t('creatingNeptune'), task: () => this.createOuterPlanets(scene) },
+            { progress: 45, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
+            { progress: 50, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
+            { progress: 55, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
+            { progress: 60, message: t('creatingOrbitalPaths'), task: () => this.createOrbitalPaths(scene) },
+            { progress: 65, message: t('creatingConstellations'), task: () => this.createConstellations(scene) },
+            { progress: 70, message: t('creatingDistantStars'), task: () => this.createDistantStars(scene) },
+            { progress: 75, message: t('creatingNebulae'), task: () => this.createNebulae(scene) },
+            { progress: 80, message: t('creatingGalaxies'), task: () => this.createGalaxies(scene) },
+            { progress: 85, message: '� Adding galaxies...', task: () => this.createGalaxies(scene) },
+            { progress: 85, message: t('creatingNearbyStars'), task: () => this.createNearbyStars(scene) },
+            { progress: 88, message: t('creatingExoplanets'), task: () => this.createExoplanets(scene) },
+            { progress: 91, message: t('creatingComets'), task: () => this.createComets(scene) },
+            { progress: 94, message: t('creatingSatellites'), task: () => this.createSatellites(scene) },
+            { progress: 97, message: t('creatingSpacecraft'), task: () => this.createSpacecraft(scene) },
+            { progress: 100, message: t('creatingLabels'), task: () => this.createLabels() }
         ];
 
         // Execute steps sequentially with UI updates
@@ -4928,6 +4936,7 @@ class SolarSystemModule {
     }
 
     createOrbitalPaths(scene) {
+        // Planet orbital paths around the Sun
         const orbitalData = [
             { distance: 20, color: 0x6688AA },   // Mercury
             { distance: 30, color: 0x6688AA },   // Venus
@@ -4962,6 +4971,37 @@ class SolarSystemModule {
             orbitLine.visible = this.orbitsVisible;  // Respect initial visibility setting
             scene.add(orbitLine);
             this.orbits.push(orbitLine);
+        });
+        
+        // Moon orbital paths around their planets
+        Object.values(this.planets).forEach(planet => {
+            if (planet.userData.moons && planet.userData.moons.length > 0) {
+                planet.userData.moons.forEach(moon => {
+                    const moonDistance = moon.userData.distance;
+                    
+                    const curve = new THREE.EllipseCurve(
+                        0, 0,
+                        moonDistance, moonDistance,
+                        0, 2 * Math.PI,
+                        false,
+                        0
+                    );
+
+                    const points = curve.getPoints(64);  // Fewer points for smaller orbits
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const material = new THREE.LineBasicMaterial({
+                        color: 0x88AACC,  // Slightly lighter blue for moon orbits
+                        transparent: true,
+                        opacity: 0.4  // Slightly more transparent than planet orbits
+                    });
+
+                    const orbitLine = new THREE.Line(geometry, material);
+                    orbitLine.rotation.x = Math.PI / 2;
+                    orbitLine.visible = this.orbitsVisible;  // Respect initial visibility setting
+                    planet.add(orbitLine);  // Add to planet so it moves with the planet
+                    this.orbits.push(orbitLine);
+                });
+            }
         });
     }
 
