@@ -1,63 +1,145 @@
-# Icon Generator for Space Explorer PWA
-# This script creates placeholder icons. Replace with actual icons later.
+# =====================================================
+# PWA Icon Generator Script
+# Generates all required PNG icons from icon-base.svg
+# =====================================================
 
-Write-Host "🎨 Generating PWA Icons..." -ForegroundColor Cyan
+param(
+    [string]$SourceSvg = "icons\icon-base.svg",
+    [string]$OutputDir = "icons"
+)
 
-# Create icons directory
-$iconsDir = "icons"
-if (-not (Test-Path $iconsDir)) {
-    New-Item -ItemType Directory -Path $iconsDir | Out-Null
-    Write-Host "✅ Created icons directory" -ForegroundColor Green
+Write-Host "🚀 PWA Icon Generator" -ForegroundColor Cyan
+Write-Host "=====================`n" -ForegroundColor Cyan
+
+# Check if source SVG exists
+if (-not (Test-Path $SourceSvg)) {
+    Write-Host "❌ Error: Source SVG not found at: $SourceSvg" -ForegroundColor Red
+    exit 1
 }
 
-# Icon sizes required for PWA
-$sizes = @(72, 96, 128, 144, 152, 192, 384, 512)
-
-Write-Host "📝 Icon Requirements:" -ForegroundColor Yellow
-Write-Host "   The following icon files are needed in the /icons directory:"
-Write-Host ""
-
-foreach ($size in $sizes) {
-    $filename = "icon-${size}x${size}.png"
-    Write-Host "   • $filename (${size}x${size} pixels)" -ForegroundColor White
+# Create output directory if it doesn't exist
+if (-not (Test-Path $OutputDir)) {
+    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
-Write-Host ""
-Write-Host "🎯 Recommended Tools:" -ForegroundColor Cyan
-Write-Host "   1. PWA Builder Image Generator: https://www.pwabuilder.com/imageGenerator"
-Write-Host "   2. RealFaviconGenerator: https://realfavicongenerator.net/"
-Write-Host "   3. Favicon.io: https://favicon.io/"
-Write-Host ""
-Write-Host "💡 Quick Option:" -ForegroundColor Yellow
-Write-Host "   Upload a single 512x512 PNG logo to PWA Builder's Image Generator"
-Write-Host "   It will automatically create all required sizes for you!"
-Write-Host ""
-Write-Host "🚀 For now, I'll create SVG placeholder icons..." -ForegroundColor Cyan
+# Define icon sizes needed
+$iconSizes = @(72, 96, 128, 144, 152, 192, 384, 512)
 
-# Create a simple SVG placeholder icon
-$svgContent = @"
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="spaceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#000033;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0078D4;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#spaceGrad)"/>
-  <circle cx="256" cy="180" r="60" fill="#FDB813"/>
-  <ellipse cx="256" cy="300" rx="120" ry="15" fill="#0078D4" opacity="0.6"/>
-  <circle cx="180" cy="280" r="25" fill="#4A9EFF"/>
-  <circle cx="330" cy="320" r="30" fill="#FF6B6B"/>
-  <text x="256" y="450" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="white" text-anchor="middle">🚀</text>
-</svg>
-"@
+Write-Host "� Checking for available image conversion tools...`n" -ForegroundColor Yellow
 
-$svgPath = Join-Path $iconsDir "icon.svg"
-$svgContent | Out-File -FilePath $svgPath -Encoding utf8
-Write-Host "✅ Created SVG placeholder: $svgPath" -ForegroundColor Green
+# Try to use ImageMagick (best quality)
+$magickPath = Get-Command "magick" -ErrorAction SilentlyContinue
+if ($null -eq $magickPath) {
+    $magickPath = Get-Command "convert" -ErrorAction SilentlyContinue
+}
 
-Write-Host ""
-Write-Host "⚠️  IMPORTANT: Replace placeholder SVG with actual PNG icons!" -ForegroundColor Red
-Write-Host "   Use one of the recommended tools above to generate proper icons." -ForegroundColor Yellow
-Write-Host ""
-Write-Host "✨ Done!" -ForegroundColor Green
+if ($null -ne $magickPath) {
+    Write-Host "✅ ImageMagick found! Using high-quality conversion." -ForegroundColor Green
+    Write-Host "   Path: $($magickPath.Source)`n" -ForegroundColor Gray
+    
+    foreach ($size in $iconSizes) {
+        $outputFile = Join-Path $OutputDir "icon-${size}x${size}.png"
+        Write-Host "   Generating ${size}x${size}..." -NoNewline
+        
+        try {
+            if ($magickPath.Name -eq "magick") {
+                & magick convert -background none -density 300 -resize "${size}x${size}" $SourceSvg $outputFile 2>$null
+            } else {
+                & convert -background none -density 300 -resize "${size}x${size}" $SourceSvg $outputFile 2>$null
+            }
+            
+            if (Test-Path $outputFile) {
+                Write-Host " ✓" -ForegroundColor Green
+            } else {
+                Write-Host " ✗ Failed" -ForegroundColor Red
+            }
+        } catch {
+            Write-Host " ✗ Error: $_" -ForegroundColor Red
+        }
+    }
+    
+    # Generate maskable icons (with safe zone padding)
+    Write-Host "`n📱 Generating maskable icons (with safe zone)..." -ForegroundColor Yellow
+    
+    $maskableSizes = @(192, 512)
+    foreach ($size in $maskableSizes) {
+        $outputFile = Join-Path $OutputDir "icon-${size}x${size}-maskable.png"
+        Write-Host "   Generating ${size}x${size}-maskable..." -NoNewline
+        
+        try {
+            # Create with padding for safe zone (20% padding = 80% of size)
+            $innerSize = [math]::Round($size * 0.8)
+            $padding = [math]::Round(($size - $innerSize) / 2)
+            
+            if ($magickPath.Name -eq "magick") {
+                & magick convert -background "#0078D4" -density 300 $SourceSvg -resize "${innerSize}x${innerSize}" -gravity center -extent "${size}x${size}" $outputFile 2>$null
+            } else {
+                & convert -background "#0078D4" -density 300 $SourceSvg -resize "${innerSize}x${innerSize}" -gravity center -extent "${size}x${size}" $outputFile 2>$null
+            }
+            
+            if (Test-Path $outputFile) {
+                Write-Host " ✓" -ForegroundColor Green
+            } else {
+                Write-Host " ✗ Failed" -ForegroundColor Red
+            }
+        } catch {
+            Write-Host " ✗ Error: $_" -ForegroundColor Red
+        }
+    }
+    
+} else {
+    Write-Host "⚠️  ImageMagick not found." -ForegroundColor Yellow
+    Write-Host "`n📥 Please install ImageMagick for automated icon generation:" -ForegroundColor Yellow
+    Write-Host "   1. Download from: https://imagemagick.org/script/download.php" -ForegroundColor Cyan
+    Write-Host "   2. Or use Chocolatey: choco install imagemagick" -ForegroundColor Cyan
+    Write-Host "   3. Or use Scoop: scoop install imagemagick" -ForegroundColor Cyan
+    Write-Host "`n🌐 Alternative: Use online generator:" -ForegroundColor Yellow
+    Write-Host "   https://www.pwabuilder.com/imageGenerator" -ForegroundColor Cyan
+}
+
+Write-Host "`n" -NoNewline
+
+# Verify generated files
+$generatedCount = 0
+$expectedFiles = @()
+foreach ($size in $iconSizes) {
+    $expectedFiles += "icon-${size}x${size}.png"
+}
+$expectedFiles += "icon-192x192-maskable.png"
+$expectedFiles += "icon-512x512-maskable.png"
+
+Write-Host "📋 Verification:" -ForegroundColor Cyan
+Write-Host "   Expected: $($expectedFiles.Count) files" -ForegroundColor Gray
+
+foreach ($file in $expectedFiles) {
+    $fullPath = Join-Path $OutputDir $file
+    if (Test-Path $fullPath) {
+        $generatedCount++
+        $fileInfo = Get-Item $fullPath
+        $sizeKB = [math]::Round($fileInfo.Length / 1KB, 2)
+        Write-Host "   ✓ $file ($sizeKB KB)" -ForegroundColor Green
+    } else {
+        Write-Host "   ✗ $file (missing)" -ForegroundColor Red
+    }
+}
+
+Write-Host "`n📊 Summary:" -ForegroundColor Cyan
+Write-Host "   Generated: $generatedCount / $($expectedFiles.Count) icons" -ForegroundColor $(if ($generatedCount -eq $expectedFiles.Count) { "Green" } else { "Yellow" })
+
+if ($generatedCount -eq $expectedFiles.Count) {
+    Write-Host "`n✅ SUCCESS! All PWA icons generated!" -ForegroundColor Green
+    Write-Host "   Your app should now be installable." -ForegroundColor Green
+    Write-Host "`n📝 Next steps:" -ForegroundColor Yellow
+    Write-Host "   1. Test locally: Serve over HTTPS (or use localhost)" -ForegroundColor Cyan
+    Write-Host "   2. Open DevTools > Application > Manifest (verify icons load)" -ForegroundColor Cyan
+    Write-Host "   3. Look for install prompt in browser address bar" -ForegroundColor Cyan
+    Write-Host "   4. Deploy to GitHub Pages, Netlify, or Vercel for public access" -ForegroundColor Cyan
+} elseif ($generatedCount -gt 0) {
+    Write-Host "`n⚠️  PARTIAL SUCCESS: Some icons generated, but some are missing." -ForegroundColor Yellow
+    Write-Host "   The app may not be fully installable." -ForegroundColor Yellow
+} else {
+    Write-Host "`n❌ FAILED: No icons were generated." -ForegroundColor Red
+    Write-Host "   Please install ImageMagick or use the online generator." -ForegroundColor Red
+}
+
+Write-Host "`n"
