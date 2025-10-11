@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.3.1 - Force constellation update
+// Version 1.4.0 - Constellation dropdown + ISS tracking fix
 
-const CACHE_VERSION = '1.3.1';
+const CACHE_VERSION = '1.4.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
