@@ -7686,9 +7686,46 @@ class SolarSystemModule {
  this.orbits.push(orbit);
  }
  
- if (DEBUG.enabled) console.log(` Orbits updated: ${this.orbits.length}`);
- }
+ // Recreate moon orbital paths
+ Object.values(this.planets).forEach(planet => {
+ if (planet.userData.moons && planet.userData.moons.length > 0) {
+ console.log(`[Orbits] Recreating ${planet.userData.moons.length} moon orbit(s) for ${planet.userData.name}`);
+ planet.userData.moons.forEach(moon => {
+ const moonDistance = moon.userData.distance;
  
+ const curve = new THREE.EllipseCurve(
+ 0, 0,
+ moonDistance, moonDistance,
+ 0, 2 * Math.PI,
+ false,
+ 0
+ );
+ 
+ const points = curve.getPoints(128);
+ const geometry = new THREE.BufferGeometry().setFromPoints(points);
+ const material = new THREE.LineBasicMaterial({
+ color: 0xAADDFF, // Brighter cyan for better visibility
+ transparent: true,
+ opacity: 0.7,
+ linewidth: 2,
+ depthTest: true,
+ depthWrite: false
+ });
+ 
+ const orbitLine = new THREE.Line(geometry, material);
+ orbitLine.rotation.x = Math.PI / 2;
+ orbitLine.visible = this.orbitsVisible;
+ orbitLine.renderOrder = 1;
+ orbitLine.userData = { type: 'moonOrbit', moon: moon.userData.name, planet: planet.userData.name };
+ planet.add(orbitLine);
+ this.orbits.push(orbitLine);
+ });
+ }
+ });
+ 
+ if (DEBUG.enabled) console.log(` Orbits updated: ${this.orbits.length} (including moon orbits)`);
+ }
+
  updateBelts() {
  // Update asteroid belt positions based on scale
  if (this.asteroidBelt && this.asteroidBelt.children) {
