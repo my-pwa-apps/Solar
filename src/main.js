@@ -1842,7 +1842,7 @@ class UIManager {
  timeSpeedLabel.textContent = `${speed}x`;
  }
  
- console.log(`⏱ Speed changed to: ${speed}x`);
+ console.log(`[Speed] Changed to: ${speed}x`);
  };
  
  // Add event listener
@@ -4573,6 +4573,8 @@ class SolarSystemModule {
  planet.userData.moons.push(moon);
  this.objects.push(moon);
  planet.add(moon);
+ 
+ console.log(`[Moon] Created "${config.name}" for ${planet.userData.name} at distance ${config.distance} (Total moons: ${planet.userData.moons.length})`);
  }
 
  createAsteroidBelt(scene) {
@@ -4980,27 +4982,33 @@ class SolarSystemModule {
                 console.log(`Creating orbital paths for ${planet.userData.moons.length} moon(s) of ${planet.userData.name}`);
                 planet.userData.moons.forEach(moon => {
                     const moonDistance = moon.userData.distance;
-                    console.log(`  - Creating orbit for ${moon.userData.name} at distance ${moonDistance}`); const curve = new THREE.EllipseCurve(
- 0, 0,
- moonDistance, moonDistance,
- 0, 2 * Math.PI,
- false,
- 0
- );
+                    console.log(`  - Creating orbit for ${moon.userData.name} at distance ${moonDistance}`);
+                    
+                    const curve = new THREE.EllipseCurve(
+                        0, 0,
+                        moonDistance, moonDistance,
+                        0, 2 * Math.PI,
+                        false,
+                        0
+                    );
 
- const points = curve.getPoints(64); // Fewer points for smaller orbits
- const geometry = new THREE.BufferGeometry().setFromPoints(points);
- const material = new THREE.LineBasicMaterial({
- color: 0x88AACC, // Slightly lighter blue for moon orbits
- transparent: true,
- opacity: 0.4 // Slightly more transparent than planet orbits
- });
+                    const points = curve.getPoints(128); // More points for smoother orbits
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const material = new THREE.LineBasicMaterial({
+                        color: 0xAADDFF, // Brighter cyan for better visibility
+                        transparent: true,
+                        opacity: 0.7, // Increased from 0.4 for better visibility
+                        linewidth: 2, // Thicker lines (note: may not work on all platforms)
+                        depthTest: true,
+                        depthWrite: false // Prevent z-fighting
+                    });
 
- const orbitLine = new THREE.Line(geometry, material);
- orbitLine.rotation.x = Math.PI / 2;
- orbitLine.visible = this.orbitsVisible; // Respect initial visibility setting
- planet.add(orbitLine); // Add to planet so it moves with the planet
- this.orbits.push(orbitLine);
+                    const orbitLine = new THREE.Line(geometry, material);
+                    orbitLine.rotation.x = Math.PI / 2;
+                    orbitLine.visible = this.orbitsVisible; // Respect initial visibility setting
+                    orbitLine.renderOrder = 1; // Render after planets to prevent z-fighting
+                    planet.add(orbitLine); // Add to planet so it moves with the planet
+                    this.orbits.push(orbitLine);
  });
  }
  });
