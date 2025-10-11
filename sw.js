@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.4.3 - Constellation focus fix + disable ISS tracking
+// Version 1.5.0 - ISS co-rotation + constellation highlighting
 
-const CACHE_VERSION = '1.4.3';
+const CACHE_VERSION = '1.5.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
