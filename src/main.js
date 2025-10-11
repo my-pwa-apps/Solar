@@ -8002,13 +8002,29 @@ class SolarSystemModule {
  if (userData.isSpacecraft || userData.isComet) {
  // Use actual size for spacecraft and comets, not glow/tail size
  actualRadius = userData.actualSize || 0.1;
+ } else if (userData.type === 'Constellation') {
+ // Constellations: use calculated radius (star pattern spread)
+ actualRadius = userData.radius || 500;
+ } else if (userData.type === 'Galaxy' || userData.type === 'Nebula') {
+ // Distant deep-sky objects
+ actualRadius = userData.radius || 300;
  } else {
  actualRadius = userData.radius || 10;
  }
  
  // Calculate appropriate viewing distance based on object type
  let distance;
- if (userData.isSpacecraft && userData.distance > 100) {
+ if (userData.type === 'Constellation') {
+ // Constellations: Position camera to view the star pattern
+ // They're at distance ~10000, so we need to be relatively close but not inside
+ distance = actualRadius * 3; // View from 3x the pattern size
+ } else if (userData.type === 'Galaxy') {
+ // Galaxies: Distant objects, zoom to appreciate structure
+ distance = actualRadius * 4;
+ } else if (userData.type === 'Nebula') {
+ // Nebulae: Clouds in space, zoom to show details
+ distance = actualRadius * 3.5;
+ } else if (userData.isSpacecraft && userData.distance > 100) {
  // Distant spacecraft: zoom in close enough to see them clearly
  distance = Math.max(actualRadius * 10, 5);
  } else if (userData.isSpacecraft) {
@@ -9289,10 +9305,10 @@ class App {
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
+ console.log(` [Nav] Navigating to: ${info.name} (type: ${targetObject.userData.type || 'planet'})`);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
- console.log(` Navigated to: ${info.name}`);
  } else {
- console.warn(` Object not found: ${value}`);
+ console.warn(` [Nav] Object not found: ${value}`);
  }
  }
  });
