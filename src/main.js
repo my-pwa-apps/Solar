@@ -5672,13 +5672,47 @@ class SolarSystemModule {
  group.add(lineMesh);
  });
  
+ // Calculate constellation center and size for camera positioning
+ let centerX = 0, centerY = 0, centerZ = 0;
+ let maxDist = 0;
+ 
+ starMeshes.forEach(star => {
+ centerX += star.position.x;
+ centerY += star.position.y;
+ centerZ += star.position.z;
+ 
+ const dist = Math.sqrt(
+ star.position.x * star.position.x +
+ star.position.y * star.position.y +
+ star.position.z * star.position.z
+ );
+ if (dist > maxDist) maxDist = dist;
+ });
+ 
+ centerX /= starMeshes.length;
+ centerY /= starMeshes.length;
+ centerZ /= starMeshes.length;
+ 
+ // Calculate spread of stars for radius
+ let maxSpread = 0;
+ starMeshes.forEach(star => {
+ const dx = star.position.x - centerX;
+ const dy = star.position.y - centerY;
+ const dz = star.position.z - centerZ;
+ const spread = Math.sqrt(dx * dx + dy * dy + dz * dz);
+ if (spread > maxSpread) maxSpread = spread;
+ });
+ 
  // Add constellation metadata
  group.userData = {
  name: constData.name,
  type: 'Constellation',
  description: constData.description,
  distance: '100s to 1000s of light-years',
- starCount: constData.stars.length
+ starCount: constData.stars.length,
+ radius: maxSpread || 500, // Pattern spread
+ centerPosition: { x: centerX, y: centerY, z: centerZ }, // Center of star pattern
+ distanceFromOrigin: 10000 // All stars at this distance from origin
  };
  
  scene.add(group);
@@ -8039,7 +8073,18 @@ class SolarSystemModule {
  }
  
  const targetPosition = new THREE.Vector3();
+ 
+ // Special handling for constellations - use center of star pattern
+ if (userData.type === 'Constellation' && userData.centerPosition) {
+ targetPosition.set(
+ userData.centerPosition.x,
+ userData.centerPosition.y,
+ userData.centerPosition.z
+ );
+ console.log(` [Constellation] Focusing on ${userData.name} at distance ${userData.distanceFromOrigin}`);
+ } else {
  object.getWorldPosition(targetPosition);
+ }
  
  // Store reference for tracking with enhanced data
  this.focusedObject = object;
@@ -8053,15 +8098,26 @@ class SolarSystemModule {
  const isOrbiter = userData.orbitPlanet || (userData.isSpacecraft && userData.speed);
  const isFastOrbiter = isOrbiter && userData.speed > 0.5;
  
- // For orbiters, enable continuous tracking
- if (isOrbiter) {
+ // For orbiters, DON'T enable continuous tracking - it's too disorienting
+ // User can manually rotate camera if they want to follow
+ // Only track if explicitly a satellite (not spacecraft like ISS)
+ if (isOrbiter && !userData.isSpacecraft) {
  this.cameraFollowMode = true;
  if (DEBUG.enabled) console.log(` Tracking mode enabled for ${object.userData.name}`);
  }
  
  // Configure controls for focused object inspection
- const minDist = Math.max(actualRadius * 0.5, 0.5); // Allow zooming to half the radius
- const maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
+ let minDist, maxDist;
+ 
+ if (userData.type === 'Constellation') {
+ // Constellations: large viewing range since they're at distance 10000
+ minDist = 100; // Don't get too close or you'll be inside stars
+ maxDist = 20000; // Allow zooming far out
+ } else {
+ minDist = Math.max(actualRadius * 0.5, 0.5); // Allow zooming to half the radius
+ maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
+ }
+ 
  controls.minDistance = minDist;
  controls.maxDistance = maxDist;
  
@@ -8089,11 +8145,27 @@ class SolarSystemModule {
  }
  }
  
- const endPos = new THREE.Vector3(
+ // Calculate camera end position based on object type
+ let endPos;
+ 
+ if (userData.type === 'Constellation') {
+ // For constellations: position camera slightly in front of the pattern center
+ // Move toward origin from the constellation center
+ const directionToOrigin = new THREE.Vector3(0, 0, 0).sub(targetPosition).normalize();
+ endPos = new THREE.Vector3(
+ targetPosition.x + directionToOrigin.x * distance,
+ targetPosition.y + directionToOrigin.y * distance,
+ targetPosition.z + directionToOrigin.z * distance
+ );
+ console.log(` [Constellation] Camera position: ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)}`);
+ } else {
+ // Regular objects: position above and behind
+ endPos = new THREE.Vector3(
  targetPosition.x,
  targetPosition.y + distance * 0.3,
  targetPosition.z + distance
  );
+ }
  
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
  const startTime = performance.now();
