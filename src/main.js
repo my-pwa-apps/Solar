@@ -5722,6 +5722,46 @@ class SolarSystemModule {
  
  console.log(`? Created ${this.constellations.length} constellations with star patterns!`);
  }
+ 
+ highlightConstellation(focusedConstellation) {
+ // Highlight the focused constellation and dim all others
+ if (!this.constellations) return;
+ 
+ this.constellations.forEach(constellation => {
+ const isFocused = constellation === focusedConstellation;
+ 
+ // Traverse all children (stars, lines, etc.)
+ constellation.traverse(child => {
+ if (child.material) {
+ if (isFocused) {
+ // Brighten focused constellation
+ child.material.opacity = child.material.userData?.originalOpacity || child.material.opacity;
+ child.visible = true;
+ } else {
+ // Dim other constellations significantly
+ if (!child.material.userData?.originalOpacity) {
+ child.material.userData = child.material.userData || {};
+ child.material.userData.originalOpacity = child.material.opacity;
+ }
+ child.material.opacity = 0.1; // Very dim
+ }
+ }
+ });
+ });
+ }
+ 
+ resetConstellationHighlight() {
+ // Reset all constellations to normal visibility
+ if (!this.constellations) return;
+ 
+ this.constellations.forEach(constellation => {
+ constellation.traverse(child => {
+ if (child.material && child.material.userData?.originalOpacity) {
+ child.material.opacity = child.material.userData.originalOpacity;
+ }
+ });
+ });
+ }
 
  createGalaxies(scene) {
  // Create distant galaxies with procedural generation
@@ -8082,7 +8122,12 @@ class SolarSystemModule {
  userData.centerPosition.z
  );
  console.log(` [Constellation] Focusing on ${userData.name} at distance ${userData.distanceFromOrigin}`);
+ 
+ // Highlight this constellation and dim others
+ this.highlightConstellation(object);
  } else {
+ // Reset constellation highlighting if focusing on non-constellation
+ this.resetConstellationHighlight();
  object.getWorldPosition(targetPosition);
  }
  
@@ -8098,12 +8143,24 @@ class SolarSystemModule {
  const isOrbiter = userData.orbitPlanet || (userData.isSpacecraft && userData.speed);
  const isFastOrbiter = isOrbiter && userData.speed > 0.5;
 
- // For constellations and spacecraft, NEVER enable cameraFollowMode
- if (userData.type === 'Constellation' || userData.isSpacecraft) {
-     this.cameraFollowMode = false;
- } else if (isOrbiter) {
+ // For spacecraft (ISS, Hubble), enable co-rotation mode
+ // Camera will orbit WITH the spacecraft
+ if (userData.isSpacecraft && userData.orbitPlanet) {
      this.cameraFollowMode = true;
+     this.cameraCoRotateMode = true; // New mode: camera orbits with object
+     if (DEBUG.enabled) console.log(` Co-rotation mode enabled for ${object.userData.name}`);
+ } else if (userData.type === 'Constellation') {
+     // Constellations: never follow
+     this.cameraFollowMode = false;
+     this.cameraCoRotateMode = false;
+ } else if (isOrbiter) {
+     // Other orbiters (moons): traditional tracking
+     this.cameraFollowMode = true;
+     this.cameraCoRotateMode = false;
      if (DEBUG.enabled) console.log(` Tracking mode enabled for ${object.userData.name}`);
+ } else {
+     this.cameraFollowMode = false;
+     this.cameraCoRotateMode = false;
  }
  
  // Configure controls for focused object inspection
@@ -8218,34 +8275,50 @@ class SolarSystemModule {
  }
  
  updateCameraTracking(camera, controls) {
- // Update tracking indicator UI
- const trackingIndicator = document.getElementById('tracking-indicator');
- if (!trackingIndicator) return;
+ // TRACKING INDICATOR REMOVED - it was distracting
  
- // Show/hide tracking indicator based on tracking mode
+ // Exit if no focused object or tracking disabled
  if (!this.focusedObject || !this.cameraFollowMode) {
- trackingIndicator.classList.remove('active');
  return;
  }
  
- // Show tracking indicator with object name
- trackingIndicator.classList.add('active');
- const trackingText = trackingIndicator.querySelector('.tracking-text');
- if (trackingText && this.focusedObject.userData && this.focusedObject.userData.name) {
- trackingText.textContent = `Tracking: ${this.focusedObject.userData.name}`;
- }
- 
- // Update camera to follow focused object smoothly
  const object = this.focusedObject;
+ const userData = object.userData;
  const targetPosition = new THREE.Vector3();
  object.getWorldPosition(targetPosition);
  
- // Determine smooth factor based on object speed
- const userData = object.userData;
- const isFastOrbiter = userData.orbitPlanet && userData.speed && userData.speed > 0.5;
+ if (this.cameraCoRotateMode && userData.orbitPlanet) {
+ // CO-ROTATION MODE: Camera orbits WITH the spacecraft (ISS, Hubble, etc.)
+ // Maintain fixed relative position to spacecraft
  
- // Fast orbiters need more aggressive tracking to prevent camera lag/spinning
- const smoothFactor = isFastOrbiter ? 0.25 : 0.1; // Higher = more responsive, lower = smoother
+ const parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+ if (parentPlanet) {
+ // Calculate desired camera offset from ISS (behind and above)
+ const offsetDistance = this.focusedObjectDistance || 3;
+ 
+ // Get ISS direction from planet
+ const issDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
+ 
+ // Calculate camera position: behind ISS in its orbit
+ const cameraOffset = new THREE.Vector3(
+ -issDirection.x * offsetDistance, // Behind in orbit direction
+ offsetDistance * 0.5, // Above
+ -issDirection.z * offsetDistance
+ );
+ 
+ // Position camera relative to ISS
+ camera.position.copy(targetPosition).add(cameraOffset);
+ 
+ // Always look at ISS
+ controls.target.copy(targetPosition);
+ controls.update();
+ }
+ } else {
+ // TRADITIONAL TRACKING MODE: Camera follows but doesn't co-rotate
+ 
+ // Determine smooth factor based on object speed
+ const isFastOrbiter = userData.orbitPlanet && userData.speed && userData.speed > 0.5;
+ const smoothFactor = isFastOrbiter ? 0.25 : 0.1;
  
  // Smoothly update controls target to follow the object
  const currentTarget = controls.target.clone();
@@ -8258,6 +8331,7 @@ class SolarSystemModule {
  camera.position.copy(targetPosition).add(offset);
  
  controls.update();
+ }
  }
 
  createLabels() {
