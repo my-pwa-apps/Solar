@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.4.0 - Constellation dropdown + ISS tracking fix
+// Version 1.4.1 - All 21 constellations in dropdown
 
-const CACHE_VERSION = '1.4.0';
+const CACHE_VERSION = '1.4.1';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
