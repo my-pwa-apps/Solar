@@ -363,12 +363,25 @@
         let deferredPrompt;
         let installPromptShown = false;
         
+        // Check if running as installed PWA
+        function isPWA() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true ||
+                   document.referrer.includes('android-app://');
+        }
+        
         window.addEventListener('beforeinstallprompt', (e) => {
             console.log('PWA install prompt ready');
             // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
             // Stash the event so it can be triggered later
             deferredPrompt = e;
+            
+            // Don't show install prompt if already running as installed app
+            if (isPWA()) {
+                console.log('Already running as installed PWA - hiding install prompt');
+                return;
+            }
             
             // Show install prompt after 30 seconds if not dismissed
             if (!installPromptShown && !localStorage.getItem('installPromptDismissed')) {
@@ -380,7 +393,8 @@
         
         // Show install prompt UI
         function showInstallPrompt() {
-            if (!deferredPrompt || installPromptShown) return;
+            // Don't show if already installed or no prompt available
+            if (!deferredPrompt || installPromptShown || isPWA()) return;
             
             installPromptShown = true;
             const promptElement = document.getElementById('install-prompt');
@@ -447,15 +461,16 @@
             window.startupVR = true;
         }
         
-        // Check if running as installed PWA
-        function isPWA() {
-            return window.matchMedia('(display-mode: standalone)').matches ||
-                   window.navigator.standalone === true;
-        }
-        
+        // Check and handle installed PWA mode
         if (isPWA()) {
             console.log('Running as installed PWA');
             document.body.classList.add('pwa-mode');
+            
+            // Hide install prompt if somehow visible
+            const installPrompt = document.getElementById('install-prompt');
+            if (installPrompt) {
+                installPrompt.classList.add('hidden');
+            }
             
             // Track PWA usage
             if (window.gtag) {
