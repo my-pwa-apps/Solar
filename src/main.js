@@ -9219,24 +9219,70 @@ class App {
  case 'sombrero-galaxy':
  targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Sombrero'));
  break;
- // Constellations
+ // Constellations - Zodiac
+ case 'constellation-aries':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Aries'));
+ break;
+ case 'constellation-taurus':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Taurus'));
+ break;
+ case 'constellation-gemini':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Gemini'));
+ break;
+ case 'constellation-cancer':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cancer'));
+ break;
+ case 'constellation-leo':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Leo'));
+ break;
+ case 'constellation-virgo':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Virgo'));
+ break;
+ case 'constellation-libra':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Libra'));
+ break;
+ case 'constellation-scorpius':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Scorpius'));
+ break;
+ case 'constellation-sagittarius':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Sagittarius'));
+ break;
+ case 'constellation-capricornus':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Capricornus'));
+ break;
+ case 'constellation-aquarius':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Aquarius'));
+ break;
+ case 'constellation-pisces':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Pisces'));
+ break;
+ // Constellations - Other
  case 'constellation-orion':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Orion'));
  break;
  case 'constellation-big-dipper':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Big Dipper') || c.userData.name.includes('Ursa Major'));
  break;
+ case 'constellation-little-dipper':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Little Dipper') || c.userData.name.includes('Ursa Minor'));
+ break;
+ case 'constellation-southern-cross':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Southern Cross') || c.userData.name.includes('Crux'));
+ break;
  case 'constellation-cassiopeia':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cassiopeia'));
  break;
+ case 'constellation-cygnus':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cygnus'));
+ break;
+ case 'constellation-lyra':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Lyra'));
+ break;
  case 'constellation-andromeda':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Andromeda'));
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Andromeda') && c.userData.name.includes('Princess'));
  break;
- case 'constellation-leo':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Leo'));
- break;
- case 'constellation-scorpius':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Scorpius'));
+ case 'constellation-perseus':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Perseus'));
  break;
  }
  
