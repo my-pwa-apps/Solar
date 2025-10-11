@@ -8058,13 +8058,28 @@ class SolarSystemModule {
  // Smooth camera transition
  const startPos = camera.position.clone();
  const startTarget = controls.target.clone();
+ 
+ // For fast orbiters (like ISS), calculate relative offset instead of absolute position
+ let useRelativeOffset = false;
+ let parentPlanet = null;
+ let relativeOffset = null;
+ 
+ if (isFastOrbiter && userData.orbitPlanet) {
+ parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+ if (parentPlanet) {
+ useRelativeOffset = true;
+ relativeOffset = targetPosition.clone().sub(parentPlanet.position);
+ if (DEBUG.enabled) console.log(` Fast orbiter: using relative offset from ${userData.orbitPlanet}`);
+ }
+ }
+ 
  const endPos = new THREE.Vector3(
  targetPosition.x,
  targetPosition.y + distance * 0.3,
  targetPosition.z + distance
  );
  
- const duration = 1500;
+ const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
  const startTime = performance.now();
  
  const animate = () => {
@@ -8072,8 +8087,20 @@ class SolarSystemModule {
  const progress = Math.min(elapsed / duration, 1);
  const eased = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
  
- // Update target position if object is moving
+ // Update target position differently based on object type
+ if (useRelativeOffset && progress < 1) {
+ // For fast orbiters during transition: maintain relative offset from parent
+ const planetPos = parentPlanet.position.clone();
+ targetPosition.copy(planetPos).add(relativeOffset);
+ endPos.set(
+ targetPosition.x,
+ targetPosition.y + distance * 0.3,
+ targetPosition.z + distance
+ );
+ } else if (progress < 1) {
+ // For regular objects or final frame: use actual position
  object.getWorldPosition(targetPosition);
+ }
  
  camera.position.lerpVectors(startPos, endPos, eased);
  controls.target.copy(targetPosition);
@@ -8085,6 +8112,7 @@ class SolarSystemModule {
  // Transition complete - enable smooth following
  if (isOrbiter) {
  this.cameraFollowMode = true;
+ if (DEBUG.enabled) console.log(` Camera follow mode ENABLED for ${object.userData.name}`);
  }
  }
  };
@@ -8115,10 +8143,15 @@ class SolarSystemModule {
  const targetPosition = new THREE.Vector3();
  object.getWorldPosition(targetPosition);
  
+ // Determine smooth factor based on object speed
+ const userData = object.userData;
+ const isFastOrbiter = userData.orbitPlanet && userData.speed && userData.speed > 0.5;
+ 
+ // Fast orbiters need more aggressive tracking to prevent camera lag/spinning
+ const smoothFactor = isFastOrbiter ? 0.25 : 0.1; // Higher = more responsive, lower = smoother
+ 
  // Smoothly update controls target to follow the object
  const currentTarget = controls.target.clone();
- const smoothFactor = 0.1; // Adjust for smoother/faster following (0.1 = smooth, 1.0 = instant)
- 
  controls.target.lerpVectors(currentTarget, targetPosition, smoothFactor);
  
  // Calculate offset from target to camera
@@ -9185,6 +9218,25 @@ class App {
  break;
  case 'sombrero-galaxy':
  targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Sombrero'));
+ break;
+ // Constellations
+ case 'constellation-orion':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Orion'));
+ break;
+ case 'constellation-big-dipper':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Big Dipper') || c.userData.name.includes('Ursa Major'));
+ break;
+ case 'constellation-cassiopeia':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cassiopeia'));
+ break;
+ case 'constellation-andromeda':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Andromeda'));
+ break;
+ case 'constellation-leo':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Leo'));
+ break;
+ case 'constellation-scorpius':
+ targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Scorpius'));
  break;
  }
  
