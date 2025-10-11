@@ -8349,8 +8349,16 @@ class SolarSystemModule {
  }
  ];
  
+ // Debug logging for constellations
+ console.log(`[Explorer] Constellations array length: ${this.constellations?.length || 0}`);
+ if (this.constellations?.length > 0) {
+ console.log(`[Explorer] First constellation: ${this.constellations[0]?.userData?.name}`);
+ }
+ 
  // Filter out categories with no items (empty arrays)
- return categories.filter(category => category.items && category.items.length > 0);
+ const filtered = categories.filter(category => category.items && category.items.length > 0);
+ console.log(`[Explorer] Total categories: ${categories.length}, After filter: ${filtered.length}`);
+ return filtered;
  }
  
  getQuickNavTargets() {
