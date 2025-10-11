@@ -8086,24 +8086,24 @@ class SolarSystemModule {
  object.getWorldPosition(targetPosition);
  }
  
- // Store reference for tracking with enhanced data
+
+ // Store reference for tracking
  this.focusedObject = object;
  this.focusedObjectDistance = distance;
  this.focusedObjectStartTime = performance.now();
- this.cameraFollowMode = false; // Will be enabled after initial transition
- 
+
  if (DEBUG.enabled) console.log(` Focus: ${object.userData.name} (r:${actualRadius.toFixed(2)}, d:${distance.toFixed(2)})`);
- 
+
  // Determine if this is a fast-moving object that needs special tracking
  const isOrbiter = userData.orbitPlanet || (userData.isSpacecraft && userData.speed);
  const isFastOrbiter = isOrbiter && userData.speed > 0.5;
- 
- // For orbiters, DON'T enable continuous tracking - it's too disorienting
- // User can manually rotate camera if they want to follow
- // Only track if explicitly a satellite (not spacecraft like ISS)
- if (isOrbiter && !userData.isSpacecraft) {
- this.cameraFollowMode = true;
- if (DEBUG.enabled) console.log(` Tracking mode enabled for ${object.userData.name}`);
+
+ // For constellations and spacecraft, NEVER enable cameraFollowMode
+ if (userData.type === 'Constellation' || userData.isSpacecraft) {
+     this.cameraFollowMode = false;
+ } else if (isOrbiter) {
+     this.cameraFollowMode = true;
+     if (DEBUG.enabled) console.log(` Tracking mode enabled for ${object.userData.name}`);
  }
  
  // Configure controls for focused object inspection
@@ -8131,40 +8131,49 @@ class SolarSystemModule {
  const startPos = camera.position.clone();
  const startTarget = controls.target.clone();
  
- // For fast orbiters (like ISS), calculate relative offset instead of absolute position
+ // For fast orbiters (like ISS), do NOT use relative offset if isSpacecraft
  let useRelativeOffset = false;
  let parentPlanet = null;
  let relativeOffset = null;
- 
- if (isFastOrbiter && userData.orbitPlanet) {
- parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
- if (parentPlanet) {
- useRelativeOffset = true;
- relativeOffset = targetPosition.clone().sub(parentPlanet.position);
- if (DEBUG.enabled) console.log(` Fast orbiter: using relative offset from ${userData.orbitPlanet}`);
- }
+
+ if (isFastOrbiter && userData.orbitPlanet && !userData.isSpacecraft) {
+     parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+     if (parentPlanet) {
+         useRelativeOffset = true;
+         relativeOffset = targetPosition.clone().sub(parentPlanet.position);
+         if (DEBUG.enabled) console.log(` Fast orbiter: using relative offset from ${userData.orbitPlanet}`);
+     }
  }
  
  // Calculate camera end position based on object type
  let endPos;
- 
+
  if (userData.type === 'Constellation') {
- // For constellations: position camera slightly in front of the pattern center
- // Move toward origin from the constellation center
- const directionToOrigin = new THREE.Vector3(0, 0, 0).sub(targetPosition).normalize();
- endPos = new THREE.Vector3(
- targetPosition.x + directionToOrigin.x * distance,
- targetPosition.y + directionToOrigin.y * distance,
- targetPosition.z + directionToOrigin.z * distance
- );
- console.log(` [Constellation] Camera position: ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)}`);
+     // For constellations: position camera slightly in front of the pattern center
+     // Move toward origin from the constellation center
+     const directionToOrigin = new THREE.Vector3(0, 0, 0).sub(targetPosition).normalize();
+     endPos = new THREE.Vector3(
+         targetPosition.x + directionToOrigin.x * distance,
+         targetPosition.y + directionToOrigin.y * distance,
+         targetPosition.z + directionToOrigin.z * distance
+     );
+     controls.target.copy(targetPosition); // Always look at constellation center
+     console.log(` [Constellation] Camera position: ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)}`);
+ } else if (userData.isSpacecraft) {
+     // For ISS and other spacecraft: position camera at a fixed offset, look at object
+     endPos = new THREE.Vector3(
+         targetPosition.x,
+         targetPosition.y + distance * 0.3,
+         targetPosition.z + distance
+     );
+     controls.target.copy(targetPosition); // Always look at ISS
  } else {
- // Regular objects: position above and behind
- endPos = new THREE.Vector3(
- targetPosition.x,
- targetPosition.y + distance * 0.3,
- targetPosition.z + distance
- );
+     // Regular objects: position above and behind
+     endPos = new THREE.Vector3(
+         targetPosition.x,
+         targetPosition.y + distance * 0.3,
+         targetPosition.z + distance
+     );
  }
  
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
