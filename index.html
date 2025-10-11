@@ -7,12 +7,31 @@
     
     <!-- Language Detection Script - Must load first -->
     <script>
-        // Check URL parameter first, then browser language
+        // Priority order: 1) Stored preference, 2) URL parameter, 3) Browser/OS language
         const urlParams = new URLSearchParams(window.location.search);
         const urlLang = urlParams.get('lang');
+        const storedLang = localStorage.getItem('appLanguage');
         const userLang = navigator.language || navigator.userLanguage;
-        const langCode = urlLang || userLang.toLowerCase().split('-')[0];
+        
+        // Determine language with priority
+        let langCode;
+        if (storedLang) {
+            // Use stored preference (from installation or user choice)
+            langCode = storedLang;
+        } else if (urlLang) {
+            // Use URL parameter
+            langCode = urlLang;
+        } else {
+            // Use browser/OS language
+            langCode = userLang.toLowerCase().split('-')[0];
+        }
+        
         const isNL = langCode === 'nl';
+        
+        // Store the language preference for future sessions
+        if (!storedLang) {
+            localStorage.setItem('appLanguage', isNL ? 'nl' : 'en');
+        }
         
         // Set HTML lang attribute and load appropriate manifest
         document.documentElement.lang = isNL ? 'nl' : 'en';
@@ -22,6 +41,8 @@
         manifestLink.rel = 'manifest';
         manifestLink.href = isNL ? './manifest.nl.json' : './manifest.json';
         document.head.appendChild(manifestLink);
+        
+        console.log('[Language] Detected:', isNL ? 'Dutch (nl)' : 'English (en)', '| Source:', storedLang ? 'Stored' : urlLang ? 'URL' : 'OS/Browser');
     </script>
     
     <!-- Primary Meta Tags -->

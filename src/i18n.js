@@ -390,7 +390,7 @@ function t(key) {
 // Apply translations to the page
 function applyTranslations() {
     const lang = getCurrentLanguage();
-    console.log(`🌍 Applying ${lang === 'nl' ? 'Dutch' : 'English'} translations`);
+    console.log(`[i18n] Applying ${lang === 'nl' ? 'Dutch' : 'English'} translations`);
     
     // Update all elements with data-i18n attribute
     document.querySelectorAll('[data-i18n]').forEach(element => {
@@ -432,10 +432,36 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { t, applyTranslations, getCurrentLanguage, translations };
 }
 
+// Function to change language
+function setLanguage(lang) {
+    if (lang !== 'en' && lang !== 'nl') {
+        console.warn('[i18n] Invalid language:', lang, '- using English');
+        lang = 'en';
+    }
+    
+    // Update HTML lang attribute
+    document.documentElement.lang = lang;
+    
+    // Store preference
+    localStorage.setItem('appLanguage', lang);
+    
+    // Update manifest link
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+        manifestLink.href = lang === 'nl' ? './manifest.nl.json' : './manifest.json';
+    }
+    
+    // Re-apply translations
+    applyTranslations();
+    
+    console.log('[i18n] Language changed to:', lang === 'nl' ? 'Dutch' : 'English');
+}
+
 // Make translation function globally available
 window.t = t;
 window.applyTranslations = applyTranslations;
 window.getCurrentLanguage = getCurrentLanguage;
+window.setLanguage = setLanguage;
 
 // Auto-apply translations when DOM is ready
 if (document.readyState === 'loading') {
