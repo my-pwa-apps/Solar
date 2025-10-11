@@ -8340,11 +8340,57 @@ class SolarSystemModule {
  name: ` ${galaxy.userData.name}`,
  onClick: () => focusCallback(galaxy)
  }))
+ },
+ {
+ title: ' Constellations',
+ items: this.constellations.map(constellation => ({
+ name: ` ${constellation.userData.name}`,
+ onClick: () => focusCallback(constellation)
+ }))
  }
  ];
  
  // Filter out categories with no items (empty arrays)
  return categories.filter(category => category.items && category.items.length > 0);
+ }
+ 
+ getQuickNavTargets() {
+ // Returns array of quick navigation targets for VR menu and quick nav dropdown
+ const targets = [];
+ 
+ // Add key solar system objects
+ if (this.planets.earth) targets.push({ id: 'earth', label: ' Earth', object: this.planets.earth });
+ if (this.planets.mars) targets.push({ id: 'mars', label: ' Mars', object: this.planets.mars });
+ if (this.planets.jupiter) targets.push({ id: 'jupiter', label: ' Jupiter', object: this.planets.jupiter });
+ if (this.planets.saturn) targets.push({ id: 'saturn', label: ' Saturn', object: this.planets.saturn });
+ 
+ // Add some moons
+ if (this.moons.moon) targets.push({ id: 'moon', label: ' Moon', object: this.moons.moon });
+ if (this.moons.europa) targets.push({ id: 'europa', label: ' Europa', object: this.moons.europa });
+ if (this.moons.titan) targets.push({ id: 'titan', label: ' Titan', object: this.moons.titan });
+ 
+ // Add some interesting objects
+ if (this.satellites && this.satellites.length > 0) {
+ const iss = this.satellites.find(s => s.userData.name.includes('ISS'));
+ if (iss) targets.push({ id: 'iss', label: ' ISS', object: iss });
+ }
+ 
+ if (this.spacecraft && this.spacecraft.length > 0) {
+ const voyager1 = this.spacecraft.find(s => s.userData.name.includes('Voyager 1'));
+ if (voyager1) targets.push({ id: 'voyager-1', label: ' Voyager 1', object: voyager1 });
+ }
+ 
+ if (this.nebulae && this.nebulae.length > 0) {
+ const orion = this.nebulae.find(n => n.userData.name.includes('Orion'));
+ if (orion) targets.push({ id: 'orion-nebula', label: ' Orion Nebula', object: orion });
+ }
+ 
+ if (this.galaxies && this.galaxies.length > 0) {
+ const andromeda = this.galaxies.find(g => g.userData.name.includes('Andromeda'));
+ if (andromeda) targets.push({ id: 'andromeda-galaxy', label: ' Andromeda', object: andromeda });
+ }
+ 
+ return targets;
  }
  
  refreshExplorerContent() {
