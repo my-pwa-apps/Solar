@@ -8206,16 +8206,23 @@ class SolarSystemModule {
  let endPos;
 
  if (userData.type === 'Constellation') {
-     // For constellations: position camera slightly in front of the pattern center
-     // Move toward origin from the constellation center
-     const directionToOrigin = new THREE.Vector3(0, 0, 0).sub(targetPosition).normalize();
+     // For constellations: We view them from NEAR the origin (Earth's perspective)
+     // looking OUTWARD toward the constellation at distance 10000
+     
+     // Direction from origin to constellation center
+     const directionToConstellation = targetPosition.clone().normalize();
+     
+     // Position camera closer to origin, looking outward at constellation
+     // This simulates viewing from Earth (origin) toward the stars
+     const viewDistance = 200; // Close to origin for proper viewing angle
      endPos = new THREE.Vector3(
-         targetPosition.x + directionToOrigin.x * distance,
-         targetPosition.y + directionToOrigin.y * distance,
-         targetPosition.z + directionToOrigin.z * distance
+         directionToConstellation.x * viewDistance,
+         directionToConstellation.y * viewDistance,
+         directionToConstellation.z * viewDistance
      );
-     controls.target.copy(targetPosition); // Always look at constellation center
-     console.log(` [Constellation] Camera position: ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)}`);
+     
+     controls.target.copy(targetPosition); // Look at constellation center at distance 10000
+     console.log(` [Constellation] Camera at ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)} looking at constellation`);
  } else if (userData.isSpacecraft) {
      // For ISS and other spacecraft: position camera at a fixed offset, look at object
      endPos = new THREE.Vector3(
