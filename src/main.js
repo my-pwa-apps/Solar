@@ -1992,7 +1992,6 @@ class SolarSystemModule {
  { progress: 70, message: t('creatingDistantStars'), task: () => this.createDistantStars(scene) },
  { progress: 75, message: t('creatingNebulae'), task: () => this.createNebulae(scene) },
  { progress: 80, message: t('creatingGalaxies'), task: () => this.createGalaxies(scene) },
- { progress: 85, message: ' Adding galaxies...', task: () => this.createGalaxies(scene) },
  { progress: 85, message: t('creatingNearbyStars'), task: () => this.createNearbyStars(scene) },
  { progress: 88, message: t('creatingExoplanets'), task: () => this.createExoplanets(scene) },
  { progress: 91, message: t('creatingComets'), task: () => this.createComets(scene) },
