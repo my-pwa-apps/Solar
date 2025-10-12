@@ -7505,6 +7505,17 @@ class SolarSystemModule {
  satellite.position.y = earthPosition.y + userData.distance * sinAngle * sinIncl;
  satellite.position.z = earthPosition.z + userData.distance * sinAngle * cosIncl;
  
+ // Calculate and store orbital velocity vector for camera co-rotation
+ // Tangent to circular orbit (perpendicular to radial direction)
+ const velocityX = -userData.distance * sinAngle;
+ const velocityY = userData.distance * cosAngle * sinIncl;
+ const velocityZ = userData.distance * cosAngle * cosIncl;
+ 
+ if (!userData.orbitalVelocity) {
+ userData.orbitalVelocity = new THREE.Vector3();
+ }
+ userData.orbitalVelocity.set(velocityX, velocityY, velocityZ).normalize();
+ 
  // Debug: Log satellite positions (especially ISS)
  if (Math.random() < 0.001) {
  if (userData.name.includes('ISS')) {
@@ -8369,25 +8380,36 @@ class SolarSystemModule {
  
  if (this.cameraCoRotateMode && userData.orbitPlanet) {
  // CO-ROTATION MODE: Camera orbits WITH the spacecraft (ISS, Hubble, etc.)
- // Maintain fixed relative position to spacecraft
+ // Camera maintains fixed relative position in the spacecraft's orbital frame
  
  const parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
  if (parentPlanet) {
- // Calculate desired camera offset from ISS (behind and above)
  const offsetDistance = this.focusedObjectDistance || 3;
  
- // Get ISS direction from planet
- const issDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
+ // Get vector from planet to ISS (radial direction)
+ const radialDirection = targetPosition.clone().sub(parentPlanet.position);
+ const orbitRadius = radialDirection.length();
+ radialDirection.normalize();
  
- // Calculate camera position: behind ISS in its orbit
- const cameraOffset = new THREE.Vector3(
- -issDirection.x * offsetDistance, // Behind in orbit direction
- offsetDistance * 0.5, // Above
- -issDirection.z * offsetDistance
- );
+ // Calculate tangent direction (perpendicular to radial, in orbital plane)
+ // For a counter-clockwise orbit when viewed from above (standard), tangent is:
+ // cross product of radial with up vector (0, 1, 0)
+ const up = new THREE.Vector3(0, 1, 0);
+ const tangentDirection = new THREE.Vector3().crossVectors(up, radialDirection).normalize();
  
- // Position camera relative to ISS
- camera.position.copy(targetPosition).add(cameraOffset);
+ // If orbit is inclined significantly, use actual orbital motion
+ if (userData.orbitalVelocity) {
+ tangentDirection.copy(userData.orbitalVelocity).normalize();
+ }
+ 
+ // Position camera: slightly behind in orbit, above, and to the side
+ // This creates a chase-cam view that moves with ISS
+ const cameraPosition = targetPosition.clone()
+ .add(tangentDirection.clone().multiplyScalar(-offsetDistance * 0.7)) // Behind in orbit
+ .add(radialDirection.clone().multiplyScalar(offsetDistance * 0.3)) // Slightly outward
+ .add(up.multiplyScalar(offsetDistance * 0.2)); // Above
+ 
+ camera.position.copy(cameraPosition);
  
  // Always look at ISS
  controls.target.copy(targetPosition);
