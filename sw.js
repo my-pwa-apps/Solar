@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.8.9 - Code cleanup and optimization: reduced debug logging, optimized language detection, improved manifest
+// Version 1.9.1 - Replaced Parker Solar Probe with JWST, fixed ISS rotation
 
-const CACHE_VERSION = '1.8.9';
+const CACHE_VERSION = '1.9.1';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

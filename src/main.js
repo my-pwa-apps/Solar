@@ -4773,11 +4773,12 @@ class SolarSystemModule {
  const kuiperBeltGroup = new THREE.Group();
  kuiperBeltGroup.name = 'kuiperBelt';
  
- // Kuiper belt is beyond Neptune (30-50 AU real)
- // Educational scale: Neptune=1542, Pluto=2024, belt at 500-1300 (900±400, ~40 AU average × 51.28)
- // Realistic: Neptune=4495, Pluto=5906, so belt at ~5000-7500
- const baseDistance = this.realisticScale ? 5000 : 900;
- const distanceSpread = this.realisticScale ? 2500 : 400;
+ // Kuiper belt is beyond Neptune (30-50 AU real, centered around 40 AU)
+ // Real distances: Neptune=30 AU, Pluto=39.5 AU, Kuiper Belt main region=30-55 AU
+ // Educational scale: Neptune=1542, Pluto=2024, so belt should be 1600-2400 (center ~2000)
+ // Realistic scale: Neptune=4495, Pluto=5906, so belt should be 4500-8250 (center ~6000)
+ const baseDistance = this.realisticScale ? 6000 : 2000;
+ const distanceSpread = this.realisticScale ? 2250 : 400;
  
  // Large Kuiper Belt Objects (KBOs) - Pluto-like dwarf planets
  const largeKBOCount = 200;
@@ -6919,18 +6920,18 @@ class SolarSystemModule {
  status: 'Active in Kuiper Belt'
  },
  {
- name: 'Parker Solar Probe',
- distance: 10, // Highly elliptical orbit: ~0.2 AU average - educational scale (0.2 × 51.28 ≈ 10)
- angle: 0,
- speed: 0.5, // Peak velocity: 192 km/s (690,000 km/h) at perihelion - fastest human-made object
- size: 0.05,
- color: 0xFF6B35,
- type: 'probe',
- description: ' Parker Solar Probe is "touching" the Sun! Launched Aug 12, 2018, it flies through the Sun\'s corona. At closest approach (6.9 million km from surface), it reaches 192 km/s (690,000 km/h)! Heat shield withstands 1,377°C while instruments stay at 30°C.',
- funFact: 'Parker completed 21 orbits as of Oct 2025. Final perihelion in Dec 2025 will reach 6.9 million km - into the corona!',
- realSize: '685 kg, 3m tall, 2.3m heat shield',
- launched: 'August 12, 2018',
- status: 'Active, 7-year mission (ends 2025)'
+ name: 'James Webb Space Telescope',
+ distance: 250, // At Sun-Earth L2 Lagrange point, 1.5 million km from Earth (scaled)
+ angle: Math.PI * 0.15, // Positioned near Earth's L2 point
+ speed: 0.0003, // Halo orbit around L2, period synced with Earth (1 year)
+ size: 0.08,
+ color: 0xFFD700,
+ type: 'observatory',
+ description: '🔭 James Webb Space Telescope (JWST) is the most powerful space telescope ever built! Launched Dec 25, 2021, it orbits the Sun-Earth L2 point (1.5 million km from Earth). Observes infrared (0.6-28.5 μm) with a 6.5m segmented beryllium mirror - 6× larger than Hubble!',
+ funFact: 'JWST operates at -233°C (-388°F) behind a tennis court-sized sunshield! It can see the first galaxies formed just 280 million years after the Big Bang.',
+ realSize: '6.5m mirror, 21.2m × 14.2m sunshield, 6,161 kg',
+ launched: 'December 25, 2021',
+ status: 'Active at L2 Point'
  },
  {
  name: 'Juno (Jupiter)',
@@ -7531,26 +7532,9 @@ class SolarSystemModule {
  }
  
  // ISS: Maintain stable orientation (no rotation)
- // Lock rotation to prevent spinning appearance
- if (userData.name.includes('ISS')) {
- // ISS maintains fixed orientation - no rotation applied
- // Store initial rotation if not already set
- if (!userData.fixedRotation) {
- userData.fixedRotation = {
- x: satellite.rotation.x,
- y: satellite.rotation.y,
- z: satellite.rotation.z
- };
- } else {
- // Restore fixed rotation to prevent drift
- satellite.rotation.x = userData.fixedRotation.x;
- satellite.rotation.y = userData.fixedRotation.y;
- satellite.rotation.z = userData.fixedRotation.z;
- }
- } else {
- // Other satellites: rotate to face Earth
+ // All satellites should be tidally locked to Earth (always facing Earth)
+ // This is realistic - ISS maintains nadir-pointing orientation
  satellite.lookAt(earthPosition);
- }
  }
  });
  }
@@ -7717,8 +7701,8 @@ class SolarSystemModule {
  // Jupiter 13.3x, Saturn 24.5x, Uranus 49.2x, Neptune 77.1x, Pluto 101.2x
  // 
  // Scaled to fit with constraints:
- // - Asteroid belt: 100-150 (125 ± 25)
- // - Kuiper belt: 700-1100 (base 700, spread 400)
+ // - Asteroid belt: 100-150 (125 ± 25) - between Mars and Jupiter
+ // - Kuiper belt: 1600-2400 (2000 ± 400) - beyond Neptune, includes Pluto
  // - Mars + moons (max +2.5) must be < 100
  // - Jupiter + moons (max +23) must be > 150
  // - All proportions maintained relative to real astronomical distances
@@ -7918,12 +7902,12 @@ class SolarSystemModule {
  if (this.kuiperBelt && this.kuiperBelt.children) {
  // Define scale parameters for both modes
  const oldParams = this.realisticScale ? 
- { base: 900, spread: 400 } : // We're switching FROM educational TO realistic
- { base: 5000, spread: 2500 }; // We're switching FROM realistic TO educational
+ { base: 2000, spread: 400 } : // We're switching FROM educational TO realistic
+ { base: 6000, spread: 2250 }; // We're switching FROM realistic TO educational
  
  const newParams = this.realisticScale ? 
- { base: 5000, spread: 2500 } : // Switching TO realistic
- { base: 900, spread: 400 }; // Switching TO educational - proportionally scaled (was 280±100)
+ { base: 6000, spread: 2250 } : // Switching TO realistic (30-55 AU, centered at 40 AU)
+ { base: 2000, spread: 400 }; // Switching TO educational (beyond Neptune at 1542, includes Pluto at 2024)
  
  this.kuiperBelt.children.forEach(particleSystem => {
  if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
@@ -7963,7 +7947,7 @@ class SolarSystemModule {
  'Voyager 1': 4500, // 162 AU - way beyond planets
  'Voyager 2': 4200, // 135 AU
  'New Horizons': 2950, // 59 AU - beyond Neptune 
- 'Parker Solar Probe': 20, // Close to Sun
+ 'James Webb Space Telescope': 225, // At Earth's L2 point (1.5 million km, ~0.01 AU)
  'Pioneer 10': 4800, // 133 AU
  'Pioneer 11': 4400 // 106 AU
  } : {
@@ -7972,7 +7956,7 @@ class SolarSystemModule {
  'Voyager 1': 8307,  // 162 AU * 51.28 (was 300)
  'Voyager 2': 6923,  // 135 AU * 51.28 (was 280)
  'New Horizons': 3025, // 59 AU * 51.28 (was 85)
- 'Parker Solar Probe': 10, // ~0.2 AU (was 12)
+ 'James Webb Space Telescope': 250, // At Earth's L2 point (scaled for visibility)
  'Pioneer 10': 6820,  // 133 AU * 51.28 (was 320)
  'Pioneer 11': 5436   // 106 AU * 51.28 (was 290)
  };
@@ -9645,8 +9629,9 @@ class App {
  case 'new-horizons':
  targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('New Horizons'));
  break;
- case 'parker-solar-probe':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Parker Solar Probe'));
+ case 'jwst':
+ case 'james-webb':
+ targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('James Webb'));
  break;
  case 'juno':
  targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Juno'));
