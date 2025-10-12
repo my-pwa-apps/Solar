@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.5.1 - Fix constellation camera positioning
+// Version 1.5.2 - Fix constellation highlighting
 
-const CACHE_VERSION = '1.5.1';
+const CACHE_VERSION = '1.5.2';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
