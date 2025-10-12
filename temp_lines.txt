@@ -1,0 +1,4 @@
+﻿ // ISS and orbital spacecraft: VERY close chase-cam for dramatic Earth flyover
+ // Close enough to see the spacecraft details and Earth surface rushing by below
+ distance = Math.max(actualRadius * 3, 0.5);
+ console.log(` [Spacecraft Chase-Cam] Ultra-close distance: ${distance.toFixed(2)} for dramatic flyover`);
