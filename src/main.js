@@ -8255,16 +8255,44 @@ class SolarSystemModule {
          directionToConstellation.z * viewDistance
      );
      
+     // Important: Set target FIRST, then position camera looking FROM position TO target
+     // This way camera faces the constellation
      controls.target.copy(targetPosition); // Look at constellation center at distance 10000
-     console.log(` [Constellation] Camera at ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)} looking at constellation`);
+     console.log(` [Constellation] Camera at ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)} looking toward constellation at ${targetPosition.x.toFixed(0)}, ${targetPosition.y.toFixed(0)}, ${targetPosition.z.toFixed(0)}`);
+ } else if (userData.isSpacecraft && userData.orbitPlanet) {
+     // For ISS and other spacecraft: position camera in co-rotating orbit
+     parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+     if (parentPlanet) {
+         // Calculate ISS direction from planet
+         const issDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
+         
+         // Position camera behind and above ISS in its orbital path
+         const offsetDistance = distance;
+         endPos = new THREE.Vector3(
+             targetPosition.x - issDirection.x * offsetDistance * 0.8, // Behind in orbit
+             targetPosition.y + offsetDistance * 0.4, // Above
+             targetPosition.z - issDirection.z * offsetDistance * 0.8
+         );
+         
+         controls.target.copy(targetPosition); // Look at ISS
+         console.log(` [ISS] Camera positioned in co-rotating orbit behind and above ISS`);
+     } else {
+         // Fallback if no parent planet found
+         endPos = new THREE.Vector3(
+             targetPosition.x,
+             targetPosition.y + distance * 0.3,
+             targetPosition.z + distance
+         );
+         controls.target.copy(targetPosition);
+     }
  } else if (userData.isSpacecraft) {
-     // For ISS and other spacecraft: position camera at a fixed offset, look at object
+     // Other spacecraft without orbit: position camera at a fixed offset
      endPos = new THREE.Vector3(
          targetPosition.x,
          targetPosition.y + distance * 0.3,
          targetPosition.z + distance
      );
-     controls.target.copy(targetPosition); // Always look at ISS
+     controls.target.copy(targetPosition);
  } else {
      // Regular objects: position above and behind
      endPos = new THREE.Vector3(
@@ -8283,7 +8311,10 @@ class SolarSystemModule {
  const eased = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
  
  // Update target position differently based on object type
- if (useRelativeOffset && progress < 1) {
+ if (userData.type === 'Constellation') {
+ // Constellations: keep static target (don't update position)
+ // targetPosition already set to constellation center
+ } else if (useRelativeOffset && progress < 1) {
  // For fast orbiters during transition: maintain relative offset from parent
  const planetPos = parentPlanet.position.clone();
  targetPosition.copy(planetPos).add(relativeOffset);
@@ -8298,7 +8329,15 @@ class SolarSystemModule {
  }
  
  camera.position.lerpVectors(startPos, endPos, eased);
+ 
+ // For constellations, ensure camera always looks at the constellation
+ if (userData.type === 'Constellation') {
+ camera.lookAt(targetPosition);
  controls.target.copy(targetPosition);
+ } else {
+ controls.target.copy(targetPosition);
+ }
+ 
  controls.update();
  
  if (progress < 1) {
