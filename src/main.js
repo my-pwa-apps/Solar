@@ -2195,7 +2195,7 @@ class SolarSystemModule {
  name: 'Venus',
  radius: 0.950,
  color: 0xFFC649,
- distance: 30,
+ distance: 37, // Educational scale (1.85x Mercury)
  speed: 0.015,
  rotationSpeed: -0.001,
  tilt: 2.64,
@@ -2215,7 +2215,7 @@ class SolarSystemModule {
  name: 'Earth',
  radius: 1.0,
  color: 0x2233FF,
- distance: 45,
+ distance: 51, // Educational scale (2.56x Mercury)
  speed: 0.01,
  rotationSpeed: 0.02,
  tilt: 23.44,
@@ -2246,7 +2246,7 @@ class SolarSystemModule {
  name: 'Mars',
  radius: 0.532,
  color: 0xCD5C5C,
- distance: 60,
+ distance: 78, // Educational scale (3.90x Mercury)
  speed: 0.008,
  rotationSpeed: 0.018,
  tilt: 25.19,
@@ -2285,7 +2285,7 @@ class SolarSystemModule {
  name: 'Jupiter',
  radius: 10.97,
  color: 0xDAA520,
- distance: 100,
+ distance: 266, // Educational scale (13.3x Mercury)
  speed: 0.002,
  rotationSpeed: 0.04,
  tilt: 3.13,
@@ -2344,7 +2344,7 @@ class SolarSystemModule {
  name: 'Saturn',
  radius: 9.14,
  color: 0xFAD5A5,
- distance: 150,
+ distance: 490, // Educational scale (24.5x Mercury)
  speed: 0.0009,
  rotationSpeed: 0.038,
  tilt: 26.73,
@@ -2394,7 +2394,7 @@ class SolarSystemModule {
  name: 'Uranus',
  radius: 3.98,
  color: 0x4FD0E7,
- distance: 200,
+ distance: 984, // Educational scale (49.2x Mercury)
  speed: 0.0004,
  rotationSpeed: 0.03,
  tilt: 97.77,
@@ -2432,7 +2432,7 @@ class SolarSystemModule {
  name: 'Neptune',
  radius: 3.86,
  color: 0x4169E1,
- distance: 250,
+ distance: 1542, // Educational scale (77.1x Mercury)
  speed: 0.0001,
  rotationSpeed: 0.032,
  tilt: 28.32,
@@ -2457,7 +2457,7 @@ class SolarSystemModule {
  name: 'Pluto',
  radius: 0.187,
  color: 0xD4A373,
- distance: 300,
+ distance: 2024, // Educational scale (101.2x Mercury)
  speed: 0.00004,
  rotationSpeed: 0.015,
  tilt: 122.53,
@@ -4962,14 +4962,14 @@ class SolarSystemModule {
  // Planet orbital paths around the Sun
  const orbitalData = [
  { distance: 20, color: 0x6688AA }, // Mercury
- { distance: 30, color: 0x6688AA }, // Venus
- { distance: 45, color: 0x6688AA }, // Earth
- { distance: 60, color: 0x6688AA }, // Mars
- { distance: 100, color: 0x6688AA }, // Jupiter
- { distance: 150, color: 0x6688AA }, // Saturn
- { distance: 200, color: 0x6688AA }, // Uranus
- { distance: 250, color: 0x6688AA }, // Neptune
- { distance: 300, color: 0x6688AA } // Pluto
+ { distance: 37, color: 0x6688AA }, // Venus (educational scale)
+ { distance: 51, color: 0x6688AA }, // Earth (educational scale)
+ { distance: 78, color: 0x6688AA }, // Mars (educational scale)
+ { distance: 266, color: 0x6688AA }, // Jupiter (educational scale)
+ { distance: 490, color: 0x6688AA }, // Saturn (educational scale)
+ { distance: 984, color: 0x6688AA }, // Uranus (educational scale)
+ { distance: 1542, color: 0x6688AA }, // Neptune (educational scale)
+ { distance: 2024, color: 0x6688AA } // Pluto (educational scale)
  ];
 
  orbitalData.forEach(orbit => {
