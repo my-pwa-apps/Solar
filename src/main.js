@@ -9690,6 +9690,7 @@ class App {
  break;
  case 'constellation-scorpius':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Scorpius'));
+ if (DEBUG.enabled) console.log(` [Nav Debug] Scorpius search result:`, targetObject ? targetObject.userData.name : 'NOT FOUND', `(total constellations: ${this.solarSystemModule.constellations?.length || 0})`);
  break;
  case 'constellation-sagittarius':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Sagittarius'));
@@ -9731,9 +9732,13 @@ class App {
  case 'constellation-perseus':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Perseus'));
  break;
+ default:
+ console.warn(` [Nav] ✗ No case match for value: "${value}"`);
+ break;
  }
  
  console.log(` [Nav] Navigation dropdown value: "${value}"`);
+ console.log(` [Nav] After switch - targetObject:`, targetObject ? `Found: ${targetObject.userData?.name}` : 'NULL');
  
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
