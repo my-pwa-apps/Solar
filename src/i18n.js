@@ -35,6 +35,27 @@ const translations = {
         uranus: "Uranus",
         neptuneSystem: "Neptune System",
         neptune: "Neptune",
+        pluto: "Pluto",
+        charon: "Charon",
+        enceladus: "Enceladus",
+        rhea: "Rhea",
+        titania: "Titania",
+        miranda: "Miranda",
+        triton: "Triton",
+        
+        // Navigation menu sections
+        navOurStar: "Our Star",
+        navInnerPlanets: "Inner Planets (Rocky)",
+        navAsteroidBelt: "Asteroid Belt",
+        navOuterPlanets: "Outer Planets (Gas Giants)",
+        navIceGiants: "Ice Giants",
+        navKuiperBelt: "Kuiper Belt & Dwarf Planets",
+        navComets: "Comets",
+        navSatellites: "Satellites & Space Stations",
+        navSpacecraft: "Spacecraft & Probes",
+        navDistantStars: "Distant Stars",
+        kuiperBelt: "Kuiper Belt",
+        asteroidBelt: "Asteroid Belt",
         
         // Control buttons
         toggleOrbits: "Orbits",
@@ -188,7 +209,53 @@ const translations = {
         funFactSaturn: 'Saturn\'s rings are only 10 meters thick but 280,000 km wide!',
         funFactUranus: 'Uranus was the first planet discovered with a telescope (1781)!',
         funFactNeptune: 'Neptune was discovered by math before being seen - its gravity affected Uranus\'s orbit!',
-        funFactPluto: 'A year on Pluto lasts 248 Earth years! It hasn\'t completed one orbit since its discovery in 1930.'
+        funFactPluto: 'A year on Pluto lasts 248 Earth years! It hasn\'t completed one orbit since its discovery in 1930.',
+        
+        // Moon descriptions
+        descPhobos: 'Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.',
+        descDeimos: 'Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.',
+        descIo: 'Io is the most volcanically active body in the solar system!',
+        descEuropa: 'Europa has a global ocean beneath its ice - a potential place for life!',
+        descGanymede: 'Ganymede is the largest moon in the solar system, bigger than Mercury!',
+        descCallisto: 'Callisto is the most heavily cratered object in the solar system!',
+        descTitan: 'Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!',
+        descEnceladus: 'Enceladus shoots water geysers into space from its subsurface ocean!',
+        descRhea: 'Rhea may have its own ring system!',
+        descTitania: 'Titania is Uranus\' largest moon with massive canyons!',
+        descMiranda: 'Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!',
+        descTriton: 'Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.',
+        descCharon: 'Charon is so large relative to Pluto that they form a binary system!',
+        
+        // Satellite descriptions and fun facts
+        descISS: 'ISS orbits at 400 km altitude, completing one orbit every 92.68 minutes (15.54 orbits/day). Launched Nov 20, 1998 (Zarya module). Assembly: 1998-2011 (42 flights: 36 Shuttle, 6 Russian). Mass: 419,725 kg. Pressurized volume: 1,000 m³. Continuous occupation since Nov 2, 2000 (24+ years, 9,000+ days). 280+ astronauts from 23 countries visited.',
+        funFactISS: 'The ISS travels at 27,600 km/h! Astronauts see 16 sunrises/sunsets per day. It\'s been continuously occupied for 24+ years - longer than any other spacecraft!',
+        descHubble: 'Launched April 24, 1990 on Space Shuttle Discovery. Orbits at ~535 km altitude. Made 1.6+ million observations as of Oct 2025. 2.4m primary mirror observes UV, visible, and near-IR. Five servicing missions (1993-2009) upgraded instruments.',
+        funFactHubble: 'Can resolve objects 0.05 arcseconds apart - like seeing two fireflies 10,000 km away! Deepest image (eXtreme Deep Field) shows 5,500 galaxies, some 13.2 billion light-years away.',
+        descGPS: 'GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻¹⁴ seconds.',
+        funFactGPS: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
+        descJWST: 'Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 μm). 6.5m segmented beryllium mirror (18 hexagons) with 25 m² collecting area - 6x Hubble! Sunshield: 21.2m × 14.2m, 5 layers.',
+        funFactJWST: 'Operating at -233C (-388F)! Can detect heat signature of a bumblebee at Moon distance. Discovered earliest galaxies at z=14 (280 million years after Big Bang).',
+        
+        // Spacecraft descriptions and fun facts
+        descVoyager1: 'Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently 24.3 billion km (162 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
+        funFactVoyager1: 'Voyager 1 travels at 17 km/s (61,200 km/h). Its radio signals take 22.5 hours to reach Earth!',
+        descVoyager2: 'Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now 20.3 billion km (135 AU) from Sun.',
+        funFactVoyager2: 'Voyager 2 discovered 16 moons across the giant planets, Neptune\'s Great Dark Spot, and Triton\'s geysers!',
+        descNewHorizons: 'New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
+        funFactNewHorizons: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto at 58,536 km/h. It carries 1 oz of Clyde Tombaugh\'s ashes!',
+        descJuno: 'Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
+        funFactJuno: 'First solar-powered spacecraft at Jupiter! Three 9m solar panels generate 500W. Carries three LEGO figurines: Galileo, Jupiter, and Juno!',
+        descCassini: 'Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
+        funFactCassini: 'Discovered Enceladus\' subsurface ocean! Water geysers shoot 250kg/s into space. Cassini flew through plumes, detected H2, organics - ingredients for life!',
+        descPioneer10: 'Pioneer 10 was the first spacecraft to travel through the asteroid belt and first to visit Jupiter (Dec 3, 1973)! Launched March 2, 1972, it carried the famous Pioneer plaque showing humans and Earth\'s location. Last contact: Jan 23, 2003 at 12.2 billion km.',
+        funFactPioneer10: 'Pioneer 10 carries a gold plaque designed by Carl Sagan showing a man, woman, and Earth\'s location - a message to any aliens who might find it!',
+        descPioneer11: 'Pioneer 11 was the first spacecraft to visit Saturn (Sept 1, 1979)! Also flew by Jupiter (Dec 2, 1974). Launched April 5, 1973, it discovered Saturn\'s F ring and a new moon. Also carries the Pioneer plaque. Last contact: Nov 24, 1995 at 6.5 billion km.',
+        funFactPioneer11: 'Pioneer 11 used Jupiter\'s gravity for the first planetary gravity assist, saving years of travel time to Saturn!',
+        
+        // Comet descriptions
+        descHalley: 'Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!',
+        descHaleBopp: 'Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.',
+        descNeowise: 'Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are "dirty snowballs" made of ice, dust, and rock from the solar system\'s formation.'
     },
     
     nl: {
@@ -224,6 +291,27 @@ const translations = {
         uranus: "Uranus",
         neptuneSystem: "Neptunus Systeem",
         neptune: "Neptunus",
+        pluto: "Pluto",
+        charon: "Charon",
+        enceladus: "Enceladus",
+        rhea: "Rhea",
+        titania: "Titania",
+        miranda: "Miranda",
+        triton: "Triton",
+        
+        // Navigatiemenu secties
+        navOurStar: "Onze Ster",
+        navInnerPlanets: "Binnenste Planeten (Rotsachtig)",
+        navAsteroidBelt: "Asteroïdengordel",
+        navOuterPlanets: "Buitenste Planeten (Gasreuzen)",
+        navIceGiants: "IJsreuzen",
+        navKuiperBelt: "Kuipergordel & Dwergplaneten",
+        navComets: "Kometen",
+        navSatellites: "Satellieten & Ruimtestations",
+        navSpacecraft: "Ruimtevaartuigen & Sondes",
+        navDistantStars: "Verre Sterren",
+        kuiperBelt: "Kuipergordel",
+        asteroidBelt: "Asteroïdengordel",
         
         // Bedieningsknoppen
         toggleOrbits: "Banen",
@@ -374,7 +462,53 @@ const translations = {
         funFactSaturn: 'De ringen van Saturnus zijn slechts 10 meter dik maar 280.000 km breed!',
         funFactUranus: 'Uranus was de eerste planeet die ontdekt werd met een telescoop (in 1781)!',
         funFactNeptune: 'Neptunus werd ontdekt door wiskundige berekeningen voordat hij gezien werd - zijn zwaartekracht beïnvloedde de baan van Uranus!',
-        funFactPluto: 'Een jaar op Pluto duurt 248 aardse jaren! Pluto heeft nog geen hele baan voltooid sinds de ontdekking in 1930.'
+        funFactPluto: 'Een jaar op Pluto duurt 248 aardse jaren! Pluto heeft nog geen hele baan voltooid sinds de ontdekking in 1930.',
+        
+        // Maanbeschrijvingen
+        descPhobos: 'Phobos draait sneller om Mars dan Mars om zijn as draait! Hij komt op in het westen en gaat onder in het oosten.',
+        descDeimos: 'Deimos is de kleinste van de twee Marsmanen en doet er 30 uur over om rond te draaien.',
+        descIo: 'Io is het vulkanisch actiefste hemellichaam in het zonnestelsel!',
+        descEuropa: 'Europa heeft een wereldwijde oceaan onder zijn ijskorst - een mogelijke plek voor leven!',
+        descGanymede: 'Ganymedes is de grootste maan in het zonnestelsel, groter dan Mercurius!',
+        descCallisto: 'Callisto is het meest gekraterde object in het zonnestelsel!',
+        descTitan: 'Titan heeft meren en rivieren van vloeibaar methaan - de enige plek naast de Aarde met vloeistof op het oppervlak!',
+        descEnceladus: 'Enceladus spuit watergeisers de ruimte in vanuit zijn ondergrondse oceaan!',
+        descRhea: 'Rhea heeft mogelijk zijn eigen ringensysteem!',
+        descTitania: 'Titania is de grootste maan van Uranus met massieve kloven!',
+        descMiranda: 'Miranda heeft het meest dramatische terrein in het zonnestelsel met kliffen van 20 km hoog!',
+        descTriton: 'Triton draait achterstevoren en heeft stikstofgeisers! Het is waarschijnlijk een gevangen Kuipergordelobject.',
+        descCharon: 'Charon is zo groot ten opzichte van Pluto dat ze een dubbelsysteem vormen!',
+        
+        // Satellietbeschrijvingen en wetenswaardigheden
+        descISS: 'ISS draait op 400 km hoogte en voltooit elke 92,68 minuten een baan (15,54 banen/dag). Gelanceerd 20 nov 1998 (Zarya-module). Assemblage: 1998-2011 (42 vluchten: 36 Shuttle, 6 Russisch). Massa: 419.725 kg. Volume onder druk: 1.000 m³. Continu bewoond sinds 2 nov 2000 (24+ jaar, 9.000+ dagen). 280+ astronauten uit 23 landen bezocht.',
+        funFactISS: 'Het ISS reist met 27.600 km/u! Astronauten zien 16 zonsopgangen/ondergangen per dag. Het is al 24+ jaar continu bewoond - langer dan elk ander ruimtevaartuig!',
+        descHubble: 'Gelanceerd 24 april 1990 met Space Shuttle Discovery. Draait op ~535 km hoogte. Heeft tot oktober 2025 1,6+ miljoen waarnemingen gedaan. 2,4m primaire spiegel observeert UV, zichtbaar licht en nabij-IR. Vijf onderhoudsmi​ssies (1993-2009) upgradeden de instrumenten.',
+        funFactHubble: 'Kan objecten van 0,05 boogseconden onderscheiden - alsof je twee vuurvliegjes op 10.000 km afstand ziet! Diepste beeld (eXtreme Deep Field) toont 5.500 sterrenstelsels, sommige 13,2 miljard lichtjaar ver.',
+        descGPS: 'GPS (NAVSTAR) constellatie: 31 operationele satellieten (per oktober 2025) in 6 baanvlakken, 55° inclinatie. Elke satelliet draait op 20.180 km hoogte. Zendt L-band signalen uit (1,2-1,5 GHz). Rubidium/cesium atoomklokken nauwkeurig tot 10⁻¹⁴ seconden.',
+        funFactGPS: 'Je hebt 4 satellieten nodig voor een 3D-positiebepaling (trilateratie + klok correctie). Het systeem geeft 5-10m nauwkeurigheid. Militair signaal (P/Y code) nauwkeurig tot centimeters!',
+        descJWST: 'Gelanceerd 25 dec 2021. Bereikte L2-punt 24 jan 2022. Eerste beelden vrijgegeven 12 juli 2022. Observeert infrarood (0,6-28,5 μm). 6,5m gesegmenteerde berylliumspiegel (18 zeshoeken) met 25 m² oppervlak - 6x Hubble! Zonneschild: 21,2m × 14,2m, 5 lagen.',
+        funFactJWST: 'Werkt bij -233°C (-388°F)! Kan de warmte van een hommel op maanafstand detecteren. Ontdekte de vroegste sterrenstelsels bij z=14 (280 miljoen jaar na de Oerknal).',
+        
+        // Ruimtevaartuigbeschrijvingen en wetenswaardigheden
+        descVoyager1: 'Voyager 1 is het verst door mensen gemaakte object vanaf de Aarde! Gelanceerd 5 sept 1977, kwam het op 25 aug 2012 in de interstellaire ruimte. Momenteel 24,3 miljard km (162 AU) van de Zon. Draagt de Gouden Plaat met geluiden en beelden van de Aarde.',
+        funFactVoyager1: 'Voyager 1 reist met 17 km/s (61.200 km/u). Radiosignalen doen er 22,5 uur over om de Aarde te bereiken!',
+        descVoyager2: 'Voyager 2 is het enige ruimtevaartuig dat alle vier reuzenplaneten bezocht! Jupiter (juli 1979), Saturnus (aug 1981), Uranus (jan 1986), Neptunus (aug 1989). Kwam 5 nov 2018 in de interstellaire ruimte. Nu 20,3 miljard km (135 AU) van de Zon.',
+        funFactVoyager2: 'Voyager 2 ontdekte 16 manen bij de reuzenplaneten, de Grote Donkere Vlek van Neptunus, en geisers op Triton!',
+        descNewHorizons: 'New Horizons gaf ons de eerste close-up beelden van Pluto op 14 juli 2015! Het onthulde waterijsbergen tot 3.500m hoog, enorme stikstofgletsjers, en de beroemde hartvormige Tombaugh Regio. Nu 59 AU van de Zon, verkent de Kuipergordel.',
+        funFactNewHorizons: 'New Horizons reisde 9,5 jaar en 5 miljard km om Pluto te bereiken met 58.536 km/u. Het draagt 28 gram van Clyde Tombaugh\'s as!',
+        descJuno: 'Juno kwam op 4 juli 2016 in een baan om Jupiter. Bestudeert samenstelling, zwaartekrachtveld, magnetisch veld en poolaurora\'s. Ontdekte dat Jupiter\'s kern groter en "vaag" is, massieve poolcyclonen, en atmosferische ammoniakverdeling. Verlengde missie tot sept 2025.',
+        funFactJuno: 'Eerste zonne-aangedreven ruimtevaartuig bij Jupiter! Drie 9m zonnepanelen genereren 500W. Draagt drie LEGO-poppetjes: Galileo, Jupiter en Juno!',
+        descCassini: 'Cassini draaide om Saturnus van 30 juni 2004 - 15 sept 2017 (13 jaar). Ontdekte vloeibare methaan/ethaan meren op Titan, watergeisers op Enceladus, nieuwe ringen, 7 nieuwe manen. Huygens-sonde landde op Titan op 14 jan 2005. Eindigde met atmosferische intrede "Grand Finale".',
+        funFactCassini: 'Ontdekte Enceladus\' ondergrondse oceaan! Watergeisers spuiten 250kg/s de ruimte in. Cassini vloog door pluimen, detecteerde H2, organische stoffen - ingrediënten voor leven!',
+        descPioneer10: 'Pioneer 10 was het eerste ruimtevaartuig dat door de asteroïdengordel reisde en als eerste Jupiter bezocht (3 dec 1973)! Gelanceerd 2 maart 1972, droeg het de beroemde Pioneer-plaquette met mensen en de locatie van de Aarde. Laatste contact: 23 jan 2003 op 12,2 miljard km.',
+        funFactPioneer10: 'Pioneer 10 draagt een gouden plaquette ontworpen door Carl Sagan met een man, vrouw en de locatie van de Aarde - een boodschap voor aliens die het zouden vinden!',
+        descPioneer11: 'Pioneer 11 was het eerste ruimtevaartuig dat Saturnus bezocht (1 sept 1979)! Vloog ook langs Jupiter (2 dec 1974). Gelanceerd 5 april 1973, ontdekte het Saturnus\' F-ring en een nieuwe maan. Draagt ook de Pioneer-plaquette. Laatste contact: 24 nov 1995 op 6,5 miljard km.',
+        funFactPioneer11: 'Pioneer 11 gebruikte Jupiter\'s zwaartekracht voor de eerste planetaire zwaartekrachtondersteuning, besparend jaren reistijd naar Saturnus!',
+        
+        // Komeetbeschrijvingen
+        descHalley: 'De Halley-komeet is de beroemdste komeet! Hij keert elke 75-76 jaar terug naar de Aarde. Laatst gezien in 1986, keert hij terug in 2061. Als je hem ziet, bekijk je een 4,6 miljard jaar oude kosmische sneeuwbal!',
+        descHaleBopp: 'Hale-Bopp was een van de helderste kometen van de 20e eeuw, 18 maanden met het blote oog zichtbaar in 1996-1997! Zijn kern is ongewoon groot met 60 km diameter.',
+        descNeowise: 'Komeet NEOWISE was een spectaculair gezicht in juli 2020! Hij keert pas over ongeveer 6.800 jaar terug. Kometen zijn "vuile sneeuwballen" van ijs, stof en rots uit de vorming van het zonnestelsel.'
     },
     
     fr: {
@@ -410,6 +544,27 @@ const translations = {
         uranus: "Uranus",
         neptuneSystem: "Système Neptunien",
         neptune: "Neptune",
+        pluto: "Pluton",
+        charon: "Charon",
+        enceladus: "Encelade",
+        rhea: "Rhéa",
+        titania: "Titania",
+        miranda: "Miranda",
+        triton: "Triton",
+        
+        // Sections du menu de navigation
+        navOurStar: "Notre Étoile",
+        navInnerPlanets: "Planètes Intérieures (Rocheuses)",
+        navAsteroidBelt: "Ceinture d'Astéroïdes",
+        navOuterPlanets: "Planètes Extérieures (Géantes Gazeuses)",
+        navIceGiants: "Géantes de Glace",
+        navKuiperBelt: "Ceinture de Kuiper & Planètes Naines",
+        navComets: "Comètes",
+        navSatellites: "Satellites & Stations Spatiales",
+        navSpacecraft: "Vaisseaux Spatiaux & Sondes",
+        navDistantStars: "Étoiles Lointaines",
+        kuiperBelt: "Ceinture de Kuiper",
+        asteroidBelt: "Ceinture d'Astéroïdes",
         
         // Boutons de contrôle
         toggleOrbits: "Orbites",
@@ -552,7 +707,53 @@ const translations = {
         funFactSaturn: 'Les anneaux de Saturne ne font que 10 mètres d\'épaisseur mais 280 000 km de large!',
         funFactUranus: 'Uranus a été la première planète découverte avec un télescope (1781)!',
         funFactNeptune: 'Neptune a été découverte par les mathématiques avant d\'être vue - sa gravité affectait l\'orbite d\'Uranus!',
-        funFactPluto: 'Une année sur Pluton dure 248 années terrestres! Elle n\'a pas complété une orbite depuis sa découverte en 1930.'
+        funFactPluto: 'Une année sur Pluton dure 248 années terrestres! Elle n\'a pas complété une orbite depuis sa découverte en 1930.',
+        
+        // Descriptions des lunes
+        descPhobos: 'Phobos orbite Mars plus vite que Mars ne tourne! Il se lève à l\'ouest et se couche à l\'est.',
+        descDeimos: 'Deimos est la plus petite des deux lunes de Mars et met 30 heures pour orbiter.',
+        descIo: 'Io est le corps le plus volcaniquement actif du système solaire!',
+        descEuropa: 'Europe possède un océan global sous sa glace - un endroit potentiel pour la vie!',
+        descGanymede: 'Ganymède est la plus grande lune du système solaire, plus grande que Mercure!',
+        descCallisto: 'Callisto est l\'objet le plus criblé de cratères du système solaire!',
+        descTitan: 'Titan possède des lacs et rivières de méthane liquide - le seul endroit avec du liquide en surface hormis la Terre!',
+        descEnceladus: 'Encelade projette des geysers d\'eau dans l\'espace depuis son océan souterrain!',
+        descRhea: 'Rhéa pourrait avoir son propre système d\'anneaux!',
+        descTitania: 'Titania est la plus grande lune d\'Uranus avec des canyons massifs!',
+        descMiranda: 'Miranda possède le terrain le plus dramatique du système solaire avec des falaises de 20 km de haut!',
+        descTriton: 'Triton orbite à l\'envers et possède des geysers d\'azote! C\'est probablement un objet capturé de la ceinture de Kuiper.',
+        descCharon: 'Charon est si grand par rapport à Pluton qu\'ils forment un système binaire!',
+        
+        // Descriptions et faits des satellites
+        descISS: 'L\'ISS orbite à 400 km d\'altitude, complétant une orbite toutes les 92,68 minutes (15,54 orbites/jour). Lancée le 20 nov 1998 (module Zarya). Assemblage: 1998-2011 (42 vols: 36 Navette, 6 Russes). Masse: 419 725 kg. Volume pressurisé: 1 000 m³. Occupation continue depuis le 2 nov 2000 (24+ ans, 9 000+ jours). 280+ astronautes de 23 pays ont visité.',
+        funFactISS: 'L\'ISS voyage à 27 600 km/h! Les astronautes voient 16 levers/couchers de soleil par jour. Elle est continuellement occupée depuis 24+ ans - plus longtemps que tout autre vaisseau spatial!',
+        descHubble: 'Lancé le 24 avril 1990 par la navette Discovery. Orbite à ~535 km d\'altitude. A effectué 1,6+ million d\'observations en oct 2025. Miroir primaire de 2,4m observe UV, visible et proche IR. Cinq missions de maintenance (1993-2009) ont amélioré les instruments.',
+        funFactHubble: 'Peut résoudre des objets séparés de 0,05 secondes d\'arc - comme voir deux lucioles à 10 000 km! L\'image la plus profonde (eXtreme Deep Field) montre 5 500 galaxies, certaines à 13,2 milliards d\'années-lumière.',
+        descGPS: 'Constellation GPS (NAVSTAR): 31 satellites opérationnels (oct 2025) sur 6 plans orbitaux, inclinaison 55°. Chaque satellite orbite à 20 180 km d\'altitude. Émet des signaux bande L (1,2-1,5 GHz). Horloges atomiques rubidium/césium précises à 10⁻¹⁴ secondes.',
+        funFactGPS: 'Besoin de 4 satellites pour une position 3D (trilatération + correction d\'horloge). Le système fournit une précision de 5-10m. Le signal militaire (code P/Y) est précis au centimètre!',
+        descJWST: 'Lancé le 25 déc 2021. Atteint le point L2 le 24 jan 2022. Premières images publiées le 12 juil 2022. Observe l\'infrarouge (0,6-28,5 μm). Miroir segmenté en béryllium de 6,5m (18 hexagones) avec 25 m² de surface collectrice - 6x Hubble! Bouclier solaire: 21,2m × 14,2m, 5 couches.',
+        funFactJWST: 'Fonctionne à -233°C (-388°F)! Peut détecter la signature thermique d\'un bourdon à distance lunaire. A découvert les galaxies les plus anciennes à z=14 (280 millions d\'années après le Big Bang).',
+        
+        // Descriptions et faits des vaisseaux spatiaux
+        descVoyager1: 'Voyager 1 est l\'objet fait par l\'homme le plus éloigné de la Terre! Lancée le 5 sept 1977, elle est entrée dans l\'espace interstellaire le 25 août 2012. Actuellement à 24,3 milliards de km (162 UA) du Soleil. Elle transporte le Disque d\'Or avec des sons et images de la Terre.',
+        funFactVoyager1: 'Voyager 1 voyage à 17 km/s (61 200 km/h). Ses signaux radio mettent 22,5 heures pour atteindre la Terre!',
+        descVoyager2: 'Voyager 2 est le seul vaisseau spatial à avoir visité les quatre planètes géantes! Jupiter (juil 1979), Saturne (août 1981), Uranus (jan 1986), Neptune (août 1989). Entrée dans l\'espace interstellaire le 5 nov 2018. Maintenant à 20,3 milliards de km (135 UA) du Soleil.',
+        funFactVoyager2: 'Voyager 2 a découvert 16 lunes parmi les planètes géantes, la Grande Tache Sombre de Neptune et les geysers de Triton!',
+        descNewHorizons: 'New Horizons nous a donné les premières images rapprochées de Pluton le 14 juillet 2015! Il a révélé des montagnes de glace d\'eau jusqu\'à 3 500m de haut, de vastes glaciers d\'azote et la célèbre Tombaugh Regio en forme de cœur. Maintenant à 59 UA du Soleil, explorant la ceinture de Kuiper.',
+        funFactNewHorizons: 'New Horizons a voyagé 9,5 ans et 5 milliards de km pour atteindre Pluton à 58 536 km/h. Il transporte 28g des cendres de Clyde Tombaugh!',
+        descJuno: 'Juno est entrée en orbite autour de Jupiter le 4 juillet 2016. Étudie la composition, le champ gravitationnel, le champ magnétique et les aurores polaires. A découvert que le noyau de Jupiter est plus grand et "flou", des cyclones polaires massifs et la distribution d\'ammoniac atmosphérique. Mission prolongée jusqu\'en sept 2025.',
+        funFactJuno: 'Premier vaisseau spatial à énergie solaire vers Jupiter! Trois panneaux solaires de 9m génèrent 500W. Transporte trois figurines LEGO: Galilée, Jupiter et Junon!',
+        descCassini: 'Cassini a orbité Saturne du 30 juin 2004 au 15 sept 2017 (13 ans). A découvert des lacs de méthane/éthane liquide sur Titan, des geysers d\'eau sur Encelade, de nouveaux anneaux, 7 nouvelles lunes. La sonde Huygens a atterri sur Titan le 14 jan 2005. S\'est terminée par une entrée atmosphérique "Grand Finale".',
+        funFactCassini: 'A découvert l\'océan souterrain d\'Encelade! Les geysers d\'eau projettent 250kg/s dans l\'espace. Cassini a traversé les panaches, détecté H2, composés organiques - ingrédients de la vie!',
+        descPioneer10: 'Pioneer 10 fut le premier vaisseau spatial à traverser la ceinture d\'astéroïdes et à visiter Jupiter (3 déc 1973)! Lancée le 2 mars 1972, elle portait la célèbre plaque Pioneer montrant les humains et la localisation de la Terre. Dernier contact: 23 jan 2003 à 12,2 milliards de km.',
+        funFactPioneer10: 'Pioneer 10 porte une plaque dorée conçue par Carl Sagan montrant un homme, une femme et la localisation de la Terre - un message pour les extraterrestres qui pourraient la trouver!',
+        descPioneer11: 'Pioneer 11 fut le premier vaisseau spatial à visiter Saturne (1er sept 1979)! A aussi survolé Jupiter (2 déc 1974). Lancée le 5 avril 1973, elle a découvert l\'anneau F de Saturne et une nouvelle lune. Porte aussi la plaque Pioneer. Dernier contact: 24 nov 1995 à 6,5 milliards de km.',
+        funFactPioneer11: 'Pioneer 11 a utilisé la gravité de Jupiter pour la première assistance gravitationnelle planétaire, économisant des années de voyage vers Saturne!',
+        
+        // Descriptions des comètes
+        descHalley: 'La comète de Halley est la plus célèbre! Elle revient près de la Terre tous les 75-76 ans. Vue pour la dernière fois en 1986, elle reviendra en 2061. Quand vous la voyez, vous observez une boule de neige cosmique vieille de 4,6 milliards d\'années!',
+        descHaleBopp: 'Hale-Bopp fut l\'une des comètes les plus brillantes du 20e siècle, visible à l\'œil nu pendant 18 mois en 1996-1997! Son noyau est exceptionnellement grand avec 60 km de diamètre.',
+        descNeowise: 'La comète NEOWISE fut un spectacle spectaculaire en juillet 2020! Elle ne reviendra pas avant environ 6 800 ans. Les comètes sont des "boules de neige sales" composées de glace, poussière et roche de la formation du système solaire.'
     },
     
     de: {
@@ -588,6 +789,27 @@ const translations = {
         uranus: "Uranus",
         neptuneSystem: "Neptunsystem",
         neptune: "Neptun",
+        pluto: "Pluto",
+        charon: "Charon",
+        enceladus: "Enceladus",
+        rhea: "Rhea",
+        titania: "Titania",
+        miranda: "Miranda",
+        triton: "Triton",
+        
+        // Navigationsmenü-Abschnitte
+        navOurStar: "Unser Stern",
+        navInnerPlanets: "Innere Planeten (Gesteinsplaneten)",
+        navAsteroidBelt: "Asteroidengürtel",
+        navOuterPlanets: "Äußere Planeten (Gasriesen)",
+        navIceGiants: "Eisriesen",
+        navKuiperBelt: "Kuipergürtel & Zwergplaneten",
+        navComets: "Kometen",
+        navSatellites: "Satelliten & Raumstationen",
+        navSpacecraft: "Raumfahrzeuge & Sonden",
+        navDistantStars: "Ferne Sterne",
+        kuiperBelt: "Kuipergürtel",
+        asteroidBelt: "Asteroidengürtel",
         
         // Steuerungstasten
         toggleOrbits: "Umlaufbahnen",
@@ -730,7 +952,53 @@ const translations = {
         funFactSaturn: 'Saturns Ringe sind nur 10 Meter dick, aber 280.000 km breit!',
         funFactUranus: 'Uranus war der erste Planet, der mit einem Teleskop entdeckt wurde (1781)!',
         funFactNeptune: 'Neptun wurde durch Mathematik entdeckt, bevor er gesehen wurde - seine Schwerkraft beeinflusste die Umlaufbahn von Uranus!',
-        funFactPluto: 'Ein Jahr auf Pluto dauert 248 Erdjahre! Er hat seit seiner Entdeckung 1930 noch keine Umlaufbahn vollendet.'
+        funFactPluto: 'Ein Jahr auf Pluto dauert 248 Erdjahre! Er hat seit seiner Entdeckung 1930 noch keine Umlaufbahn vollendet.',
+        
+        // Mondbeschreibungen
+        descPhobos: 'Phobos umkreist den Mars schneller als der Mars rotiert! Er geht im Westen auf und im Osten unter.',
+        descDeimos: 'Deimos ist der kleinere der beiden Marsmonde und braucht 30 Stunden für eine Umkreisung.',
+        descIo: 'Io ist der vulkanisch aktivste Körper im Sonnensystem!',
+        descEuropa: 'Europa hat einen globalen Ozean unter seinem Eis - ein potenzieller Ort für Leben!',
+        descGanymede: 'Ganymed ist der größte Mond im Sonnensystem, größer als Merkur!',
+        descCallisto: 'Callisto ist das am stärksten verkraterte Objekt im Sonnensystem!',
+        descTitan: 'Titan hat Seen und Flüsse aus flüssigem Methan - der einzige Ort mit Oberflächenflüssigkeiten außer der Erde!',
+        descEnceladus: 'Enceladus spritzt Wasserfontänen aus seinem unterirdischen Ozean ins All!',
+        descRhea: 'Rhea könnte ein eigenes Ringsystem haben!',
+        descTitania: 'Titania ist der größte Mond von Uranus mit massiven Schluchten!',
+        descMiranda: 'Miranda hat das dramatischste Gelände im Sonnensystem mit 20 km hohen Klippen!',
+        descTriton: 'Triton umkreist rückwärts und hat Stickstoffgeysire! Wahrscheinlich ein eingefangenes Objekt aus dem Kuipergürtel.',
+        descCharon: 'Charon ist im Vergleich zu Pluto so groß, dass sie ein Doppelsystem bilden!',
+        
+        // Satellitenbeschreibungen und Fakten
+        descISS: 'Die ISS umkreist in 400 km Höhe und vollendet alle 92,68 Minuten eine Umlaufbahn (15,54 Umläufe/Tag). Gestartet am 20. Nov 1998 (Zarya-Modul). Montage: 1998-2011 (42 Flüge: 36 Shuttle, 6 russisch). Masse: 419.725 kg. Druckvolumen: 1.000 m³. Dauerhaft bewohnt seit 2. Nov 2000 (24+ Jahre, 9.000+ Tage). 280+ Astronauten aus 23 Ländern haben sie besucht.',
+        funFactISS: 'Die ISS reist mit 27.600 km/h! Astronauten sehen 16 Sonnenauf-/untergänge pro Tag. Sie ist seit 24+ Jahren dauerhaft bewohnt - länger als jedes andere Raumfahrzeug!',
+        descHubble: 'Gestartet am 24. April 1990 mit der Discovery-Fähre. Umkreist in ~535 km Höhe. Hat bis Okt 2025 1,6+ Millionen Beobachtungen durchgeführt. 2,4m Primärspiegel beobachtet UV, sichtbar und nahes IR. Fünf Wartungsmissionen (1993-2009) verbesserten die Instrumente.',
+        funFactHubble: 'Kann Objekte auflösen, die 0,05 Bogensekunden getrennt sind - wie das Sehen zweier Glühwürmchen in 10.000 km Entfernung! Das tiefste Bild (eXtreme Deep Field) zeigt 5.500 Galaxien, einige 13,2 Milliarden Lichtjahre entfernt.',
+        descGPS: 'GPS-Konstellation (NAVSTAR): 31 operative Satelliten (Okt 2025) in 6 Bahnebenen, 55° Neigung. Jeder Satellit umkreist in 20.180 km Höhe. Sendet L-Band-Signale (1,2-1,5 GHz). Rubidium/Cäsium-Atomuhren genau auf 10⁻¹⁴ Sekunden.',
+        funFactGPS: 'Benötigt 4 Satelliten für 3D-Position (Trilateration + Uhrenkorrektur). Das System bietet 5-10m Genauigkeit. Das militärische Signal (P/Y-Code) ist zentimetergenau!',
+        descJWST: 'Gestartet am 25. Dez 2021. Erreichte L2-Punkt am 24. Jan 2022. Erste Bilder veröffentlicht am 12. Jul 2022. Beobachtet Infrarot (0,6-28,5 μm). 6,5m segmentierter Beryllium-Spiegel (18 Sechsecke) mit 25 m² Sammelfläche - 6x Hubble! Sonnenschild: 21,2m × 14,2m, 5 Schichten.',
+        funFactJWST: 'Arbeitet bei -233°C (-388°F)! Kann die thermische Signatur einer Hummel in Mondentfernung erkennen. Hat die ältesten Galaxien bei z=14 entdeckt (280 Millionen Jahre nach dem Urknall).',
+        
+        // Raumfahrzeugbeschreibungen und Fakten
+        descVoyager1: 'Voyager 1 ist das am weitesten von der Erde entfernte menschengemachte Objekt! Gestartet am 5. Sept 1977, trat am 25. Aug 2012 in den interstellaren Raum ein. Derzeit 24,3 Milliarden km (162 AE) von der Sonne entfernt. Trägt die Goldene Schallplatte mit Klängen und Bildern der Erde.',
+        funFactVoyager1: 'Voyager 1 reist mit 17 km/s (61.200 km/h). Seine Funksignale brauchen 22,5 Stunden zur Erde!',
+        descVoyager2: 'Voyager 2 ist das einzige Raumfahrzeug, das alle vier Riesenplaneten besucht hat! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptun (Aug 1989). Trat am 5. Nov 2018 in den interstellaren Raum ein. Jetzt 20,3 Milliarden km (135 AE) von der Sonne entfernt.',
+        funFactVoyager2: 'Voyager 2 entdeckte 16 Monde bei den Riesenplaneten, den Großen Dunklen Fleck des Neptun und die Geysire von Triton!',
+        descNewHorizons: 'New Horizons gab uns am 14. Juli 2015 die ersten Nahaufnahmen von Pluto! Enthüllte Wassereis-Berge bis 3.500m Höhe, riesige Stickstoffgletscher und die berühmte herzförmige Tombaugh Regio. Jetzt 59 AE von der Sonne entfernt, erkundet den Kuipergürtel.',
+        funFactNewHorizons: 'New Horizons reiste 9,5 Jahre und 5 Milliarden km, um Pluto mit 58.536 km/h zu erreichen. Trägt 28g von Clyde Tombaughs Asche!',
+        descJuno: 'Juno trat am 4. Juli 2016 in die Jupiter-Umlaufbahn ein. Untersucht Zusammensetzung, Gravitationsfeld, Magnetfeld und polare Polarlichter. Entdeckte, dass Jupiters Kern größer und "unscharf" ist, massive polare Wirbelstürme und atmosphärische Ammoniakverteilung. Mission bis Sept 2025 verlängert.',
+        funFactJuno: 'Erstes solarbetriebenes Raumfahrzeug zu Jupiter! Drei 9m Solarpanele erzeugen 500W. Trägt drei LEGO-Figuren: Galileo, Jupiter und Juno!',
+        descCassini: 'Cassini umkreiste Saturn vom 30. Juni 2004 bis 15. Sept 2017 (13 Jahre). Entdeckte Methan/Ethan-Flüssigseen auf Titan, Wasserfontänen auf Enceladus, neue Ringe, 7 neue Monde. Die Huygens-Sonde landete am 14. Jan 2005 auf Titan. Endete mit "Grand Finale" Atmosphäreneintritt.',
+        funFactCassini: 'Entdeckte den unterirdischen Ozean von Enceladus! Wasserfontänen sprühen 250kg/s ins All. Cassini flog durch die Fontänen, entdeckte H2, organische Verbindungen - Zutaten für Leben!',
+        descPioneer10: 'Pioneer 10 war das erste Raumfahrzeug, das den Asteroidengürtel durchquerte und Jupiter besuchte (3. Dez 1973)! Gestartet am 2. März 1972, trug die berühmte Pioneer-Plakette mit Menschen und Erdposition. Letzter Kontakt: 23. Jan 2003 bei 12,2 Milliarden km.',
+        funFactPioneer10: 'Pioneer 10 trägt eine goldene Plakette von Carl Sagan, die einen Mann, eine Frau und die Erdposition zeigt - eine Botschaft für Außerirdische, die sie finden könnten!',
+        descPioneer11: 'Pioneer 11 war das erste Raumfahrzeug, das Saturn besuchte (1. Sept 1979)! Flog auch an Jupiter vorbei (2. Dez 1974). Gestartet am 5. April 1973, entdeckte Saturns F-Ring und einen neuen Mond. Trägt ebenfalls die Pioneer-Plakette. Letzter Kontakt: 24. Nov 1995 bei 6,5 Milliarden km.',
+        funFactPioneer11: 'Pioneer 11 nutzte Jupiters Schwerkraft für das erste planetare Swing-by-Manöver und sparte Jahre Reisezeit zum Saturn!',
+        
+        // Kometenbeschreibungen
+        descHalley: 'Der Halleysche Komet ist der berühmteste! Er kehrt alle 75-76 Jahre zur Erde zurück. Zuletzt 1986 gesehen, wird er 2061 wiederkommen. Wenn Sie ihn sehen, beobachten Sie einen 4,6 Milliarden Jahre alten kosmischen Schneeball!',
+        descHaleBopp: 'Hale-Bopp war einer der hellsten Kometen des 20. Jahrhunderts, 18 Monate lang 1996-1997 mit bloßem Auge sichtbar! Sein Kern ist außergewöhnlich groß mit 60 km Durchmesser.',
+        descNeowise: 'Komet NEOWISE war im Juli 2020 ein spektakulärer Anblick! Er wird erst in etwa 6.800 Jahren wiederkommen. Kometen sind "schmutzige Schneebälle" aus Eis, Staub und Gestein von der Entstehung des Sonnensystems.'
     },
     
     es: {
@@ -766,6 +1034,27 @@ const translations = {
         uranus: "Urano",
         neptuneSystem: "Sistema Neptuniano",
         neptune: "Neptuno",
+        pluto: "Plutón",
+        charon: "Caronte",
+        enceladus: "Encélado",
+        rhea: "Rea",
+        titania: "Titania",
+        miranda: "Miranda",
+        triton: "Tritón",
+        
+        // Secciones del menú de navegación
+        navOurStar: "Nuestra Estrella",
+        navInnerPlanets: "Planetas Interiores (Rocosos)",
+        navAsteroidBelt: "Cinturón de Asteroides",
+        navOuterPlanets: "Planetas Exteriores (Gigantes Gaseosos)",
+        navIceGiants: "Gigantes de Hielo",
+        navKuiperBelt: "Cinturón de Kuiper y Planetas Enanos",
+        navComets: "Cometas",
+        navSatellites: "Satélites y Estaciones Espaciales",
+        navSpacecraft: "Naves Espaciales y Sondas",
+        navDistantStars: "Estrellas Distantes",
+        kuiperBelt: "Cinturón de Kuiper",
+        asteroidBelt: "Cinturón de Asteroides",
         
         // Botones de control
         toggleOrbits: "Órbitas",
@@ -908,7 +1197,53 @@ const translations = {
         funFactSaturn: '¡Los anillos de Saturno tienen solo 10 metros de espesor pero 280.000 km de ancho!',
         funFactUranus: '¡Urano fue el primer planeta descubierto con un telescopio (1781)!',
         funFactNeptune: '¡Neptuno fue descubierto por matemáticas antes de ser visto: su gravedad afectaba la órbita de Urano!',
-        funFactPluto: '¡Un año en Plutón dura 248 años terrestres! No ha completado una órbita desde su descubrimiento en 1930.'
+        funFactPluto: '¡Un año en Plutón dura 248 años terrestres! No ha completado una órbita desde su descubrimiento en 1930.',
+        
+        // Descripciones de lunas
+        descPhobos: '¡Fobos orbita Marte más rápido de lo que Marte gira! Sale por el oeste y se pone por el este.',
+        descDeimos: 'Deimos es la más pequeña de las dos lunas de Marte y tarda 30 horas en orbitar.',
+        descIo: '¡Ío es el cuerpo más volcánicamente activo del sistema solar!',
+        descEuropa: '¡Europa tiene un océano global bajo su hielo: un lugar potencial para la vida!',
+        descGanymede: '¡Ganímedes es la luna más grande del sistema solar, más grande que Mercurio!',
+        descCallisto: '¡Calisto es el objeto más craterizado del sistema solar!',
+        descTitan: '¡Titán tiene lagos y ríos de metano líquido: el único lugar con líquidos superficiales aparte de la Tierra!',
+        descEnceladus: '¡Encélado expulsa chorros de agua al espacio desde su océano subterráneo!',
+        descRhea: '¡Rea podría tener su propio sistema de anillos!',
+        descTitania: '¡Titania es la luna más grande de Urano con cañones masivos!',
+        descMiranda: '¡Miranda tiene el terreno más dramático del sistema solar con acantilados de 20 km de altura!',
+        descTriton: '¡Tritón orbita hacia atrás y tiene géiseres de nitrógeno! Probablemente es un objeto capturado del cinturón de Kuiper.',
+        descCharon: '¡Caronte es tan grande comparado con Plutón que forman un sistema binario!',
+        
+        // Descripciones y datos de satélites
+        descISS: 'La EEI orbita a 400 km de altitud, completando una órbita cada 92,68 minutos (15,54 órbitas/día). Lanzada el 20 nov 1998 (módulo Zarya). Ensamblaje: 1998-2011 (42 vuelos: 36 Shuttle, 6 rusos). Masa: 419.725 kg. Volumen presurizado: 1.000 m³. Ocupación continua desde el 2 nov 2000 (24+ años, 9.000+ días). 280+ astronautas de 23 países la han visitado.',
+        funFactISS: '¡La EEI viaja a 27.600 km/h! Los astronautas ven 16 amaneceres/atardeceres por día. ¡Ha estado continuamente ocupada durante 24+ años, más que cualquier otra nave espacial!',
+        descHubble: 'Lanzado el 24 abril 1990 por el transbordador Discovery. Orbita a ~535 km de altitud. Ha realizado 1,6+ millones de observaciones hasta oct 2025. Espejo primario de 2,4m observa UV, visible e IR cercano. Cinco misiones de servicio (1993-2009) mejoraron los instrumentos.',
+        funFactHubble: '¡Puede resolver objetos separados por 0,05 segundos de arco: como ver dos luciérnagas a 10.000 km! La imagen más profunda (eXtreme Deep Field) muestra 5.500 galaxias, algunas a 13,2 mil millones de años luz.',
+        descGPS: 'Constelación GPS (NAVSTAR): 31 satélites operativos (oct 2025) en 6 planos orbitales, inclinación 55°. Cada satélite orbita a 20.180 km de altitud. Transmite señales banda L (1,2-1,5 GHz). Relojes atómicos de rubidio/cesio precisos a 10⁻¹⁴ segundos.',
+        funFactGPS: '¡Necesita 4 satélites para posición 3D (trilateración + corrección de reloj). El sistema proporciona precisión de 5-10m. La señal militar (código P/Y) es precisa al centímetro!',
+        descJWST: 'Lanzado el 25 dic 2021. Alcanzó el punto L2 el 24 ene 2022. Primeras imágenes publicadas el 12 jul 2022. Observa infrarrojo (0,6-28,5 μm). Espejo segmentado de berilio de 6,5m (18 hexágonos) con 25 m² de área colectora: ¡6x Hubble! Parasol: 21,2m × 14,2m, 5 capas.',
+        funFactJWST: '¡Opera a -233°C (-388°F)! Puede detectar la firma térmica de un abejorro a distancia lunar. ¡Ha descubierto las galaxias más antiguas en z=14 (280 millones de años después del Big Bang)!',
+        
+        // Descripciones y datos de naves espaciales
+        descVoyager1: '¡Voyager 1 es el objeto hecho por el hombre más lejano de la Tierra! Lanzada el 5 sept 1977, entró al espacio interestelar el 25 ago 2012. Actualmente a 24,3 mil millones de km (162 UA) del Sol. Lleva el Disco de Oro con sonidos e imágenes de la Tierra.',
+        funFactVoyager1: '¡Voyager 1 viaja a 17 km/s (61.200 km/h). Sus señales de radio tardan 22,5 horas en llegar a la Tierra!',
+        descVoyager2: '¡Voyager 2 es la única nave espacial que ha visitado los cuatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (ene 1986), Neptuno (ago 1989). Entró al espacio interestelar el 5 nov 2018. Ahora a 20,3 mil millones de km (135 UA) del Sol.',
+        funFactVoyager2: '¡Voyager 2 descubrió 16 lunas entre los planetas gigantes, la Gran Mancha Oscura de Neptuno y los géiseres de Tritón!',
+        descNewHorizons: '¡New Horizons nos dio las primeras imágenes cercanas de Plutón el 14 julio 2015! Reveló montañas de hielo de agua de hasta 3.500m de altura, vastos glaciares de nitrógeno y la famosa Tombaugh Regio en forma de corazón. Ahora a 59 UA del Sol, explorando el cinturón de Kuiper.',
+        funFactNewHorizons: '¡New Horizons viajó 9,5 años y 5 mil millones de km para llegar a Plutón a 58.536 km/h. Lleva 28g de las cenizas de Clyde Tombaugh!',
+        descJuno: 'Juno entró en órbita de Júpiter el 4 julio 2016. Estudia composición, campo gravitacional, campo magnético y auroras polares. Descubrió que el núcleo de Júpiter es más grande y "difuso", ciclones polares masivos y distribución de amoníaco atmosférico. Misión extendida hasta sept 2025.',
+        funFactJuno: '¡Primera nave espacial solar a Júpiter! Tres paneles solares de 9m generan 500W. ¡Lleva tres figuras LEGO: Galileo, Júpiter y Juno!',
+        descCassini: 'Cassini orbitó Saturno del 30 junio 2004 al 15 sept 2017 (13 años). Descubrió lagos de metano/etano líquido en Titán, géiseres de agua en Encélado, nuevos anillos, 7 lunas nuevas. La sonda Huygens aterrizó en Titán el 14 ene 2005. Terminó con entrada atmosférica "Gran Finale".',
+        funFactCassini: '¡Descubrió el océano subterráneo de Encélado! Los géiseres de agua expulsan 250kg/s al espacio. ¡Cassini voló a través de los penachos, detectó H2, compuestos orgánicos: ingredientes para la vida!',
+        descPioneer10: '¡Pioneer 10 fue la primera nave espacial en cruzar el cinturón de asteroides y visitar Júpiter (3 dic 1973)! Lanzada el 2 marzo 1972, llevaba la famosa placa Pioneer mostrando humanos y la ubicación de la Tierra. Último contacto: 23 ene 2003 a 12,2 mil millones de km.',
+        funFactPioneer10: '¡Pioneer 10 lleva una placa dorada diseñada por Carl Sagan mostrando un hombre, una mujer y la ubicación de la Tierra: un mensaje para extraterrestres que puedan encontrarla!',
+        descPioneer11: '¡Pioneer 11 fue la primera nave espacial en visitar Saturno (1 sept 1979)! También sobrevoló Júpiter (2 dic 1974). Lanzada el 5 abril 1973, descubrió el anillo F de Saturno y una nueva luna. También lleva la placa Pioneer. Último contacto: 24 nov 1995 a 6,5 mil millones de km.',
+        funFactPioneer11: '¡Pioneer 11 usó la gravedad de Júpiter para la primera asistencia gravitacional planetaria, ahorrando años de viaje a Saturno!',
+        
+        // Descripciones de cometas
+        descHalley: '¡El cometa Halley es el más famoso! Regresa a las cercanías de la Tierra cada 75-76 años. Visto por última vez en 1986, regresará en 2061. ¡Cuando lo ves, estás observando una bola de nieve cósmica de 4,6 mil millones de años!',
+        descHaleBopp: '¡Hale-Bopp fue uno de los cometas más brillantes del siglo XX, visible a simple vista durante 18 meses en 1996-1997! Su núcleo es excepcionalmente grande con 60 km de diámetro.',
+        descNeowise: '¡El cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.'
     },
     
     pt: {
@@ -944,6 +1279,27 @@ const translations = {
         uranus: "Urano",
         neptuneSystem: "Sistema Netuniano",
         neptune: "Netuno",
+        pluto: "Plutão",
+        charon: "Caronte",
+        enceladus: "Encélado",
+        rhea: "Reia",
+        titania: "Titânia",
+        miranda: "Miranda",
+        triton: "Tritão",
+        
+        // Seções do menu de navegação
+        navOurStar: "Nossa Estrela",
+        navInnerPlanets: "Planetas Interiores (Rochosos)",
+        navAsteroidBelt: "Cinturão de Asteroides",
+        navOuterPlanets: "Planetas Exteriores (Gigantes Gasosos)",
+        navIceGiants: "Gigantes de Gelo",
+        navKuiperBelt: "Cinturão de Kuiper e Planetas Anões",
+        navComets: "Cometas",
+        navSatellites: "Satélites e Estações Espaciais",
+        navSpacecraft: "Naves Espaciais e Sondas",
+        navDistantStars: "Estrelas Distantes",
+        kuiperBelt: "Cinturão de Kuiper",
+        asteroidBelt: "Cinturão de Asteroides",
         
         // Botões de controle
         toggleOrbits: "Órbitas",
@@ -1086,7 +1442,53 @@ const translations = {
         funFactSaturn: 'Os anéis de Saturno têm apenas 10 metros de espessura, mas 280.000 km de largura!',
         funFactUranus: 'Urano foi o primeiro planeta descoberto com um telescópio (1781)!',
         funFactNeptune: 'Netuno foi descoberto pela matemática antes de ser visto - sua gravidade afetava a órbita de Urano!',
-        funFactPluto: 'Um ano em Plutão dura 248 anos terrestres! Ele não completou uma órbita desde sua descoberta em 1930.'
+        funFactPluto: 'Um ano em Plutão dura 248 anos terrestres! Ele não completou uma órbita desde sua descoberta em 1930.',
+        
+        // Descrições de luas
+        descPhobos: 'Fobos orbita Marte mais rápido do que Marte gira! Ele nasce no oeste e se põe no leste.',
+        descDeimos: 'Deimos é a menor das duas luas de Marte e leva 30 horas para orbitar.',
+        descIo: 'Io é o corpo mais vulcanicamente ativo do sistema solar!',
+        descEuropa: 'Europa tem um oceano global sob seu gelo - um local potencial para vida!',
+        descGanymede: 'Ganimedes é a maior lua do sistema solar, maior que Mercúrio!',
+        descCallisto: 'Calisto é o objeto mais repleto de crateras no sistema solar!',
+        descTitan: 'Titã tem lagos e rios de metano líquido - o único lugar com líquidos na superfície além da Terra!',
+        descEnceladus: 'Encélado expele jatos de água para o espaço de seu oceano subterrâneo!',
+        descRhea: 'Reia pode ter seu próprio sistema de anéis!',
+        descTitania: 'Titânia é a maior lua de Urano com cânions maciços!',
+        descMiranda: 'Miranda tem o terreno mais dramático do sistema solar com falésias de 20 km de altura!',
+        descTriton: 'Tritão orbita para trás e tem gêiseres de nitrogênio! Provavelmente é um objeto capturado do cinturão de Kuiper.',
+        descCharon: 'Caronte é tão grande comparado a Plutão que eles formam um sistema binário!',
+        
+        // Descrições e fatos de satélites
+        descISS: 'A ISS orbita a 400 km de altitude, completando uma órbita a cada 92,68 minutos (15,54 órbitas/dia). Lançada em 20 nov 1998 (módulo Zarya). Montagem: 1998-2011 (42 voos: 36 Shuttle, 6 russos). Massa: 419.725 kg. Volume pressurizado: 1.000 m³. Ocupação contínua desde 2 nov 2000 (24+ anos, 9.000+ dias). 280+ astronautas de 23 países a visitaram.',
+        funFactISS: 'A ISS viaja a 27.600 km/h! Os astronautas veem 16 nascer/pôr do sol por dia. Ela está continuamente ocupada há 24+ anos - mais do que qualquer outra nave espacial!',
+        descHubble: 'Lançado em 24 abril 1990 pelo ônibus Discovery. Orbita a ~535 km de altitude. Realizou 1,6+ milhões de observações até out 2025. Espelho primário de 2,4m observa UV, visível e IV próximo. Cinco missões de serviço (1993-2009) melhoraram os instrumentos.',
+        funFactHubble: 'Pode resolver objetos separados por 0,05 segundos de arco - como ver dois vaga-lumes a 10.000 km! A imagem mais profunda (eXtreme Deep Field) mostra 5.500 galáxias, algumas a 13,2 bilhões de anos-luz.',
+        descGPS: 'Constelação GPS (NAVSTAR): 31 satélites operacionais (out 2025) em 6 planos orbitais, inclinação 55°. Cada satélite orbita a 20.180 km de altitude. Transmite sinais banda L (1,2-1,5 GHz). Relógios atômicos de rubídio/césio precisos a 10⁻¹⁴ segundos.',
+        funFactGPS: 'Precisa de 4 satélites para posição 3D (trilateração + correção de relógio). O sistema fornece precisão de 5-10m. O sinal militar (código P/Y) é preciso ao centímetro!',
+        descJWST: 'Lançado em 25 dez 2021. Alcançou o ponto L2 em 24 jan 2022. Primeiras imagens publicadas em 12 jul 2022. Observa infravermelho (0,6-28,5 μm). Espelho segmentado de berílio de 6,5m (18 hexágonos) com 25 m² de área coletora - 6x Hubble! Protetor solar: 21,2m × 14,2m, 5 camadas.',
+        funFactJWST: 'Opera a -233°C (-388°F)! Pode detectar a assinatura térmica de um zangão à distância lunar. Descobriu as galáxias mais antigas em z=14 (280 milhões de anos após o Big Bang)!',
+        
+        // Descrições e fatos de naves espaciais
+        descVoyager1: 'Voyager 1 é o objeto feito pelo homem mais distante da Terra! Lançada em 5 set 1977, entrou no espaço interestelar em 25 ago 2012. Atualmente a 24,3 bilhões de km (162 UA) do Sol. Carrega o Disco de Ouro com sons e imagens da Terra.',
+        funFactVoyager1: 'Voyager 1 viaja a 17 km/s (61.200 km/h). Seus sinais de rádio levam 22,5 horas para chegar à Terra!',
+        descVoyager2: 'Voyager 2 é a única nave espacial a visitar todos os quatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (jan 1986), Netuno (ago 1989). Entrou no espaço interestelar em 5 nov 2018. Agora a 20,3 bilhões de km (135 UA) do Sol.',
+        funFactVoyager2: 'Voyager 2 descobriu 16 luas entre os planetas gigantes, a Grande Mancha Escura de Netuno e os gêiseres de Tritão!',
+        descNewHorizons: 'New Horizons nos deu as primeiras imagens próximas de Plutão em 14 julho 2015! Revelou montanhas de gelo de água de até 3.500m de altura, vastas geleiras de nitrogênio e a famosa Tombaugh Regio em forma de coração. Agora a 59 UA do Sol, explorando o cinturão de Kuiper.',
+        funFactNewHorizons: 'New Horizons viajou 9,5 anos e 5 bilhões de km para chegar a Plutão a 58.536 km/h. Carrega 28g das cinzas de Clyde Tombaugh!',
+        descJuno: 'Juno entrou em órbita de Júpiter em 4 julho 2016. Estuda composição, campo gravitacional, campo magnético e auroras polares. Descobriu que o núcleo de Júpiter é maior e "difuso", ciclones polares maciços e distribuição de amônia atmosférica. Missão estendida até set 2025.',
+        funFactJuno: 'Primeira nave espacial solar para Júpiter! Três painéis solares de 9m geram 500W. Carrega três figuras LEGO: Galileu, Júpiter e Juno!',
+        descCassini: 'Cassini orbitou Saturno de 30 junho 2004 a 15 set 2017 (13 anos). Descobriu lagos de metano/etano líquido em Titã, gêiseres de água em Encélado, novos anéis, 7 novas luas. A sonda Huygens pousou em Titã em 14 jan 2005. Terminou com entrada atmosférica "Grand Finale".',
+        funFactCassini: 'Descobriu o oceano subterrâneo de Encélado! Os gêiseres de água expelem 250kg/s para o espaço. Cassini voou através das plumas, detectou H2, compostos orgânicos - ingredientes para a vida!',
+        descPioneer10: 'Pioneer 10 foi a primeira nave espacial a cruzar o cinturão de asteroides e visitar Júpiter (3 dez 1973)! Lançada em 2 março 1972, carregava a famosa placa Pioneer mostrando humanos e a localização da Terra. Último contato: 23 jan 2003 a 12,2 bilhões de km.',
+        funFactPioneer10: 'Pioneer 10 carrega uma placa dourada projetada por Carl Sagan mostrando um homem, uma mulher e a localização da Terra - uma mensagem para alienígenas que possam encontrá-la!',
+        descPioneer11: 'Pioneer 11 foi a primeira nave espacial a visitar Saturno (1 set 1979)! Também sobrevoou Júpiter (2 dez 1974). Lançada em 5 abril 1973, descobriu o anel F de Saturno e uma nova lua. Também carrega a placa Pioneer. Último contato: 24 nov 1995 a 6,5 bilhões de km.',
+        funFactPioneer11: 'Pioneer 11 usou a gravidade de Júpiter para a primeira assistência gravitacional planetária, economizando anos de viagem para Saturno!',
+        
+        // Descrições de cometas
+        descHalley: 'O cometa Halley é o mais famoso! Ele retorna às proximidades da Terra a cada 75-76 anos. Visto pela última vez em 1986, retornará em 2061. Quando você o vê, está observando uma bola de neve cósmica de 4,6 bilhões de anos!',
+        descHaleBopp: 'Hale-Bopp foi um dos cometas mais brilhantes do século 20, visível a olho nu por 18 meses em 1996-1997! Seu núcleo é excepcionalmente grande com 60 km de diâmetro.',
+        descNeowise: 'O cometa NEOWISE foi um espetáculo espetacular em julho de 2020! Ele não voltará por cerca de 6.800 anos. Cometas são "bolas de neve sujas" compostas de gelo, poeira e rocha da formação do sistema solar.'
     }
 };
 

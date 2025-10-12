@@ -2264,7 +2264,7 @@ class SolarSystemModule {
             color: 0x666666,
             distance: 1.5,
             speed: 17.22, // 2153x Mars's speed (0.008 * 2153) - orbits 3 times per Mars day!
-            description: 'Phobos orbits Mars faster than Mars rotates! It rises in the west and sets in the east.'
+            description: t('descPhobos')
         });
         // Deimos: ~12 km / 12,742 km = 0.0009
         // Orbital period: 1.263 days (30.3 hours) vs Mars's 687 days = 544x faster
@@ -2274,7 +2274,7 @@ class SolarSystemModule {
             color: 0x888888,
             distance: 2.5,
             speed: 4.35, // 544x Mars's speed (0.008 * 544)
-            description: 'Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
+            description: t('descDeimos')
         });
     } async createOuterPlanets(scene) {
  // Jupiter: 139,820 km / 12,742 km = 10.97 (MASSIVE!)
@@ -2303,7 +2303,7 @@ class SolarSystemModule {
             color: 0xFFFF00,
             distance: 12, // Increased from 8 for better visibility
             speed: 4.898, // 2449x Jupiter's speed (0.002 * 2449)
-            description: 'Io is the most volcanically active body in the solar system!'
+            description: t('descIo')
         });
         // Europa: 3,122 km / 12,742 km = 0.245
         // Orbital period: 3.551 days vs Jupiter's 4333 days = 1220x faster
@@ -2313,7 +2313,7 @@ class SolarSystemModule {
             color: 0xCCBB99,
             distance: 15, // Increased from 10
             speed: 2.44, // 1220x Jupiter's speed (0.002 * 1220)
-            description: 'Europa has a global ocean beneath its ice - a potential place for life!'
+            description: t('descEuropa')
         });
         // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
         // Orbital period: 7.155 days vs Jupiter's 4333 days = 606x faster
@@ -2323,7 +2323,7 @@ class SolarSystemModule {
             color: 0x996633,
             distance: 19, // Increased from 12
             speed: 1.212, // 606x Jupiter's speed (0.002 * 606)
-            description: 'Ganymede is the largest moon in the solar system, bigger than Mercury!'
+            description: t('descGanymede')
         });
         // Callisto: 4,821 km / 12,742 km = 0.378
         // Orbital period: 16.689 days vs Jupiter's 4333 days = 260x faster
@@ -2333,7 +2333,7 @@ class SolarSystemModule {
             color: 0x777777,
             distance: 23, // Increased from 14
             speed: 0.52, // 260x Jupiter's speed (0.002 * 260)
-            description: 'Callisto is the most heavily cratered object in the solar system!'
+            description: t('descCallisto')
         }); // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
  if (this.uiManager) this.uiManager.updateLoadingProgress(48, t('creatingSaturn'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -2361,7 +2361,7 @@ class SolarSystemModule {
             color: 0xFFAA33,
             distance: 10,
             speed: 0.608, // 675x Saturn's speed (0.0009 * 675)
-            description: 'Titan has lakes and rivers of liquid methane - the only place besides Earth with liquid on its surface!'
+            description: t('descTitan')
         });
         // Enceladus: 504 km / 12,742 km = 0.040
         // Orbital period: 1.370 days vs Saturn's 10759 days = 7854x faster
@@ -2371,7 +2371,7 @@ class SolarSystemModule {
             color: 0xFFFFFF,
             distance: 7,
             speed: 7.07, // 7854x Saturn's speed (0.0009 * 7854)
-            description: 'Enceladus shoots water geysers into space from its subsurface ocean!'
+            description: t('descEnceladus')
         });
         // Rhea: 1,527 km / 12,742 km = 0.120
         // Orbital period: 4.518 days vs Saturn's 10759 days = 2382x faster
@@ -2381,7 +2381,7 @@ class SolarSystemModule {
             color: 0xCCCCCC,
             distance: 12,
             speed: 2.144, // 2382x Saturn's speed (0.0009 * 2382)
-            description: 'Rhea may have its own ring system!'
+            description: t('descRhea')
         }); // Uranus: 50,724 km / 12,742 km = 3.98
  if (this.uiManager) this.uiManager.updateLoadingProgress(54, t('creatingUranus'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -2407,7 +2407,7 @@ class SolarSystemModule {
             color: 0xAAAAAA,
             distance: 5,
             speed: 1.410, // 3526x Uranus's speed (0.0004 * 3526)
-            description: 'Titania is Uranus\' largest moon with massive canyons!'
+            description: t('descTitania')
         });
         // Miranda: 472 km / 12,742 km = 0.037
         // Orbital period: 1.413 days vs Uranus's 30687 days = 21722x faster
@@ -2417,7 +2417,7 @@ class SolarSystemModule {
             color: 0x999999,
             distance: 3.5,
             speed: 8.689, // 21722x Uranus's speed (0.0004 * 21722)
-            description: 'Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
+            description: t('descMiranda')
         }); // Neptune: 49,244 km / 12,742 km = 3.86
  if (this.uiManager) this.uiManager.updateLoadingProgress(58, t('creatingNeptune'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -2443,7 +2443,7 @@ class SolarSystemModule {
             color: 0xFFCCCC,
             distance: 5,
             speed: -1.024, // -10242x Neptune's speed (negative for retrograde orbit)
-            description: 'Triton orbits backwards and has nitrogen geysers! It\'s likely a captured Kuiper Belt object.'
+            description: t('descTriton')
         }); // Pluto: 2,377 km / 12,742 km = 0.187
  this.planets.pluto = this.createPlanet(scene, {
  name: 'Pluto',
@@ -2468,7 +2468,7 @@ class SolarSystemModule {
             color: 0xAAAAAA,
             distance: 1.2,
             speed: 0.567, // 14178x Pluto's speed (0.00004 * 14178)
-            description: 'Charon is so large relative to Pluto that they form a binary system!'
+            description: t('descCharon')
         });
     } createProceduralTexture(type, size = 512) {
  // Create canvas for procedural texture
@@ -3003,6 +3003,19 @@ class SolarSystemModule {
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/venusmap.jpg'
  ];
  return this.loadPlanetTextureReal('Venus', textureURLs, this.createVenusTexture, size);
+ }
+ 
+ // Earth real texture loader - FIXED to use same pattern as other planets
+ createEarthTextureRealFixed(size) {
+ const textureURLs = [
+ // GitHub CDN - Blue Marble 4K (WORKS! No CORS issues)
+ 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg',
+ // Alternative: 8K version (higher quality but larger)
+ 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_8k.jpg',
+ // Fallback: Another GitHub source
+ 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg'
+ ];
+ return this.loadPlanetTextureReal('Earth', textureURLs, this.createEarthTexture, size);
  }
  
  // Mars real texture loader
@@ -4199,7 +4212,7 @@ class SolarSystemModule {
  switch(name) {
  case 'earth':
  // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
- const earthTexture = this.createEarthTextureReal(4096); // 4K resolution!
+ const earthTexture = this.createEarthTextureRealFixed(4096); // 4K resolution!
  const earthBump = this.createEarthBumpMap(4096);
  const earthSpecular = this.createEarthSpecularMap(4096);
  const earthNormal = this.createEarthNormalMap(4096);
@@ -6233,11 +6246,11 @@ class SolarSystemModule {
  
  const cometsData = [
  // Halley: 15 km / 12,742 km = 0.0012, orbit: ~35 AU
- { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.001, size: 0.002, description: ' Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
+ { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.001, size: 0.002, description: t('descHalley') },
  // Hale-Bopp: 60 km / 12,742 km = 0.0047, orbit: ~250 AU
- { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: ' Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
+ { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: t('descHaleBopp') },
  // NEOWISE: 5 km / 12,742 km = 0.0004, orbit: ~10 AU
- { name: 'Comet NEOWISE', distance: 513, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: ' Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
+ { name: 'Comet NEOWISE', distance: 513, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: t('descNeowise') }
  ];
 
  cometsData.forEach((cometData, index) => {
@@ -7254,8 +7267,8 @@ class SolarSystemModule {
  // At timeSpeed=1: 15.5 * 1 * 0.01 = 0.155 rad/frame = realistic orbital motion
  size: 0.03,
  color: 0xCCCCCC,
- description: ' ISS orbits at 408 km altitude, traveling at 7.66 km/s (27,576 km/h). One orbit takes 92.68 minutes. Continuously inhabited since Nov 2, 2000 (25 years!). Collaboration of NASA, Roscosmos, ESA, JAXA, CSA. Completed 180,000+ orbits as of Oct 2025.',
- funFact: 'ISS is 109m long, 73m wide, masses 419,725 kg. Pressurized volume equals a Boeing 747! Visible to naked eye as brightest "star" after Venus.',
+ description: t('descISS'),
+ funFact: t('funFactISS'),
  realSize: '109m Ã— 73m Ã— 20m, 419,725 kg',
  orbitTime: '92.68 minutes',
  modules: '17 pressurized modules: Zarya, Unity, Zvezda, Destiny, Quest, Harmony, Columbus, Kibo (3 parts), Poisk, Tranquility, Cupola, Rassvet, Leonardo, BEAM, Nauka, Prichal. Plus 8 solar arrays, 6 radiators, 3 robotic arms (Canadarm2, Dextre, JEM RMS).'
@@ -7266,17 +7279,12 @@ class SolarSystemModule {
  speed: 15.1, // Orbital velocity: 7.59 km/s (27,300 km/h)
  size: 0.02,
  color: 0x4169E1,
- description: ' Launched April 24, 1990 on Space Shuttle Discovery. Orbits at ~535 km altitude. Made 1.6+ million observations as of Oct 2025. 2.4m primary mirror observes UV, visible, and near-IR. Five servicing missions (1993-2009) upgraded instruments.',
- funFact: 'Can resolve objects 0.05 arcseconds apart - like seeing two fireflies 10,000 km away! Deepest image (eXtreme Deep Field) shows 5,500 galaxies, some 13.2 billion light-years away.',
+ description: t('descHubble'),
+ funFact: t('funFactHubble'),
  realSize: '13.2m long 4.2m diameter, 11,110 kg',
  orbitTime: '95 minutes'
  },
- { 
- name: 'GPS Satellites', 
- distance: 3.5, // Medium Earth Orbit (MEO): 20,180 km altitude (26,560 km from Earth center)
- speed: 2, // Orbital velocity: 3.87 km/s, period: 11h 58min (2 orbits/day)
- size: 0.025,
- color: 0x00FF00,
+ {
  description: ' GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55Â° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10â»â´ seconds.',
  funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
  realSize: 'GPS III: 2,161 kg, 7.8m solar span',
@@ -7288,8 +7296,8 @@ class SolarSystemModule {
  speed: 0.01, // Halo orbit around L2, period synced with Earth (1 year)
  size: 0.04,
  color: 0xFFD700,
- description: ' Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 Î¼m). 6.5m segmented beryllium mirror (18 hexagons) with 25 mÂ² collecting area - 6x Hubble! Sunshield: 21.2m Ã— 14.2m, 5 layers.',
- funFact: 'Operating at -233C (-388F)! Can detect heat signature of a bumblebee at Moon distance. Discovered earliest galaxies at z=14 (280 million years after Big Bang).',
+ description: t('descJWST'),
+ funFact: t('funFactJWST'),
  realSize: '6.5m mirror, 21.2m 14.2m sunshield, 6,161 kg',
  orbitTime: 'L2 halo orbit: ~6 months period'
  },
@@ -7400,8 +7408,8 @@ class SolarSystemModule {
  size: 0.08,
  color: 0xC0C0C0,
  type: 'probe',
- description: ' Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently 24.3 billion km (162 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
- funFact: 'Voyager 1 travels at 17 km/s (61,200 km/h). Its radio signals take 22.5 hours to reach Earth!',
+ description: t('descVoyager1'),
+ funFact: t('funFactVoyager1'),
  realSize: '825.5 kg, 3.7m antenna dish',
  launched: 'September 5, 1977',
  status: 'Active in Interstellar Space (since Aug 2012)'
@@ -7414,8 +7422,8 @@ class SolarSystemModule {
  size: 0.08,
  color: 0xB0B0B0,
  type: 'probe',
- description: ' Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now 20.3 billion km (135 AU) from Sun.',
- funFact: 'Voyager 2 discovered 16 moons across the giant planets, Neptune\'s Great Dark Spot, and Triton\'s geysers!',
+ description: t('descVoyager2'),
+ funFact: t('funFactVoyager2'),
  realSize: '825.5 kg, 3.7m antenna dish',
  launched: 'August 20, 1977',
  status: 'Active in Interstellar Space (since Nov 2018)'
@@ -7428,8 +7436,8 @@ class SolarSystemModule {
  size: 0.06,
  color: 0x4169E1,
  type: 'probe',
- description: ' New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
- funFact: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto at 58,536 km/h. It carries 1 oz of Clyde Tombaugh\'s ashes!',
+ description: t('descNewHorizons'),
+ funFact: t('funFactNewHorizons'),
  realSize: '478 kg, 0.7 2.1 2.7m (piano-sized)',
  launched: 'January 19, 2006',
  status: 'Active in Kuiper Belt'
@@ -7457,8 +7465,8 @@ class SolarSystemModule {
  size: 0.05,
  color: 0xFFD700,
  type: 'orbiter',
- description: ' Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
- funFact: 'First solar-powered spacecraft at Jupiter! Three 9m solar panels generate 500W. Carries three LEGO figurines: Galileo, Jupiter, and Juno!',
+ description: t('descJuno'),
+ funFact: t('funFactJuno'),
  realSize: '3,625 kg, 20m solar panel span',
  launched: 'August 5, 2011',
  status: 'Active in Jupiter Orbit (63+ orbits)'
@@ -7472,8 +7480,8 @@ class SolarSystemModule {
  size: 0.06,
  color: 0xDAA520,
  type: 'memorial',
- description: ' Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
- funFact: 'Discovered Enceladus\' subsurface ocean! Water geysers shoot 250kg/s into space. Cassini flew through plumes, detected H2, organics - ingredients for life!',
+ description: t('descCassini'),
+ funFact: t('funFactCassini'),
  realSize: '5,600 kg, 6.8m tall, 4m wide',
  launched: 'October 15, 1997',
  status: 'Mission Ended Sept 15, 2017 (Memorial)'
@@ -7486,8 +7494,8 @@ class SolarSystemModule {
  size: 0.07,
  color: 0xA0A0A0,
  type: 'memorial',
- description: ' Pioneer 10 was the first spacecraft to travel through the asteroid belt and first to visit Jupiter (Dec 3, 1973)! Launched March 2, 1972, it carried the famous Pioneer plaque showing humans and Earth\'s location. Last contact: Jan 23, 2003 at 12.2 billion km.',
- funFact: 'Pioneer 10 carries a gold plaque designed by Carl Sagan showing a man, woman, and Earth\'s location - a message to any aliens who might find it!',
+ description: t('descPioneer10'),
+ funFact: t('funFactPioneer10'),
  realSize: '258 kg, 2.74m antenna dish',
  launched: 'March 2, 1972',
  status: 'Silent since Jan 2003 (Memorial)'
@@ -7500,8 +7508,8 @@ class SolarSystemModule {
  size: 0.07,
  color: 0x909090,
  type: 'memorial',
- description: ' Pioneer 11 was the first spacecraft to visit Saturn (Sept 1, 1979)! Also flew by Jupiter (Dec 2, 1974). Launched April 5, 1973, it discovered Saturn\'s F ring and a new moon. Also carries the Pioneer plaque. Last contact: Nov 24, 1995 at 6.5 billion km.',
- funFact: 'Pioneer 11 used Jupiter\'s gravity to slingshot to Saturn - the first gravity-assist maneuver to another planet!',
+ description: t('descPioneer11'),
+ funFact: t('funFactPioneer11'),
  realSize: '259 kg, 2.74m antenna dish',
  launched: 'April 5, 1973',
  status: 'Silent since Nov 1995 (Memorial)'
@@ -9236,84 +9244,84 @@ class SolarSystemModule {
  getExplorerContent(focusCallback) {
  const categories = [
  {
- title: ' The Sun',
+ title: ` ${t('navOurStar')}`,
  items: [
- { name: ' Sun', onClick: () => focusCallback(this.sun) }
+ { name: ` ${t('sun')}`, onClick: () => focusCallback(this.sun) }
  ]
  },
  {
- title: ' Inner Planets (Rocky)',
+ title: ` ${t('navInnerPlanets')}`,
  items: [
- { name: ' Mercury', onClick: () => focusCallback(this.planets.mercury) },
- { name: ' Venus', onClick: () => focusCallback(this.planets.venus) },
- { name: ' Earth', onClick: () => focusCallback(this.planets.earth) },
- { name: ' Moon', onClick: () => focusCallback(this.moons.moon) },
- { name: ' Mars', onClick: () => focusCallback(this.planets.mars) },
- { name: ' Phobos', onClick: () => focusCallback(this.moons.phobos) },
- { name: ' Deimos', onClick: () => focusCallback(this.moons.deimos) }
+ { name: ` ${t('mercury')}`, onClick: () => focusCallback(this.planets.mercury) },
+ { name: ` ${t('venus')}`, onClick: () => focusCallback(this.planets.venus) },
+ { name: ` ${t('earth')}`, onClick: () => focusCallback(this.planets.earth) },
+ { name: ` ${t('moon')}`, onClick: () => focusCallback(this.moons.moon) },
+ { name: ` ${t('mars')}`, onClick: () => focusCallback(this.planets.mars) },
+ { name: ` ${t('phobos')}`, onClick: () => focusCallback(this.moons.phobos) },
+ { name: ` ${t('deimos')}`, onClick: () => focusCallback(this.moons.deimos) }
  ]
  },
  {
- title: ' Asteroid Belt',
+ title: ` ${t('navAsteroidBelt')}`,
  items: [
- { name: ' Asteroid Belt', onClick: () => focusCallback(this.asteroidBelt) }
+ { name: ` ${t('asteroidBelt')}`, onClick: () => focusCallback(this.asteroidBelt) }
  ]
  },
  {
- title: ' Outer Planets (Gas Giants)',
+ title: ` ${t('navOuterPlanets')}`,
  items: [
- { name: ' Jupiter', onClick: () => focusCallback(this.planets.jupiter) },
- { name: ' Io', onClick: () => focusCallback(this.moons.io) },
- { name: ' Europa', onClick: () => focusCallback(this.moons.europa) },
- { name: ' Ganymede', onClick: () => focusCallback(this.moons.ganymede) },
- { name: ' Callisto', onClick: () => focusCallback(this.moons.callisto) },
- { name: ' Saturn', onClick: () => focusCallback(this.planets.saturn) },
- { name: ' Titan', onClick: () => focusCallback(this.moons.titan) },
- { name: ' Enceladus', onClick: () => focusCallback(this.moons.enceladus) },
- { name: ' Rhea', onClick: () => focusCallback(this.moons.rhea) }
+ { name: ` ${t('jupiter')}`, onClick: () => focusCallback(this.planets.jupiter) },
+ { name: ` ${t('io')}`, onClick: () => focusCallback(this.moons.io) },
+ { name: ` ${t('europa')}`, onClick: () => focusCallback(this.moons.europa) },
+ { name: ` ${t('ganymede')}`, onClick: () => focusCallback(this.moons.ganymede) },
+ { name: ` ${t('callisto')}`, onClick: () => focusCallback(this.moons.callisto) },
+ { name: ` ${t('saturn')}`, onClick: () => focusCallback(this.planets.saturn) },
+ { name: ` ${t('titan')}`, onClick: () => focusCallback(this.moons.titan) },
+ { name: ` ${t('enceladus')}`, onClick: () => focusCallback(this.moons.enceladus) },
+ { name: ` ${t('rhea')}`, onClick: () => focusCallback(this.moons.rhea) }
  ]
  },
  {
- title: ' Ice Giants',
+ title: ` ${t('navIceGiants')}`,
  items: [
- { name: ' Uranus', onClick: () => focusCallback(this.planets.uranus) },
- { name: ' Titania', onClick: () => focusCallback(this.moons.titania) },
- { name: ' Miranda', onClick: () => focusCallback(this.moons.miranda) },
- { name: ' Neptune', onClick: () => focusCallback(this.planets.neptune) },
- { name: ' Triton', onClick: () => focusCallback(this.moons.triton) }
+ { name: ` ${t('uranus')}`, onClick: () => focusCallback(this.planets.uranus) },
+ { name: ` ${t('titania')}`, onClick: () => focusCallback(this.moons.titania) },
+ { name: ` ${t('miranda')}`, onClick: () => focusCallback(this.moons.miranda) },
+ { name: ` ${t('neptune')}`, onClick: () => focusCallback(this.planets.neptune) },
+ { name: ` ${t('triton')}`, onClick: () => focusCallback(this.moons.triton) }
  ]
  },
  {
- title: ' Kuiper Belt & Dwarf Planets',
+ title: ` ${t('navKuiperBelt')}`,
  items: [
- { name: ' Pluto', onClick: () => focusCallback(this.planets.pluto) },
- { name: ' Charon', onClick: () => focusCallback(this.moons.charon) },
- { name: ' Kuiper Belt', onClick: () => focusCallback(this.kuiperBelt) }
+ { name: ` ${t('pluto')}`, onClick: () => focusCallback(this.planets.pluto) },
+ { name: ` ${t('charon')}`, onClick: () => focusCallback(this.moons.charon) },
+ { name: ` ${t('kuiperBelt')}`, onClick: () => focusCallback(this.kuiperBelt) }
  ]
  },
  {
- title: ' Comets',
+ title: ` ${t('navComets')}`,
  items: this.comets.map(comet => ({
  name: ` ${comet.userData.name}`,
  onClick: () => focusCallback(comet)
  }))
  },
  {
- title: ' Satellites & Space Stations',
+ title: ` ${t('navSatellites')}`,
  items: this.satellites.map(sat => ({
  name: ` ${sat.userData.name}`,
  onClick: () => focusCallback(sat)
  }))
  },
  {
- title: ' Spacecraft & Probes',
+ title: ` ${t('navSpacecraft')}`,
  items: this.spacecraft.map(craft => ({
  name: ` ${craft.userData.name}`,
  onClick: () => focusCallback(craft)
  }))
  },
  {
- title: ' Distant Stars',
+ title: ` ${t('navDistantStars')}`,
  items: this.distantStars.map(star => ({
  name: ` ${star.userData.name}`,
  onClick: () => focusCallback(star)
