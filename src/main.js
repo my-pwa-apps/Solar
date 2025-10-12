@@ -8146,8 +8146,13 @@ class SolarSystemModule {
  } else if (userData.isSpacecraft && userData.distance > 100) {
  // Distant spacecraft: zoom in close enough to see them clearly
  distance = Math.max(actualRadius * 10, 5);
+ } else if (userData.isSpacecraft && userData.orbitPlanet) {
+ // ISS and orbital spacecraft: VERY close chase-cam for dramatic Earth flyover
+ // Close enough to see the spacecraft details and Earth surface rushing by below
+ distance = Math.max(actualRadius * 3, 0.5);
+ console.log(` [ISS Chase-Cam] Ultra-close distance: ${distance.toFixed(2)} for dramatic flyover`);
  } else if (userData.isSpacecraft) {
- // Nearby spacecraft: moderate zoom
+ // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);
  } else if (userData.isComet) {
  // Comets: zoom to see nucleus and inner coma details
@@ -8271,22 +8276,23 @@ class SolarSystemModule {
      controls.target.copy(targetPosition); // Look at constellation center at distance 10000
      console.log(` [Constellation] Camera at ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)} looking toward constellation at ${targetPosition.x.toFixed(0)}, ${targetPosition.y.toFixed(0)}, ${targetPosition.z.toFixed(0)}`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
-     // For ISS and other spacecraft: position camera in co-rotating orbit
+     // For ISS and other spacecraft: position camera in ULTRA-CLOSE co-rotating chase-cam
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
      if (parentPlanet) {
          // Calculate ISS direction from planet
          const issDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
          
-         // Position camera behind and above ISS in its orbital path
+         // Position camera VERY close behind and slightly above ISS
+         // This gives a dramatic chase-cam view with Earth surface visible below
          const offsetDistance = distance;
          endPos = new THREE.Vector3(
-             targetPosition.x - issDirection.x * offsetDistance * 0.8, // Behind in orbit
-             targetPosition.y + offsetDistance * 0.4, // Above
-             targetPosition.z - issDirection.z * offsetDistance * 0.8
+             targetPosition.x - issDirection.x * offsetDistance * 0.4, // Close behind (40%)
+             targetPosition.y + offsetDistance * 0.25, // Slightly above (25%)
+             targetPosition.z - issDirection.z * offsetDistance * 0.4
          );
          
          controls.target.copy(targetPosition); // Look at ISS
-         console.log(` [ISS] Camera positioned in co-rotating orbit behind and above ISS`);
+         console.log(` [ISS Chase-Cam] Ultra-close camera positioned for dramatic Earth flyover view`);
      } else {
          // Fallback if no parent planet found
          endPos = new THREE.Vector3(
@@ -8500,12 +8506,12 @@ class SolarSystemModule {
  const breathingFactor = Math.sin(time) * 0.1; // ±10% distance variation
  const adjustedDistance = offsetDistance * (1.0 + breathingFactor);
  
- // Position camera: slightly behind in orbit, above, and to the side
- // This creates a chase-cam view that moves with ISS
+ // ULTRA-CLOSE chase-cam: Position camera very close behind and slightly above ISS
+ // This creates a dramatic view with Earth surface rushing by below
  const cameraPosition = targetPosition.clone()
- .add(tangentDirection.clone().multiplyScalar(-adjustedDistance * 0.7)) // Behind in orbit
- .add(radialDirection.clone().multiplyScalar(adjustedDistance * 0.3)) // Slightly outward
- .add(up.multiplyScalar(adjustedDistance * 0.2)); // Above
+ .add(tangentDirection.clone().multiplyScalar(-adjustedDistance * 0.4)) // Close behind (40% of distance)
+ .add(radialDirection.clone().multiplyScalar(adjustedDistance * 0.15)) // Minimal outward (15%)
+ .add(up.multiplyScalar(adjustedDistance * 0.25)); // Slightly above (25%)
  
  camera.position.copy(cameraPosition);
  
