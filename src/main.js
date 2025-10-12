@@ -5755,22 +5755,14 @@ class SolarSystemModule {
  scene.add(group);
  this.objects.push(group);
  this.constellations.push(group);
- 
- if (DEBUG.enabled) console.log(` [Constellation Create] Added: ${constData.name} (center: ${centerX.toFixed(0)}, ${centerY.toFixed(0)}, ${centerZ.toFixed(0)}, radius: ${(maxSpread || 500).toFixed(0)})`);
  });
  
- console.log(` [Constellations] ✓ Created ${this.constellations.length} constellations`);
- console.log(` [Constellations] Names:`, this.constellations.map(c => c.userData.name).join(', '));
- 
- console.log(`? Created ${this.constellations.length} constellations with star patterns!`);
+ console.log(`✓ Created ${this.constellations.length} constellations with star patterns!`);
  }
  
  highlightConstellation(focusedConstellation) {
  // Highlight the focused constellation and dim all others
  if (!this.constellations) return;
- 
- console.log(`[Constellation] Highlighting ${focusedConstellation.userData.name}, dimming others`);
- let focusedCount = 0, dimmedCount = 0;
  
  this.constellations.forEach(constellation => {
  const isFocused = constellation === focusedConstellation;
@@ -5789,17 +5781,13 @@ class SolarSystemModule {
  const originalOpacity = child.material.userData.originalOpacity;
  child.material.opacity = Math.min(originalOpacity * 1.3, 1.0); // 30% brighter
  child.visible = true;
- focusedCount++;
  } else {
  // Dim other constellations significantly
  child.material.opacity = 0.05; // Very dim
- dimmedCount++;
  }
  }
  });
  });
- 
- console.log(`[Constellation] Highlighted ${focusedCount} elements, dimmed ${dimmedCount} elements`);
  }
  
  resetConstellationHighlight() {
@@ -8221,9 +8209,6 @@ class SolarSystemModule {
  userData.centerPosition.y,
  userData.centerPosition.z
  );
- console.log(` [Constellation Focus] ✓ Focusing on ${userData.name}`);
- console.log(` [Constellation Focus] Center: (${userData.centerPosition.x.toFixed(0)}, ${userData.centerPosition.y.toFixed(0)}, ${userData.centerPosition.z.toFixed(0)})`);
- console.log(` [Constellation Focus] Radius: ${userData.radius.toFixed(0)}, Camera distance: ${distance.toFixed(0)}`);
  
  // Highlight this constellation and dim others
  this.highlightConstellation(object);
@@ -8356,7 +8341,6 @@ class SolarSystemModule {
      // Important: Set target FIRST, then position camera looking FROM position TO target
      // This way camera faces the constellation
      controls.target.copy(targetPosition); // Look at constellation center at distance 10000
-     console.log(` [Constellation] Camera at ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)} looking toward constellation at ${targetPosition.x.toFixed(0)}, ${targetPosition.y.toFixed(0)}, ${targetPosition.z.toFixed(0)}`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
      // For ISS and other spacecraft: position camera to see BOTH ISS and Earth
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
@@ -8376,7 +8360,6 @@ class SolarSystemModule {
          );
          
          controls.target.copy(targetPosition); // Look at ISS (Earth will be behind it)
-         console.log(` [ISS Camera] Positioned outside orbit to keep both ISS and Earth in view`);
      } else {
          // Fallback: simple positioning
          const angle = Math.random() * Math.PI * 2;

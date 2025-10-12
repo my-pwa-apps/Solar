@@ -459,36 +459,13 @@ function setLanguage(lang) {
     console.log('[i18n] Language changed to:', lang === 'nl' ? 'Dutch' : 'English');
 }
 
-// Auto-detect browser language on first load
-function detectLanguage() {
-    // Check if user already has a saved preference
-    const savedLang = localStorage.getItem('appLanguage');
-    if (savedLang) {
-        console.log('[i18n] Using saved language preference:', savedLang);
-        return savedLang;
-    }
-    
-    // Auto-detect from browser
-    const browserLang = navigator.language || navigator.userLanguage || 'en';
-    console.log('[i18n] Browser language detected:', browserLang);
-    
-    // Check if browser language starts with 'nl' (Dutch)
-    if (browserLang.toLowerCase().startsWith('nl')) {
-        console.log('[i18n] Auto-detected Dutch language');
-        return 'nl';
-    }
-    
-    // Default to English
-    console.log('[i18n] Defaulting to English');
-    return 'en';
-}
-
-// Initialize language on page load
+// Initialize language UI on page load
+// Note: Language detection is already handled by index.html inline script
+// This function just updates the UI to match the detected language
 function initLanguage() {
-    const lang = detectLanguage();
-    document.documentElement.lang = lang;
+    const lang = getCurrentLanguage();
     
-    // Update language selector if it exists
+    // Update language selector to match current language
     const selector = document.getElementById('language-selector');
     if (selector) {
         selector.value = lang;

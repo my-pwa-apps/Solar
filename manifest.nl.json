@@ -473,5 +473,10 @@
   "handle_links": "preferred",
   "launch_handler": {
     "client_mode": "navigate-existing"
-  }
+  },
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "fullscreen"
+  ]
 }
