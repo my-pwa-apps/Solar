@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.5.9 - Fixed Windows Store icons and added title bar favicon
+// Version 1.6.0 - Ultra-close ISS chase-cam
 
-const CACHE_VERSION = '1.5.9';
+const CACHE_VERSION = '1.6.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
