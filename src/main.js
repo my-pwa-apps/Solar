@@ -7527,8 +7527,16 @@ class SolarSystemModule {
  }
  }
  
- // Rotate satellite to face Earth (only if not ISS - ISS has fixed orientation)
- if (!userData.name.includes('ISS')) {
+ // ISS: Maintain nadir-pointing orientation (modules face Earth)
+ // Other satellites: face Earth
+ if (userData.name.includes('ISS')) {
+ // ISS maintains nadir-pointing: keep modules facing Earth
+ // The truss runs along X-axis, so align Z-axis to point at Earth
+ satellite.lookAt(earthPosition);
+ // Correct orientation so ISS "floor" faces Earth
+ satellite.rotateX(-Math.PI / 2);
+ } else {
+ // Other satellites simply face Earth
  satellite.lookAt(earthPosition);
  }
  }
@@ -8234,6 +8242,22 @@ class SolarSystemModule {
      this.cameraFollowMode = false;
      this.cameraCoRotateMode = false;
  }
+
+ // Adjust time speed based on object type
+ // Fast-moving orbital objects (ISS, satellites) need slower time for observation
+ if (userData.isSpacecraft && userData.orbitPlanet && !isPlanetOrbitingSun) {
+     // Orbital spacecraft (ISS, satellites): slow to 0.1x for detailed observation
+     if (window.app && window.app.timeSpeed !== 0) {
+         window.app.timeSpeed = 0.1;
+         console.log(` [Time Speed] Reduced to 0.1x for orbital spacecraft observation`);
+     }
+ } else if (userData.type === 'planet' || userData.isPlanet) {
+     // Planets: return to normal 1x speed
+     if (window.app && window.app.timeSpeed !== 0 && window.app.timeSpeed !== 1) {
+         window.app.timeSpeed = 1;
+         console.log(` [Time Speed] Restored to 1x for planet observation`);
+     }
+ }
  
  // Configure controls for focused object inspection
  let minDist, maxDist;
@@ -8242,6 +8266,11 @@ class SolarSystemModule {
  // Constellations: large viewing range since they're at distance 10000
  minDist = 100; // Don't get too close or you'll be inside stars
  maxDist = 20000; // Allow zooming far out
+ } else if (userData.isSpacecraft && userData.orbitPlanet) {
+ // ISS and orbital satellites: allow ultra-close inspection and wide zoom range
+ minDist = 0.05; // Get very close to see details
+ maxDist = 50; // Zoom out to see Earth + satellite in context
+ console.log(` [ISS/Satellite Zoom] min: ${minDist}, max: ${maxDist}`);
  } else {
  minDist = Math.max(actualRadius * 0.5, 0.5); // Allow zooming to half the radius
  maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
