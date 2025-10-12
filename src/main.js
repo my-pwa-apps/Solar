@@ -6246,12 +6246,12 @@ class SolarSystemModule {
  this.comets = [];
  
  const cometsData = [
- // Halley: 15 km / 12,742 km = 0.0012
- { name: 'Halley\'s Comet', distance: 200, eccentricity: 0.967, speed: 0.001, size: 0.002, description: ' Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
- // Hale-Bopp: 60 km / 12,742 km = 0.0047
- { name: 'Comet Hale-Bopp', distance: 250, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: ' Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
- // NEOWISE: 5 km / 12,742 km = 0.0004
- { name: 'Comet NEOWISE', distance: 180, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: ' Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
+ // Halley: 15 km / 12,742 km = 0.0012, orbit: ~35 AU
+ { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.001, size: 0.002, description: ' Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!' },
+ // Hale-Bopp: 60 km / 12,742 km = 0.0047, orbit: ~250 AU
+ { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: ' Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.' },
+ // NEOWISE: 5 km / 12,742 km = 0.0004, orbit: ~10 AU
+ { name: 'Comet NEOWISE', distance: 513, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: ' Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are \"dirty snowballs\" made of ice, dust, and rock from the solar system\'s formation.' }
  ];
 
  cometsData.forEach((cometData, index) => {
@@ -6875,7 +6875,7 @@ class SolarSystemModule {
  const spacecraftData = [
  {
  name: 'Voyager 1',
- distance: 300, // ~24.3 billion km from Sun as of Oct 2025 (162 AU) - scaled for visualization
+ distance: 8307, // ~24.3 billion km from Sun as of Oct 2025 (162 AU) - educational scale (162 × 51.28)
  angle: Math.PI * 0.7, // Direction: 35 north of ecliptic plane
  speed: 0.0001, // Traveling at 17 km/s relative to Sun
  size: 0.08,
@@ -6889,7 +6889,7 @@ class SolarSystemModule {
  },
  {
  name: 'Voyager 2',
- distance: 280, // ~20.3 billion km from Sun as of Oct 2025 (135 AU) - scaled
+ distance: 6923, // ~20.3 billion km from Sun as of Oct 2025 (135 AU) - educational scale (135 × 51.28)
  angle: Math.PI * 1.2, // Direction: Different trajectory than V1
  speed: 0.0001, // Traveling at 15.4 km/s relative to Sun
  size: 0.08,
@@ -6903,7 +6903,7 @@ class SolarSystemModule {
  },
  {
  name: 'New Horizons',
- distance: 85, // ~8.9 billion km from Sun as of Oct 2025 (59 AU) - beyond Pluto orbit
+ distance: 3025, // ~8.9 billion km from Sun as of Oct 2025 (59 AU) - educational scale (59 × 51.28)
  angle: Math.PI * 0.3,
  speed: 0.0002, // Traveling at 14.31 km/s relative to Sun
  size: 0.06,
@@ -6917,7 +6917,7 @@ class SolarSystemModule {
  },
  {
  name: 'Parker Solar Probe',
- distance: 12, // Highly elliptical orbit: 6.9 million km (perihelion) to 108 million km (aphelion)
+ distance: 10, // Highly elliptical orbit: ~0.2 AU average - educational scale (0.2 × 51.28 ≈ 10)
  angle: 0,
  speed: 0.5, // Peak velocity: 192 km/s (690,000 km/h) at perihelion - fastest human-made object
  size: 0.05,
@@ -6961,7 +6961,7 @@ class SolarSystemModule {
  },
  {
  name: 'Pioneer 10',
- distance: 320, // ~19.9 billion km from Sun (133 AU) - last contact Jan 2003
+ distance: 6820, // ~19.9 billion km from Sun (133 AU) - educational scale (133 × 51.28)
  angle: Math.PI * 0.5, // Direction: toward Aldebaran in Taurus
  speed: 0.00009, // Traveling at 12.2 km/s relative to Sun
  size: 0.07,
@@ -6975,7 +6975,7 @@ class SolarSystemModule {
  },
  {
  name: 'Pioneer 11',
- distance: 290, // ~15.9 billion km from Sun (106 AU) - last contact Nov 1995
+ distance: 5436, // ~15.9 billion km from Sun (106 AU) - educational scale (106 × 51.28)
  angle: Math.PI * 1.4, // Direction: toward constellation Aquila
  speed: 0.00008, // Traveling at 11.4 km/s relative to Sun
  size: 0.07,

@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.7.5 - Fix initial scale to match educational scale exactly
+// Version 1.7.6 - Fix spacecraft and comet initial distances for educational scale
 
-const CACHE_VERSION = '1.7.5';
+const CACHE_VERSION = '1.7.6';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
