@@ -7690,15 +7690,17 @@ class SolarSystemModule {
  pluto: 5906.4
  } : {
  // Educational scale (compressed for visibility)
+ // Asteroid belt is at ~75 ± 15 (60-90 range)
+ // Jupiter needs to be beyond 95 to keep its moons (at +12 to +23) clear of asteroids
  mercury: 20,
  venus: 30,
  earth: 45,
  mars: 60,
- jupiter: 100,
- saturn: 150,
- uranus: 200,
- neptune: 250,
- pluto: 300
+ jupiter: 120, // Moved from 100 to 120 to clear asteroid belt
+ saturn: 175, // Adjusted proportionally
+ uranus: 230, // Adjusted proportionally
+ neptune: 285, // Adjusted proportionally
+ pluto: 340 // Adjusted proportionally
  };
  
  // Update planet distances
