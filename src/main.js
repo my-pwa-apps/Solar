@@ -5636,6 +5636,8 @@ class SolarSystemModule {
  transparent: true,
  opacity: 0.9
  });
+ // Store original opacity for highlighting
+ starMat.userData = { originalOpacity: 0.9 };
  
  const starMesh = new THREE.Mesh(starGeom, starMat);
  starMesh.position.set(x, y, z);
@@ -5651,6 +5653,8 @@ class SolarSystemModule {
  blending: THREE.AdditiveBlending,
  depthWrite: false // Don't block objects behind the glow
  });
+ // Store original opacity for highlighting
+ glowMat.userData = { originalOpacity: 0.3 };
  const glow = new THREE.Mesh(glowGeom, glowMat);
  starMesh.add(glow);
  });
@@ -5668,6 +5672,8 @@ class SolarSystemModule {
  opacity: 0.4,
  linewidth: 2
  });
+ // Store original opacity for highlighting
+ lineMat.userData = { originalOpacity: 0.4 };
  const lineMesh = new THREE.Line(lineGeom, lineMat);
  group.add(lineMesh);
  });
@@ -5727,27 +5733,36 @@ class SolarSystemModule {
  // Highlight the focused constellation and dim all others
  if (!this.constellations) return;
  
+ console.log(`[Constellation] Highlighting ${focusedConstellation.userData.name}, dimming others`);
+ let focusedCount = 0, dimmedCount = 0;
+ 
  this.constellations.forEach(constellation => {
  const isFocused = constellation === focusedConstellation;
  
  // Traverse all children (stars, lines, etc.)
  constellation.traverse(child => {
  if (child.material) {
- if (isFocused) {
- // Brighten focused constellation
- child.material.opacity = child.material.userData?.originalOpacity || child.material.opacity;
- child.visible = true;
- } else {
- // Dim other constellations significantly
+ // Store original opacity if not already stored
  if (!child.material.userData?.originalOpacity) {
  child.material.userData = child.material.userData || {};
  child.material.userData.originalOpacity = child.material.opacity;
  }
- child.material.opacity = 0.1; // Very dim
+ 
+ if (isFocused) {
+ // Brighten focused constellation
+ child.material.opacity = child.material.userData.originalOpacity;
+ child.visible = true;
+ focusedCount++;
+ } else {
+ // Dim other constellations significantly
+ child.material.opacity = 0.05; // Very dim
+ dimmedCount++;
  }
  }
  });
  });
+ 
+ console.log(`[Constellation] Highlighted ${focusedCount} elements, dimmed ${dimmedCount} elements`);
  }
  
  resetConstellationHighlight() {
