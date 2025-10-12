@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.8.4 - Fix ISS camera distance and user control
+// Version 1.8.5 - ISS camera positioning to keep Earth in view
 
-const CACHE_VERSION = '1.8.4';
+const CACHE_VERSION = '1.8.5';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

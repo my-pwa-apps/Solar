@@ -8336,17 +8336,35 @@ class SolarSystemModule {
      controls.target.copy(targetPosition); // Look at constellation center at distance 10000
      console.log(` [Constellation] Camera at ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)} looking toward constellation at ${targetPosition.x.toFixed(0)}, ${targetPosition.y.toFixed(0)}, ${targetPosition.z.toFixed(0)}`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
-     // For ISS and other spacecraft: simple camera positioning at reasonable distance
-     // Position camera at a fixed offset for clear viewing
-     const angle = Math.random() * Math.PI * 2; // Random angle around object
-     endPos = new THREE.Vector3(
-         targetPosition.x + Math.cos(angle) * distance,
-         targetPosition.y + distance * 0.3, // Slightly above
-         targetPosition.z + Math.sin(angle) * distance
-     );
-     
-     controls.target.copy(targetPosition); // Look at ISS
-     console.log(` [ISS Camera] Simple positioning at distance ${distance.toFixed(2)} for clear viewing`);
+     // For ISS and other spacecraft: position camera to see BOTH ISS and Earth
+     parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+     if (parentPlanet) {
+         // Get direction from Earth to ISS (radial direction)
+         const earthPos = new THREE.Vector3();
+         parentPlanet.getWorldPosition(earthPos);
+         const issDirection = targetPosition.clone().sub(earthPos).normalize();
+         
+         // Position camera OUTSIDE the orbit, looking inward at both ISS and Earth
+         // This ensures Earth is always visible as backdrop
+         const cameraDistance = distance * 1.5; // Further out to see both
+         endPos = new THREE.Vector3(
+             targetPosition.x + issDirection.x * cameraDistance, // Outside the orbit
+             targetPosition.y + cameraDistance * 0.4, // Elevated view
+             targetPosition.z + issDirection.z * cameraDistance
+         );
+         
+         controls.target.copy(targetPosition); // Look at ISS (Earth will be behind it)
+         console.log(` [ISS Camera] Positioned outside orbit to keep both ISS and Earth in view`);
+     } else {
+         // Fallback: simple positioning
+         const angle = Math.random() * Math.PI * 2;
+         endPos = new THREE.Vector3(
+             targetPosition.x + Math.cos(angle) * distance,
+             targetPosition.y + distance * 0.3,
+             targetPosition.z + Math.sin(angle) * distance
+         );
+         controls.target.copy(targetPosition);
+     }
  } else if (userData.isSpacecraft) {
      // Other spacecraft without orbit: position camera at a fixed offset
      endPos = new THREE.Vector3(
