@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.8.2 - Enhanced navigation debugging
+// Version 1.8.3 - Comprehensive constellation debugging
 
-const CACHE_VERSION = '1.8.2';
+const CACHE_VERSION = '1.8.3';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

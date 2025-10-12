@@ -5754,7 +5754,11 @@ class SolarSystemModule {
  scene.add(group);
  this.objects.push(group);
  this.constellations.push(group);
+ 
+ if (DEBUG.enabled) console.log(` [Constellation Create] Added: ${constData.name} (radius: ${(maxSpread || 500).toFixed(0)})`);
  });
+ 
+ console.log(` [Constellations] ✓ Created ${this.constellations.length} constellations`);
  
  console.log(`? Created ${this.constellations.length} constellations with star patterns!`);
  }
@@ -8199,7 +8203,9 @@ class SolarSystemModule {
  userData.centerPosition.y,
  userData.centerPosition.z
  );
- console.log(` [Constellation] Focusing on ${userData.name} at distance ${userData.distanceFromOrigin}`);
+ console.log(` [Constellation Focus] ✓ Focusing on ${userData.name}`);
+ console.log(` [Constellation Focus] Center: (${userData.centerPosition.x.toFixed(0)}, ${userData.centerPosition.y.toFixed(0)}, ${userData.centerPosition.z.toFixed(0)})`);
+ console.log(` [Constellation Focus] Radius: ${userData.radius.toFixed(0)}, Camera distance: ${distance.toFixed(0)}`);
  
  // Highlight this constellation and dim others
  this.highlightConstellation(object);
