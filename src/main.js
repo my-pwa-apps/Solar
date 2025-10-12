@@ -6846,22 +6846,23 @@ class SolarSystemModule {
  }
  }
  
- satellite.userData = {
- name: satData.name,
- type: 'Satellite',
- radius: satData.size,
- distance: satData.distance,
- angle: (Math.PI * 2 / satellitesData.length) * index, // Spread them out
- speed: satData.speed,
- description: satData.description,
- funFact: satData.funFact,
- realSize: satData.realSize,
- orbitTime: satData.orbitTime,
- planet: this.planets.earth,
- inclination: (index * 30) * Math.PI / 180 // Different orbital inclinations
- };
- 
- scene.add(satellite);
+            satellite.userData = {
+                name: satData.name,
+                type: 'Satellite',
+                radius: satData.size,
+                actualSize: satData.size, // Use actual size for camera distance calculations
+                distance: satData.distance,
+                angle: (Math.PI * 2 / satellitesData.length) * index, // Spread them out
+                speed: satData.speed,
+                description: satData.description,
+                funFact: satData.funFact,
+                realSize: satData.realSize,
+                orbitTime: satData.orbitTime,
+                orbitPlanet: 'earth', // Consistent with spacecraft naming
+                planet: this.planets.earth,
+                isSpacecraft: true, // Mark as spacecraft for camera logic
+                inclination: (index * 30) * Math.PI / 180 // Different orbital inclinations
+            }; scene.add(satellite);
  this.objects.push(satellite);
  this.satellites.push(satellite);
  });
@@ -8160,10 +8161,10 @@ class SolarSystemModule {
  // Distant spacecraft: zoom in close enough to see them clearly
  distance = Math.max(actualRadius * 10, 5);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
- // ISS and orbital spacecraft: VERY close chase-cam for dramatic Earth flyover
- // Close enough to see the spacecraft details and Earth surface rushing by below
- distance = Math.max(actualRadius * 3, 0.5);
- console.log(` [Spacecraft Chase-Cam] Ultra-close distance: ${distance.toFixed(2)} for dramatic flyover`);
+ // ISS and orbital satellites: ULTRA-close chase-cam for dramatic Earth flyover
+ // For tiny objects like ISS (size ~0.03), position camera very close (0.15 units minimum)
+ distance = Math.max(actualRadius * 5, 0.15);
+ console.log(` [Satellite Chase-Cam] Ultra-close distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 5, min 0.15) for dramatic Earth flyover`);
  } else if (userData.type === 'moon' && userData.orbitPlanet) {
  // Moons: Close chase-cam to see moon details and parent planet surface
  distance = Math.max(actualRadius * 4, 2);

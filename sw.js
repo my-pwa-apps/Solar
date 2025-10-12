@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.7.1 - Fixed initial camera view
+// Version 1.7.2 - Fix ISS camera with proper spacecraft properties and ultra-close distance
 
-const CACHE_VERSION = '1.7.1';
+const CACHE_VERSION = '1.7.2';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
