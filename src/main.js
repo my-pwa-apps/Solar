@@ -364,6 +364,15 @@ class SceneManager {
  this.controls.zoomSpeed = CONFIG.CONTROLS.zoomSpeed;
  this.controls.rotateSpeed = 0.5;
  this.controls.update();
+ 
+ // Add event listeners to detect user interaction with controls
+ // When user manually controls camera, disable follow mode
+ this.controls.addEventListener('start', () => {
+ if (window.app && window.app.solarSystemModule) {
+ window.app.solarSystemModule.cameraFollowMode = false;
+ if (DEBUG.enabled) console.log(' [Controls] User interaction detected - follow mode disabled');
+ }
+ });
  }
 
  setupEventListeners() {
@@ -7527,16 +7536,9 @@ class SolarSystemModule {
  }
  }
  
- // ISS: Maintain nadir-pointing orientation (modules face Earth)
- // Other satellites: face Earth
- if (userData.name.includes('ISS')) {
- // ISS maintains nadir-pointing: keep modules facing Earth
- // The truss runs along X-axis, so align Z-axis to point at Earth
- satellite.lookAt(earthPosition);
- // Correct orientation so ISS "floor" faces Earth
- satellite.rotateX(-Math.PI / 2);
- } else {
- // Other satellites simply face Earth
+ // ISS: Keep fixed orientation (don't rotate - maintains construction orientation)
+ // Other satellites: rotate to face Earth
+ if (!userData.name.includes('ISS')) {
  satellite.lookAt(earthPosition);
  }
  }
@@ -9672,6 +9674,7 @@ class App {
  break;
  case 'constellation-gemini':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Gemini'));
+ if (DEBUG.enabled) console.log(` [Nav Debug] Gemini search result:`, targetObject ? targetObject.userData.name : 'NOT FOUND', `(total constellations: ${this.solarSystemModule.constellations?.length || 0})`);
  break;
  case 'constellation-cancer':
  targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cancer'));
@@ -9730,13 +9733,16 @@ class App {
  break;
  }
  
+ console.log(` [Nav] Navigation dropdown value: "${value}"`);
+ 
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
- console.log(` [Nav] Navigating to: ${info.name} (type: ${targetObject.userData.type || 'planet'})`);
+ console.log(` [Nav] ✓ Found and navigating to: ${info.name} (type: ${targetObject.userData.type || 'planet'})`);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
  } else {
- console.warn(` [Nav] Object not found: ${value}`);
+ console.warn(` [Nav] ✗ Object not found for value: "${value}"`);
+ console.warn(` [Nav] Available constellations:`, this.solarSystemModule.constellations?.map(c => c.userData.name) || []);
  }
  }
  });
