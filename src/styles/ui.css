@@ -1166,7 +1166,7 @@ select {
 /* Update Notification */
 #update-notification {
     position: fixed;
-    top: 20px;
+    top: 70px;
     right: 20px;
     z-index: 95;
     background: rgba(52, 199, 89, 0.95);
