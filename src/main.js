@@ -5756,10 +5756,11 @@ class SolarSystemModule {
  this.objects.push(group);
  this.constellations.push(group);
  
- if (DEBUG.enabled) console.log(` [Constellation Create] Added: ${constData.name} (radius: ${(maxSpread || 500).toFixed(0)})`);
+ if (DEBUG.enabled) console.log(` [Constellation Create] Added: ${constData.name} (center: ${centerX.toFixed(0)}, ${centerY.toFixed(0)}, ${centerZ.toFixed(0)}, radius: ${(maxSpread || 500).toFixed(0)})`);
  });
  
  console.log(` [Constellations] ✓ Created ${this.constellations.length} constellations`);
+ console.log(` [Constellations] Names:`, this.constellations.map(c => c.userData.name).join(', '));
  
  console.log(`? Created ${this.constellations.length} constellations with star patterns!`);
  }

@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.8.6 - Lock ISS rotation and disable panning
+// Version 1.8.7 - Enhanced constellation debugging with full name list
 
-const CACHE_VERSION = '1.8.6';
+const CACHE_VERSION = '1.8.7';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
