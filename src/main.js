@@ -4603,11 +4603,11 @@ class SolarSystemModule {
  const asteroidBeltGroup = new THREE.Group();
  asteroidBeltGroup.name = 'asteroidBelt';
  
- // Asteroid belt is between Mars and Jupiter
- // Educational: Mars=60, Jupiter=100, so belt at 75-90
- // Realistic: Mars=227.9, Jupiter=778.6, so belt at ~300-500 AU (2.2-3.2 AU real)
- const baseDistance = this.realisticScale ? 350 : 75;
- const distanceSpread = this.realisticScale ? 150 : 15;
+ // Asteroid belt is between Mars and Jupiter (2.2-3.2 AU real)
+ // Educational scale: Mars=78, Jupiter=266, belt at 100-150 (125±25, ~2.7 AU × 51.28)
+ // Realistic: Mars=227.9, Jupiter=778.6, so belt at ~350±150
+ const baseDistance = this.realisticScale ? 350 : 125;
+ const distanceSpread = this.realisticScale ? 150 : 25;
  
  // Large asteroids (visible as small irregular rocks)
  const largeCount = 150;
@@ -4764,10 +4764,10 @@ class SolarSystemModule {
  kuiperBeltGroup.name = 'kuiperBelt';
  
  // Kuiper belt is beyond Neptune (30-50 AU real)
- // Educational: Neptune=250, Pluto=300, so belt at 280-380
+ // Educational scale: Neptune=1542, Pluto=2024, belt at 500-1300 (900±400, ~40 AU average × 51.28)
  // Realistic: Neptune=4495, Pluto=5906, so belt at ~5000-7500
- const baseDistance = this.realisticScale ? 5000 : 280;
- const distanceSpread = this.realisticScale ? 2500 : 100;
+ const baseDistance = this.realisticScale ? 5000 : 900;
+ const distanceSpread = this.realisticScale ? 2500 : 400;
  
  // Large Kuiper Belt Objects (KBOs) - Pluto-like dwarf planets
  const largeKBOCount = 200;
