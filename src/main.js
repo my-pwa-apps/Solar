@@ -1974,29 +1974,24 @@ class SolarSystemModule {
  const t = window.t || ((key) => key);
  
  // Define all loading steps with progress and tasks
+ // Individual planet creation reports its own progress internally
  const loadingSteps = [
- { progress: 5, message: t('creatingSun'), task: () => this.createSun(scene) },
- { progress: 8, message: t('creatingMercury'), task: () => {} },
- { progress: 12, message: t('creatingVenus'), task: () => {} },
- { progress: 16, message: t('creatingEarth'), task: () => {} },
- { progress: 20, message: t('creatingMars'), task: () => this.createInnerPlanets(scene) },
- { progress: 25, message: t('creatingJupiter'), task: () => {} },
- { progress: 30, message: t('creatingSaturn'), task: () => {} },
- { progress: 35, message: t('creatingUranus'), task: () => {} },
- { progress: 40, message: t('creatingNeptune'), task: () => this.createOuterPlanets(scene) },
- { progress: 45, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
- { progress: 50, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
- { progress: 55, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
- { progress: 60, message: t('creatingOrbitalPaths'), task: () => this.createOrbitalPaths(scene) },
- { progress: 65, message: t('creatingConstellations'), task: () => this.createConstellations(scene) },
- { progress: 70, message: t('creatingDistantStars'), task: () => this.createDistantStars(scene) },
- { progress: 75, message: t('creatingNebulae'), task: () => this.createNebulae(scene) },
- { progress: 80, message: t('creatingGalaxies'), task: () => this.createGalaxies(scene) },
- { progress: 85, message: t('creatingNearbyStars'), task: () => this.createNearbyStars(scene) },
- { progress: 88, message: t('creatingExoplanets'), task: () => this.createExoplanets(scene) },
+ { progress: 3, message: t('creatingSun'), task: async () => this.createSun(scene) },
+ { progress: 5, message: t('creatingInnerPlanets'), task: async () => await this.createInnerPlanets(scene) },
+ { progress: 38, message: t('creatingOuterPlanets'), task: async () => await this.createOuterPlanets(scene) },
+ { progress: 62, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
+ { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
+ { progress: 68, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
+ { progress: 71, message: t('creatingOrbitalPaths'), task: () => this.createOrbitalPaths(scene) },
+ { progress: 74, message: t('creatingConstellations'), task: () => this.createConstellations(scene) },
+ { progress: 77, message: t('creatingDistantStars'), task: () => this.createDistantStars(scene) },
+ { progress: 80, message: t('creatingNebulae'), task: () => this.createNebulae(scene) },
+ { progress: 83, message: t('creatingGalaxies'), task: () => this.createGalaxies(scene) },
+ { progress: 86, message: t('creatingNearbyStars'), task: () => this.createNearbyStars(scene) },
+ { progress: 89, message: t('creatingExoplanets'), task: () => this.createExoplanets(scene) },
  { progress: 91, message: t('creatingComets'), task: () => this.createComets(scene) },
- { progress: 94, message: t('creatingSatellites'), task: () => this.createSatellites(scene) },
- { progress: 97, message: t('creatingSpacecraft'), task: () => this.createSpacecraft(scene) },
+ { progress: 93, message: t('creatingSatellites'), task: () => this.createSatellites(scene) },
+ { progress: 95, message: t('creatingSpacecraft'), task: () => this.createSpacecraft(scene) },
  { progress: 100, message: t('creatingLabels'), task: () => this.createLabels() }
  ];
 
@@ -2170,9 +2165,12 @@ class SolarSystemModule {
  this.objects.push(this.sun);
  }
 
- createInnerPlanets(scene) {
+ async createInnerPlanets(scene) {
  // REALISTIC SIZES (Earth radius = 1.0 as base)
  // Mercury: 4,879 km / 12,742 km = 0.383
+ if (this.uiManager) this.uiManager.updateLoadingProgress(7, t('creatingMercury'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.mercury = this.createPlanet(scene, {
  name: 'Mercury',
  radius: 0.383,
@@ -2188,6 +2186,9 @@ class SolarSystemModule {
  });
 
  // Venus: 12,104 km / 12,742 km = 0.950
+ if (this.uiManager) this.uiManager.updateLoadingProgress(14, t('creatingVenus'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.venus = this.createPlanet(scene, {
  name: 'Venus',
  radius: 0.950,
@@ -2204,7 +2205,10 @@ class SolarSystemModule {
  emissiveIntensity: 0.3
  });
 
- // Earth: BASE = 1.0 (12,742 km)
+ // Earth: BASE = 1.0 (12,742 km) - Most complex texture generation
+ if (this.uiManager) this.uiManager.updateLoadingProgress(21, t('creatingEarth'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.earth = this.createPlanet(scene, {
  name: 'Earth',
  radius: 1.0,
@@ -2233,6 +2237,9 @@ class SolarSystemModule {
             description: ' Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
             funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
         }); // Mars: 6,779 km / 12,742 km = 0.532
+ if (this.uiManager) this.uiManager.updateLoadingProgress(31, t('creatingMars'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.mars = this.createPlanet(scene, {
  name: 'Mars',
  radius: 0.532,
@@ -2267,8 +2274,11 @@ class SolarSystemModule {
             speed: 4.35, // 544x Mars's speed (0.008 * 544)
             description: 'Deimos is the smaller of Mars\' two moons and takes 30 hours to orbit.'
         });
-    } createOuterPlanets(scene) {
+    } async createOuterPlanets(scene) {
  // Jupiter: 139,820 km / 12,742 km = 10.97 (MASSIVE!)
+ if (this.uiManager) this.uiManager.updateLoadingProgress(40, t('creatingJupiter'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.jupiter = this.createPlanet(scene, {
  name: 'Jupiter',
  radius: 10.97,
@@ -2325,6 +2335,9 @@ class SolarSystemModule {
             speed: 0.52, // 260x Jupiter's speed (0.002 * 260)
             description: 'Callisto is the most heavily cratered object in the solar system!'
         }); // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
+ if (this.uiManager) this.uiManager.updateLoadingProgress(48, t('creatingSaturn'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.saturn = this.createPlanet(scene, {
  name: 'Saturn',
  radius: 9.14,
@@ -2372,6 +2385,9 @@ class SolarSystemModule {
             speed: 2.144, // 2382x Saturn's speed (0.0009 * 2382)
             description: 'Rhea may have its own ring system!'
         }); // Uranus: 50,724 km / 12,742 km = 3.98
+ if (this.uiManager) this.uiManager.updateLoadingProgress(54, t('creatingUranus'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.uranus = this.createPlanet(scene, {
  name: 'Uranus',
  radius: 3.98,
@@ -2407,6 +2423,9 @@ class SolarSystemModule {
             speed: 8.689, // 21722x Uranus's speed (0.0004 * 21722)
             description: 'Miranda has the most dramatic terrain in the solar system with cliffs 20 km high!'
         }); // Neptune: 49,244 km / 12,742 km = 3.86
+ if (this.uiManager) this.uiManager.updateLoadingProgress(58, t('creatingNeptune'));
+ await new Promise(resolve => requestAnimationFrame(resolve));
+ 
  this.planets.neptune = this.createPlanet(scene, {
  name: 'Neptune',
  radius: 3.86,

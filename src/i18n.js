@@ -141,6 +141,8 @@ const translations = {
         descNeptune: 'Neptune is the windiest planet with storms reaching 2,100 km/h! It\'s the farthest planet from the Sun and takes 165 Earth years to complete one orbit. Its blue color comes from methane in the atmosphere.',
         
         // Loading messages
+        creatingInnerPlanets: 'Creating inner planets...',
+        creatingOuterPlanets: 'Creating outer planets...',
         creatingMercury: 'Creating Mercury...',
         creatingVenus: 'Creating Venus...',
         creatingEarth: 'Creating Earth...',
