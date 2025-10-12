@@ -7689,22 +7689,25 @@ class SolarSystemModule {
  neptune: 4495.1,
  pluto: 5906.4
  } : {
- // Educational scale (compressed for visibility with proper spacing)
- // Constraints:
- // - Asteroid belt: 60-90 (75 ± 15)
- // - Kuiper belt: 280-380 (base 280, spread 100)
- // - Mars + moons (max +2.5) must be < 60
- // - Jupiter + moons (max +23) must be > 90
- // - Neptune + moons (max +5) should be < 280
- mercury: 20,  // No moons
- venus: 30,    // No moons
- earth: 45,    // Moon at +4 = 49 (clear)
- mars: 55,     // Deimos at +2.5 = 57.5 (was 60, moved to 55 to clear belt at 60)
- jupiter: 120, // Callisto at +23 = 143 (clear of belt ending at 90)
- saturn: 180,  // Rhea at +12 = 192 (adjusted spacing)
- uranus: 235,  // Titania at +5 = 240 (adjusted spacing)
- neptune: 270, // Triton at +5 = 275 (was 285, moved to 270 to clear Kuiper at 280)
- pluto: 340    // Inside Kuiper belt as it should be
+ // Educational scale - proportionally compressed but maintaining relative distances
+ // Real AU ratios (Mercury = 1x): Venus 1.85x, Earth 2.56x, Mars 3.90x, 
+ // Jupiter 13.3x, Saturn 24.5x, Uranus 49.2x, Neptune 77.1x, Pluto 101.2x
+ // 
+ // Scaled to fit with constraints:
+ // - Asteroid belt: 100-150 (125 ± 25)
+ // - Kuiper belt: 700-1100 (base 700, spread 400)
+ // - Mars + moons (max +2.5) must be < 100
+ // - Jupiter + moons (max +23) must be > 150
+ // - All proportions maintained relative to real astronomical distances
+ mercury: 20,   // Base unit (0.39 AU)
+ venus: 37,     // 1.85x Mercury (0.72 AU) - was 30
+ earth: 51,     // 2.56x Mercury (1.0 AU) - was 45
+ mars: 78,      // 3.90x Mercury (1.52 AU) - was 55, Deimos at +2.5 = 80.5 (clears belt at 100)
+ jupiter: 266,  // 13.3x Mercury (5.20 AU) - was 120, Callisto at +23 = 289 (clears belt at 150)
+ saturn: 490,   // 24.5x Mercury (9.54 AU) - was 180, Rhea at +12 = 502
+ uranus: 984,   // 49.2x Mercury (19.19 AU) - was 235, Titania at +5 = 989
+ neptune: 1542, // 77.1x Mercury (30.07 AU) - was 270, Triton at +5 = 1547 (clears Kuiper at 700)
+ pluto: 2024    // 101.2x Mercury (39.48 AU) - was 340, inside Kuiper belt as it should be
  };
  
  // Update planet distances
@@ -7856,12 +7859,12 @@ class SolarSystemModule {
  if (this.asteroidBelt && this.asteroidBelt.children) {
  // Define scale parameters for both modes
  const oldParams = this.realisticScale ? 
- { base: 75, spread: 15 } : // We're switching FROM educational TO realistic
+ { base: 125, spread: 25 } : // We're switching FROM educational TO realistic
  { base: 350, spread: 150 }; // We're switching FROM realistic TO educational
  
  const newParams = this.realisticScale ? 
  { base: 350, spread: 150 } : // Switching TO realistic
- { base: 75, spread: 15 }; // Switching TO educational
+ { base: 125, spread: 25 }; // Switching TO educational - proportionally scaled (was 75±15)
  
  this.asteroidBelt.children.forEach(particleSystem => {
  if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
@@ -7892,12 +7895,12 @@ class SolarSystemModule {
  if (this.kuiperBelt && this.kuiperBelt.children) {
  // Define scale parameters for both modes
  const oldParams = this.realisticScale ? 
- { base: 280, spread: 100 } : // We're switching FROM educational TO realistic
+ { base: 900, spread: 400 } : // We're switching FROM educational TO realistic
  { base: 5000, spread: 2500 }; // We're switching FROM realistic TO educational
  
  const newParams = this.realisticScale ? 
  { base: 5000, spread: 2500 } : // Switching TO realistic
- { base: 280, spread: 100 }; // Switching TO educational
+ { base: 900, spread: 400 }; // Switching TO educational - proportionally scaled (was 280±100)
  
  this.kuiperBelt.children.forEach(particleSystem => {
  if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
@@ -7941,13 +7944,14 @@ class SolarSystemModule {
  'Pioneer 10': 4800, // 133 AU
  'Pioneer 11': 4400 // 106 AU
  } : {
- // Educational scale - compressed for visibility
- 'Voyager 1': 300,
- 'Voyager 2': 280,
- 'New Horizons': 85,
- 'Parker Solar Probe': 12,
- 'Pioneer 10': 320,
- 'Pioneer 11': 290
+ // Educational scale - proportionally compressed
+ // Using Mercury (0.39 AU) = 20 as base scale factor = 51.28 units per AU
+ 'Voyager 1': 8307,  // 162 AU * 51.28 (was 300)
+ 'Voyager 2': 6923,  // 135 AU * 51.28 (was 280)
+ 'New Horizons': 3025, // 59 AU * 51.28 (was 85)
+ 'Parker Solar Probe': 10, // ~0.2 AU (was 12)
+ 'Pioneer 10': 6820,  // 133 AU * 51.28 (was 320)
+ 'Pioneer 11': 5436   // 106 AU * 51.28 (was 290)
  };
  
  this.spacecraft.forEach(spacecraft => {
@@ -7981,10 +7985,10 @@ class SolarSystemModule {
  'Comet Hale-Bopp': 37500, // ~250 AU
  'Comet NEOWISE': 1500 // ~10 AU
  } : {
- // Educational scale - compressed for visibility
- 'Halley\'s Comet': 200,
- 'Comet Hale-Bopp': 250,
- 'Comet NEOWISE': 180
+ // Educational scale - proportionally compressed (51.28 units per AU)
+ 'Halley\'s Comet': 1795,  // 35 AU * 51.28 (was 200)
+ 'Comet Hale-Bopp': 12820, // 250 AU * 51.28 (was 250)
+ 'Comet NEOWISE': 513      // 10 AU * 51.28 (was 180)
  };
  
  this.comets.forEach(comet => {
