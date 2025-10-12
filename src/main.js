@@ -202,7 +202,9 @@ const CONFIG = {
  fov: 75,
  near: 0.1,
  far: 50000,
- startPos: { x: 0, y: 50, z: 100 }
+ // Start position adjusted for new proportional educational scale
+ // Earth is at 51 units, so start at ~100 units for good overview
+ startPos: { x: 0, y: 100, z: 200 }
  },
  CONTROLS: {
  dampingFactor: 0.05,
@@ -396,7 +398,7 @@ class SceneManager {
  
  // Create a dolly (rig) for VR movement (but don't add camera yet - only in VR mode)
  this.dolly = new THREE.Group();
- this.dolly.position.set(0, 50, 150); // Start away from Sun
+ this.dolly.position.set(0, 100, 200); // Start away from Sun (updated for new educational scale)
  this.scene.add(this.dolly);
  
  // Store original camera parent for switching back
@@ -586,8 +588,8 @@ class SceneManager {
  this.dolly.add(this.camera);
  // Reset camera local position
  this.camera.position.set(0, 0, 0);
- // Position dolly for good initial view
- this.dolly.position.set(0, 50, 150);
+ // Position dolly for good initial view (updated for new educational scale)
+ this.dolly.position.set(0, 100, 200);
  }
  
  // Set background based on session type
