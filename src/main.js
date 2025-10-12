@@ -370,7 +370,8 @@ class SceneManager {
  this.controls.addEventListener('start', () => {
  if (window.app && window.app.solarSystemModule) {
  window.app.solarSystemModule.cameraFollowMode = false;
- if (DEBUG.enabled) console.log(' [Controls] User interaction detected - follow mode disabled');
+ window.app.solarSystemModule.cameraCoRotateMode = false;
+ if (DEBUG.enabled) console.log(' [Controls] User interaction detected - follow and co-rotate modes disabled');
  }
  });
  }
@@ -8175,10 +8176,10 @@ class SolarSystemModule {
  // Distant spacecraft: zoom in close enough to see them clearly
  distance = Math.max(actualRadius * 10, 5);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
- // ISS and orbital satellites: ULTRA-close chase-cam for dramatic Earth flyover
- // For tiny objects like ISS (size ~0.03), position camera very close (0.15 units minimum)
- distance = Math.max(actualRadius * 5, 0.15);
- console.log(` [Satellite Chase-Cam] Ultra-close distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 5, min 0.15) for dramatic Earth flyover`);
+ // ISS and orbital satellites: Close enough to see details but not too close
+ // For tiny objects like ISS (size ~0.03), position camera at reasonable distance (1.0 units minimum)
+ distance = Math.max(actualRadius * 15, 1.0);
+ console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 15, min 1.0) for ISS viewing`);
  } else if (userData.type === 'moon' && userData.orbitPlanet) {
  // Moons: Close chase-cam to see moon details and parent planet surface
  distance = Math.max(actualRadius * 4, 2);
@@ -8275,9 +8276,9 @@ class SolarSystemModule {
  minDist = 100; // Don't get too close or you'll be inside stars
  maxDist = 20000; // Allow zooming far out
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
- // ISS and orbital satellites: allow ultra-close inspection and wide zoom range
- minDist = 0.05; // Get very close to see details
- maxDist = 50; // Zoom out to see Earth + satellite in context
+ // ISS and orbital satellites: allow close inspection and wide zoom range
+ minDist = 0.2; // Get close to see module details
+ maxDist = 100; // Zoom out to see Earth + satellite in context
  console.log(` [ISS/Satellite Zoom] min: ${minDist}, max: ${maxDist}`);
  } else {
  minDist = Math.max(actualRadius * 0.5, 0.5); // Allow zooming to half the radius
@@ -8335,32 +8336,17 @@ class SolarSystemModule {
      controls.target.copy(targetPosition); // Look at constellation center at distance 10000
      console.log(` [Constellation] Camera at ${endPos.x.toFixed(0)}, ${endPos.y.toFixed(0)}, ${endPos.z.toFixed(0)} looking toward constellation at ${targetPosition.x.toFixed(0)}, ${targetPosition.y.toFixed(0)}, ${targetPosition.z.toFixed(0)}`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
-     // For ISS and other spacecraft: position camera in ULTRA-CLOSE co-rotating chase-cam
-     parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
-     if (parentPlanet) {
-         // Calculate ISS direction from planet
-         const issDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
-         
-         // Position camera VERY close behind and slightly above ISS
-         // This gives a dramatic chase-cam view with Earth surface visible below
-         const offsetDistance = distance;
-         endPos = new THREE.Vector3(
-             targetPosition.x - issDirection.x * offsetDistance * 0.4, // Close behind (40%)
-             targetPosition.y + offsetDistance * 0.25, // Slightly above (25%)
-             targetPosition.z - issDirection.z * offsetDistance * 0.4
-         );
-         
-         controls.target.copy(targetPosition); // Look at ISS
-         console.log(` [ISS Chase-Cam] Ultra-close camera positioned for dramatic Earth flyover view`);
-     } else {
-         // Fallback if no parent planet found
-         endPos = new THREE.Vector3(
-             targetPosition.x,
-             targetPosition.y + distance * 0.3,
-             targetPosition.z + distance
-         );
-         controls.target.copy(targetPosition);
-     }
+     // For ISS and other spacecraft: simple camera positioning at reasonable distance
+     // Position camera at a fixed offset for clear viewing
+     const angle = Math.random() * Math.PI * 2; // Random angle around object
+     endPos = new THREE.Vector3(
+         targetPosition.x + Math.cos(angle) * distance,
+         targetPosition.y + distance * 0.3, // Slightly above
+         targetPosition.z + Math.sin(angle) * distance
+     );
+     
+     controls.target.copy(targetPosition); // Look at ISS
+     console.log(` [ISS Camera] Simple positioning at distance ${distance.toFixed(2)} for clear viewing`);
  } else if (userData.isSpacecraft) {
      // Other spacecraft without orbit: position camera at a fixed offset
      endPos = new THREE.Vector3(
