@@ -8304,12 +8304,105 @@ class SolarSystemModule {
          targetPosition.z + distance
      );
      controls.target.copy(targetPosition);
- } else {
-     // Regular objects: position above and behind
+ } else if (userData.type === 'moon') {
+     // Moons: Creative orbital perspective - view from the side at an angle
+     // Position camera to show both the moon and hint of its parent planet
+     const angle = Math.random() * Math.PI * 2; // Random angle for variety
+     const elevation = 0.4 + Math.random() * 0.3; // Slight variation in elevation (0.4-0.7)
      endPos = new THREE.Vector3(
-         targetPosition.x,
-         targetPosition.y + distance * 0.3,
-         targetPosition.z + distance
+         targetPosition.x + Math.cos(angle) * distance,
+         targetPosition.y + distance * elevation,
+         targetPosition.z + Math.sin(angle) * distance
+     );
+     controls.target.copy(targetPosition);
+     console.log(` [Moon] Orbital perspective at angle ${(angle * 180 / Math.PI).toFixed(0)}°, elevation ${(elevation * 100).toFixed(0)}%`);
+ } else if (userData.type === 'planet' || userData.isPlanet) {
+     // Planets: Cinematic angles that showcase their features
+     const planetName = userData.name.toLowerCase();
+     let angleOffset = 0;
+     let elevationFactor = 0.4;
+     let distanceMultiplier = 1.0;
+     
+     // Customize camera angle per planet for best feature showcase
+     if (planetName === 'saturn') {
+         // Saturn: View rings at a dramatic angle
+         elevationFactor = 0.25; // Lower angle to see rings better
+         angleOffset = Math.PI * 0.3; // 54 degrees for ring visibility
+         distanceMultiplier = 1.2; // Pull back a bit to see full ring system
+         console.log(` [Saturn] Ring showcase view`);
+     } else if (planetName === 'jupiter') {
+         // Jupiter: Slight elevation to show bands and Great Red Spot
+         elevationFactor = 0.35;
+         angleOffset = Math.PI * 0.15; // 27 degrees
+         console.log(` [Jupiter] Band showcase view`);
+     } else if (planetName === 'mars') {
+         // Mars: Medium elevation to show polar caps
+         elevationFactor = 0.45;
+         angleOffset = Math.PI * 0.25; // 45 degrees
+         console.log(` [Mars] Polar cap view`);
+     } else if (planetName === 'earth') {
+         // Earth: Beautiful oblique angle
+         elevationFactor = 0.5;
+         angleOffset = Math.PI * 0.2; // 36 degrees
+         console.log(` [Earth] Oblique orbital view`);
+     } else if (planetName === 'venus' || planetName === 'mercury') {
+         // Inner planets: Higher elevation
+         elevationFactor = 0.55;
+         angleOffset = Math.PI * 0.3;
+         console.log(` [${planetName}] High angle view`);
+     } else if (planetName === 'uranus' || planetName === 'neptune') {
+         // Ice giants: Moderate angle with slight randomness
+         elevationFactor = 0.4 + Math.random() * 0.2;
+         angleOffset = Math.PI * 0.25;
+         console.log(` [${planetName}] Ice giant showcase`);
+     } else {
+         // Default planet view
+         elevationFactor = 0.4;
+         angleOffset = Math.PI * 0.3;
+     }
+     
+     const adjustedDistance = distance * distanceMultiplier;
+     endPos = new THREE.Vector3(
+         targetPosition.x + Math.cos(angleOffset) * adjustedDistance,
+         targetPosition.y + adjustedDistance * elevationFactor,
+         targetPosition.z + Math.sin(angleOffset) * adjustedDistance
+     );
+     controls.target.copy(targetPosition);
+ } else if (userData.isComet) {
+     // Comets: Position camera to showcase tail and nucleus
+     // Camera should be positioned to see both the coma and the tail streaming away from sun
+     const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
+     const sunDirection = targetPosition.clone().sub(sunPosition).normalize();
+     
+     // Position camera at an angle to see both nucleus and tail
+     const sideVector = new THREE.Vector3(-sunDirection.z, 0, sunDirection.x).normalize();
+     const angleVariation = Math.random() * Math.PI * 0.3 - Math.PI * 0.15; // ±27 degrees
+     
+     endPos = targetPosition.clone()
+         .add(sunDirection.clone().multiplyScalar(distance * 0.5)) // Partially in front
+         .add(sideVector.multiplyScalar(distance * Math.sin(angleVariation) * 0.8)) // To the side
+         .add(new THREE.Vector3(0, distance * 0.4, 0)); // Above to see tail shape
+     
+     controls.target.copy(targetPosition);
+     console.log(` [Comet] Tail showcase view - camera positioned to see nucleus and tail`);
+ } else if (userData.type === 'asteroid') {
+     // Asteroids: Close dramatic angle to show irregular shape
+     const angle = Math.random() * Math.PI * 2;
+     const elevation = 0.3 + Math.random() * 0.2; // Lower angle (0.3-0.5) for drama
+     endPos = new THREE.Vector3(
+         targetPosition.x + Math.cos(angle) * distance * 0.8,
+         targetPosition.y + distance * elevation,
+         targetPosition.z + Math.sin(angle) * distance * 0.8
+     );
+     controls.target.copy(targetPosition);
+     console.log(` [Asteroid] Close dramatic angle for irregular shape showcase`);
+ } else {
+     // Other objects: Dynamic positioning with slight variation
+     const variation = Math.random() * 0.2 - 0.1; // -0.1 to +0.1 variation
+     endPos = new THREE.Vector3(
+         targetPosition.x + distance * variation,
+         targetPosition.y + distance * (0.3 + variation),
+         targetPosition.z + distance * (1.0 + variation)
      );
  }
  
@@ -8402,12 +8495,17 @@ class SolarSystemModule {
  tangentDirection.copy(userData.orbitalVelocity).normalize();
  }
  
+ // Cinematic co-rotation: Add subtle variation over time for more dynamic view
+ const time = performance.now() * 0.0001; // Slow oscillation
+ const breathingFactor = Math.sin(time) * 0.1; // ±10% distance variation
+ const adjustedDistance = offsetDistance * (1.0 + breathingFactor);
+ 
  // Position camera: slightly behind in orbit, above, and to the side
  // This creates a chase-cam view that moves with ISS
  const cameraPosition = targetPosition.clone()
- .add(tangentDirection.clone().multiplyScalar(-offsetDistance * 0.7)) // Behind in orbit
- .add(radialDirection.clone().multiplyScalar(offsetDistance * 0.3)) // Slightly outward
- .add(up.multiplyScalar(offsetDistance * 0.2)); // Above
+ .add(tangentDirection.clone().multiplyScalar(-adjustedDistance * 0.7)) // Behind in orbit
+ .add(radialDirection.clone().multiplyScalar(adjustedDistance * 0.3)) // Slightly outward
+ .add(up.multiplyScalar(adjustedDistance * 0.2)); // Above
  
  camera.position.copy(cameraPosition);
  
