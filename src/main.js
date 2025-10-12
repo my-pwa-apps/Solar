@@ -8151,7 +8151,11 @@ class SolarSystemModule {
  // ISS and orbital spacecraft: VERY close chase-cam for dramatic Earth flyover
  // Close enough to see the spacecraft details and Earth surface rushing by below
  distance = Math.max(actualRadius * 3, 0.5);
- console.log(` [ISS Chase-Cam] Ultra-close distance: ${distance.toFixed(2)} for dramatic flyover`);
+ console.log(` [Spacecraft Chase-Cam] Ultra-close distance: ${distance.toFixed(2)} for dramatic flyover`);
+ } else if (userData.type === 'moon' && userData.orbitPlanet) {
+ // Moons: Close chase-cam to see moon details and parent planet surface
+ distance = Math.max(actualRadius * 4, 2);
+ console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for parent planet flyover`);
  } else if (userData.isSpacecraft) {
  // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);
@@ -8194,21 +8198,25 @@ class SolarSystemModule {
  const isOrbiter = userData.orbitPlanet || (userData.isSpacecraft && userData.speed);
  const isFastOrbiter = isOrbiter && userData.speed > 0.5;
 
- // For spacecraft (ISS, Hubble), enable co-rotation mode
- // Camera will orbit WITH the spacecraft
- if (userData.isSpacecraft && userData.orbitPlanet) {
-     this.cameraFollowMode = true;
-     this.cameraCoRotateMode = true; // New mode: camera orbits with object
-     if (DEBUG.enabled) console.log(` Co-rotation mode enabled for ${object.userData.name}`);
- } else if (userData.type === 'Constellation') {
+ // Enable chase-cam co-rotation for ALL orbiting objects except planets
+ // Camera will orbit WITH the object (spacecraft, moons, etc.)
+ const isPlanetOrbitingSun = (userData.type === 'planet' || userData.isPlanet) && userData.orbitPlanet?.toLowerCase() === 'sun';
+ 
+ if (userData.type === 'Constellation') {
      // Constellations: never follow
      this.cameraFollowMode = false;
      this.cameraCoRotateMode = false;
+ } else if (userData.orbitPlanet && !isPlanetOrbitingSun) {
+     // All objects orbiting a planet (spacecraft, moons, etc.): enable chase-cam
+     this.cameraFollowMode = true;
+     this.cameraCoRotateMode = true; // Chase-cam mode: camera orbits WITH object
+     const objectType = userData.isSpacecraft ? 'spacecraft' : userData.type || 'orbiter';
+     if (DEBUG.enabled) console.log(` Chase-cam co-rotation enabled for ${object.userData.name} (${objectType})`);
  } else if (isOrbiter) {
-     // Other orbiters (moons): traditional tracking
+     // Other orbiters (planets around sun, comets): traditional tracking
      this.cameraFollowMode = true;
      this.cameraCoRotateMode = false;
-     if (DEBUG.enabled) console.log(` Tracking mode enabled for ${object.userData.name}`);
+     if (DEBUG.enabled) console.log(` Traditional tracking enabled for ${object.userData.name}`);
  } else {
      this.cameraFollowMode = false;
      this.cameraCoRotateMode = false;
@@ -8311,18 +8319,34 @@ class SolarSystemModule {
          targetPosition.z + distance
      );
      controls.target.copy(targetPosition);
- } else if (userData.type === 'moon') {
-     // Moons: Creative orbital perspective - view from the side at an angle
-     // Position camera to show both the moon and hint of its parent planet
-     const angle = Math.random() * Math.PI * 2; // Random angle for variety
-     const elevation = 0.4 + Math.random() * 0.3; // Slight variation in elevation (0.4-0.7)
-     endPos = new THREE.Vector3(
-         targetPosition.x + Math.cos(angle) * distance,
-         targetPosition.y + distance * elevation,
-         targetPosition.z + Math.sin(angle) * distance
-     );
-     controls.target.copy(targetPosition);
-     console.log(` [Moon] Orbital perspective at angle ${(angle * 180 / Math.PI).toFixed(0)}°, elevation ${(elevation * 100).toFixed(0)}%`);
+ } else if (userData.type === 'moon' && userData.orbitPlanet) {
+     // Moons: Chase-cam perspective showing moon and parent planet surface
+     parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+     if (parentPlanet) {
+         // Calculate moon direction from planet
+         const moonDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
+         
+         // Position camera behind and slightly above moon for chase-cam effect
+         const offsetDistance = distance;
+         endPos = new THREE.Vector3(
+             targetPosition.x - moonDirection.x * offsetDistance * 0.5, // Behind moon
+             targetPosition.y + offsetDistance * 0.3, // Above
+             targetPosition.z - moonDirection.z * offsetDistance * 0.5
+         );
+         
+         controls.target.copy(targetPosition); // Look at moon
+         console.log(` [Moon Chase-Cam] Camera positioned behind ${userData.name} for parent planet flyover`);
+     } else {
+         // Fallback: static angle
+         const angle = Math.random() * Math.PI * 2;
+         const elevation = 0.4;
+         endPos = new THREE.Vector3(
+             targetPosition.x + Math.cos(angle) * distance,
+             targetPosition.y + distance * elevation,
+             targetPosition.z + Math.sin(angle) * distance
+         );
+         controls.target.copy(targetPosition);
+     }
  } else if (userData.type === 'planet' || userData.isPlanet) {
      // Planets: Cinematic angles that showcase their features
      const planetName = userData.name.toLowerCase();
