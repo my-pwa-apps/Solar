@@ -5768,8 +5768,9 @@ class SolarSystemModule {
  }
  
  if (isFocused) {
- // Brighten focused constellation
- child.material.opacity = child.material.userData.originalOpacity;
+ // Brighten focused constellation - boost opacity beyond original for extra brightness
+ const originalOpacity = child.material.userData.originalOpacity;
+ child.material.opacity = Math.min(originalOpacity * 1.3, 1.0); // 30% brighter
  child.visible = true;
  focusedCount++;
  } else {
