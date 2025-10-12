@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.7.3 - Fix Windows icon configuration with unplated icons and proper manifest setup
+// Version 1.7.4 - Add favicon.ico to title bar and ensure proper caching
 
-const CACHE_VERSION = '1.7.3';
+const CACHE_VERSION = '1.7.4';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -22,7 +22,8 @@ const STATIC_CACHE_FILES = [
   './src/styles/ui.css',
   './manifest.json',
   './manifest.nl.json',
-  './browserconfig.xml'
+  './browserconfig.xml',
+  './favicon.ico'
 ];
 
 // CDN files to cache (Three.js and dependencies)
