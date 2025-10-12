@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.7.2 - Fix ISS camera with proper spacecraft properties and ultra-close distance
+// Version 1.7.3 - Fix Windows icon configuration with unplated icons and proper manifest setup
 
-const CACHE_VERSION = '1.7.2';
+const CACHE_VERSION = '1.7.3';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
