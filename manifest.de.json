@@ -1,0 +1,31 @@
+{
+  "id": "/solar/",
+  "name": "Weltraumreise - Interaktives 3D-Sonnensystem",
+  "short_name": "Weltraumreise",
+  "description": "Erkunden Sie unser Sonnensystem in atemberaubendem 3D mit VR-Unterstützung. Navigieren Sie durch Planeten, Monde, Raumfahrzeuge, Nebel und Galaxien in diesem interaktiven Bildungserlebnis.",
+  "start_url": "./?lang=de",
+  "display": "standalone",
+  "dir": "ltr",
+  "background_color": "#000011",
+  "theme_color": "#0078D4",
+  "orientation": "any",
+  "scope": "./",
+  "lang": "de-DE",
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "categories": ["education", "entertainment"],
+  "icons": [
+    {"src": "icons/manifest-icon-192.maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/manifest-icon-192.maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "icons/manifest-icon-512.maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/manifest-icon-512.maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "screenshots": [
+    {"src": "./screenshots/solar1.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Weltraumreise - Sonnensystem Ansicht"},
+    {"src": "./screenshots/solar2.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Weltraumreise - Planeten Detail"}
+  ],
+  "shortcuts": [
+    {"name": "Erde Anzeigen", "short_name": "Erde", "description": "Direkt zur Erde springen", "url": "./?planet=earth&lang=de"},
+    {"name": "Mars Anzeigen", "short_name": "Mars", "description": "Direkt zu Mars springen", "url": "./?planet=mars&lang=de"},
+    {"name": "VR Modus Starten", "short_name": "VR", "description": "Im VR-Modus starten", "url": "./?vr=true&lang=de"}
+  ]
+}

@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 1.9.1 - Replaced Parker Solar Probe with JWST, fixed ISS rotation
+// Version 2.0.0 - Multilingual support (English, Dutch, French, German, Spanish, Portuguese)
 
-const CACHE_VERSION = '1.9.1';
+const CACHE_VERSION = '2.0.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -22,6 +22,10 @@ const STATIC_CACHE_FILES = [
   './src/styles/ui.css',
   './manifest.json',
   './manifest.nl.json',
+  './manifest.fr.json',
+  './manifest.de.json',
+  './manifest.es.json',
+  './manifest.pt.json',
   './browserconfig.xml',
   './favicon.ico'
 ];

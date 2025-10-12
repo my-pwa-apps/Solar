@@ -1,0 +1,482 @@
+{
+  "id": "/solar/",
+  "name": "Voyage Spatial - Système Solaire 3D Interactif",
+  "short_name": "Voyage Spatial",
+  "description": "Explorez notre système solaire en 3D époustouflant avec support VR. Naviguez à travers les planètes, lunes, vaisseaux spatiaux, nébuleuses et galaxies dans cette expérience éducative interactive.",
+  "start_url": "./?lang=fr",
+  "display": "standalone",
+  "dir": "ltr",
+  "background_color": "#000011",
+  "theme_color": "#0078D4",
+  "orientation": "any",
+  "scope": "./",
+  "lang": "fr-FR",
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "categories": ["education", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/manifest-icon-192.maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/manifest-icon-512.maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-16.png",
+      "sizes": "16x16",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-24.png",
+      "sizes": "24x24",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/android/android-launchericon-48-48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/android/android-launchericon-72-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/android/android-launchericon-96-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/android/android-launchericon-144-144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/android/android-launchericon-192-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/android/android-launchericon-512-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/apple-icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/20.png",
+      "sizes": "20x20",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/29.png",
+      "sizes": "29x29",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/40.png",
+      "sizes": "40x40",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/57.png",
+      "sizes": "57x57",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/58.png",
+      "sizes": "58x58",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/60.png",
+      "sizes": "60x60",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/76.png",
+      "sizes": "76x76",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/80.png",
+      "sizes": "80x80",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/87.png",
+      "sizes": "87x87",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/114.png",
+      "sizes": "114x114",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/120.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/167.png",
+      "sizes": "167x167",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/ios/1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-20.png",
+      "sizes": "20x20",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-24.png",
+      "sizes": "24x24",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-30.png",
+      "sizes": "30x30",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-36.png",
+      "sizes": "36x36",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-40.png",
+      "sizes": "40x40",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-44.png",
+      "sizes": "44x44",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-60.png",
+      "sizes": "60x60",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-80.png",
+      "sizes": "80x80",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.targetsize-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-20.png",
+      "sizes": "20x20",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-24.png",
+      "sizes": "24x24",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-30.png",
+      "sizes": "30x30",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-36.png",
+      "sizes": "36x36",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-40.png",
+      "sizes": "40x40",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-44.png",
+      "sizes": "44x44",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-60.png",
+      "sizes": "60x60",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-80.png",
+      "sizes": "80x80",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/StoreLogo.scale-100.png",
+      "sizes": "50x50",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/StoreLogo.scale-200.png",
+      "sizes": "100x100",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square150x150Logo.scale-100.png",
+      "sizes": "150x150",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Square150x150Logo.scale-200.png",
+      "sizes": "300x300",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Wide310x150Logo.scale-100.png",
+      "sizes": "310x150",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/Wide310x150Logo.scale-200.png",
+      "sizes": "620x300",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/LargeTile.scale-100.png",
+      "sizes": "310x310",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/windows11/LargeTile.scale-200.png",
+      "sizes": "620x620",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshots/solar1.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Voyage Spatial - Vue du Système Solaire"
+    },
+    {
+      "src": "./screenshots/solar2.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Voyage Spatial - Détail de Planète"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Voir la Terre",
+      "short_name": "Terre",
+      "description": "Aller directement à la Terre",
+      "url": "./?planet=earth&lang=fr",
+      "icons": [
+        {
+          "src": "./icons/earth-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Voir Mars",
+      "short_name": "Mars",
+      "description": "Aller directement à Mars",
+      "url": "./?planet=mars&lang=fr",
+      "icons": [
+        {
+          "src": "./icons/mars-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Démarrer le Mode RV",
+      "short_name": "RV",
+      "description": "Démarrer en mode RV",
+      "url": "./?vr=true&lang=fr",
+      "icons": [
+        {
+          "src": "./icons/vr-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "features": [
+    "Cross Platform",
+    "VR Support",
+    "WebXR",
+    "3D Graphics",
+    "Educational Content"
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "fullscreen"
+  ]
+}

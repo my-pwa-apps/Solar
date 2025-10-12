@@ -1,0 +1,31 @@
+{
+  "id": "/solar/",
+  "name": "Viaje Espacial - Sistema Solar 3D Interactivo",
+  "short_name": "Viaje Espacial",
+  "description": "Explora nuestro sistema solar en impresionante 3D con soporte RV. Navega por planetas, lunas, naves espaciales, nebulosas y galaxias en esta experiencia educativa interactiva.",
+  "start_url": "./?lang=es",
+  "display": "standalone",
+  "dir": "ltr",
+  "background_color": "#000011",
+  "theme_color": "#0078D4",
+  "orientation": "any",
+  "scope": "./",
+  "lang": "es-ES",
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "categories": ["education", "entertainment"],
+  "icons": [
+    {"src": "icons/manifest-icon-192.maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/manifest-icon-192.maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "icons/manifest-icon-512.maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/manifest-icon-512.maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "screenshots": [
+    {"src": "./screenshots/solar1.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Viaje Espacial - Vista del Sistema Solar"},
+    {"src": "./screenshots/solar2.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Viaje Espacial - Detalle de Planeta"}
+  ],
+  "shortcuts": [
+    {"name": "Ver la Tierra", "short_name": "Tierra", "description": "Saltar directamente a la Tierra", "url": "./?planet=earth&lang=es"},
+    {"name": "Ver Marte", "short_name": "Marte", "description": "Saltar directamente a Marte", "url": "./?planet=mars&lang=es"},
+    {"name": "Iniciar Modo RV", "short_name": "RV", "description": "Iniciar en modo RV", "url": "./?vr=true&lang=es"}
+  ]
+}

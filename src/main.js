@@ -2077,17 +2077,15 @@ class SolarSystemModule {
  });
  
  this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
- this.sun.userData = {
- name: 'Sun',
- type: 'Star',
- distance: 0,
- radius: sunRadius,
- description: ' The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
- funFact: 'The Sun is so big that 1.3 million Earths could fit inside it!',
- realSize: '1,391,000 km diameter'
- };
- 
- // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
+        this.sun.userData = {
+            name: t('sun'),
+            type: t('typeStar'),
+            distance: 0,
+            radius: sunRadius,
+            description: t('descSun'),
+            funFact: t('funFactSun'),
+            realSize: '1,391,000 km diameter'
+        }; // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
  // In space, light doesn't decay with distance (inverse square law applies but over HUGE distances)
  // BALANCED: Reduced intensity to prevent washing out textures on sunny side
  const sunLight = new THREE.PointLight(0xFFFAE8, 9, 0, 0); // Warm white, reduced intensity (10→9)
@@ -2189,84 +2187,76 @@ class SolarSystemModule {
  color: 0x8C7853,
  distance: 20,
  speed: 0.04,
- rotationSpeed: 0.004,
- tilt: 0.034,
- description: ' Mercury is the smallest planet and closest to the Sun. Its surface is covered with craters like our Moon. Temperature ranges from -180°C at night to 430°C during the day - the largest temperature swing in the solar system!',
- funFact: 'A year on Mercury (88 Earth days) is shorter than its day (176 Earth days)!',
- realSize: '4,879 km diameter',
- moons: 0
- });
-
- // Venus: 12,104 km / 12,742 km = 0.950
+            rotationSpeed: 0.004,
+            tilt: 0.034,
+            description: t('descMercury'),
+            funFact: t('funFactMercury'),
+            realSize: '4,879 km diameter',
+            moons: 0
+        }); // Venus: 12,104 km / 12,742 km = 0.950
  if (this.uiManager) this.uiManager.updateLoadingProgress(14, t('creatingVenus'));
  await new Promise(resolve => requestAnimationFrame(resolve));
  
- this.planets.venus = this.createPlanet(scene, {
- name: 'Venus',
- radius: 0.950,
- color: 0xFFC649,
- distance: 37, // Educational scale (1.85x Mercury)
- speed: 0.015,
- rotationSpeed: -0.001,
- tilt: 2.64,
- description: ' Venus is the hottest planet with surface temperature of 465°C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards compared to most planets!',
- funFact: 'Venus is the brightest planet in our sky and is often called Earth\'s "evil twin"',
- realSize: '12,104 km diameter',
- moons: 0,
- emissive: 0xFFC649,
- emissiveIntensity: 0.3
- });
-
- // Earth: BASE = 1.0 (12,742 km) - Most complex texture generation
+        this.planets.venus = this.createPlanet(scene, {
+            name: t('venus'),
+            radius: 0.950,
+            color: 0xFFC649,
+            distance: 37, // Educational scale (1.85x Mercury)
+            speed: 0.015,
+            rotationSpeed: -0.001,
+            tilt: 2.64,
+            description: t('descVenus'),
+            funFact: t('funFactVenus'),
+            realSize: '12,104 km diameter',
+            moons: 0,
+            emissive: 0xFFC649,
+            emissiveIntensity: 0.3
+        }); // Earth: BASE = 1.0 (12,742 km) - Most complex texture generation
  if (this.uiManager) this.uiManager.updateLoadingProgress(21, t('creatingEarth'));
  await new Promise(resolve => requestAnimationFrame(resolve));
  
- this.planets.earth = this.createPlanet(scene, {
- name: 'Earth',
- radius: 1.0,
- color: 0x2233FF,
- distance: 51, // Educational scale (2.56x Mercury)
- speed: 0.01,
- rotationSpeed: 0.02,
- tilt: 23.44,
- description: ' Earth is our home, the only known planet with life! 71% is covered by water, creating the blue color visible from space. The atmosphere protects us from harmful radiation and meteors.',
- funFact: 'Earth is the only planet not named after a god. It travels at 107,000 km/h around the Sun!',
- realSize: '12,742 km diameter',
- moons: 1,
- atmosphere: true
- });
-
-        // Moon: 3,474 km / 12,742 km = 0.273
+        this.planets.earth = this.createPlanet(scene, {
+            name: t('earth'),
+            radius: 1.0,
+            color: 0x2233FF,
+            distance: 51, // Educational scale (2.56x Mercury)
+            speed: 0.01,
+            rotationSpeed: 0.02,
+            tilt: 23.44,
+            description: t('descEarth'),
+            funFact: t('funFactEarth'),
+            realSize: '12,742 km diameter',
+            moons: 1,
+            atmosphere: true
+        });        // Moon: 3,474 km / 12,742 km = 0.273
         // Real distance: 384,400 km / Earth radius (6,371 km) = ~60 Earth radii
         // Real orbital period: 27.32 days vs Earth's 365.25 days = 13.37x faster
         this.createMoon(this.planets.earth, {
-            name: 'Moon',
+            name: t('moon'),
             radius: 0.273,
             color: 0xAAAAAA,
             distance: 4, // Increased from 3 for better visibility
             speed: 0.1337, // 13.37x Earth's speed (0.01 * 13.37) - completes ~13 orbits per Earth year
             rotationSpeed: 0.004, // Moon rotates (tidally locked)
-            description: ' Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
-            funFact: 'The Moon is slowly moving away from Earth at 3.8 cm per year!'
+            description: t('descMoon'),
+            funFact: t('funFactMoon')
         }); // Mars: 6,779 km / 12,742 km = 0.532
  if (this.uiManager) this.uiManager.updateLoadingProgress(31, t('creatingMars'));
  await new Promise(resolve => requestAnimationFrame(resolve));
  
- this.planets.mars = this.createPlanet(scene, {
- name: 'Mars',
- radius: 0.532,
- color: 0xCD5C5C,
- distance: 78, // Educational scale (3.90x Mercury)
- speed: 0.008,
- rotationSpeed: 0.018,
- tilt: 25.19,
- description: ' Mars, the Red Planet, gets its color from iron oxide (rust). It has the largest volcano (Olympus Mons - 22 km high) and canyon (Valles Marineris - 4,000 km long) in the solar system. Water ice exists at its poles!',
- funFact: 'Mars has seasons like Earth, and its day is only 37 minutes longer than ours!',
- realSize: '6,779 km diameter',
- moons: 2
-        });
-
-        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny!)
+        this.planets.mars = this.createPlanet(scene, {
+            name: t('mars'),
+            radius: 0.532,
+            color: 0xCD5C5C,
+            distance: 78, // Educational scale (3.90x Mercury)
+            speed: 0.008,
+            rotationSpeed: 0.018,
+            tilt: 25.19,
+            description: t('descMars'),
+            funFact: t('funFactMars'),
+            realSize: '6,779 km diameter',
+            moons: 2
+        });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny!)
         // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
         this.createMoon(this.planets.mars, {
             name: 'Phobos',
@@ -2291,22 +2281,20 @@ class SolarSystemModule {
  if (this.uiManager) this.uiManager.updateLoadingProgress(40, t('creatingJupiter'));
  await new Promise(resolve => requestAnimationFrame(resolve));
  
- this.planets.jupiter = this.createPlanet(scene, {
- name: 'Jupiter',
- radius: 10.97,
- color: 0xDAA520,
- distance: 266, // Educational scale (13.3x Mercury)
- speed: 0.002,
- rotationSpeed: 0.04,
- tilt: 3.13,
- description: ' Jupiter is the largest planet - all other planets could fit inside it! The Great Red Spot is a storm larger than Earth that has raged for at least 400 years. Jupiter has 95 known moons!',
- funFact: 'Jupiter\'s gravity shields Earth from many asteroids and comets!',
- realSize: '139,820 km diameter',
- moons: 4,
- rings: true
- });
-
- // Jupiter's Galilean moons (realistic sizes)
+        this.planets.jupiter = this.createPlanet(scene, {
+            name: t('jupiter'),
+            radius: 10.97,
+            color: 0xDAA520,
+            distance: 266, // Educational scale (13.3x Mercury)
+            speed: 0.002,
+            rotationSpeed: 0.04,
+            tilt: 3.13,
+            description: t('descJupiter'),
+            funFact: t('funFactJupiter'),
+            realSize: '139,820 km diameter',
+            moons: 4,
+            rings: true
+        }); // Jupiter's Galilean moons (realistic sizes)
         // Io: 3,643 km / 12,742 km = 0.286
         // Orbital period: 1.769 days vs Jupiter's 4333 days = 2449x faster
         this.createMoon(this.planets.jupiter, {
@@ -2350,23 +2338,21 @@ class SolarSystemModule {
  if (this.uiManager) this.uiManager.updateLoadingProgress(48, t('creatingSaturn'));
  await new Promise(resolve => requestAnimationFrame(resolve));
  
- this.planets.saturn = this.createPlanet(scene, {
- name: 'Saturn',
- radius: 9.14,
- color: 0xFAD5A5,
- distance: 490, // Educational scale (24.5x Mercury)
- speed: 0.0009,
- rotationSpeed: 0.038,
- tilt: 26.73,
- description: ' Saturn is famous for its spectacular ring system made of ice and rock particles. It\'s the least dense planet - it would float in water! Saturn has 146 known moons including Titan, which has a thick atmosphere.',
- funFact: 'Saturn\'s rings are only 10 meters thick but 280,000 km wide!',
- realSize: '116,460 km diameter',
- moons: 3,
- rings: true,
- prominentRings: true
- });
-
-
+        this.planets.saturn = this.createPlanet(scene, {
+            name: t('saturn'),
+            radius: 9.14,
+            color: 0xFAD5A5,
+            distance: 490, // Educational scale (24.5x Mercury)
+            speed: 0.0009,
+            rotationSpeed: 0.038,
+            tilt: 26.73,
+            description: t('descSaturn'),
+            funFact: t('funFactSaturn'),
+            realSize: '116,460 km diameter',
+            moons: 3,
+            rings: true,
+            prominentRings: true
+        });
         // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
         // Orbital period: 15.945 days vs Saturn's 10759 days = 675x faster
         this.createMoon(this.planets.saturn, {
@@ -2400,22 +2386,20 @@ class SolarSystemModule {
  if (this.uiManager) this.uiManager.updateLoadingProgress(54, t('creatingUranus'));
  await new Promise(resolve => requestAnimationFrame(resolve));
  
- this.planets.uranus = this.createPlanet(scene, {
- name: 'Uranus',
- radius: 3.98,
- color: 0x4FD0E7,
- distance: 984, // Educational scale (49.2x Mercury)
- speed: 0.0004,
- rotationSpeed: 0.03,
- tilt: 97.77,
- description: ' Uranus is unique - it rotates on its side! This means its poles take turns facing the Sun during its 84-year orbit. Made of water, methane, and ammonia ices, it appears blue-green due to methane in its atmosphere.',
- funFact: 'Uranus was the first planet discovered with a telescope (1781)!',
- realSize: '50,724 km diameter',
- moons: 2,
- rings: true
- });
-
-        // Titania: 1,578 km / 12,742 km = 0.124
+        this.planets.uranus = this.createPlanet(scene, {
+            name: t('uranus'),
+            radius: 3.98,
+            color: 0x4FD0E7,
+            distance: 984, // Educational scale (49.2x Mercury)
+            speed: 0.0004,
+            rotationSpeed: 0.03,
+            tilt: 97.77,
+            description: t('descUranus'),
+            funFact: t('funFactUranus'),
+            realSize: '50,724 km diameter',
+            moons: 2,
+            rings: true
+        });        // Titania: 1,578 km / 12,742 km = 0.124
         // Orbital period: 8.706 days vs Uranus's 30687 days = 3526x faster
         this.createMoon(this.planets.uranus, {
             name: 'Titania',
@@ -2438,22 +2422,20 @@ class SolarSystemModule {
  if (this.uiManager) this.uiManager.updateLoadingProgress(58, t('creatingNeptune'));
  await new Promise(resolve => requestAnimationFrame(resolve));
  
- this.planets.neptune = this.createPlanet(scene, {
- name: 'Neptune',
- radius: 3.86,
- color: 0x4169E1,
- distance: 1542, // Educational scale (77.1x Mercury)
- speed: 0.0001,
- rotationSpeed: 0.032,
- tilt: 28.32,
- description: ' Neptune is the windiest planet with storms reaching 2,100 km/h! Its beautiful blue color comes from methane. Neptune has a large dark spot (storm) similar to Jupiter\'s Great Red Spot.',
- funFact: 'Neptune was discovered by math before being seen - its gravity affected Uranus\'s orbit!',
- realSize: '49,244 km diameter',
- moons: 1,
- rings: true
- });
-
-        // Triton: 2,707 km / 12,742 km = 0.212
+        this.planets.neptune = this.createPlanet(scene, {
+            name: t('neptune'),
+            radius: 3.86,
+            color: 0x4169E1,
+            distance: 1542, // Educational scale (77.1x Mercury)
+            speed: 0.0001,
+            rotationSpeed: 0.032,
+            tilt: 28.32,
+            description: t('descNeptune'),
+            funFact: t('funFactNeptune'),
+            realSize: '49,244 km diameter',
+            moons: 1,
+            rings: true
+        });        // Triton: 2,707 km / 12,742 km = 0.212
         // Orbital period: 5.877 days (retrograde) vs Neptune's 60190 days = 10242x faster
         this.createMoon(this.planets.neptune, {
             name: 'Triton',
