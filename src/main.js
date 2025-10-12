@@ -9924,7 +9924,7 @@ class App {
  targetObject = this.solarSystemModule.planets[value];
  break;
  case 'moon':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Moon');
+ targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === t('moon'));
  break;
  case 'pluto':
  targetObject = this.solarSystemModule.planets.pluto;
