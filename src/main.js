@@ -7689,18 +7689,22 @@ class SolarSystemModule {
  neptune: 4495.1,
  pluto: 5906.4
  } : {
- // Educational scale (compressed for visibility)
- // Asteroid belt is at ~75 ± 15 (60-90 range)
- // Jupiter needs to be beyond 95 to keep its moons (at +12 to +23) clear of asteroids
- mercury: 20,
- venus: 30,
- earth: 45,
- mars: 60,
- jupiter: 120, // Moved from 100 to 120 to clear asteroid belt
- saturn: 175, // Adjusted proportionally
- uranus: 230, // Adjusted proportionally
- neptune: 285, // Adjusted proportionally
- pluto: 340 // Adjusted proportionally
+ // Educational scale (compressed for visibility with proper spacing)
+ // Constraints:
+ // - Asteroid belt: 60-90 (75 ± 15)
+ // - Kuiper belt: 280-380 (base 280, spread 100)
+ // - Mars + moons (max +2.5) must be < 60
+ // - Jupiter + moons (max +23) must be > 90
+ // - Neptune + moons (max +5) should be < 280
+ mercury: 20,  // No moons
+ venus: 30,    // No moons
+ earth: 45,    // Moon at +4 = 49 (clear)
+ mars: 55,     // Deimos at +2.5 = 57.5 (was 60, moved to 55 to clear belt at 60)
+ jupiter: 120, // Callisto at +23 = 143 (clear of belt ending at 90)
+ saturn: 180,  // Rhea at +12 = 192 (adjusted spacing)
+ uranus: 235,  // Titania at +5 = 240 (adjusted spacing)
+ neptune: 270, // Triton at +5 = 275 (was 285, moved to 270 to clear Kuiper at 280)
+ pluto: 340    // Inside Kuiper belt as it should be
  };
  
  // Update planet distances
