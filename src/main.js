@@ -2301,7 +2301,7 @@ class SolarSystemModule {
             name: 'Io',
             radius: 0.286,
             color: 0xFFFF00,
-            distance: 8,
+            distance: 12, // Increased from 8 for better visibility
             speed: 4.898, // 2449x Jupiter's speed (0.002 * 2449)
             description: 'Io is the most volcanically active body in the solar system!'
         });
@@ -2311,7 +2311,7 @@ class SolarSystemModule {
             name: 'Europa',
             radius: 0.245,
             color: 0xCCBB99,
-            distance: 10,
+            distance: 15, // Increased from 10
             speed: 2.44, // 1220x Jupiter's speed (0.002 * 1220)
             description: 'Europa has a global ocean beneath its ice - a potential place for life!'
         });
@@ -2321,7 +2321,7 @@ class SolarSystemModule {
             name: 'Ganymede',
             radius: 0.413,
             color: 0x996633,
-            distance: 12,
+            distance: 19, // Increased from 12
             speed: 1.212, // 606x Jupiter's speed (0.002 * 606)
             description: 'Ganymede is the largest moon in the solar system, bigger than Mercury!'
         });
@@ -2331,7 +2331,7 @@ class SolarSystemModule {
             name: 'Callisto',
             radius: 0.378,
             color: 0x777777,
-            distance: 14,
+            distance: 23, // Increased from 14
             speed: 0.52, // 260x Jupiter's speed (0.002 * 260)
             description: 'Callisto is the most heavily cratered object in the solar system!'
         }); // Saturn: 116,460 km / 12,742 km = 9.14 (almost as big as Jupiter!)
@@ -9389,16 +9389,16 @@ class App {
  targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Deimos');
  break;
  case 'io':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Io');
+ targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Io');
  break;
  case 'europa':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Europa');
+ targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Europa');
  break;
  case 'ganymede':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Ganymede');
+ targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Ganymede');
  break;
  case 'callisto':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Callisto');
+ targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Callisto');
  break;
  case 'titan':
  targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Titan');
