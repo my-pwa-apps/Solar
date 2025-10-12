@@ -6288,7 +6288,8 @@ class SolarSystemModule {
  });
  }
 
-createHyperrealisticHubble(satData) {
+
+    createHyperrealisticHubble(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic Hubble Space Telescope');
         const hubble = new THREE.Group();
         const scale = 0.002;
@@ -8579,8 +8580,9 @@ createHyperrealisticHubble(satData) {
  this.resetConstellationHighlight();
  object.getWorldPosition(targetPosition);
  }
+ 
 
-// Store reference for tracking
+ // Store reference for tracking
  this.focusedObject = object;
  this.focusedObjectDistance = distance;
  this.focusedObjectStartTime = performance.now();
@@ -9274,6 +9276,7 @@ createHyperrealisticHubble(satData) {
  }
  }
 }
+
 
 // ===========================
 // TOPIC MANAGER
@@ -10339,5 +10342,6 @@ if (document.readyState === 'loading') {
 } else {
  new App();
 }
+
 
 

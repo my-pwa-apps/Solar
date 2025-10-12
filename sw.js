@@ -1,4 +1,4 @@
-// Space Voyage - Service Worker
+﻿// Space Voyage - Service Worker
 // Version 2.0.0 - Multilingual support (English, Dutch, French, German, Spanish, Portuguese)
 
 const CACHE_VERSION = '2.0.0';
@@ -338,3 +338,4 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 console.log('[SW] Space Voyage Service Worker v' + CACHE_VERSION + ' loaded');
+
