@@ -4580,8 +4580,8 @@ class SolarSystemModule {
  rotationPhase: Math.random() * Math.PI * 2
  };
 
- // Store moon reference
- this.moons[config.name.toLowerCase()] = moon;
+ // Store moon reference (trim and lowercase for lookup)
+ this.moons[config.name.trim().toLowerCase()] = moon;
  planet.userData.moons.push(moon);
  this.objects.push(moon);
  planet.add(moon);
