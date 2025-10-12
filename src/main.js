@@ -7541,9 +7541,25 @@ class SolarSystemModule {
  }
  }
  
- // ISS: Keep fixed orientation (don't rotate - maintains construction orientation)
+ // ISS: Maintain stable orientation (no rotation)
+ // Lock rotation to prevent spinning appearance
+ if (userData.name.includes('ISS')) {
+ // ISS maintains fixed orientation - no rotation applied
+ // Store initial rotation if not already set
+ if (!userData.fixedRotation) {
+ userData.fixedRotation = {
+ x: satellite.rotation.x,
+ y: satellite.rotation.y,
+ z: satellite.rotation.z
+ };
+ } else {
+ // Restore fixed rotation to prevent drift
+ satellite.rotation.x = userData.fixedRotation.x;
+ satellite.rotation.y = userData.fixedRotation.y;
+ satellite.rotation.z = userData.fixedRotation.z;
+ }
+ } else {
  // Other satellites: rotate to face Earth
- if (!userData.name.includes('ISS')) {
  satellite.lookAt(earthPosition);
  }
  }
@@ -8288,11 +8304,16 @@ class SolarSystemModule {
  controls.minDistance = minDist;
  controls.maxDistance = maxDist;
  
- // Enable full rotation around object
+ // Configure controls based on object type
  controls.enableRotate = true;
  controls.enableZoom = true;
- controls.enablePan = true;
+ // Disable panning for ISS/satellites to keep them centered (Earth stays in view)
+ controls.enablePan = (userData.isSpacecraft && userData.orbitPlanet) ? false : true;
  controls.autoRotate = false;
+ 
+ if (userData.isSpacecraft && userData.orbitPlanet) {
+ console.log(` [ISS Controls] Panning disabled to keep ISS centered and Earth in view`);
+ }
  
  // Smooth camera transition
  const startPos = camera.position.clone();
