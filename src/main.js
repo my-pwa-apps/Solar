@@ -398,10 +398,10 @@ class App {
  'big-dipper': ['Big Dipper (Ursa Major)'],
  'little-dipper': ['Little Dipper (Ursa Minor)'],
  'southern-cross': ['Southern Cross (Crux)'],
- 'cassiopeia': ['Cassiopeia'],
+ 'cassiopeia': ['Cassiopeia (The Queen)'],
  'cygnus': ['Cygnus (The Swan)'],
  'lyra': ['Lyra (The Lyre)'],
- 'andromeda': ['Andromeda (Princess)'], // Distinct from "Andromeda Galaxy"
+ 'andromeda': ['Andromeda (The Princess)'], // Distinct from "Andromeda Galaxy"
  'perseus': ['Perseus (The Hero)'],
  }},
  { prefix: '', array: 'satellites', patterns: {
@@ -445,6 +445,10 @@ class App {
  const patterns = category.patterns[searchKey];
  
  if (patterns && this.solarSystemModule[category.array]) {
+ console.log(`🔍 [Nav Debug] Searching for "${value}" → key: "${searchKey}" in array: "${category.array}"`);
+ console.log(`🔍 [Nav Debug] Patterns:`, patterns);
+ console.log(`🔍 [Nav Debug] Available objects:`, this.solarSystemModule[category.array].map(obj => obj.userData.name));
+ 
  let found;
  
  if (category.exactMatch) {
@@ -460,7 +464,11 @@ class App {
  );
  }
  
- if (found) return found;
+ if (found) {
+ console.log(`✅ [Nav Debug] FOUND: "${found.userData.name}"`);
+ return found;
+ }
+ console.log(`❌ [Nav Debug] Not found in this array`);
  }
  }
  

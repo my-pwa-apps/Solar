@@ -6760,6 +6760,10 @@ createHyperrealisticHubble(satData) {
  
  // Special handling for constellations - use center of star pattern
  if (userData.type === 'Constellation' && userData.centerPosition) {
+ console.log(`🔍 [Constellation Focus Debug] Focusing on: "${userData.name}"`);
+ console.log(`🔍 [Constellation Focus Debug] Center position:`, userData.centerPosition);
+ console.log(`🔍 [Constellation Focus Debug] Object position:`, object.position);
+ 
  targetPosition.set(
  userData.centerPosition.x,
  userData.centerPosition.y,
