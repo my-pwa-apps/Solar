@@ -1360,6 +1360,7 @@ export class SceneManager {
  }
 
  animate(callback) {
+ let frameCount = 0;
  this.renderer.setAnimationLoop(() => {
  try {
  this.controls.update();
@@ -1368,6 +1369,17 @@ export class SceneManager {
  if (this.labelRenderer) {
  this.labelRenderer.render(this.scene, this.camera);
  }
+ 
+ // Debug first frame
+ if (frameCount === 0) {
+ console.log('🎬 First frame rendered!');
+ console.log('📊 Scene children:', this.scene.children.length);
+ console.log('📷 Camera position:', this.camera.position);
+ console.log('🎯 Camera looking at:', this.controls.target);
+ console.log('🖼️ Canvas dimensions:', this.renderer.domElement.width, 'x', this.renderer.domElement.height);
+ console.log('🎨 Background:', this.scene.background);
+ }
+ frameCount++;
  } catch (error) {
  console.error(' ERROR in animation loop:', error);
  console.error(' Stack:', error.stack);

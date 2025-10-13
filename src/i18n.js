@@ -1619,6 +1619,7 @@ if (document.readyState === 'loading') {
     initLanguage();
 }
 
-// ES6 module exports for modular architecture
-export { t, applyTranslations, getCurrentLanguage, setLanguage };
+// Note: Functions are available globally via window.t, window.applyTranslations, etc.
+// ES6 imports in modules will use: import { t } from './i18n.js'
+// The functions are also attached to window for backwards compatibility
 

@@ -5,7 +5,10 @@ import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { TEXTURE_CACHE, cachedTextureGeneration } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE } from './utils.js';
-import { t } from '../i18n.js';
+
+// i18n.js is loaded globally in index.html, access via window.t
+const t = window.t || ((key) => key);
+
 export class SolarSystemModule {
  constructor(uiManager) {
  this.uiManager = uiManager;
@@ -1690,6 +1693,219 @@ export class SolarSystemModule {
  return texture;
  }
  
+ // ===== MOON TEXTURES =====
+ 
+ createPhobosTexture(size) {
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ 
+ const noise = (x, y) => {
+ const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+ return n - Math.floor(n);
+ };
+ 
+ const imageData = ctx.createImageData(size, size);
+ const data = imageData.data;
+ 
+ for (let y = 0; y < size; y++) {
+ for (let x = 0; x < size; x++) {
+ const idx = (y * size + x) * 4;
+ const nx = x / size, ny = y / size;
+ 
+ // Dark gray carbonaceous surface with reddish dust
+ const gray = 80 + noise(nx * 30, ny * 30) * 50;
+ 
+ data[idx] = gray * 0.85; // Slightly red-tinted
+ data[idx + 1] = gray * 0.75;
+ data[idx + 2] = gray * 0.70;
+ data[idx + 3] = 255;
+ }
+ }
+ 
+ ctx.putImageData(imageData, 0, 0);
+ 
+ // Add large Stickney crater (about 1/3 diameter)
+ const centerX = size * 0.4;
+ const centerY = size * 0.5;
+ const craterRadius = size * 0.15;
+ const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, craterRadius);
+ gradient.addColorStop(0, '#252525');
+ gradient.addColorStop(0.7, '#404040');
+ gradient.addColorStop(1, '#505050');
+ ctx.fillStyle = gradient;
+ ctx.beginPath();
+ ctx.arc(centerX, centerY, craterRadius, 0, Math.PI * 2);
+ ctx.fill();
+ 
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ return texture;
+ }
+ 
+ createDeimosTexture(size) {
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ 
+ const noise = (x, y) => {
+ const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+ return n - Math.floor(n);
+ };
+ 
+ const imageData = ctx.createImageData(size, size);
+ const data = imageData.data;
+ 
+ for (let y = 0; y < size; y++) {
+ for (let x = 0; x < size; x++) {
+ const idx = (y * size + x) * 4;
+ const nx = x / size, ny = y / size;
+ 
+ // Lighter gray than Phobos, smoother surface
+ const gray = 100 + noise(nx * 25, ny * 25) * 40;
+ 
+ data[idx] = gray * 0.90;
+ data[idx + 1] = gray * 0.85;
+ data[idx + 2] = gray * 0.80;
+ data[idx + 3] = 255;
+ }
+ }
+ 
+ ctx.putImageData(imageData, 0, 0);
+ 
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ return texture;
+ }
+ 
+ createIoTexture(size) {
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ 
+ const noise = (x, y) => {
+ const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+ return n - Math.floor(n);
+ };
+ 
+ const imageData = ctx.createImageData(size, size);
+ const data = imageData.data;
+ 
+ for (let y = 0; y < size; y++) {
+ for (let x = 0; x < size; x++) {
+ const idx = (y * size + x) * 4;
+ const nx = x / size, ny = y / size;
+ 
+ // Volcanic yellow/orange/red surface
+ const volcanic = noise(nx * 20, ny * 20);
+ const sulfur = noise(nx * 10, ny * 10);
+ 
+ let r, g, b;
+ if (volcanic < 0.3) {
+ // Dark lava flows
+ r = 120 + sulfur * 40;
+ g = 60 + sulfur * 30;
+ b = 20;
+ } else if (volcanic < 0.7) {
+ // Yellow sulfur plains
+ r = 255;
+ g = 200 + sulfur * 40;
+ b = 80 + sulfur * 60;
+ } else {
+ // Orange/red volcanic regions
+ r = 255;
+ g = 120 + sulfur * 60;
+ b = 40;
+ }
+ 
+ data[idx] = r;
+ data[idx + 1] = g;
+ data[idx + 2] = b;
+ data[idx + 3] = 255;
+ }
+ }
+ 
+ ctx.putImageData(imageData, 0, 0);
+ 
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ return texture;
+ }
+ 
+ createEuropaTexture(size) {
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ 
+ // Icy white/cream base
+ ctx.fillStyle = '#f5ede0';
+ ctx.fillRect(0, 0, size, size);
+ 
+ // Add crack patterns (reddish-brown lineae)
+ ctx.strokeStyle = 'rgba(150, 100, 80, 0.4)';
+ ctx.lineWidth = size / 200;
+ for (let i = 0; i < 50; i++) {
+ ctx.beginPath();
+ const startX = Math.random() * size;
+ const startY = Math.random() * size;
+ ctx.moveTo(startX, startY);
+ for (let j = 0; j < 5; j++) {
+ ctx.lineTo(
+ startX + (Math.random() - 0.5) * size * 0.5,
+ startY + (Math.random() - 0.5) * size * 0.5
+ );
+ }
+ ctx.stroke();
+ }
+ 
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ return texture;
+ }
+ 
+ createTitanTexture(size) {
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ 
+ const noise = (x, y) => {
+ const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+ return n - Math.floor(n);
+ };
+ 
+ const imageData = ctx.createImageData(size, size);
+ const data = imageData.data;
+ 
+ for (let y = 0; y < size; y++) {
+ for (let x = 0; x < size; x++) {
+ const idx = (y * size + x) * 4;
+ const nx = x / size, ny = y / size;
+ 
+ // Orange atmosphere with darker surface features
+ const terrain = noise(nx * 15, ny * 15);
+ const r = 255;
+ const g = 140 + terrain * 60;
+ const b = 50 + terrain * 30;
+ 
+ data[idx] = r;
+ data[idx + 1] = g;
+ data[idx + 2] = b;
+ data[idx + 3] = 255;
+ }
+ }
+ 
+ ctx.putImageData(imageData, 0, 0);
+ 
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ return texture;
+ }
+ 
  createMercuryTexture(size) {
  const canvas = document.createElement('canvas');
  canvas.width = size;
@@ -2512,31 +2728,55 @@ export class SolarSystemModule {
  roughness: 0.98,
  metalness: 0.02
  });
- } else if (moonName.includes('io')) {
- // Io: Yellow/orange volcanic surface
+ } else if (moonName.includes('phobos')) {
+ // Phobos: Dark reddish-gray with Stickney crater
+ const phobosTexture = this.createPhobosTexture(1024);
  moonMaterial = new THREE.MeshStandardMaterial({
- color: 0xffdd44,
+ map: phobosTexture,
+ roughness: 0.95,
+ metalness: 0.05
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Created Phobos texture (1024x1024)`);
+ } else if (moonName.includes('deimos')) {
+ // Deimos: Lighter gray, smoother surface
+ const deimosTexture = this.createDeimosTexture(1024);
+ moonMaterial = new THREE.MeshStandardMaterial({
+ map: deimosTexture,
+ roughness: 0.92,
+ metalness: 0.05
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Created Deimos texture (1024x1024)`);
+ } else if (moonName.includes('io')) {
+ // Io: Yellow/orange/red volcanic surface with detailed texture
+ const ioTexture = this.createIoTexture(1024);
+ moonMaterial = new THREE.MeshStandardMaterial({
+ map: ioTexture,
  roughness: 0.7,
  metalness: 0.0,
  emissive: 0xff6600,
  emissiveIntensity: 0.15
  });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Created Io texture (1024x1024)`);
  } else if (moonName.includes('europa')) {
- // Europa: Icy white/cream with blue tint
+ // Europa: Icy white with crack patterns
+ const europaTexture = this.createEuropaTexture(1024);
  moonMaterial = new THREE.MeshStandardMaterial({
- color: 0xeeddcc,
+ map: europaTexture,
  roughness: 0.3,
  metalness: 0.2
  });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Created Europa texture (1024x1024)`);
  } else if (moonName.includes('titan')) {
- // Titan: Orange atmosphere
+ // Titan: Orange atmosphere with surface features
+ const titanTexture = this.createTitanTexture(1024);
  moonMaterial = new THREE.MeshStandardMaterial({
- color: 0xffa033,
+ map: titanTexture,
  roughness: 0.6,
  metalness: 0.0,
  emissive: 0x663300,
  emissiveIntensity: 0.1
  });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Created Titan texture (1024x1024)`);
  } else if (moonName.includes('enceladus')) {
  // Enceladus: Bright white ice
  moonMaterial = new THREE.MeshStandardMaterial({
@@ -2563,6 +2803,11 @@ export class SolarSystemModule {
  const moon = new THREE.Mesh(geometry, moonMaterial);
  moon.castShadow = true;
  moon.receiveShadow = true;
+ 
+ // Verify texture is applied
+ if (DEBUG.enabled && moonMaterial.map) {
+ console.log(`[Moon Material] "${config.name}" has texture map: ${moonMaterial.map.isTexture ? 'YES' : 'NO'}`);
+ }
 
  // Get real astronomical data for this moon
  const moonKey = config.name.toLowerCase();
@@ -5283,6 +5528,11 @@ createHyperrealisticHubble(satData) {
  orbitTime: '95 minutes'
  },
  {
+ name: 'GPS Satellite (NAVSTAR)',
+ distance: 4.2,
+ speed: 2.0,
+ size: 0.015,
+ color: 0x00FF00,
  description: ' GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55Â° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10â»â´ seconds.',
  funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
  realSize: 'GPS III: 2,161 kg, 7.8m solar span',
@@ -6690,10 +6940,10 @@ createHyperrealisticHubble(satData) {
  // For tiny objects like ISS (size ~0.03), position camera at reasonable distance (1.0 units minimum)
  distance = Math.max(actualRadius * 15, 1.0);
  console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} Ã— 15, min 1.0) for ISS viewing`);
- } else if (userData.type === 'moon' && userData.orbitPlanet) {
+ } else if (userData.type === 'Moon' && userData.parentPlanet) {
  // Moons: Close chase-cam to see moon details and parent planet surface
  distance = Math.max(actualRadius * 4, 2);
- console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for parent planet flyover`);
+ console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for "${userData.name}" around ${userData.parentPlanet}`);
  } else if (userData.isSpacecraft) {
  // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);

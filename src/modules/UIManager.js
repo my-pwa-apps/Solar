@@ -1,7 +1,9 @@
 ﻿// ===========================
 // UI MANAGER MODULE
 // ===========================
-import { t } from '../i18n.js';
+// i18n.js is loaded globally in index.html, access via window.t
+const t = window.t || ((key) => key);
+
 export class UIManager {
  constructor() {
  // Cache DOM elements
@@ -64,8 +66,14 @@ export class UIManager {
  }
 
  hideLoading() {
+ console.log('🎭 hideLoading() called');
+ console.log('📦 Loading element exists:', !!this.elements.loading);
  if (this.elements.loading) {
+ console.log('🔍 Loading element before:', this.elements.loading.className);
+ console.log('🔍 Loading element display:', window.getComputedStyle(this.elements.loading).display);
  this.elements.loading.classList.add('hidden');
+ console.log('🔍 Loading element after:', this.elements.loading.className);
+ console.log('🔍 Loading element display after:', window.getComputedStyle(this.elements.loading).display);
  }
  // Show controls and info panel (explorer removed - using header dropdown instead)
  ['infoPanel', 'controls'].forEach(key => {

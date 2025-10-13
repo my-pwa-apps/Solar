@@ -12,7 +12,9 @@ import { TEXTURE_CACHE, warmupTextureCache } from './modules/TextureCache.js';
 import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
 import { SolarSystemModule } from './modules/SolarSystemModule.js';
-import { t } from './i18n.js';
+
+// i18n.js is loaded globally in index.html, access via window.t
+const t = window.t || ((key) => key);
 
 class App {
  constructor() {
@@ -346,43 +348,43 @@ class App {
  break;
  // Moons
  case 'phobos':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Phobos');
+ targetObject = this.solarSystemModule.moons?.phobos;
  break;
  case 'deimos':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Deimos');
+ targetObject = this.solarSystemModule.moons?.deimos;
  break;
  case 'io':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Io');
+ targetObject = this.solarSystemModule.moons?.io;
  break;
  case 'europa':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Europa');
+ targetObject = this.solarSystemModule.moons?.europa;
  break;
  case 'ganymede':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Ganymede');
+ targetObject = this.solarSystemModule.moons?.ganymede;
  break;
  case 'callisto':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === 'Callisto');
+ targetObject = this.solarSystemModule.moons?.callisto;
  break;
  case 'titan':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Titan');
+ targetObject = this.solarSystemModule.moons?.titan;
  break;
  case 'enceladus':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Enceladus');
+ targetObject = this.solarSystemModule.moons?.enceladus;
  break;
  case 'rhea':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Rhea');
+ targetObject = this.solarSystemModule.moons?.rhea;
  break;
  case 'titania':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Titania');
+ targetObject = this.solarSystemModule.moons?.titania;
  break;
  case 'miranda':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Miranda');
+ targetObject = this.solarSystemModule.moons?.miranda;
  break;
  case 'triton':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Triton');
+ targetObject = this.solarSystemModule.moons?.triton;
  break;
  case 'charon':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Charon');
+ targetObject = this.solarSystemModule.moons?.charon;
  break;
  // Nearby Stars
  case 'alpha-centauri':
