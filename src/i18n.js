@@ -1619,3 +1619,6 @@ if (document.readyState === 'loading') {
     initLanguage();
 }
 
+// ES6 module exports for modular architecture
+export { t, applyTranslations, getCurrentLanguage, setLanguage };
+
