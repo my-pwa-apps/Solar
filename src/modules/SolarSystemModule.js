@@ -6878,31 +6878,42 @@ createHyperrealisticHubble(satData) {
  let endPos;
 
  if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
-     // For distant objects: Position camera to view from slightly offset angle
-     // Place camera at the object location with offset, looking at the center
-     // This keeps the solar system far behind and out of view
+     // For distant objects: Position camera OUTSIDE solar system, looking AT the constellation
+     // Strategy: Place camera on a sphere around the constellation, ensuring line of sight
+     // doesn't pass through the solar system at origin
      
-     // Calculate viewing angle from a perpendicular direction
+     // Direction from origin to constellation
      const directionFromOrigin = targetPosition.clone().normalize();
      
-     // Create perpendicular offset vectors
-     const perpendicular1 = new THREE.Vector3(-directionFromOrigin.z, 0, directionFromOrigin.x).normalize();
-     const perpendicular2 = new THREE.Vector3(0, 1, 0); // Up direction
+     // Position camera slightly to the SIDE of the direct line from origin to constellation
+     // This ensures the solar system (at origin) is not in the line of sight
      
-     // Position camera with offset from constellation center
-     // This gives a good viewing angle while keeping solar system out of view
-     const offsetAngle = Math.random() * Math.PI * 2; // Random angle around constellation
-     const offsetDist = distance * 1.5; // Viewing distance from center
+     // Create a perpendicular vector (90 degrees from the origin-constellation line)
+     const perpendicularVector = new THREE.Vector3(-directionFromOrigin.z, 0, directionFromOrigin.x).normalize();
+     
+     // Calculate camera position:
+     // 1. Start at constellation center
+     // 2. Move perpendicular to avoid origin being in line of sight
+     // 3. Move slightly backward (toward origin direction) for better angle
+     const sideOffset = 1000; // Move 1000 units to the side
+     const backOffset = distance; // Viewing distance
      
      endPos = targetPosition.clone()
-         .add(perpendicular1.clone().multiplyScalar(Math.cos(offsetAngle) * offsetDist))
-         .add(perpendicular2.clone().multiplyScalar(Math.sin(offsetAngle) * offsetDist * 0.5))
-         .add(directionFromOrigin.clone().multiplyScalar(offsetDist * 0.3)); // Slight outward offset
+         .add(perpendicularVector.clone().multiplyScalar(sideOffset)) // Move to the side
+         .add(directionFromOrigin.clone().multiplyScalar(-backOffset * 0.5)); // Pull back slightly for viewing angle
      
-     // Set controls target to constellation center FIRST (this is critical!)
+     // Ensure camera is far from origin (outside solar system sphere of ~300 units)
+     const distanceFromOrigin = endPos.length();
+     if (distanceFromOrigin < 500) {
+         // If too close to origin, push camera further out in perpendicular direction
+         endPos.add(perpendicularVector.clone().multiplyScalar(500));
+         console.log(` [${userData.type}] Camera repositioned further from solar system`);
+     }
+     
+     // Set controls target to constellation center - camera will look directly at it
      controls.target.copy(targetPosition);
      
-     console.log(` [${userData.type}] Camera offset from center, looking at constellation`);
+     console.log(` [${userData.type}] Camera at ${distanceFromOrigin.toFixed(0)} units from origin, looking at constellation at ${targetPosition.length().toFixed(0)} units`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
      // For ISS and other spacecraft: position camera to see BOTH ISS and Earth
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
