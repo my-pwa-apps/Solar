@@ -3671,38 +3671,38 @@ export class SolarSystemModule {
  const y = distance * Math.sin(decRad);
  const z = -distance * Math.cos(decRad) * Math.sin(raRad);
  
- // Create star
- const starSize = 15 * Math.pow(2.5, -star.mag); // Brighter = larger
- const starGeom = new THREE.SphereGeometry(starSize, 8, 8);
+ // Create star - make much brighter and larger
+ const starSize = 25 * Math.pow(2.5, -star.mag); // Brighter = larger (increased from 15 to 25)
+ const starGeom = new THREE.SphereGeometry(starSize, 16, 16); // More segments for smoother appearance
  const starMat = new THREE.MeshBasicMaterial({
  color: star.color,
  transparent: true,
- opacity: 0.9
+ opacity: 1.0 // Fully opaque core (increased from 0.9)
  });
  // Store original opacity for highlighting
- starMat.userData = { originalOpacity: 0.9 };
+ starMat.userData = { originalOpacity: 1.0 };
  
  const starMesh = new THREE.Mesh(starGeom, starMat);
  starMesh.position.set(x, y, z);
  group.add(starMesh);
  starMeshes.push(starMesh);
  
- // Add glow
- const glowGeom = new THREE.SphereGeometry(starSize * 2, 8, 8);
+ // Add bright glow with additive blending
+ const glowGeom = new THREE.SphereGeometry(starSize * 3, 16, 16); // Larger glow (increased from 2x to 3x)
  const glowMat = new THREE.MeshBasicMaterial({
  color: star.color,
  transparent: true,
- opacity: 0.3,
+ opacity: 0.6, // Much brighter glow (increased from 0.3)
  blending: THREE.AdditiveBlending,
  depthWrite: false // Don't block objects behind the glow
  });
  // Store original opacity for highlighting
- glowMat.userData = { originalOpacity: 0.3 };
+ glowMat.userData = { originalOpacity: 0.6 };
  const glow = new THREE.Mesh(glowGeom, glowMat);
  starMesh.add(glow);
  });
  
- // Draw constellation lines
+ // Draw constellation lines - make much brighter
  constData.lines.forEach(line => {
  const points = [
  starMeshes[line[0]].position,
@@ -3710,13 +3710,13 @@ export class SolarSystemModule {
  ];
  const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
  const lineMat = new THREE.LineBasicMaterial({
- color: 0x4488FF,
+ color: 0x6699FF, // Brighter blue (changed from 0x4488FF)
  transparent: true,
- opacity: 0.4,
- linewidth: 2
+ opacity: 0.7, // Much brighter lines (increased from 0.4)
+ linewidth: 3 // Thicker lines (increased from 2)
  });
  // Store original opacity for highlighting
- lineMat.userData = { originalOpacity: 0.4 };
+ lineMat.userData = { originalOpacity: 0.7 };
  const lineMesh = new THREE.Line(lineGeom, lineMat);
  group.add(lineMesh);
  });
