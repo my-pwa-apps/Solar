@@ -6878,25 +6878,23 @@ createHyperrealisticHubble(satData) {
  let endPos;
 
  if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
-     // For distant objects: Position camera BEYOND the object, away from origin
+     // For distant objects: Position camera BEYOND the object, looking back at it
      // This ensures the solar system is behind the camera, not blocking the view
      
      // Direction from origin to constellation center
      const directionFromOrigin = targetPosition.clone().normalize();
      
      // Position camera FURTHER OUT beyond the constellation, looking back at it
-     // This puts the solar system behind the camera
-     const cameraDistance = targetPosition.length() + distance; // Beyond the constellation
-     const angle = Math.random() * Math.PI * 0.5 - Math.PI * 0.25; // ±45 degrees variation
-     const sideVector = new THREE.Vector3(-directionFromOrigin.z, 0, directionFromOrigin.x).normalize();
+     // Use a much larger distance to ensure good viewing angle and solar system is behind
+     const beyondDistance = targetPosition.length() + distance * 2; // Well beyond the constellation
      
-     endPos = new THREE.Vector3()
-         .addScaledVector(directionFromOrigin, cameraDistance) // Move far out in same direction as constellation
-         .addScaledVector(sideVector, distance * Math.sin(angle)) // Offset to the side
-         .add(new THREE.Vector3(0, distance * 0.3, 0)); // Slight elevation
+     // Simple positioning: straight out in the same direction, with slight offset
+     endPos = directionFromOrigin.clone().multiplyScalar(beyondDistance);
      
-     controls.target.copy(targetPosition); // Look back at the constellation center
-     console.log(` [${userData.type}] Camera beyond object at distance ${cameraDistance.toFixed(0)}, looking back at center`);
+     // Set controls target to constellation center FIRST (this is critical!)
+     controls.target.copy(targetPosition);
+     
+     console.log(` [${userData.type}] Camera at ${beyondDistance.toFixed(0)} units, looking at center at ${targetPosition.length().toFixed(0)} units`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
      // For ISS and other spacecraft: position camera to see BOTH ISS and Earth
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
@@ -7050,6 +7048,14 @@ createHyperrealisticHubble(satData) {
          targetPosition.y + distance * (0.3 + variation),
          targetPosition.z + distance * (1.0 + variation)
      );
+     controls.target.copy(targetPosition); // Ensure target is set
+ }
+ 
+ // For constellations, immediately set up the camera orientation before animation
+ if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
+     camera.lookAt(targetPosition); // Immediately orient camera toward target
+     controls.update(); // Apply the change
+     console.log(` [${userData.type}] Pre-animation: Camera oriented to look at target`);
  }
  
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
@@ -7080,12 +7086,12 @@ createHyperrealisticHubble(satData) {
  
  camera.position.lerpVectors(startPos, endPos, eased);
  
- // For constellations, ensure camera always looks at the constellation
- if (userData.type === 'Constellation') {
- camera.lookAt(targetPosition);
+ // Always set target first, then update controls
  controls.target.copy(targetPosition);
- } else {
- controls.target.copy(targetPosition);
+ 
+ // For constellations and distant objects, ensure camera orientation is maintained
+ if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
+ camera.lookAt(targetPosition); // Force camera to look at target during animation
  }
  
  controls.update();
