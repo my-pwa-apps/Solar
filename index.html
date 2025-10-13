@@ -116,12 +116,15 @@
     
     <!-- Favicon - Using unplated versions for Windows taskbar/Start Menu/Title Bar -->
     <!-- Modern browsers prefer PNG, but ICO ensures maximum compatibility -->
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <!-- Favicon set (ICO + PNG fallbacks including 256 for high-DPI title bar) -->
+    <link rel="icon" href="./favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="16x16" href="./icons/windows11/Square44x44Logo.altform-unplated_targetsize-16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="./icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png">
     <link rel="icon" type="image/png" sizes="48x48" href="./icons/windows11/Square44x44Logo.altform-unplated_targetsize-48.png">
-    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
-    <link rel="shortcut icon" type="image/png" href="./icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png">
+    <link rel="icon" type="image/png" sizes="64x64" href="./icons/windows11/Square44x44Logo.altform-unplated_targetsize-64.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="./icons/manifest-icon-192.maskable.png">
+    <link rel="icon" type="image/png" sizes="256x256" href="./icons/manifest-icon-256.png">
+    <link rel="shortcut icon" href="./favicon.ico">
     
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-icon-180.png">
@@ -401,6 +404,23 @@
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
                         console.log('New Service Worker activated');
                     });
+                    // Listen for messages from the Service Worker
+                    navigator.serviceWorker.addEventListener('message', (event) => {
+                        const msg = event.data;
+                        if (!msg || !msg.type) return;
+                        switch (msg.type) {
+                            case 'SW_INSTALLED':
+                                console.log('[SW] Installed version', msg.version);
+                                break;
+                            case 'SW_ACTIVATED':
+                                console.log('[SW] Activated version', msg.version);
+                                break;
+                            case 'SW_SKIP_WAITING_COMPLETE':
+                                console.log('[SW] Skip waiting complete; reloading');
+                                window.location.reload();
+                                break;
+                        }
+                    });
                     
                 } catch (error) {
                     console.warn('Service Worker registration failed:', error);
@@ -417,9 +437,13 @@
             
             notification.classList.remove('hidden');
             
-            // Update button - reload the page
+            // Update button - request immediate activation
             document.getElementById('update-reload')?.addEventListener('click', () => {
-                window.location.reload();
+                if (navigator.serviceWorker?.controller) {
+                    navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+                } else {
+                    window.location.reload();
+                }
             }, { once: true });
             
             // Dismiss button
@@ -444,9 +468,20 @@
         window.addEventListener('offline', updateOnlineStatus);
         window.addEventListener('load', updateOnlineStatus);
         
-        // PWA Install prompt handling
+        // PWA Install prompt handling (platform adaptive)
         let deferredPrompt;
         let installPromptShown = false;
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.MSStream;
+        const isAndroid = /Android/i.test(ua);
+        const isWindows = /Windows NT/i.test(ua);
+        const isEdge = /Edg\//i.test(ua);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+        const INSTALL_DELAY_MS = 30000; // 30s delay before auto showing prompt
+
+        function platformInfo() {
+            return { isIOS, isAndroid, isWindows, isEdge, isSafari };
+        }
         
         // Check if running as installed PWA
         function isPWA() {
@@ -456,60 +491,87 @@
         }
         
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('PWA install prompt ready');
-            // Prevent the mini-infobar from appearing on mobile
-            e.preventDefault();
-            // Stash the event so it can be triggered later
+            console.log('[PWA] beforeinstallprompt fired');
+            e.preventDefault(); // stop mini-infobar
             deferredPrompt = e;
-            
-            // Don't show install prompt if already running as installed app
             if (isPWA()) {
-                console.log('Already running as installed PWA - hiding install prompt');
+                console.log('[PWA] Already installed, skipping prompt');
                 return;
             }
-            
-            // Show install prompt after 30 seconds if not dismissed
-            if (!installPromptShown && !localStorage.getItem('installPromptDismissed')) {
-                setTimeout(() => {
-                    showInstallPrompt();
-                }, 30000);
+            // iOS will never fire this event (Safari limitation)
+            if (isIOS) {
+                console.log('[PWA] iOS detected; using manual instructions');
+                showIOSInstructions();
+                return;
+            }
+            // Windows / Desktop Edge: show a subtle inline hint after delay instead of mobile-style modal if dismissed previously
+            if (isWindows || isEdge) {
+                if (!localStorage.getItem('installPromptDismissed')) {
+                    setTimeout(() => showInstallPrompt(), INSTALL_DELAY_MS);
+                }
+                return; // rely on manual trigger button or delayed prompt
+            }
+            // Android typical flow
+            if (isAndroid && !localStorage.getItem('installPromptDismissed')) {
+                setTimeout(() => showInstallPrompt(), INSTALL_DELAY_MS);
             }
         });
         
         // Show install prompt UI
         function showInstallPrompt() {
-            // Don't show if already installed or no prompt available
-            if (!deferredPrompt || installPromptShown || isPWA()) return;
-            
-            installPromptShown = true;
+            // For iOS we display instructions instead;
+            if (isIOS) {
+                showIOSInstructions();
+                return;
+            }
+            if (installPromptShown || isPWA()) return;
+            // Ensure event available for platforms that support it
+            if (!deferredPrompt && !(isWindows || isEdge)) return;
             const promptElement = document.getElementById('install-prompt');
             if (!promptElement) return;
-            
+            installPromptShown = true;
             promptElement.classList.remove('hidden');
-            
             // Accept button
-            document.getElementById('install-accept')?.addEventListener('click', async () => {
-                promptElement.classList.add('hidden');
-                if (!deferredPrompt) return;
-                
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                
-                if (outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
-                } else {
-                    console.log('User dismissed the install prompt');
-                }
-                
-                deferredPrompt = null;
-            }, { once: true });
-            
+            const acceptBtn = document.getElementById('install-accept');
+            if (acceptBtn) {
+                acceptBtn.textContent = isWindows || isEdge ? 'Install (Add to apps)' : acceptBtn.textContent;
+                acceptBtn.addEventListener('click', async () => {
+                    promptElement.classList.add('hidden');
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('[PWA] UserChoice:', outcome);
+                        deferredPrompt = null;
+                    }
+                }, { once: true });
+            }
             // Dismiss button
             document.getElementById('install-dismiss')?.addEventListener('click', () => {
                 promptElement.classList.add('hidden');
                 localStorage.setItem('installPromptDismissed', 'true');
                 installPromptShown = false;
             }, { once: true });
+        }
+
+        function showIOSInstructions() {
+            if (installPromptShown || isPWA()) return;
+            installPromptShown = true;
+            const promptElement = document.getElementById('install-prompt');
+            if (!promptElement) return;
+            promptElement.classList.remove('hidden');
+            const iconDiv = promptElement.querySelector('.install-icon');
+            if (iconDiv) iconDiv.textContent = '🧭';
+            const title = document.getElementById('install-title');
+            if (title) title.textContent = 'Add to Home Screen';
+            const msgP = promptElement.querySelector('p');
+            if (msgP) msgP.innerHTML = 'Tap the Share icon <span style="font-size:18px">▵</span> then choose "Add to Home Screen" to install.';
+            const buttons = promptElement.querySelector('.install-buttons');
+            if (buttons) {
+                const dismiss = document.getElementById('install-dismiss');
+                const accept = document.getElementById('install-accept');
+                if (accept) accept.style.display = 'none';
+                if (dismiss) dismiss.textContent = 'Got it';
+            }
         }
         
         // Public function to manually trigger install prompt

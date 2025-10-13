@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.1.4 - Fixed Windows taskbar icon caching
+// Version 2.1.5 - Added broadcast messaging & improved update activation
 
-const CACHE_VERSION = '2.1.4';
+const CACHE_VERSION = '2.1.5';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -78,10 +78,11 @@ self.addEventListener('install', (event) => {
           }
         }
         
-        console.log('[SW] Installation complete');
-        
-        // Force the waiting service worker to become the active service worker
-        await self.skipWaiting();
+  console.log('[SW] Installation complete');
+  // Notify clients that a new SW is installed and waiting
+  broadcastMessage({ type: 'SW_INSTALLED', version: CACHE_VERSION });
+  // Force the waiting service worker to become active (can also be triggered manually)
+  await self.skipWaiting();
       } catch (error) {
         console.error('[SW] Installation failed:', error);
       }
@@ -109,8 +110,9 @@ self.addEventListener('activate', (event) => {
       );
       
       // Take control of all clients immediately
-      await self.clients.claim();
-      console.log('[SW] Activated successfully');
+  await self.clients.claim();
+  console.log('[SW] Activated successfully');
+  broadcastMessage({ type: 'SW_ACTIVATED', version: CACHE_VERSION });
     })()
   );
 });
@@ -310,7 +312,9 @@ async function trimCache(cacheName, maxItems) {
 // Handle messages from the client
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+    self.skipWaiting().then(() => {
+      broadcastMessage({ type: 'SW_SKIP_WAITING_COMPLETE', version: CACHE_VERSION });
+    });
   }
   
   if (event.data && event.data.type === 'CACHE_URLS') {
@@ -356,4 +360,13 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 console.log('[SW] Space Voyage Service Worker v' + CACHE_VERSION + ' loaded');
+
+// Broadcast helper to send messages to all window clients
+function broadcastMessage(message) {
+  self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
+    for (const client of clients) {
+      client.postMessage(message);
+    }
+  });
+}
 
