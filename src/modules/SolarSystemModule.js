@@ -131,6 +131,7 @@ export class SolarSystemModule {
  { progress: 3, message: t('creatingSun'), task: async () => this.createSun(scene) },
  { progress: 5, message: t('creatingInnerPlanets'), task: async () => await this.createInnerPlanets(scene) },
  { progress: 38, message: t('creatingOuterPlanets'), task: async () => await this.createOuterPlanets(scene) },
+    { progress: 50, message: t('creatingDwarfPlanets'), task: async () => await this.createDwarfPlanets(scene) },
  { progress: 62, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
  { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
  { progress: 68, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
@@ -614,7 +615,51 @@ export class SolarSystemModule {
             speed: 0.567, // 14178x Pluto's speed (0.00004 * 14178)
             description: t('descCharon')
         });
-    } createProceduralTexture(type, size = 512) {
+    }
+
+    async createDwarfPlanets(scene) {
+        // Pluto already created; add others
+        const catalog = [
+            { name: 'Ceres', radius: 0.073, color: 0xC8C8B4, distance: 180, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter' },
+            { name: 'Haumea', radius: 0.085, color: 0xE0D6C8, distance: 2200, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: 'Fast-spinning elongated dwarf planet.', funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
+            { name: 'Makemake', radius: 0.075, color: 0xD4B48C, distance: 2300, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: 'Bright Kuiper Belt dwarf planet.', funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
+            { name: 'Eris', radius: 0.09, color: 0xD8D8D8, distance: 2400, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: 'Massive scattered disk dwarf planet.', funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
+            // Candidates / notable TNOs
+            { name: 'Orcus', radius: 0.06, color: 0xB0B0C0, distance: 2100, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
+            { name: 'Quaoar', radius: 0.065, color: 0xC8A088, distance: 2150, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
+            { name: 'Gonggong', radius: 0.064, color: 0xBB7766, distance: 2500, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
+            { name: 'Sedna', radius: 0.055, color: 0xCC6644, distance: 4000, speed: 0.000005, rotationSpeed: 0.006, tilt: 12, description: 'Extreme distant object, possible inner Oort cloud.', funFact: 'Orbit ~11,400 years.', realSize: '~995 km est.' },
+            { name: 'Salacia', radius: 0.058, color: 0x996655, distance: 2250, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
+            { name: 'Varda', radius: 0.052, color: 0xAA8866, distance: 2350, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
+            { name: 'Varuna', radius: 0.05, color: 0xAA7755, distance: 2050, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
+        ];
+
+        const proceduralFn = (sz) => this.createMercuryTexture(sz);
+
+        catalog.forEach(cfg => {
+            if (this.planets[cfg.name.toLowerCase()]) return; // skip existing (Pluto)
+            const mesh = this.createPlanet(scene, {
+                name: cfg.name,
+                radius: cfg.radius,
+                color: cfg.color,
+                distance: cfg.distance,
+                speed: cfg.speed,
+                rotationSpeed: cfg.rotationSpeed,
+                tilt: cfg.tilt,
+                description: cfg.description,
+                funFact: cfg.funFact,
+                realSize: cfg.realSize,
+                moons: 0,
+                dwarf: true
+            });
+            const tex = proceduralFn(1024);
+            mesh.material.map = tex;
+            mesh.material.needsUpdate = true;
+        });
+        console.log(`🔍 Added dwarf planets & candidates: ${catalog.map(c => c.name).join(', ')}`);
+    }
+
+    createProceduralTexture(type, size = 512) {
  // Create canvas for procedural texture
  const canvas = document.createElement('canvas');
  canvas.width = size;
@@ -892,142 +937,225 @@ export class SolarSystemModule {
  
  // REMOVED: createEarthNightLights() - was 105 lines of unused city lights code
  
- // Generic planet texture loader with fallback
- loadPlanetTextureReal(planetName, textureURLs, proceduralFunction, size = 2048) {
- // Create procedural texture as fallback first
- const proceduralTexture = proceduralFunction.call(this, size);
- 
- // Try to load real NASA texture and swap it in when ready
- const loader = new THREE.TextureLoader();
- loader.setCrossOrigin('anonymous');
- 
- let currentURLIndex = 0;
- 
- const tryLoadTexture = () => {
- if (currentURLIndex >= textureURLs.length) {
- console.warn(`?? All ${planetName} texture sources failed`);
- console.warn(` Using beautiful procedural ${planetName} instead`);
- return;
+ // Advanced texture loader: attempts high-res sources, then plugin repo sources, then procedural generation.
+ // Returns a placeholder texture immediately; replaces with remote if successful; generates procedural only if all remote fail.
+ loadPlanetTextureReal(planetName, primaryTextureURLs, proceduralFunction, size = 2048, pluginRepoURLs = []) {
+    const planetKey = planetName.toLowerCase();
+    if (!this._pendingTextureMeta) this._pendingTextureMeta = {};
+    this._pendingTextureMeta[planetKey] = {
+        attempted: true,
+        primarySources: [...primaryTextureURLs],
+        pluginSources: [...pluginRepoURLs],
+        success: false,
+        finalURL: null,
+        phase: 'init',
+        startedAt: performance.now(),
+        proceduralGenerated: false
+    };
+
+    // Create a tiny placeholder texture (mid-gray) so material has something immediately.
+    const placeholderCanvas = document.createElement('canvas');
+    placeholderCanvas.width = 2; placeholderCanvas.height = 2;
+    const pctx = placeholderCanvas.getContext('2d');
+    pctx.fillStyle = '#7f7f7f';
+    pctx.fillRect(0,0,2,2);
+    const placeholderTexture = new THREE.CanvasTexture(placeholderCanvas);
+    placeholderTexture.needsUpdate = true;
+
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+
+    let phase = 'primary';
+    let primaryIndex = 0;
+    let pluginIndex = 0;
+    const tryNext = () => {
+        const meta = this._pendingTextureMeta[planetKey];
+        if (phase === 'primary') {
+            if (primaryIndex < primaryTextureURLs.length) {
+                const url = primaryTextureURLs[primaryIndex];
+                console.log(`🔭 Loading ${planetName} primary texture ${primaryIndex + 1}/${primaryTextureURLs.length} ...`);
+                meta.phase = 'primary';
+                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'primary'), undefined, () => {
+                    console.warn(`⚠️ ${planetName} primary source ${primaryIndex + 1} failed: ${url}`);
+                    primaryIndex++; tryNext();
+                });
+                return;
+            }
+            // Move to plugin phase
+            phase = 'plugin';
+        }
+        if (phase === 'plugin') {
+            if (pluginIndex < pluginRepoURLs.length) {
+                const url = pluginRepoURLs[pluginIndex];
+                console.log(`🧩 Loading ${planetName} plugin repository texture ${pluginIndex + 1}/${pluginRepoURLs.length} ...`);
+                meta.phase = 'plugin';
+                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'plugin'), undefined, () => {
+                    console.warn(`⚠️ ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
+                    pluginIndex++; tryNext();
+                });
+                return;
+            }
+            // All remote attempts failed – generate procedural now
+            phase = 'procedural';
+        }
+        if (phase === 'procedural') {
+            console.warn(`🌀 All remote texture sources for ${planetName} failed. Generating procedural texture...`);
+            meta.phase = 'procedural';
+            const maybePromise = proceduralFunction.call(this, size);
+            if (maybePromise && typeof maybePromise.then === 'function') {
+                maybePromise.then((tex) => this._applyProceduralPlanetTexture(planetName, tex));
+            } else {
+                this._applyProceduralPlanetTexture(planetName, maybePromise);
+            }
+        }
+    };
+
+    // Kick off chain
+    tryNext();
+    return placeholderTexture; // caller receives placeholder; will be swapped later
  }
- 
- const url = textureURLs[currentURLIndex];
- console.log(`?? Loading ${planetName} texture from source ${currentURLIndex + 1}/${textureURLs.length}...`);
- 
- loader.load(
- url,
- (tex) => {
- console.log(`? Real ${planetName} texture loaded successfully!`);
- 
- // Apply proper texture settings
- tex.colorSpace = THREE.SRGBColorSpace;
- tex.anisotropy = 16;
- tex.needsUpdate = true;
- 
- // Update the material's map to use the real texture
- const planet = this.planets[planetName.toLowerCase()];
- if (planet && planet.material) {
- planet.material.map = tex;
- planet.material.needsUpdate = true;
- console.log(`?? ${planetName} material updated with real NASA texture!`);
+
+ // Internal: apply successful remote texture
+ _onPlanetTextureSuccess(planetName, tex, url, sourceType) {
+    console.log(`✅ ${planetName} texture loaded from ${sourceType} source: ${url}`);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 16;
+    tex.needsUpdate = true;
+    const planet = this.planets[planetName.toLowerCase()];
+    if (planet && planet.material) {
+        planet.material.map = tex;
+        planet.material.needsUpdate = true;
+        planet.userData.remoteTextureLoaded = true;
+        planet.userData.remoteTextureURL = url;
+    }
+    const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
+    if (meta) {
+        meta.success = true;
+        meta.finalURL = url;
+        meta.finishedAt = performance.now();
+        meta.durationMs = meta.finishedAt - meta.startedAt;
+        meta.remoteSourceType = sourceType;
+        meta.phase = 'done';
+    }
  }
- },
- undefined,
- (err) => {
- console.warn(`?? ${planetName} source ${currentURLIndex + 1} failed, trying next...`);
- currentURLIndex++;
- tryLoadTexture();
- }
- );
- };
- 
- tryLoadTexture();
- return proceduralTexture;
+
+ // Internal: apply procedural texture after all remote failed
+ _applyProceduralPlanetTexture(planetName, tex) {
+    const planet = this.planets[planetName.toLowerCase()];
+    if (planet && planet.material) {
+        planet.material.map = tex;
+        planet.material.needsUpdate = true;
+    }
+    const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
+    if (meta) {
+        meta.success = false;
+        meta.finishedAt = performance.now();
+        meta.durationMs = meta.finishedAt - meta.startedAt;
+        meta.proceduralGenerated = true;
+        meta.phase = 'proceduralApplied';
+    }
  }
  
  // Sun real texture loader
  createSunTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/sunmap.jpg'
  ];
- return this.loadPlanetTextureReal('Sun', textureURLs, this.createSunTexture, size);
+ const pluginFallbacks = []; // already using plugin as primary
+ return this.loadPlanetTextureReal('Sun', primary, this.createSunTexture, size, pluginFallbacks);
  }
  
  // Mercury real texture loader
  createMercuryTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/mercurymap.jpg'
  ];
- return this.loadPlanetTextureReal('Mercury', textureURLs, this.createMercuryTexture, size);
+ const pluginFallbacks = [];
+ return this.loadPlanetTextureReal('Mercury', primary, this.createMercuryTexture, size, pluginFallbacks);
  }
  
  // Venus real texture loader
  createVenusTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/venusmap.jpg'
  ];
- return this.loadPlanetTextureReal('Venus', textureURLs, this.createVenusTexture, size);
+ return this.loadPlanetTextureReal('Venus', primary, this.createVenusTexture, size, []);
  }
  
  // Earth real texture loader - FIXED to use same pattern as other planets
  createEarthTextureRealFixed(size) {
- const textureURLs = [
- // GitHub CDN - Blue Marble 4K (WORKS! No CORS issues)
+ const primary = [
  'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg',
- // Alternative: 8K version (higher quality but larger)
  'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_8k.jpg',
- // Fallback: Another GitHub source
  'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg'
  ];
- return this.loadPlanetTextureReal('Earth', textureURLs, this.createEarthTexture, size);
+ const pluginFallbacks = [
+ 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/earthmap1k.jpg'
+ ];
+ return this.loadPlanetTextureReal('Earth', primary, this.createEarthTexture, size, pluginFallbacks);
  }
  
  // Mars real texture loader
  createMarsTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/marsmap1k.jpg'
  ];
- return this.loadPlanetTextureReal('Mars', textureURLs, this.createMarsTexture, size);
+ return this.loadPlanetTextureReal('Mars', primary, this.createMarsTexture, size, []);
  }
  
  // Jupiter real texture loader
  createJupiterTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/jupitermap.jpg'
  ];
- return this.loadPlanetTextureReal('Jupiter', textureURLs, this.createJupiterTexture, size);
+ return this.loadPlanetTextureReal('Jupiter', primary, this.createJupiterTexture, size, []);
  }
  
  // Saturn real texture loader
  createSaturnTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/saturnmap.jpg'
  ];
- return this.loadPlanetTextureReal('Saturn', textureURLs, this.createSaturnTexture, size);
+ return this.loadPlanetTextureReal('Saturn', primary, this.createSaturnTexture, size, []);
  }
  
  // Uranus real texture loader
  createUranusTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/uranusmap.jpg'
  ];
- return this.loadPlanetTextureReal('Uranus', textureURLs, this.createUranusTexture, size);
+ return this.loadPlanetTextureReal('Uranus', primary, this.createUranusTexture, size, []);
  }
  
  // Neptune real texture loader
  createNeptuneTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/neptunemap.jpg'
  ];
- return this.loadPlanetTextureReal('Neptune', textureURLs, this.createNeptuneTexture, size);
+ return this.loadPlanetTextureReal('Neptune', primary, this.createNeptuneTexture, size, []);
  }
  
  // Moon real texture loader
  createMoonTextureReal(size) {
- const textureURLs = [
+ const primary = [
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg',
  'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg'
  ];
- return this.loadPlanetTextureReal('Moon', textureURLs, this.createMoonTexture, size);
+ const pluginFallbacks = [
+ 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap.jpg'
+ ];
+ return this.loadPlanetTextureReal('Moon', primary, this.createMoonTexture, size, pluginFallbacks);
+ }
+
+ // Pluto remote attempt (plugin repo) before procedural
+ createPlutoTextureReal(size) {
+    const primary = [
+        // If we obtain higher-res Pluto textures later, list them here first
+    ];
+    const pluginFallbacks = [
+        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/plutomap1k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Pluto', primary, this.createPlutoTexture, size, pluginFallbacks);
  }
  
  async createEarthTexture(size) {
@@ -2481,9 +2609,56 @@ export class SolarSystemModule {
  console.log(` - Has texture map: ${!!planet.material.map}`);
  console.log(` - Visible: ${planet.visible}`);
  console.log(` - In scene: ${planet.parent === scene}`);
+
+    // Merge any pending remote texture metadata captured before planet object existed
+    const meta = this._pendingTextureMeta?.[config.name.toLowerCase()];
+    if (meta) {
+        planet.userData.remoteTextureAttempted = meta.attempted;
+        planet.userData.remoteTextureSources = meta.sources;
+        planet.userData.remoteTextureLoaded = meta.success;
+        planet.userData.remoteTextureURL = meta.finalURL || null;
+        planet.userData.remoteTextureLoadMs = meta.durationMs || null;
+    }
  
  return planet;
  }
+
+    // Verification utility: logs which solar system objects ended up with remote textures
+    verifyTextureLoads(delayMs = 4000) {
+        setTimeout(() => {
+            console.group('🔍 Texture Load Verification');
+            const summary = { remoteSuccess: 0, remoteFailed: 0, proceduralOnly: 0 };
+            Object.entries(this.planets).forEach(([key, planet]) => {
+                const ud = planet.userData;
+                const name = ud.name;
+                const hasRemote = !!ud.remoteTextureLoaded;
+                if (ud.remoteTextureAttempted) {
+                    if (hasRemote) {
+                        summary.remoteSuccess++;
+                        console.log(`✅ ${name}: remote texture loaded (${ud.remoteTextureURL}) in ${ud.remoteTextureLoadMs?.toFixed(0)}ms`);
+                    } else {
+                        summary.remoteFailed++;
+                        console.log(`⚠️ ${name}: remote texture attempted but fell back to procedural (${ud.remoteTextureSources?.length} sources)`);
+                    }
+                } else {
+                    summary.proceduralOnly++;
+                    console.log(`🌀 ${name}: procedural texture only (no remote attempt)`);
+                }
+            });
+            // Moons
+            Object.entries(this.moons).forEach(([key, moon]) => {
+                const hasMap = !!moon.material?.map;
+                const src = hasMap && moon.material.map.image?.src;
+                if (src && typeof src === 'string' && /https?:\/\//.test(src)) {
+                    console.log(`🌙 ${moon.userData.name}: has (possibly remote) texture map -> ${src}`);
+                } else {
+                    console.log(`🌙 ${moon.userData.name}: procedural/generated texture`);
+                }
+            });
+            console.log(`Summary: ${summary.remoteSuccess} remote loaded, ${summary.remoteFailed} remote failed, ${summary.proceduralOnly} procedural-only planets.`);
+            console.groupEnd();
+        }, delayMs);
+    }
 
  createMoon(planet, config) {
  const geometry = new THREE.SphereGeometry(config.radius, 32, 32);

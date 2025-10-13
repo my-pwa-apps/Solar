@@ -64,6 +64,11 @@ class App {
  
  // The init method now handles its own async loading and will call startExperience() when done
  await this.solarSystemModule.init(this.sceneManager.scene);
+
+ // After initial load, schedule verification of remote texture loads
+ if (this.solarSystemModule && typeof this.solarSystemModule.verifyTextureLoads === 'function') {
+	 this.solarSystemModule.verifyTextureLoads(5000); // wait 5s to allow async remote textures
+ }
  
  if (DEBUG.PERFORMANCE) {
  const totalTime = performance.now() - appStartTime;

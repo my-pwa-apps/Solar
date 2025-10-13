@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.1.5 - Added broadcast messaging & improved update activation
+// Version 2.1.6 - Added dwarf planets phase & texture fallback improvements
 
-const CACHE_VERSION = '2.1.5';
+const CACHE_VERSION = '2.1.6';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
