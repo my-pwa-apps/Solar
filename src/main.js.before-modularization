@@ -6288,8 +6288,7 @@ class SolarSystemModule {
  });
  }
 
-
-    createHyperrealisticHubble(satData) {
+createHyperrealisticHubble(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic Hubble Space Telescope');
         const hubble = new THREE.Group();
         const scale = 0.002;
@@ -8580,9 +8579,8 @@ class SolarSystemModule {
  this.resetConstellationHighlight();
  object.getWorldPosition(targetPosition);
  }
- 
 
- // Store reference for tracking
+// Store reference for tracking
  this.focusedObject = object;
  this.focusedObjectDistance = distance;
  this.focusedObjectStartTime = performance.now();
@@ -9277,7 +9275,6 @@ class SolarSystemModule {
  }
 }
 
-
 // ===========================
 // TOPIC MANAGER
 // ===========================
@@ -9927,7 +9924,7 @@ class App {
  targetObject = this.solarSystemModule.planets[value];
  break;
  case 'moon':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Moon');
+ targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === t('moon'));
  break;
  case 'pluto':
  targetObject = this.solarSystemModule.planets.pluto;
@@ -10342,6 +10339,5 @@ if (document.readyState === 'loading') {
 } else {
  new App();
 }
-
 
 
