@@ -2590,9 +2590,15 @@ export class SolarSystemModule {
  this.moons[config.name.trim().toLowerCase()] = moon;
  planet.userData.moons.push(moon);
  this.objects.push(moon);
+ 
+ // Set initial position based on angle (IMPORTANT: must be done before adding to planet)
+ moon.position.x = config.distance * Math.cos(moon.userData.angle);
+ moon.position.z = config.distance * Math.sin(moon.userData.angle);
+ moon.position.y = 0; // Keep in planet's equatorial plane
+ 
  planet.add(moon);
  
- console.log(`[Moon] Created "${config.name}" for ${planet.userData.name} at distance ${config.distance} (Total moons: ${planet.userData.moons.length})`);
+ console.log(`[Moon] Created "${config.name}" for ${planet.userData.name} at distance ${config.distance}, initial position (${moon.position.x.toFixed(2)}, ${moon.position.y.toFixed(2)}, ${moon.position.z.toFixed(2)})`);
  }
 
  createAsteroidBelt(scene) {
