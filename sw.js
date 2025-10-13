@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.1.3 - Fixed UTF-8 encoding in French, German, Portuguese, Spanish translations
+// Version 2.1.4 - Fixed Windows taskbar icon caching
 
-const CACHE_VERSION = '2.1.3';
+const CACHE_VERSION = '2.1.4';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -32,7 +32,20 @@ const STATIC_CACHE_FILES = [
   './manifest.es.json',
   './manifest.pt.json',
   './browserconfig.xml',
-  './favicon.ico'
+  './favicon.ico',
+  // Windows taskbar and Start Menu icons (critical for PWA)
+  './icons/windows11/Square44x44Logo.altform-unplated_targetsize-16.png',
+  './icons/windows11/Square44x44Logo.altform-unplated_targetsize-24.png',
+  './icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png',
+  './icons/windows11/Square44x44Logo.altform-unplated_targetsize-48.png',
+  './icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png',
+  './icons/windows11/Square44x44Logo.targetsize-16.png',
+  './icons/windows11/Square44x44Logo.targetsize-24.png',
+  './icons/windows11/Square44x44Logo.targetsize-32.png',
+  './icons/windows11/Square44x44Logo.targetsize-48.png',
+  './icons/windows11/Square44x44Logo.targetsize-256.png',
+  './icons/manifest-icon-192.maskable.png',
+  './icons/manifest-icon-512.maskable.png'
 ];
 
 // CDN files to cache (Three.js and dependencies)
