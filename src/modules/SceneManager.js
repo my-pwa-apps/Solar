@@ -133,6 +133,9 @@ export class SceneManager {
  }
 
  setupLighting() {
+ // Set scene background to dark space color
+ this.scene.background = new THREE.Color(0x000011);
+ 
  // Ambient light - provides base illumination so dark sides are visible
  this.lights.ambient = new THREE.AmbientLight(0x444466, 0.6);
  this.scene.add(this.lights.ambient);
