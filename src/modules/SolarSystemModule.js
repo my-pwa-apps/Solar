@@ -3437,7 +3437,7 @@ export class SolarSystemModule {
  { name: 'Alhena', ra: 99.4, dec: 16.4, mag: 1.9, color: 0xFFFFF0 },
  { name: 'Mebsuta', ra: 100.0, dec: 25.1, mag: 3.0, color: 0xFFFFE0 }
  ],
- lines: [[0,1], [0,2], [1,3], [2,3]] // Twin figures
+ lines: [[0,2], [1,3]] // Two parallel lines representing the twin brothers
  },
  {
  name: 'Cancer (The Crab)',
@@ -6760,10 +6760,6 @@ createHyperrealisticHubble(satData) {
  
  // Special handling for constellations - use center of star pattern
  if (userData.type === 'Constellation' && userData.centerPosition) {
- console.log(`🔍 [Constellation Focus Debug] Focusing on: "${userData.name}"`);
- console.log(`🔍 [Constellation Focus Debug] Center position:`, userData.centerPosition);
- console.log(`🔍 [Constellation Focus Debug] Object position:`, object.position);
- 
  targetPosition.set(
  userData.centerPosition.x,
  userData.centerPosition.y,

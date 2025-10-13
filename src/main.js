@@ -445,10 +445,6 @@ class App {
  const patterns = category.patterns[searchKey];
  
  if (patterns && this.solarSystemModule[category.array]) {
- console.log(`🔍 [Nav Debug] Searching for "${value}" → key: "${searchKey}" in array: "${category.array}"`);
- console.log(`🔍 [Nav Debug] Patterns:`, patterns);
- console.log(`🔍 [Nav Debug] Available objects:`, this.solarSystemModule[category.array].map(obj => obj.userData.name));
- 
  let found;
  
  if (category.exactMatch) {
@@ -464,11 +460,7 @@ class App {
  );
  }
  
- if (found) {
- console.log(`✅ [Nav Debug] FOUND: "${found.userData.name}"`);
- return found;
- }
- console.log(`❌ [Nav Debug] Not found in this array`);
+ if (found) return found;
  }
  }
  
