@@ -74,7 +74,16 @@ export class SceneManager {
  
  const container = document.getElementById('canvas-container');
  if (container) {
+ // Ensure canvas has proper styling
+ this.renderer.domElement.style.display = 'block';
+ this.renderer.domElement.style.width = '100%';
+ this.renderer.domElement.style.height = '100%';
+ 
  container.appendChild(this.renderer.domElement);
+ console.log('✅ Canvas added to DOM');
+ console.log('📐 Canvas size:', this.renderer.domElement.width, 'x', this.renderer.domElement.height);
+ console.log('📦 Container:', container.id);
+ console.log('🎨 Renderer output:', this.renderer.outputColorSpace);
  } else {
  throw new Error('Canvas container not found');
  }

@@ -75,7 +75,12 @@ class App {
  
  startExperience() {
  // Called by SolarSystemModule after all assets are loaded
- console.log(' Starting experience...');
+ console.log('🚀 Starting experience...');
+ console.log('📦 SceneManager exists:', !!this.sceneManager);
+ console.log('📦 SolarSystemModule exists:', !!this.solarSystemModule);
+ console.log('📦 Scene exists:', !!this.sceneManager?.scene);
+ console.log('📦 Renderer exists:', !!this.sceneManager?.renderer);
+ console.log('📦 Camera exists:', !!this.sceneManager?.camera);
  
  // Setup UI for Solar System
  this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
@@ -86,9 +91,13 @@ class App {
  // Hide loading screen
  this.uiManager.hideLoading();
  
- console.log(' Starting animation loop...');
- console.log(' Sun position:', this.solarSystemModule.sun?.position);
- console.log(' Earth position:', this.solarSystemModule.planets?.earth?.position);
+ console.log('🎬 Starting animation loop...');
+ console.log('☀️ Sun position:', this.solarSystemModule.sun?.position);
+ console.log('🌍 Earth position:', this.solarSystemModule.planets?.earth?.position);
+ console.log('🖼️ Canvas in DOM:', !!document.querySelector('canvas'));
+ console.log('🖼️ Canvas parent:', this.sceneManager.renderer?.domElement?.parentElement?.id);
+ console.log('🎨 Scene background:', this.sceneManager.scene?.background);
+ console.log('📊 Scene children count:', this.sceneManager.scene?.children?.length);
  
  // Start animation loop
  this.sceneManager.animate(() => {
