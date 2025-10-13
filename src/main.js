@@ -381,28 +381,28 @@ class App {
  
  // Pattern-based lookups for arrays (stars, exoplanets, spacecraft, etc.)
  const searchPatterns = [
- { prefix: 'constellation-', array: 'constellations', patterns: {
- 'aries': ['Aries'],
- 'taurus': ['Taurus'],
- 'gemini': ['Gemini'],
- 'cancer': ['Cancer'],
- 'leo': ['Leo'],
- 'virgo': ['Virgo'],
- 'libra': ['Libra'],
- 'scorpius': ['Scorpius'],
- 'sagittarius': ['Sagittarius'],
- 'capricornus': ['Capricornus'],
- 'aquarius': ['Aquarius'],
- 'pisces': ['Pisces'],
- 'orion': ['Orion'],
- 'big-dipper': ['Big Dipper', 'Ursa Major'],
- 'little-dipper': ['Little Dipper', 'Ursa Minor'],
- 'southern-cross': ['Southern Cross', 'Crux'],
+ { prefix: 'constellation-', array: 'constellations', exactMatch: true, patterns: {
+ 'aries': ['Aries (The Ram)'],
+ 'taurus': ['Taurus (The Bull)'],
+ 'gemini': ['Gemini (The Twins)'],
+ 'cancer': ['Cancer (The Crab)'],
+ 'leo': ['Leo (The Lion)'],
+ 'virgo': ['Virgo (The Maiden)'],
+ 'libra': ['Libra (The Scales)'],
+ 'scorpius': ['Scorpius (The Scorpion)'],
+ 'sagittarius': ['Sagittarius (The Archer)'],
+ 'capricornus': ['Capricornus (The Sea-Goat)'],
+ 'aquarius': ['Aquarius (The Water-Bearer)'],
+ 'pisces': ['Pisces (The Fish)'],
+ 'orion': ['Orion (The Hunter)'],
+ 'big-dipper': ['Big Dipper (Ursa Major)'],
+ 'little-dipper': ['Little Dipper (Ursa Minor)'],
+ 'southern-cross': ['Southern Cross (Crux)'],
  'cassiopeia': ['Cassiopeia'],
- 'cygnus': ['Cygnus'],
- 'lyra': ['Lyra'],
- 'andromeda': ['Andromeda', 'Princess'],
- 'perseus': ['Perseus'],
+ 'cygnus': ['Cygnus (The Swan)'],
+ 'lyra': ['Lyra (The Lyre)'],
+ 'andromeda': ['Andromeda (Princess)'], // Distinct from "Andromeda Galaxy"
+ 'perseus': ['Perseus (The Hero)'],
  }},
  { prefix: '', array: 'satellites', patterns: {
  'iss': ['ISS', 'International Space Station'],
@@ -445,9 +445,21 @@ class App {
  const patterns = category.patterns[searchKey];
  
  if (patterns && this.solarSystemModule[category.array]) {
- const found = this.solarSystemModule[category.array].find(obj => 
+ let found;
+ 
+ if (category.exactMatch) {
+ // For constellations: use exact startsWith() matching to avoid ambiguity
+ // (e.g., "Orion" constellation vs "Orion Nebula")
+ found = this.solarSystemModule[category.array].find(obj => 
+ patterns.some(pattern => obj.userData.name.startsWith(pattern))
+ );
+ } else {
+ // For other categories: use includes() for flexible matching
+ found = this.solarSystemModule[category.array].find(obj => 
  patterns.some(pattern => obj.userData.name.includes(pattern))
  );
+ }
+ 
  if (found) return found;
  }
  }
