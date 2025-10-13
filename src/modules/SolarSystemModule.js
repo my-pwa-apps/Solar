@@ -5537,8 +5537,24 @@ createHyperrealisticHubble(satData) {
  ];
 
  spacecraftData.forEach(craft => {
- // Create HYPER-REALISTIC spacecraft with detailed geometry
- const spacecraftGroup = new THREE.Group();
+ let spacecraftGroup;
+ 
+ // Check if this spacecraft has a hyperrealistic model
+ if (craft.name.includes('Voyager')) {
+ spacecraftGroup = this.createHyperrealisticVoyager(craft);
+ } else if (craft.name.includes('Pioneer')) {
+ spacecraftGroup = this.createHyperrealisticPioneer(craft);
+ } else if (craft.name.includes('Juno')) {
+ spacecraftGroup = this.createHyperrealisticJuno(craft);
+ } else if (craft.name.includes('Cassini')) {
+ spacecraftGroup = this.createHyperrealisticCassini(craft);
+ } else if (craft.name.includes('James Webb')) {
+ spacecraftGroup = this.createHyperrealisticJWST(craft);
+ } else if (craft.name.includes('New Horizons')) {
+ spacecraftGroup = this.createHyperrealisticNewHorizons(craft);
+ } else {
+ // Create GENERIC spacecraft with detailed geometry for others
+ spacecraftGroup = new THREE.Group();
  
  // Main body - octagonal/box shape for probes
  if (craft.type === 'probe' || craft.type === 'orbiter') {
@@ -5662,6 +5678,7 @@ createHyperrealisticHubble(satData) {
  panel.position.set(craft.size * 0.5, 0, 0);
  spacecraftGroup.add(panel);
  }
+ } // End of generic spacecraft creation else block
  
  // Add subtle visibility glow - proportional to actual size
  const glowSize = craft.size * 2.5; // Subtle glow for visibility
