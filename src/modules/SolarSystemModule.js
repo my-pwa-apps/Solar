@@ -618,13 +618,12 @@ export class SolarSystemModule {
     }
 
     async createDwarfPlanets(scene) {
-        // Pluto already created; add others
+        // Pluto already created; add others with texture loaders where available
         const catalog = [
-            { name: 'Ceres', radius: 0.073, color: 0xC8C8B4, distance: 180, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter' },
+            { name: 'Ceres', radius: 0.073, color: 0xC8C8B4, distance: 180, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
             { name: 'Haumea', radius: 0.085, color: 0xE0D6C8, distance: 2200, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: 'Fast-spinning elongated dwarf planet.', funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
             { name: 'Makemake', radius: 0.075, color: 0xD4B48C, distance: 2300, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: 'Bright Kuiper Belt dwarf planet.', funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
             { name: 'Eris', radius: 0.09, color: 0xD8D8D8, distance: 2400, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: 'Massive scattered disk dwarf planet.', funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
-            // Candidates / notable TNOs
             { name: 'Orcus', radius: 0.06, color: 0xB0B0C0, distance: 2100, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
             { name: 'Quaoar', radius: 0.065, color: 0xC8A088, distance: 2150, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
             { name: 'Gonggong', radius: 0.064, color: 0xBB7766, distance: 2500, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
@@ -634,11 +633,9 @@ export class SolarSystemModule {
             { name: 'Varuna', radius: 0.05, color: 0xAA7755, distance: 2050, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
         ];
 
-        const proceduralFn = (sz) => this.createMercuryTexture(sz);
-
         catalog.forEach(cfg => {
-            if (this.planets[cfg.name.toLowerCase()]) return; // skip existing (Pluto)
-            const mesh = this.createPlanet(scene, {
+            if (this.planets[cfg.name.toLowerCase()]) return;
+            this.createPlanet(scene, {
                 name: cfg.name,
                 radius: cfg.radius,
                 color: cfg.color,
@@ -652,11 +649,8 @@ export class SolarSystemModule {
                 moons: 0,
                 dwarf: true
             });
-            const tex = proceduralFn(1024);
-            mesh.material.map = tex;
-            mesh.material.needsUpdate = true;
         });
-        console.log(`🔍 Added dwarf planets & candidates: ${catalog.map(c => c.name).join(', ')}`);
+        console.log(`🪐 Added ${catalog.length} dwarf planets & candidates`);
     }
 
     createProceduralTexture(type, size = 512) {
@@ -1149,13 +1143,20 @@ export class SolarSystemModule {
 
  // Pluto remote attempt (plugin repo) before procedural
  createPlutoTextureReal(size) {
-    const primary = [
-        // If we obtain higher-res Pluto textures later, list them here first
-    ];
+    const primary = [];
     const pluginFallbacks = [
         'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/plutomap1k.jpg'
     ];
     return this.loadPlanetTextureReal('Pluto', primary, this.createPlutoTexture, size, pluginFallbacks);
+ }
+
+ // Ceres texture loader (Dawn mission global map)
+ createCeresTextureReal(size) {
+    const primary = [
+        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/ceresmap1k.jpg'
+    ];
+    const pluginFallbacks = [];
+    return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, pluginFallbacks);
  }
  
  async createEarthTexture(size) {
@@ -2465,8 +2466,8 @@ export class SolarSystemModule {
  });
  
  case 'pluto':
- // Pluto: Hyperrealistic with Tombaugh Regio heart
- const plutoTexture = this.createPlutoTexture(2048);
+ // Pluto: Remote attempt (plugin) then procedural with Tombaugh Regio heart
+ const plutoTexture = this.createPlutoTextureReal(2048);
  return new THREE.MeshStandardMaterial({
  map: plutoTexture,
  roughness: 0.85,
@@ -2474,10 +2475,33 @@ export class SolarSystemModule {
  emissive: 0x000000,
  emissiveIntensity: 0
  });
+
+ case 'ceres':
+ // Ceres: Dawn mission texture or procedural fallback
+ const ceresTexture = this.createCeresTextureReal(1024);
+ return new THREE.MeshStandardMaterial({
+ map: ceresTexture,
+ roughness: 0.9,
+ metalness: 0.05,
+ emissive: 0x000000,
+ emissiveIntensity: 0
+ });
  
  default:
- // Default material
- console.warn(`?? DEFAULT MATERIAL CASE for planet "${name}" - using simple color: 0x${config.color?.toString(16)}`);
+ // Default material (for dwarf planets and others without specific loaders)
+ if (config.dwarf) {
+ // Dwarf planets: use Mercury-style cratered texture
+ const dwarfTexture = this.createMercuryTexture(1024);
+ return new THREE.MeshStandardMaterial({
+ map: dwarfTexture,
+ color: config.color,
+ roughness: 0.9,
+ metalness: 0.05,
+ emissive: 0x000000,
+ emissiveIntensity: 0
+ });
+ }
+ console.warn(`⚠️ DEFAULT MATERIAL for "${name}" - color: 0x${config.color?.toString(16)}`);
  return new THREE.MeshStandardMaterial({
  color: config.color,
  ...materialProps

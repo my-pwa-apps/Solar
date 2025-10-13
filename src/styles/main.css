@@ -181,6 +181,10 @@ body {
     backdrop-filter: blur(30px);
     box-shadow: var(--fluent-shadow);
     min-width: 200px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .nav-dropdown:hover {

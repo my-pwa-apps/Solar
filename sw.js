@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.1.6 - Added dwarf planets phase & texture fallback improvements
+// Version 2.1.8 - Consistent Fluent Design styling for all buttons & dropdowns
 
-const CACHE_VERSION = '2.1.6';
+const CACHE_VERSION = '2.1.8';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

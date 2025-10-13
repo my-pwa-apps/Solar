@@ -73,65 +73,85 @@
 }
 
 #nav-quick-nav {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.25));
-    color: #ffffff;
-    border: 1px solid rgba(102, 126, 234, 0.6);
-    border-radius: 8px;
-    padding: 6px 32px 6px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Poppins', sans-serif;
+    background: var(--fluent-bg-secondary);
+    color: var(--fluent-text-primary);
+    border: 1px solid var(--fluent-border);
+    border-radius: 4px;
+    padding: 10px 32px 10px 16px;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: 'Segoe UI', system-ui, sans-serif;
     cursor: pointer;
     appearance: none;
     min-width: 220px;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-    background-image: linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.8) 50%),
-        linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
-    background-position: calc(100% - 18px) calc(50% - 4px), 0 0;
+    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1.5L6 6.5L11 1.5" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     background-repeat: no-repeat;
-    background-size: 8px 8px, 100% 100%;
+    background-position: calc(100% - 12px) center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #nav-quick-nav:hover,
 #nav-quick-nav:focus {
-    box-shadow: 0 0 12px rgba(102, 126, 234, 0.65);
+    background: var(--fluent-bg-primary);
+    border-color: var(--fluent-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     outline: none;
-    transform: translateY(-1px);
 }
 
 .language-selector {
-    background: rgba(255, 255, 255, 0.95);
-    color: #1a1a2e;
-    border: 1px solid rgba(102, 126, 234, 0.6);
-    border-radius: 8px;
-    padding: 6px 32px 6px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Poppins', sans-serif;
+    background: var(--fluent-bg-secondary);
+    color: var(--fluent-text-primary);
+    border: 1px solid var(--fluent-border);
+    border-radius: 4px;
+    padding: 10px 32px 10px 16px;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: 'Segoe UI', system-ui, sans-serif;
     cursor: pointer;
     appearance: none;
     min-width: 140px;
-    transition: all 0.2s ease;
-    background-image: linear-gradient(45deg, transparent 50%, #667eea 50%),
-        linear-gradient(135deg, transparent 50%, #667eea 50%);
-    background-position: calc(100% - 18px) calc(50% - 4px), calc(100% - 13px) calc(50% + 1px);
+    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1.5L6 6.5L11 1.5" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     background-repeat: no-repeat;
-    background-size: 5px 5px, 5px 5px;
+    background-position: calc(100% - 12px) center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .language-selector:hover,
 .language-selector:focus {
-    box-shadow: 0 0 12px rgba(102, 126, 234, 0.65);
+    background: var(--fluent-bg-primary);
+    border-color: var(--fluent-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     outline: none;
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 1);
 }
 
-.language-selector option {
-    background: #ffffff;
-    color: #1a1a2e;
+.language-selector option,
+#nav-quick-nav option,
+.footer-controls select option {
+    background: var(--fluent-bg-primary);
+    color: var(--fluent-text-primary);
+    padding: 10px;
+    font-weight: 400;
+}
+
+.language-selector optgroup,
+#nav-quick-nav optgroup,
+.footer-controls select optgroup {
+    background: var(--fluent-bg-secondary);
+    color: var(--fluent-accent);
+    font-weight: 600;
     padding: 8px;
-    font-weight: 500;
 }
 
 .nav-select label {
@@ -278,6 +298,10 @@
     align-items: center;
     justify-content: center;
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .close-btn:hover {
@@ -417,6 +441,10 @@
     white-space: nowrap;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* Fluent Reveal Effect */
@@ -466,8 +494,11 @@
 }
 
 .footer-controls select {
-    background: rgba(10, 10, 30, 0.7);
-    padding: 8px 12px;
+    appearance: none;
+    padding-right: 32px;
+    background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1.5L6 6.5L11 1.5" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    background-repeat: no-repeat;
+    background-position: calc(100% - 12px) center;
 }
 
 #speed-value,
@@ -618,6 +649,10 @@
     line-height: 1;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #vr-button button::before,
@@ -673,6 +708,10 @@
     white-space: nowrap;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #help-button::before {
@@ -905,64 +944,105 @@ select {
     transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Responsive Design for Footer */
+/* Responsive Design for Mobile - Optimized */
 @media (max-width: 768px) {
     #main-header {
-        padding: 4px 8px;
+        padding: 8px 12px;
         gap: 8px;
-        flex-wrap: nowrap; /* Force single line */
-        overflow-x: auto; /* Allow horizontal scrolling if needed */
+        flex-wrap: wrap; /* Allow wrapping for better layout */
     }
 
     .logo h1 {
-        font-size: 14px;
+        font-size: 16px;
+        flex: 0 0 auto;
+    }
+    
+    .header-controls {
+        flex: 1 1 100%;
+        justify-content: space-between;
+        gap: 8px;
     }
 
     #nav-quick-nav {
-        padding: 4px 28px 4px 8px;
-        font-size: 12px;
-        min-width: 160px;
+        padding: 8px 32px 8px 10px;
+        font-size: 13px;
+        min-width: 0;
+        flex: 1 1 auto;
+        max-width: calc(100% - 160px);
+    }
+    
+    .language-selector {
+        padding: 8px 28px 8px 10px;
+        font-size: 13px;
+        min-width: 100px;
+        flex: 0 0 auto;
     }
 
     #help-button {
-        padding: 6px 8px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 13px;
+        flex: 0 0 auto;
+        white-space: nowrap;
     }
 
     #main-footer {
-        padding: 4px 8px;
-        flex-direction: row; /* Keep horizontal */
-        flex-wrap: nowrap; /* Force single line */
-        gap: 8px;
-        overflow-x: auto; /* Allow horizontal scrolling for controls */
+        padding: 8px 12px;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
     }
     
     .footer-controls {
-        gap: 6px;
-        flex-wrap: nowrap; /* Ensure controls stay in a line */
-        justify-content: flex-start;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
     .footer-controls button,
     .footer-controls select {
-        padding: 5px 8px;
-        font-size: 10px;
+        padding: 8px 12px;
+        font-size: 12px;
+        flex: 1 1 auto;
+        min-width: 80px;
     }
 
+    .control-group {
+        flex: 1 1 auto;
+        min-width: 100px;
+    }
+    
     .control-group label {
-        display: none; /* Hide labels to save space */
+        font-size: 10px;
+        margin-bottom: 4px;
     }
     
     .footer-xr-controls {
-        gap: 8px;
+        gap: 12px;
+        justify-content: center;
     }
     
     #vr-button button,
     #ar-button button {
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        padding: 8px;
+    }
+    
+    #info-panel {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        max-width: calc(100vw - 20px);
+        max-height: 50vh;
+    }
+    
+    #info-panel .close-btn {
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
         font-size: 18px;
-        padding: 6px;
     }
 }
 
@@ -1115,6 +1195,10 @@ select {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .btn-primary {
@@ -1249,6 +1333,10 @@ select {
     position: relative;
     overflow: hidden;
     transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .btn-update {
@@ -1316,19 +1404,89 @@ select {
 /* Responsive adjustments for PWA UI */
 @media (max-width: 768px) {
     #install-prompt {
-        bottom: 80px;
-        max-width: calc(100% - 40px);
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        max-width: calc(100vw - 20px);
+        padding: 16px;
+    }
+    
+    #install-prompt h3 {
+        font-size: 16px;
+    }
+    
+    #install-prompt p {
+        font-size: 13px;
+    }
+    
+    #install-prompt .install-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    #install-prompt button {
+        width: 100%;
+        padding: 12px;
     }
     
     #offline-indicator {
-        top: 70px;
+        top: auto;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
     }
     
     #update-notification {
-        top: 70px;
+        top: auto;
+        bottom: 10px;
         right: 10px;
         left: 10px;
-        justify-content: space-between;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #update-notification .btn-update {
+        width: 100%;
+        margin-top: 8px;
+    }
+    
+    #tracking-indicator {
+        top: auto;
+        bottom: 10px;
+        right: 10px;
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    #main-header {
+        padding: 6px 8px;
+    }
+    
+    .logo h1 {
+        font-size: 14px;
+    }
+    
+    #nav-quick-nav,
+    .language-selector,
+    #help-button {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    
+    .footer-controls button,
+    .footer-controls select {
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+    
+    #vr-button button,
+    #ar-button button {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
     }
 }
 
