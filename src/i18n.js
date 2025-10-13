@@ -209,6 +209,7 @@ const translations = {
         funFactSaturn: 'Saturn\'s rings are only 10 meters thick but 280,000 km wide!',
         funFactUranus: 'Uranus was the first planet discovered with a telescope (1781)!',
         funFactNeptune: 'Neptune was discovered by math before being seen - its gravity affected Uranus\'s orbit!',
+        descPluto: '🪐 Pluto is a dwarf planet in the Kuiper Belt. It has a heart-shaped glacier (Tombaugh Regio), mountains of water ice, and five moons. Pluto and its largest moon Charon are tidally locked - they always show the same face to each other!',
         funFactPluto: 'A year on Pluto lasts 248 Earth years! It hasn\'t completed one orbit since its discovery in 1930.',
         
         // Moon descriptions
@@ -462,6 +463,7 @@ const translations = {
         funFactSaturn: 'De ringen van Saturnus zijn slechts 10 meter dik maar 280.000 km breed!',
         funFactUranus: 'Uranus was de eerste planeet die ontdekt werd met een telescoop (in 1781)!',
         funFactNeptune: 'Neptunus werd ontdekt door wiskundige berekeningen voordat hij gezien werd - zijn zwaartekracht beÃ¯nvloedde de baan van Uranus!',
+        descPluto: '🪐 Pluto is een dwergplaneet in de Kuipergordel. Het heeft een hartvormige gletsjer (Tombaugh Regio), bergen van waterijs en vijf manen. Pluto en zijn grootste maan Charon zijn getijdengekoppeld - ze laten elkaar altijd hetzelfde gezicht zien!',
         funFactPluto: 'Een jaar op Pluto duurt 248 aardse jaren! Pluto heeft nog geen hele baan voltooid sinds de ontdekking in 1930.',
         
         // Maanbeschrijvingen
@@ -707,6 +709,7 @@ const translations = {
         funFactSaturn: 'Les anneaux de Saturne ne font que 10 mÃ¨tres d\'Ã©paisseur mais 280 000 km de large!',
         funFactUranus: 'Uranus a Ã©tÃ© la premiÃ¨re planÃ¨te dÃ©couverte avec un tÃ©lescope (1781)!',
         funFactNeptune: 'Neptune a Ã©tÃ© dÃ©couverte par les mathÃ©matiques avant d\'Ãªtre vue - sa gravitÃ© affectait l\'orbite d\'Uranus!',
+        descPluto: '🪐 Pluton est une planÃ¨te naine dans la ceinture de Kuiper. Elle a un glacier en forme de cÅ"ur (Tombaugh Regio), des montagnes de glace d\'eau et cinq lunes. Pluton et sa plus grande lune Charon sont verrouillÃ©s par marÃ©e - ils montrent toujours la mÃªme face l\'un Ã  l\'autre!',
         funFactPluto: 'Une annÃ©e sur Pluton dure 248 annÃ©es terrestres! Elle n\'a pas complÃ©tÃ© une orbite depuis sa dÃ©couverte en 1930.',
         
         // Descriptions des lunes
@@ -952,6 +955,7 @@ const translations = {
         funFactSaturn: 'Saturns Ringe sind nur 10 Meter dick, aber 280.000 km breit!',
         funFactUranus: 'Uranus war der erste Planet, der mit einem Teleskop entdeckt wurde (1781)!',
         funFactNeptune: 'Neptun wurde durch Mathematik entdeckt, bevor er gesehen wurde - seine Schwerkraft beeinflusste die Umlaufbahn von Uranus!',
+        descPluto: '🪐 Pluto ist ein Zwergplanet im Kuipergürtel. Er hat einen herzförmigen Gletscher (Tombaugh Regio), Berge aus Wassereis und fünf Monde. Pluto und sein größter Mond Charon sind gezeitengebunden - sie zeigen einander immer die gleiche Seite!',
         funFactPluto: 'Ein Jahr auf Pluto dauert 248 Erdjahre! Er hat seit seiner Entdeckung 1930 noch keine Umlaufbahn vollendet.',
         
         // Mondbeschreibungen
@@ -1197,6 +1201,7 @@ const translations = {
         funFactSaturn: 'Â¡Los anillos de Saturno tienen solo 10 metros de espesor pero 280.000 km de ancho!',
         funFactUranus: 'Â¡Urano fue el primer planeta descubierto con un telescopio (1781)!',
         funFactNeptune: 'Â¡Neptuno fue descubierto por matemÃ¡ticas antes de ser visto: su gravedad afectaba la Ã³rbita de Urano!',
+        descPluto: '🪐 Plutón es un planeta enano en el Cinturón de Kuiper. Tiene un glaciar en forma de corazón (Tombaugh Regio), montañas de hielo de agua y cinco lunas. Plutón y su luna más grande, Caronte, están bloqueados por mareas: ¡siempre se muestran la misma cara!',
         funFactPluto: 'Â¡Un aÃ±o en PlutÃ³n dura 248 aÃ±os terrestres! No ha completado una Ã³rbita desde su descubrimiento en 1930.',
         
         // Descripciones de lunas
@@ -1442,6 +1447,7 @@ const translations = {
         funFactSaturn: 'Os anÃ©is de Saturno tÃªm apenas 10 metros de espessura, mas 280.000 km de largura!',
         funFactUranus: 'Urano foi o primeiro planeta descoberto com um telescÃ³pio (1781)!',
         funFactNeptune: 'Netuno foi descoberto pela matemÃ¡tica antes de ser visto - sua gravidade afetava a Ã³rbita de Urano!',
+        descPluto: '🪐 Plutão é um planeta anão no Cinturão de Kuiper. Ele tem uma geleira em forma de coração (Tombaugh Regio), montanhas de gelo de água e cinco luas. Plutão e sua maior lua, Caronte, estão travados por maré - sempre mostram a mesma face um ao outro!',
         funFactPluto: 'Um ano em PlutÃ£o dura 248 anos terrestres! Ele nÃ£o completou uma Ã³rbita desde sua descoberta em 1930.',
         
         // DescriÃ§Ãµes de luas

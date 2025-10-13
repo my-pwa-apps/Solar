@@ -322,7 +322,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
  this.planets.mercury = this.createPlanet(scene, {
- name: 'Mercury',
+ name: t('mercury'),
  radius: 0.383,
  color: 0x8C7853,
  distance: 20,
@@ -399,17 +399,17 @@ export class SolarSystemModule {
         });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny in reality, scaled up for visibility)
         // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
         this.createMoon(this.planets.mars, {
-            name: 'Phobos',
+            name: t('phobos'),
             radius: 0.08, // Scaled up for visibility (was 0.002)
             color: 0x666666,
             distance: 1.5,
-            speed: 17.22, // 2153x Mars's speed (0.008 * 2153) - orbits 3 times per Mars day!
+            speed: 3.0, // Reduced from 17.22 for visual stability - still noticeably fast
             description: t('descPhobos')
         });
         // Deimos: ~12 km / 12,742 km = 0.0009 (tiny in reality, scaled up for visibility)
         // Orbital period: 1.263 days (30.3 hours) vs Mars's 687 days = 544x faster
         this.createMoon(this.planets.mars, {
-            name: 'Deimos',
+            name: t('deimos'),
             radius: 0.06, // Scaled up for visibility (was 0.0015)
             color: 0x888888,
             distance: 2.5,
@@ -438,7 +438,7 @@ export class SolarSystemModule {
         // Io: 3,643 km / 12,742 km = 0.286
         // Orbital period: 1.769 days vs Jupiter's 4333 days = 2449x faster
         this.createMoon(this.planets.jupiter, {
-            name: 'Io',
+            name: t('io'),
             radius: 0.286,
             color: 0xFFFF00,
             distance: 12, // Increased from 8 for better visibility
@@ -448,7 +448,7 @@ export class SolarSystemModule {
         // Europa: 3,122 km / 12,742 km = 0.245
         // Orbital period: 3.551 days vs Jupiter's 4333 days = 1220x faster
         this.createMoon(this.planets.jupiter, {
-            name: 'Europa',
+            name: t('europa'),
             radius: 0.245,
             color: 0xCCBB99,
             distance: 15, // Increased from 10
@@ -458,7 +458,7 @@ export class SolarSystemModule {
         // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
         // Orbital period: 7.155 days vs Jupiter's 4333 days = 606x faster
         this.createMoon(this.planets.jupiter, {
-            name: 'Ganymede',
+            name: t('ganymede'),
             radius: 0.413,
             color: 0x996633,
             distance: 19, // Increased from 12
@@ -468,7 +468,7 @@ export class SolarSystemModule {
         // Callisto: 4,821 km / 12,742 km = 0.378
         // Orbital period: 16.689 days vs Jupiter's 4333 days = 260x faster
         this.createMoon(this.planets.jupiter, {
-            name: 'Callisto',
+            name: t('callisto'),
             radius: 0.378,
             color: 0x777777,
             distance: 23, // Increased from 14
@@ -493,35 +493,39 @@ export class SolarSystemModule {
             rings: true,
             prominentRings: true
         });
-        // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
-        // Orbital period: 15.945 days vs Saturn's 10759 days = 675x faster
-        this.createMoon(this.planets.saturn, {
-            name: 'Titan',
-            radius: 0.404,
-            color: 0xFFAA33,
-            distance: 10,
-            speed: 0.608, // 675x Saturn's speed (0.0009 * 675)
-            description: t('descTitan')
-        });
         // Enceladus: 504 km / 12,742 km = 0.040
         // Orbital period: 1.370 days vs Saturn's 10759 days = 7854x faster
+        // Note: Reduced speed for visual stability (was 7.07, too fast causing visual artifacts)
+        // Orbits inside rings (rings: 11.88-20.11)
         this.createMoon(this.planets.saturn, {
-            name: 'Enceladus',
+            name: t('enceladus'),
             radius: 0.040,
             color: 0xFFFFFF,
-            distance: 7,
-            speed: 7.07, // 7854x Saturn's speed (0.0009 * 7854)
+            distance: 15, // Inside rings - between Saturn (9.14) and ring edge (20.11)
+            speed: 1.5, // Reduced from 7.07 for smoother visual orbit
             description: t('descEnceladus')
         });
         // Rhea: 1,527 km / 12,742 km = 0.120
         // Orbital period: 4.518 days vs Saturn's 10759 days = 2382x faster
+        // Orbits outside rings
         this.createMoon(this.planets.saturn, {
-            name: 'Rhea',
+            name: t('rhea'),
             radius: 0.120,
             color: 0xCCCCCC,
-            distance: 12,
+            distance: 23, // Outside rings (rings end at 20.11)
             speed: 2.144, // 2382x Saturn's speed (0.0009 * 2382)
             description: t('descRhea')
+        });
+        // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
+        // Orbital period: 15.945 days vs Saturn's 10759 days = 675x faster
+        // Orbits well outside rings
+        this.createMoon(this.planets.saturn, {
+            name: t('titan'),
+            radius: 0.404,
+            color: 0xFFAA33,
+            distance: 28, // Well outside rings for clear separation
+            speed: 0.608, // 675x Saturn's speed (0.0009 * 675)
+            description: t('descTitan')
         }); // Uranus: 50,724 km / 12,742 km = 3.98
  if (this.uiManager) this.uiManager.updateLoadingProgress(54, t('creatingUranus'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -542,7 +546,7 @@ export class SolarSystemModule {
         });        // Titania: 1,578 km / 12,742 km = 0.124
         // Orbital period: 8.706 days vs Uranus's 30687 days = 3526x faster
         this.createMoon(this.planets.uranus, {
-            name: 'Titania',
+            name: t('titania'),
             radius: 0.124,
             color: 0xAAAAAA,
             distance: 5,
@@ -552,11 +556,11 @@ export class SolarSystemModule {
         // Miranda: 472 km / 12,742 km = 0.037
         // Orbital period: 1.413 days vs Uranus's 30687 days = 21722x faster
         this.createMoon(this.planets.uranus, {
-            name: 'Miranda',
+            name: t('miranda'),
             radius: 0.037,
             color: 0x999999,
             distance: 3.5,
-            speed: 8.689, // 21722x Uranus's speed (0.0004 * 21722)
+            speed: 2.0, // Reduced from 8.689 for visual stability
             description: t('descMiranda')
         }); // Neptune: 49,244 km / 12,742 km = 3.86
  if (this.uiManager) this.uiManager.updateLoadingProgress(58, t('creatingNeptune'));
@@ -578,7 +582,7 @@ export class SolarSystemModule {
         });        // Triton: 2,707 km / 12,742 km = 0.212
         // Orbital period: 5.877 days (retrograde) vs Neptune's 60190 days = 10242x faster
         this.createMoon(this.planets.neptune, {
-            name: 'Triton',
+            name: t('triton'),
             radius: 0.212,
             color: 0xFFCCCC,
             distance: 5,
@@ -586,15 +590,15 @@ export class SolarSystemModule {
             description: t('descTriton')
         }); // Pluto: 2,377 km / 12,742 km = 0.187
  this.planets.pluto = this.createPlanet(scene, {
- name: 'Pluto',
+ name: t('pluto'),
  radius: 0.187,
  color: 0xD4A373,
  distance: 2024, // Educational scale (101.2x Mercury)
  speed: 0.00004,
  rotationSpeed: 0.015,
  tilt: 122.53,
- description: '? Pluto is a dwarf planet in the Kuiper Belt. It has a heart-shaped glacier (Tombaugh Regio), mountains of water ice, and five moons. Pluto and its largest moon Charon are tidally locked - they always show the same face to each other!',
- funFact: 'A year on Pluto lasts 248 Earth years! It hasn\'t completed one orbit since its discovery in 1930.',
+ description: t('descPluto'),
+ funFact: t('funFactPluto'),
  realSize: '2,377 km diameter',
         moons: 1,
             dwarf: true
@@ -603,7 +607,7 @@ export class SolarSystemModule {
         // Charon: 1,212 km / 12,742 km = 0.095 (half the size of Pluto!)
         // Orbital period: 6.387 days vs Pluto's 90560 days = 14178x faster
         this.createMoon(this.planets.pluto, {
-            name: 'Charon',
+            name: t('charon'),
             radius: 0.095,
             color: 0xAAAAAA,
             distance: 1.2,
@@ -2373,7 +2377,7 @@ export class SolarSystemModule {
  
  planet.userData = {
  name: config.name,
- type: config.dwarf ? 'Dwarf Planet' : 'Planet',
+ type: config.dwarf ? t('typeDwarfPlanet') : t('typePlanet'),
  distance: config.distance,
  radius: config.radius,
  angle: Math.random() * Math.PI * 2,
@@ -4645,55 +4649,78 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticPioneer(satData) {
-        if (DEBUG.enabled) console.log(' Creating hyperrealistic Pioneer probe');
+        if (DEBUG.enabled) console.log('🛰 Creating hyperrealistic Pioneer probe');
         const pioneer = new THREE.Group();
         // Scale based on the spacecraft's display size
         const scale = satData.size || 0.07;
         
         // Materials
-        const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
-        const silverMat = new THREE.MeshStandardMaterial({ color: 0xC0C0C0, roughness: 0.3, metalness: 0.9 });
-        const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.7 });
+        const goldMat = MaterialFactory.createSpacecraftMaterial('gold');
+        const silverMat = MaterialFactory.createSpacecraftMaterial('silver');
+        const darkMat = MaterialFactory.createSpacecraftMaterial('body');
         
         // Main hexagonal bus (2.9m diameter)
-        const busGeom = new THREE.CylinderGeometry(scale * 1.45, scale * 1.45, scale * 0.3, 6);
-        const bus = new THREE.Mesh(busGeom, goldMat);
+        const bus = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 1.45, scale * 1.45, scale * 0.3, 6, this.geometryCache),
+            goldMat
+        );
         bus.rotation.x = Math.PI / 2;
         pioneer.add(bus);
         
         // RTG power source (elongated)
-        const rtg = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.2, scale * 0.2, scale * 1.5, 16), darkMat);
+        const rtg = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.2, scale * 0.2, scale * 1.5, 16, this.geometryCache),
+            darkMat
+        );
         rtg.position.set(0, -scale * 1, 0);
         pioneer.add(rtg);
         
         // 2.74m high-gain antenna dish
-        const dish = new THREE.Mesh(new THREE.ConeGeometry(scale * 1.37, scale * 0.4, 32), silverMat);
+        const dish = new THREE.Mesh(
+            GeometryFactory.createCone(scale * 1.37, scale * 0.4, 32, this.geometryCache),
+            silverMat
+        );
         dish.position.z = scale * 0.5;
         pioneer.add(dish);
         
         // Medium-gain antenna
-        const medAntenna = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.3, scale * 0.3, 16), silverMat);
+        const medAntenna = new THREE.Mesh(
+            GeometryFactory.createCone(scale * 0.3, scale * 0.3, 16, this.geometryCache),
+            silverMat
+        );
         medAntenna.position.set(scale * 0.8, 0, scale * 0.3);
         pioneer.add(medAntenna);
         
         // Magnetometer boom (extended 6.6m)
-        const magBoom = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.02, scale * 0.02, scale * 6.6, 8), silverMat);
+        const magBoom = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.02, scale * 0.02, scale * 6.6, 8, this.geometryCache),
+            silverMat
+        );
         magBoom.position.x = -scale * 3.3;
         magBoom.rotation.z = Math.PI / 2;
         pioneer.add(magBoom);
         
         // Magnetometer sensor at end
-        const magSensor = new THREE.Mesh(new THREE.SphereGeometry(scale * 0.1, 16, 16), darkMat);
+        const magSensor = new THREE.Mesh(
+            GeometryFactory.createSphere(scale * 0.1, 16, 16, this.geometryCache),
+            darkMat
+        );
         magSensor.position.x = -scale * 6.6;
         pioneer.add(magSensor);
         
         // Instruments (imaging photopolarimeter, etc)
-        const instruments = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.4, scale * 0.4, scale * 0.3), darkMat);
+        const instruments = new THREE.Mesh(
+            GeometryFactory.createBox(scale * 0.4, scale * 0.4, scale * 0.3, this.geometryCache),
+            darkMat
+        );
         instruments.position.set(scale * 0.5, scale * 0.5, 0);
         pioneer.add(instruments);
         
         // Thruster module
-        const thrusters = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.1, scale * 0.1, scale * 0.2, 8), silverMat);
+        const thrusters = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.1, scale * 0.1, scale * 0.2, 8, this.geometryCache),
+            silverMat
+        );
         thrusters.position.set(0, scale * 1.2, -scale * 0.1);
         pioneer.add(thrusters);
         
@@ -4701,72 +4728,93 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticVoyager(satData) {
-        if (DEBUG.enabled) console.log(' Creating hyperrealistic Voyager probe');
+        if (DEBUG.enabled) console.log('🛰 Creating hyperrealistic Voyager probe');
         const voyager = new THREE.Group();
         // Scale based on the spacecraft's display size
         const scale = satData.size || 0.08;
         
         // Materials
-        const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
-        const silverMat = new THREE.MeshStandardMaterial({ color: 0xC0C0C0, roughness: 0.3, metalness: 0.9 });
-        const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.7 });
-        const whiteMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.2, metalness: 0.9 });
+        const goldMat = MaterialFactory.createSpacecraftMaterial('gold');
+        const silverMat = MaterialFactory.createSpacecraftMaterial('silver');
+        const darkMat = MaterialFactory.createSpacecraftMaterial('body');
+        const whiteMat = MaterialFactory.createSpacecraftMaterial('white');
         
         // 10-sided main bus (1.8m diameter)
-        const busGeom = new THREE.CylinderGeometry(scale * 0.9, scale * 0.9, scale * 0.5, 10);
-        const bus = new THREE.Mesh(busGeom, goldMat);
+        const bus = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.9, scale * 0.9, scale * 0.5, 10, this.geometryCache),
+            goldMat
+        );
         bus.rotation.x = Math.PI / 2;
         voyager.add(bus);
         
         // 3.7m high-gain antenna (famous white dish)
-        const dish = new THREE.Mesh(new THREE.ConeGeometry(scale * 1.85, scale * 0.5, 32), whiteMat);
+        const dish = new THREE.Mesh(
+            GeometryFactory.createCone(scale * 1.85, scale * 0.5, 32, this.geometryCache),
+            whiteMat
+        );
         dish.position.z = scale * 0.6;
         voyager.add(dish);
         
         // Feed horn in center of dish
-        const feedHorn = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.1, scale * 0.3, 16), darkMat);
+        const feedHorn = new THREE.Mesh(
+            GeometryFactory.createCone(scale * 0.1, scale * 0.3, 16, this.geometryCache),
+            darkMat
+        );
         feedHorn.position.z = scale * 0.9;
         voyager.add(feedHorn);
         
-        // Science boom (13m extended to the side)
-        const scienceBoom = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.03, scale * 0.03, scale * 13, 8), silverMat);
+        // Science boom (13m extended to the side) - reusable geometry
+        const boomGeom = GeometryFactory.createCylinder(scale * 0.03, scale * 0.03, scale * 13, 8, this.geometryCache);
+        const scienceBoom = new THREE.Mesh(boomGeom, silverMat);
         scienceBoom.position.x = scale * 6.5;
         scienceBoom.rotation.z = Math.PI / 2;
         voyager.add(scienceBoom);
         
         // Cameras and instruments at end of science boom
-        const cameras = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.4, scale * 0.4, scale * 0.5), darkMat);
+        const cameras = new THREE.Mesh(
+            GeometryFactory.createBox(scale * 0.4, scale * 0.4, scale * 0.5, this.geometryCache),
+            darkMat
+        );
         cameras.position.x = scale * 13;
         voyager.add(cameras);
         
-        // Magnetometer boom (opposite direction, 13m)
-        const magBoom = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.02, scale * 0.02, scale * 13, 8), silverMat);
+        // Magnetometer boom (opposite direction, 13m) - reuse boom geometry
+        const magBoomThin = GeometryFactory.createCylinder(scale * 0.02, scale * 0.02, scale * 13, 8, this.geometryCache);
+        const magBoom = new THREE.Mesh(magBoomThin, silverMat);
         magBoom.position.x = -scale * 6.5;
         magBoom.rotation.z = Math.PI / 2;
         voyager.add(magBoom);
         
-        // Magnetometer sensors
+        // Magnetometer sensors - reuse geometry
+        const magSensorGeom = GeometryFactory.createSphere(scale * 0.08, 16, 16, this.geometryCache);
         for (let i = 0; i < 2; i++) {
-            const magSensor = new THREE.Mesh(new THREE.SphereGeometry(scale * 0.08, 16, 16), darkMat);
+            const magSensor = new THREE.Mesh(magSensorGeom, darkMat);
             magSensor.position.x = -scale * (10 + i * 3);
             voyager.add(magSensor);
         }
         
         // RTG power source (3 RTGs on boom below)
-        const rtgBoom = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.04, scale * 0.04, scale * 4, 8), silverMat);
+        const rtgBoom = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.04, scale * 0.04, scale * 4, 8, this.geometryCache),
+            silverMat
+        );
         rtgBoom.position.set(0, -scale * 2, 0);
         voyager.add(rtgBoom);
         
-        // 3 RTG units
+        // 3 RTG units - reuse geometry
+        const rtgGeom = GeometryFactory.createCylinder(scale * 0.2, scale * 0.2, scale * 0.5, 16, this.geometryCache);
         for (let i = 0; i < 3; i++) {
-            const rtg = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.2, scale * 0.2, scale * 0.5, 16), darkMat);
+            const rtg = new THREE.Mesh(rtgGeom, darkMat);
             rtg.position.set(scale * (i - 1) * 0.8, -scale * 4, 0);
             rtg.rotation.z = Math.PI / 2;
             voyager.add(rtg);
         }
         
         // Golden Record (iconic!)
-        const record = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.15, scale * 0.15, scale * 0.02, 32), goldMat);
+        const record = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.15, scale * 0.15, scale * 0.02, 32, this.geometryCache),
+            goldMat
+        );
         record.position.set(-scale * 0.5, 0, scale * 0.3);
         record.rotation.x = Math.PI / 2;
         voyager.add(record);
@@ -4846,44 +4894,52 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticJuno(satData) {
-        if (DEBUG.enabled) console.log(' Creating hyperrealistic Juno spacecraft');
+        if (DEBUG.enabled) console.log('🛰 Creating hyperrealistic Juno spacecraft');
         const juno = new THREE.Group();
         // Scale based on the spacecraft's display size (for orbiters, size from data)
         const scale = satData.size || 0.04;
         
         // Materials
-        const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
-        const panelMat = new THREE.MeshStandardMaterial({ color: 0x0a1a3d, roughness: 0.2, metalness: 0.9, emissive: 0x051020, emissiveIntensity: 0.15 });
-        const darkMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.7 });
+        const goldMat = MaterialFactory.createSpacecraftMaterial('gold');
+        const panelMat = MaterialFactory.createSpacecraftMaterial('solarPanel');
+        const darkMat = MaterialFactory.createSpacecraftMaterial('body');
+        const whiteMat = MaterialFactory.createSpacecraftMaterial('white');
         
         // Hexagonal main body (3.5m diameter)
-        const busGeom = new THREE.CylinderGeometry(scale * 1.75, scale * 1.75, scale * 1, 6);
-        const bus = new THREE.Mesh(busGeom, goldMat);
+        const bus = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 1.75, scale * 1.75, scale * 1, 6, this.geometryCache),
+            goldMat
+        );
         bus.rotation.x = Math.PI / 2;
         juno.add(bus);
         
-        // Three massive 9m x 2.7m solar panels (iconic!)
+        // Three massive 9m x 2.7m solar panels (iconic!) - reuse geometries
+        const panelGeom = GeometryFactory.createBox(scale * 9, scale * 0.05, scale * 2.7, this.geometryCache);
+        const frame1Geom = GeometryFactory.createBox(scale * 9, scale * 0.1, scale * 0.05, this.geometryCache);
+        const frame2Geom = frame1Geom; // Same geometry
+        const gridLineGeom = GeometryFactory.createBox(scale * 0.02, scale * 0.08, scale * 2.7, this.geometryCache);
+        
         for (let i = 0; i < 3; i++) {
             const angle = (Math.PI * 2 / 3) * i;
             const panelGroup = new THREE.Group();
             
-            // Solar panel
-            const panel = new THREE.Mesh(new THREE.BoxGeometry(scale * 9, scale * 0.05, scale * 2.7), panelMat);
+            // Solar panel - reuse geometry
+            const panel = new THREE.Mesh(panelGeom, panelMat);
             panel.position.x = scale * 4.5;
             panelGroup.add(panel);
             
-            // Panel frame
-            const frame1 = new THREE.Mesh(new THREE.BoxGeometry(scale * 9, scale * 0.1, scale * 0.05), goldMat);
+            // Panel frames - reuse geometry
+            const frame1 = new THREE.Mesh(frame1Geom, goldMat);
             frame1.position.set(scale * 4.5, 0, scale * 1.35);
             panelGroup.add(frame1);
             
-            const frame2 = new THREE.Mesh(new THREE.BoxGeometry(scale * 9, scale * 0.1, scale * 0.05), goldMat);
+            const frame2 = new THREE.Mesh(frame2Geom, goldMat);
             frame2.position.set(scale * 4.5, 0, -scale * 1.35);
             panelGroup.add(frame2);
             
-            // Grid lines on panels
+            // Grid lines on panels - reuse geometry
             for (let j = 0; j <= 8; j++) {
-                const line = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.02, scale * 0.08, scale * 2.7), goldMat);
+                const line = new THREE.Mesh(gridLineGeom, goldMat);
                 line.position.set(scale * j, 0, 0);
                 panelGroup.add(line);
             }
@@ -4898,30 +4954,43 @@ createHyperrealisticHubble(satData) {
         }
         
         // High-gain antenna (2.5m diameter)
-        const antenna = new THREE.Mesh(new THREE.ConeGeometry(scale * 1.25, scale * 0.4, 32), new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.2, metalness: 0.9 }));
+        const antenna = new THREE.Mesh(
+            GeometryFactory.createCone(scale * 1.25, scale * 0.4, 32, this.geometryCache),
+            whiteMat
+        );
         antenna.position.z = scale * 0.8;
         juno.add(antenna);
         
         // JunoCam (visible on side)
-        const camera = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.2, scale * 0.2, scale * 0.15), darkMat);
+        const camera = new THREE.Mesh(
+            GeometryFactory.createBox(scale * 0.2, scale * 0.2, scale * 0.15, this.geometryCache),
+            darkMat
+        );
         camera.position.set(scale * 1.5, 0, scale * 0.3);
         juno.add(camera);
         
         // Magnetometer boom (extends from one panel)
-        const magBoom = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.03, scale * 0.03, scale * 3, 8), goldMat);
+        const magBoom = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.03, scale * 0.03, scale * 3, 8, this.geometryCache),
+            goldMat
+        );
         magBoom.position.set(scale * 8, scale * 1.75, 0);
         magBoom.rotation.z = Math.PI / 2;
         juno.add(magBoom);
         
         // Magnetometer sensor
-        const magSensor = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.15, scale * 0.15, scale * 0.15), darkMat);
+        const magSensor = new THREE.Mesh(
+            GeometryFactory.createBox(scale * 0.15, scale * 0.15, scale * 0.15, this.geometryCache),
+            darkMat
+        );
         magSensor.position.set(scale * 9.5, scale * 1.75, 0);
         juno.add(magSensor);
         
-        // Microwave radiometer antennas (6 visible)
+        // Microwave radiometer antennas (6 visible) - reuse geometry
+        const mwrGeom = GeometryFactory.createBox(scale * 0.15, scale * 0.15, scale * 0.2, this.geometryCache);
         for (let i = 0; i < 6; i++) {
             const angle = (Math.PI / 3) * i;
-            const mwr = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.15, scale * 0.15, scale * 0.2), darkMat);
+            const mwr = new THREE.Mesh(mwrGeom, darkMat);
             mwr.position.set(
                 Math.cos(angle) * scale * 1.6,
                 Math.sin(angle) * scale * 1.6,
@@ -5347,18 +5416,7 @@ createHyperrealisticHubble(satData) {
  funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
  realSize: 'GPS III: 2,161 kg, 7.8m solar span',
  orbitTime: '11h 58min'
- },
- { 
- name: 'James Webb Space Telescope', 
- distance: 250, // At Sun-Earth L2 Lagrange point, 1.5 million km from Earth (scaled)
- speed: 0.01, // Halo orbit around L2, period synced with Earth (1 year)
- size: 0.04,
- color: 0xFFD700,
- description: t('descJWST'),
- funFact: t('funFactJWST'),
- realSize: '6.5m mirror, 21.2m 14.2m sunshield, 6,161 kg',
- orbitTime: 'L2 halo orbit: ~6 months period'
- },
+ }
  ];
 
  if (!this.planets.earth) {
