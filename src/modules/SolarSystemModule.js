@@ -393,21 +393,21 @@ export class SolarSystemModule {
             funFact: t('funFactMars'),
             realSize: '6,779 km diameter',
             moons: 2
-        });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny!)
+        });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny in reality, scaled up for visibility)
         // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
         this.createMoon(this.planets.mars, {
             name: 'Phobos',
-            radius: 0.002, // Minimum visible size
+            radius: 0.08, // Scaled up for visibility (was 0.002)
             color: 0x666666,
             distance: 1.5,
             speed: 17.22, // 2153x Mars's speed (0.008 * 2153) - orbits 3 times per Mars day!
             description: t('descPhobos')
         });
-        // Deimos: ~12 km / 12,742 km = 0.0009
+        // Deimos: ~12 km / 12,742 km = 0.0009 (tiny in reality, scaled up for visibility)
         // Orbital period: 1.263 days (30.3 hours) vs Mars's 687 days = 544x faster
         this.createMoon(this.planets.mars, {
             name: 'Deimos',
-            radius: 0.0015, // Minimum visible size
+            radius: 0.06, // Scaled up for visibility (was 0.0015)
             color: 0x888888,
             distance: 2.5,
             speed: 4.35, // 544x Mars's speed (0.008 * 544)
