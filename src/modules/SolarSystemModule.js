@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { TEXTURE_CACHE, cachedTextureGeneration } from './TextureCache.js';
-import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory } from './utils.js';
+import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
 
 // i18n.js is loaded globally in index.html, access via window.t
 const t = window.t || ((key) => key);
@@ -3411,22 +3411,26 @@ export class SolarSystemModule {
  name: 'Aries (The Ram)',
  description: ' Aries is the first sign of the zodiac! Look for the bright stars Hamal and Sheratan. In Greek mythology, Aries represents the golden ram that saved Phrixus and Helle.',
  stars: [
- { name: 'Hamal', ra: 31.8, dec: 23.5, mag: 2.0, color: 0xFFA500 },
- { name: 'Sheratan', ra: 28.7, dec: 20.8, mag: 2.6, color: 0xFFFFE0 },
- { name: 'Mesarthim', ra: 28.4, dec: 19.3, mag: 3.9, color: 0xFFFFF0 }
+ { name: 'Hamal', ra: 31.8, dec: 23.5, mag: 2.0, color: 0xFFA500 }, // 0 - The head
+ { name: 'Sheratan', ra: 28.7, dec: 20.8, mag: 2.6, color: 0xFFFFE0 }, // 1 - First horn
+ { name: 'Mesarthim', ra: 28.4, dec: 19.3, mag: 3.9, color: 0xFFFFF0 }, // 2 - Second horn
+ { name: '41 Arietis', ra: 44.8, dec: 27.7, mag: 3.6, color: 0xFFFFE0 }, // 3 - Body
+ { name: 'Bharani', ra: 27.1, dec: 27.3, mag: 3.6, color: 0xFFFFF0 } // 4 - Top of head
  ],
- lines: [[0,1], [1,2]] // Ram's head
+ lines: [[4,0], [0,1], [1,2], [0,3]] // Ram's head with horns and body
  },
  {
  name: 'Taurus (The Bull)',
  description: ' Taurus contains the bright red star Aldebaran, the bull\'s eye! Also home to the Pleiades star cluster. In mythology, Zeus transformed into a bull to win Europa.',
  stars: [
- { name: 'Aldebaran', ra: 68.9, dec: 16.5, mag: 0.9, color: 0xFF6347 }, // Red giant
- { name: 'Elnath', ra: 81.6, dec: 28.6, mag: 1.7, color: 0xE0FFFF },
- { name: 'Alcyone', ra: 56.9, dec: 24.1, mag: 2.9, color: 0xE0FFFF }, // Pleiades
- { name: 'Zeta Tauri', ra: 84.4, dec: 21.1, mag: 3.0, color: 0xFFFFE0 }
+ { name: 'Aldebaran', ra: 68.9, dec: 16.5, mag: 0.9, color: 0xFF6347 }, // 0 - Red giant (bull's eye)
+ { name: 'Elnath', ra: 81.6, dec: 28.6, mag: 1.7, color: 0xE0FFFF }, // 1 - Northern horn tip
+ { name: 'Alcyone', ra: 56.9, dec: 24.1, mag: 2.9, color: 0xE0FFFF }, // 2 - Pleiades brightest
+ { name: 'Zeta Tauri', ra: 84.4, dec: 21.1, mag: 3.0, color: 0xFFFFE0 }, // 3 - Southern horn
+ { name: 'Theta Tauri', ra: 67.2, dec: 15.9, mag: 3.4, color: 0xFFFFE0 }, // 4 - Hyades cluster
+ { name: 'Epsilon Tauri', ra: 67.3, dec: 19.2, mag: 3.5, color: 0xFFA500 } // 5 - Hyades cluster
  ],
- lines: [[0,1], [0,2], [1,3]] // Bull's head and horns
+ lines: [[2,5], [5,0], [0,4], [0,1], [1,3]] // V-shaped face (Hyades) with horns
  },
  {
  name: 'Gemini (The Twins)',
@@ -3443,101 +3447,122 @@ export class SolarSystemModule {
  name: 'Cancer (The Crab)',
  description: ' Cancer is faint but contains the beautiful Beehive Cluster (M44)! In mythology, Cancer was the crab sent by Hera to distract Hercules during his battle.',
  stars: [
- { name: 'Altarf', ra: 124.1, dec: 9.2, mag: 3.5, color: 0xFFA500 },
- { name: 'Acubens', ra: 134.6, dec: 11.9, mag: 4.3, color: 0xFFFFF0 },
- { name: 'Asellus Australis', ra: 130.1, dec: 18.2, mag: 3.9, color: 0xFFA500 },
- { name: 'Asellus Borealis', ra: 131.2, dec: 21.5, mag: 4.7, color: 0xFFFFF0 }
+ { name: 'Altarf', ra: 124.1, dec: 9.2, mag: 3.5, color: 0xFFA500 }, // 0 - Southern claw
+ { name: 'Acubens', ra: 134.6, dec: 11.9, mag: 4.3, color: 0xFFFFF0 }, // 1 - Northern claw
+ { name: 'Asellus Australis', ra: 130.1, dec: 18.2, mag: 3.9, color: 0xFFA500 }, // 2 - Southern donkey
+ { name: 'Asellus Borealis', ra: 131.2, dec: 21.5, mag: 4.7, color: 0xFFFFF0 }, // 3 - Northern donkey
+ { name: 'Iota Cancri', ra: 131.2, dec: 28.8, mag: 4.0, color: 0xFFFFE0 }, // 4 - Shell
+ { name: 'Lambda Cancri', ra: 122.8, dec: 24.0, mag: 5.9, color: 0xFFFFF0 } // 5 - Body center
  ],
- lines: [[0,1], [0,2], [2,3]] // Crab shape
+ lines: [[0,5], [5,1], [5,2], [2,3], [3,4], [4,5]] // Crab body with claws and legs
  },
  {
  name: 'Leo (The Lion)',
  description: ' Leo is home to the bright star Regulus! The "Sickle" asterism forms the lion\'s head. In mythology, Leo represents the Nemean Lion slain by Hercules.',
  stars: [
- { name: 'Regulus', ra: 152.1, dec: 11.9, mag: 1.4, color: 0xE0FFFF },
- { name: 'Denebola', ra: 177.4, dec: 14.6, mag: 2.1, color: 0xFFFFF0 },
- { name: 'Algieba', ra: 154.9, dec: 19.8, mag: 2.0, color: 0xFFA500 },
- { name: 'Zosma', ra: 168.5, dec: 20.5, mag: 2.6, color: 0xFFFFF0 }
+ { name: 'Regulus', ra: 152.1, dec: 11.9, mag: 1.4, color: 0xE0FFFF }, // 0 - Heart of the lion
+ { name: 'Denebola', ra: 177.4, dec: 14.6, mag: 2.1, color: 0xFFFFF0 }, // 1 - Tail
+ { name: 'Algieba', ra: 154.9, dec: 19.8, mag: 2.0, color: 0xFFA500 }, // 2 - Mane
+ { name: 'Zosma', ra: 168.5, dec: 20.5, mag: 2.6, color: 0xFFFFF0 }, // 3 - Back
+ { name: 'Eta Leonis', ra: 149.2, dec: 16.8, mag: 3.5, color: 0xFFFFE0 }, // 4 - Sickle
+ { name: 'Chertan', ra: 168.6, dec: 14.6, mag: 3.3, color: 0xFFFFF0 } // 5 - Rear haunch
  ],
- lines: [[2,0], [0,3], [3,1]] // Triangle shape (Algieba-Regulus-Zosma-Denebola)
+ lines: [[4,2], [2,0], [0,5], [5,1], [1,3], [3,2]] // Sickle head + triangle body
  },
  {
  name: 'Virgo (The Maiden)',
  description: ' Virgo is the second largest constellation! The bright star Spica represents wheat in the maiden\'s hand. Home to thousands of galaxies in the Virgo Cluster.',
  stars: [
- { name: 'Spica', ra: 201.3, dec: -11.2, mag: 1.0, color: 0xE0FFFF },
- { name: 'Vindemiatrix', ra: 195.5, dec: 10.9, mag: 2.8, color: 0xFFFFE0 },
- { name: 'Porrima', ra: 190.4, dec: -1.4, mag: 2.7, color: 0xFFFFF0 },
- { name: 'Zavijava', ra: 177.7, dec: 1.8, mag: 3.6, color: 0xFFFFF0 }
+ { name: 'Spica', ra: 201.3, dec: -11.2, mag: 1.0, color: 0xE0FFFF }, // 0 - Wheat/hand (brightest)
+ { name: 'Vindemiatrix', ra: 195.5, dec: 10.9, mag: 2.8, color: 0xFFFFE0 }, // 1 - Grape gatherer
+ { name: 'Porrima', ra: 190.4, dec: -1.4, mag: 2.7, color: 0xFFFFF0 }, // 2 - Body center
+ { name: 'Zavijava', ra: 177.7, dec: 1.8, mag: 3.6, color: 0xFFFFF0 }, // 3 - Corner
+ { name: 'Heze', ra: 211.7, dec: -0.7, mag: 3.4, color: 0xFFFFF0 }, // 4 - Arm
+ { name: 'Minelauva', ra: 184.9, dec: 3.4, mag: 3.4, color: 0xFFFFE0 } // 5 - Robe
  ],
- lines: [[0,2], [2,3], [3,1]] // Maiden figure
+ lines: [[3,5], [5,1], [1,2], [2,4], [4,0]] // Y-shaped maiden figure with wheat
  },
  {
  name: 'Libra (The Scales)',
  description: ' Libra represents the scales of justice! Its brightest stars are Zubenelgenubi and Zubeneschamali, meaning "southern claw" and "northern claw" in Arabic.',
  stars: [
- { name: 'Zubeneschamali', ra: 229.3, dec: -9.4, mag: 2.6, color: 0xE0FFFF },
- { name: 'Zubenelgenubi', ra: 222.7, dec: -16.0, mag: 2.8, color: 0xFFFFE0 },
- { name: 'Brachium', ra: 233.9, dec: -25.3, mag: 3.3, color: 0xFFA500 }
+ { name: 'Zubeneschamali', ra: 229.3, dec: -9.4, mag: 2.6, color: 0xE0FFFF }, // 0 - Northern scale
+ { name: 'Zubenelgenubi', ra: 222.7, dec: -16.0, mag: 2.8, color: 0xFFFFE0 }, // 1 - Southern scale
+ { name: 'Brachium', ra: 233.9, dec: -25.3, mag: 3.3, color: 0xFFA500 }, // 2 - Scale base
+ { name: 'Theta Librae', ra: 236.2, dec: -16.7, mag: 4.1, color: 0xFFFFF0 }, // 3 - Balance point
+ { name: 'Upsilon Librae', ra: 243.6, dec: -28.1, mag: 3.6, color: 0xFFFFE0 } // 4 - Scale arm
  ],
- lines: [[0,1], [1,2]] // Scale balance
+ lines: [[0,1], [1,2], [0,3], [3,4]] // Scale balance with beam
  },
  {
  name: 'Scorpius (The Scorpion)',
  description: ' Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
  stars: [
- { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 }, // Red supergiant
- { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF },
- { name: 'Sargas', ra: 264.3, dec: -43.0, mag: 1.9, color: 0xFFFFE0 },
- { name: 'Dschubba', ra: 240.1, dec: -22.6, mag: 2.3, color: 0xE0FFFF },
- { name: 'Graffias', ra: 241.4, dec: -19.8, mag: 2.6, color: 0xFFFFE0 }
+ { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 }, // 0 - Red supergiant (heart)
+ { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF }, // 1 - Stinger
+ { name: 'Sargas', ra: 264.3, dec: -43.0, mag: 1.9, color: 0xFFFFE0 }, // 2 - Stinger tip
+ { name: 'Dschubba', ra: 240.1, dec: -22.6, mag: 2.3, color: 0xE0FFFF }, // 3 - Head
+ { name: 'Graffias', ra: 241.4, dec: -19.8, mag: 2.6, color: 0xFFFFE0 }, // 4 - Claws
+ { name: 'Lesath', ra: 262.7, dec: -37.3, mag: 2.7, color: 0xE0FFFF }, // 5 - Tail curve
+ { name: 'Tau Scorpii', ra: 248.9, dec: -28.2, mag: 2.8, color: 0xE0FFFF } // 6 - Body
  ],
- lines: [[4,3], [3,0], [0,1], [1,2]] // Scorpion curve
+ lines: [[4,3], [3,0], [0,6], [6,5], [5,1], [1,2]] // Head-heart-body-curved tail-stinger
  },
  {
  name: 'Sagittarius (The Archer)',
  description: ' Sagittarius aims his arrow at the heart of Scorpius! The "Teapot" asterism is easy to spot. Points toward the center of our Milky Way galaxy!',
  stars: [
- { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF },
- { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF },
- { name: 'Ascella', ra: 290.7, dec: -29.9, mag: 2.6, color: 0xFFFFF0 },
- { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 },
- { name: 'Kaus Borealis', ra: 276.9, dec: -25.4, mag: 2.8, color: 0xFFA500 }
+ { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot base
+ { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Spout
+ { name: 'Ascella', ra: 290.7, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 2 - Spout tip
+ { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 }, // 3 - Bottom
+ { name: 'Kaus Borealis', ra: 276.9, dec: -25.4, mag: 2.8, color: 0xFFA500 }, // 4 - Top
+ { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Lid
+ { name: 'Zeta Sagittarii', ra: 285.7, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 6 - Handle
+ { name: 'Tau Sagittarii', ra: 286.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 7 - Handle top
+ { name: 'Sigma Sagittarii', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF } // 8 - Bow extension
  ],
- lines: [[0,3], [3,4], [4,1], [1,2], [2,0]] // Teapot shape
+ lines: [[3,0], [0,6], [6,2], [2,1], [1,5], [5,7], [7,4], [4,3], [1,8]] // Complete teapot with spout, handle, and steam
  },
  {
  name: 'Capricornus (The Sea-Goat)',
  description: ' Capricornus is one of the oldest constellations! Represents a creature with the head of a goat and tail of a fish. Associated with the god Pan in Greek mythology.',
  stars: [
- { name: 'Deneb Algedi', ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 },
- { name: 'Dabih', ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 },
- { name: 'Nashira', ra: 325.0, dec: -16.7, mag: 3.7, color: 0xFFFFF0 },
- { name: 'Algedi', ra: 304.5, dec: -12.5, mag: 3.6, color: 0xFFFFE0 }
+ { name: 'Deneb Algedi', ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 }, // 0 - Tail tip
+ { name: 'Dabih', ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 }, // 1 - Goat head
+ { name: 'Nashira', ra: 325.0, dec: -16.7, mag: 3.7, color: 0xFFFFF0 }, // 2 - Body center
+ { name: 'Algedi', ra: 304.5, dec: -12.5, mag: 3.6, color: 0xFFFFE0 }, // 3 - Horn
+ { name: 'Iota Capricorni', ra: 328.5, dec: -16.8, mag: 4.3, color: 0xE0FFFF }, // 4 - Fish tail
+ { name: 'Theta Capricorni', ra: 326.0, dec: -17.2, mag: 4.1, color: 0xFFFFE0 } // 5 - Tail curve
  ],
- lines: [[1,3], [1,0], [0,2]] // Sea-goat body
+ lines: [[1,3], [1,2], [2,5], [5,4], [4,0], [5,0]] // Sea-goat with fish tail
  },
  {
  name: 'Aquarius (The Water-Bearer)',
  description: ' Aquarius represents the water-bearer pouring from his urn! Home to several famous deep-sky objects including the Helix Nebula. One of the oldest named constellations.',
  stars: [
- { name: 'Sadalsuud', ra: 322.9, dec: -5.6, mag: 2.9, color: 0xFFFFE0 },
- { name: 'Sadalmelik', ra: 331.4, dec: -0.3, mag: 3.0, color: 0xFFFFE0 },
- { name: 'Skat', ra: 346.2, dec: -15.8, mag: 3.3, color: 0xFFFFF0 },
- { name: 'Albali', ra: 315.9, dec: -9.5, mag: 3.8, color: 0xFFFFF0 }
+ { name: 'Sadalsuud', ra: 322.9, dec: -5.6, mag: 2.9, color: 0xFFFFE0 }, // 0 - Lucky star of luckiest
+ { name: 'Sadalmelik', ra: 331.4, dec: -0.3, mag: 3.0, color: 0xFFFFE0 }, // 1 - Lucky star of the king
+ { name: 'Skat', ra: 346.2, dec: -15.8, mag: 3.3, color: 0xFFFFF0 }, // 2 - Shin/leg
+ { name: 'Albali', ra: 315.9, dec: -9.5, mag: 3.8, color: 0xFFFFF0 }, // 3 - The swallower
+ { name: 'Lambda Aquarii', ra: 352.2, dec: -7.6, mag: 3.7, color: 0xFFFFE0 }, // 4 - Water jar
+ { name: 'Phi Aquarii', ra: 353.7, dec: -6.0, mag: 4.2, color: 0xFFFFF0 } // 5 - Water stream
  ],
- lines: [[3,0], [0,1], [1,2]] // Water flow
+ lines: [[3,0], [0,1], [1,4], [4,5], [5,2]] // Water bearer with flowing water
  },
  {
  name: 'Pisces (The Fish)',
  description: ' Pisces shows two fish tied together! Represents Aphrodite and Eros who transformed into fish to escape the monster Typhon. Contains the vernal equinox point!',
  stars: [
- { name: 'Alpherg', ra: 2.0, dec: 2.8, mag: 3.8, color: 0xFFFFE0 },
- { name: 'Alrescha', ra: 8.0, dec: 2.8, mag: 3.8, color: 0xFFFFF0 },
- { name: 'Fumalsamakah', ra: 351.0, dec: 6.9, mag: 4.5, color: 0xFFFFF0 },
- { name: 'Delta Piscium', ra: 357.5, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }
+ { name: 'Alpherg', ra: 2.0, dec: 2.8, mag: 3.8, color: 0xFFFFE0 }, // 0 - Eastern fish
+ { name: 'Alrescha', ra: 8.0, dec: 2.8, mag: 3.8, color: 0xFFFFF0 }, // 1 - Knot (tie point)
+ { name: 'Fumalsamakah', ra: 351.0, dec: 6.9, mag: 4.5, color: 0xFFFFF0 }, // 2 - Western fish
+ { name: 'Delta Piscium', ra: 357.5, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }, // 3 - Fish body
+ { name: 'Eta Piscium', ra: 21.5, dec: 15.3, mag: 3.6, color: 0xFFA500 }, // 4 - Eastern fish tail
+ { name: 'Gamma Piscium', ra: 352.5, dec: 3.2, mag: 3.7, color: 0xFFFFE0 }, // 5 - Western fish body
+ { name: 'Kappa Piscium', ra: 347.5, dec: 1.2, mag: 4.9, color: 0xFFFFF0 } // 6 - Western fish tail
  ],
- lines: [[2,3], [3,0], [0,1]] // Two fish connected
+ lines: [[4,0], [0,1], [1,5], [5,2], [2,6], [5,3]] // Two fish with connecting cord
  },
  
  // === FAMOUS NON-ZODIAC CONSTELLATIONS ===
@@ -3610,13 +3635,14 @@ export class SolarSystemModule {
  name: 'Cygnus (The Swan)',
  description: ' Cygnus the Swan flies along the Milky Way! Also called the Northern Cross. In mythology, Zeus disguised himself as a swan. Home to many deep-sky objects!',
  stars: [
- { name: 'Deneb', ra: 310.4, dec: 45.3, mag: 1.3, color: 0xE0FFFF }, // Supergiant
- { name: 'Albireo', ra: 292.7, dec: 27.9, mag: 3.1, color: 0xFFA500 }, // Beautiful double star
- { name: 'Sadr', ra: 305.6, dec: 40.3, mag: 2.2, color: 0xFFFFE0 },
- { name: 'Gienah', ra: 312.3, dec: 33.9, mag: 2.5, color: 0xFFFFF0 },
- { name: 'Delta Cygni', ra: 296.2, dec: 45.1, mag: 2.9, color: 0xE0FFFF }
+ { name: 'Deneb', ra: 310.4, dec: 45.3, mag: 1.3, color: 0xE0FFFF }, // 0 - Tail (supergiant)
+ { name: 'Albireo', ra: 292.7, dec: 27.9, mag: 3.1, color: 0xFFA500 }, // 1 - Head (beautiful double star)
+ { name: 'Sadr', ra: 305.6, dec: 40.3, mag: 2.2, color: 0xFFFFE0 }, // 2 - Center/breast
+ { name: 'Gienah', ra: 312.3, dec: 33.9, mag: 2.5, color: 0xFFFFF0 }, // 3 - Right wing
+ { name: 'Delta Cygni', ra: 296.2, dec: 45.1, mag: 2.9, color: 0xE0FFFF }, // 4 - Left wing
+ { name: 'Epsilon Cygni', ra: 310.9, dec: 33.9, mag: 2.5, color: 0xFFA500 } // 5 - Wing tip
  ],
- lines: [[0,2], [2,1], [2,3], [2,4]] // Cross/Swan shape
+ lines: [[0,2], [2,1], [2,4], [2,3], [3,5]] // Cross/Swan with extended wing
  },
  {
  name: 'Lyra (The Lyre)',
@@ -3633,23 +3659,27 @@ export class SolarSystemModule {
  name: 'Andromeda (The Princess)',
  description: ' Andromeda was the princess chained to a rock and rescued by Perseus! This constellation contains the Andromeda Galaxy (M31), our nearest large galaxy neighbor!',
  stars: [
- { name: 'Alpheratz', ra: 2.1, dec: 29.1, mag: 2.1, color: 0xE0FFFF },
- { name: 'Mirach', ra: 17.4, dec: 35.6, mag: 2.1, color: 0xFF6347 }, // Red giant
- { name: 'Almach', ra: 30.9, dec: 42.3, mag: 2.2, color: 0xFFA500 },
- { name: 'Delta Andromedae', ra: 8.5, dec: 31.1, mag: 3.3, color: 0xFFFFF0 }
+ { name: 'Alpheratz', ra: 2.1, dec: 29.1, mag: 2.1, color: 0xE0FFFF }, // 0 - Head (shared with Pegasus)
+ { name: 'Mirach', ra: 17.4, dec: 35.6, mag: 2.1, color: 0xFF6347 }, // 1 - Hip (red giant)
+ { name: 'Almach', ra: 30.9, dec: 42.3, mag: 2.2, color: 0xFFA500 }, // 2 - Foot
+ { name: 'Delta Andromedae', ra: 8.5, dec: 31.1, mag: 3.3, color: 0xFFFFF0 }, // 3 - Shoulder
+ { name: 'Mu Andromedae', ra: 6.5, dec: 38.5, mag: 3.9, color: 0xFFFFF0 }, // 4 - Arm
+ { name: 'Nu Andromedae', ra: 12.2, dec: 41.1, mag: 4.5, color: 0xFFFFE0 } // 5 - Chain
  ],
- lines: [[0,3], [3,1], [1,2]] // Princess figure
+ lines: [[0,3], [3,4], [4,5], [5,1], [1,2]] // Princess chained figure
  },
  {
  name: 'Perseus (The Hero)',
  description: ' Perseus the hero who slayed Medusa! Home to the bright star Mirfak and the famous variable star Algol ("Demon Star"). Contains the Double Cluster!',
  stars: [
- { name: 'Mirfak', ra: 51.1, dec: 49.9, mag: 1.8, color: 0xFFFFE0 },
- { name: 'Algol', ra: 47.0, dec: 40.9, mag: 2.1, color: 0xE0FFFF }, // The Demon Star
- { name: 'Atik', ra: 54.1, dec: 32.3, mag: 2.9, color: 0xE0FFFF },
- { name: 'Gamma Persei', ra: 48.0, dec: 53.5, mag: 2.9, color: 0xFFFFE0 }
+ { name: 'Mirfak', ra: 51.1, dec: 49.9, mag: 1.8, color: 0xFFFFE0 }, // 0 - Shoulder
+ { name: 'Algol', ra: 47.0, dec: 40.9, mag: 2.1, color: 0xE0FFFF }, // 1 - Medusa's head
+ { name: 'Atik', ra: 54.1, dec: 32.3, mag: 2.9, color: 0xE0FFFF }, // 2 - Knee
+ { name: 'Gamma Persei', ra: 48.0, dec: 53.5, mag: 2.9, color: 0xFFFFE0 }, // 3 - Head
+ { name: 'Delta Persei', ra: 57.3, dec: 47.8, mag: 3.0, color: 0xE0FFFF }, // 4 - Arm
+ { name: 'Epsilon Persei', ra: 59.0, dec: 40.0, mag: 2.9, color: 0xE0FFFF } // 5 - Sword tip
  ],
- lines: [[3,0], [0,1], [1,2]] // Hero with sword
+ lines: [[3,0], [0,4], [4,5], [5,2], [0,1]] // Hero with sword and Medusa's head
  }
  ];
  
@@ -3657,100 +3687,37 @@ export class SolarSystemModule {
  const group = new THREE.Group();
  const starMeshes = [];
  
- // Convert RA/Dec to 3D positions at distance 10000
+ // Create stars with optimized factory methods
  constData.stars.forEach(star => {
- // Convert RA (0-360Â°) and Dec (-90 to +90Â°) to radians
- const raRad = (star.ra * Math.PI) / 180;
- const decRad = (star.dec * Math.PI) / 180;
- const distance = 10000;
+ // Convert RA/Dec to 3D Cartesian coordinates
+ const position = CoordinateUtils.sphericalToCartesian(
+ star.ra,
+ star.dec,
+ CONFIG.CONSTELLATION.DISTANCE
+ );
  
- // Spherical to Cartesian coordinates
- // We view from INSIDE the celestial sphere (like from Earth)
- // So we INVERT the coordinates to see them correctly
- const x = -distance * Math.cos(decRad) * Math.cos(raRad);
- const y = distance * Math.sin(decRad);
- const z = -distance * Math.cos(decRad) * Math.sin(raRad);
- 
- // Create star - make much brighter and larger
- const starSize = 25 * Math.pow(2.5, -star.mag); // Brighter = larger (increased from 15 to 25)
- const starGeom = new THREE.SphereGeometry(starSize, 16, 16); // More segments for smoother appearance
- const starMat = new THREE.MeshBasicMaterial({
- color: star.color,
- transparent: true,
- opacity: 1.0 // Fully opaque core (increased from 0.9)
- });
- // Store original opacity for highlighting
- starMat.userData = { originalOpacity: 1.0 };
- 
- const starMesh = new THREE.Mesh(starGeom, starMat);
- starMesh.position.set(x, y, z);
+ // Create star mesh using factory (with geometry caching)
+ const starMesh = ConstellationFactory.createStar(star, position, this.geometryCache);
  group.add(starMesh);
  starMeshes.push(starMesh);
  
- // Add bright glow with additive blending
- const glowGeom = new THREE.SphereGeometry(starSize * 3, 16, 16); // Larger glow (increased from 2x to 3x)
- const glowMat = new THREE.MeshBasicMaterial({
- color: star.color,
- transparent: true,
- opacity: 0.6, // Much brighter glow (increased from 0.3)
- blending: THREE.AdditiveBlending,
- depthWrite: false // Don't block objects behind the glow
- });
- // Store original opacity for highlighting
- glowMat.userData = { originalOpacity: 0.6 };
- const glow = new THREE.Mesh(glowGeom, glowMat);
+ // Add glow effect using factory (with geometry caching)
+ const starSize = CONFIG.CONSTELLATION.STAR_BASE_SIZE * Math.pow(2.5, -star.mag);
+ const glow = ConstellationFactory.createGlow(star, starSize, this.geometryCache);
  starMesh.add(glow);
  });
  
- // Draw constellation lines - make much brighter
+ // Create constellation lines using factory
  constData.lines.forEach(line => {
- const points = [
+ const lineMesh = ConstellationFactory.createLine(
  starMeshes[line[0]].position,
  starMeshes[line[1]].position
- ];
- const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
- const lineMat = new THREE.LineBasicMaterial({
- color: 0x6699FF, // Brighter blue (changed from 0x4488FF)
- transparent: true,
- opacity: 0.7, // Much brighter lines (increased from 0.4)
- linewidth: 3 // Thicker lines (increased from 2)
- });
- // Store original opacity for highlighting
- lineMat.userData = { originalOpacity: 0.7 };
- const lineMesh = new THREE.Line(lineGeom, lineMat);
+ );
  group.add(lineMesh);
  });
  
- // Calculate constellation center and size for camera positioning
- let centerX = 0, centerY = 0, centerZ = 0;
- let maxDist = 0;
- 
- starMeshes.forEach(star => {
- centerX += star.position.x;
- centerY += star.position.y;
- centerZ += star.position.z;
- 
- const dist = Math.sqrt(
- star.position.x * star.position.x +
- star.position.y * star.position.y +
- star.position.z * star.position.z
- );
- if (dist > maxDist) maxDist = dist;
- });
- 
- centerX /= starMeshes.length;
- centerY /= starMeshes.length;
- centerZ /= starMeshes.length;
- 
- // Calculate spread of stars for radius
- let maxSpread = 0;
- starMeshes.forEach(star => {
- const dx = star.position.x - centerX;
- const dy = star.position.y - centerY;
- const dz = star.position.z - centerZ;
- const spread = Math.sqrt(dx * dx + dy * dy + dz * dz);
- if (spread > maxSpread) maxSpread = spread;
- });
+ // Calculate constellation center and bounding radius using factory method
+ const { center, radius } = ConstellationFactory.calculateCenter(starMeshes);
  
  // Add constellation metadata
  group.userData = {
@@ -3759,9 +3726,9 @@ export class SolarSystemModule {
  description: constData.description,
  distance: '100s to 1000s of light-years',
  starCount: constData.stars.length,
- radius: maxSpread || 500, // Pattern spread
- centerPosition: { x: centerX, y: centerY, z: centerZ }, // Center of star pattern
- distanceFromOrigin: 10000 // All stars at this distance from origin
+ radius: radius || 500, // Pattern spread (bounding radius)
+ centerPosition: { x: center.x, y: center.y, z: center.z }, // Center of star pattern
+ distanceFromOrigin: CONFIG.CONSTELLATION.DISTANCE // All stars at this distance from origin
  };
  
  scene.add(group);
@@ -4453,44 +4420,74 @@ createHyperrealisticHubble(satData) {
         const hubble = new THREE.Group();
         const scale = 0.002;
         
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xC0C0C0, roughness: 0.3, metalness: 0.9 });
-        const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9, emissive: 0x4A3000, emissiveIntensity: 0.1 });
-        const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.1, metalness: 0.5 });
-        const panelMat = new THREE.MeshStandardMaterial({ color: 0x0a1a3d, roughness: 0.2, metalness: 0.9, emissive: 0x051020, emissiveIntensity: 0.15 });
+        // Use spacecraft material presets
+        const bodyMat = MaterialFactory.createSpacecraftMaterial('silver');
+        const goldMat = MaterialFactory.createSpacecraftMaterial('gold');
+        const darkMat = MaterialFactory.createSpacecraftMaterial('dark');
+        const panelMat = MaterialFactory.createSpacecraftMaterial('solarPanel');
         
-        const tube = new THREE.Mesh(new THREE.CylinderGeometry(scale * 2.1, scale * 2.1, scale * 13.2, 32), bodyMat);
+        // Main tube with geometry caching
+        const tube = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 2.1, scale * 2.1, scale * 13.2, 32, this.geometryCache),
+            bodyMat
+        );
         tube.rotation.z = Math.PI / 2;
         hubble.add(tube);
         
-        const shield = new THREE.Mesh(new THREE.CylinderGeometry(scale * 2.4, scale * 2.1, scale * 3, 32), bodyMat);
+        // Aperture shield
+        const shield = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 2.4, scale * 2.1, scale * 3, 32, this.geometryCache),
+            bodyMat
+        );
         shield.rotation.z = Math.PI / 2;
         shield.position.x = scale * 8;
         hubble.add(shield);
         
-        const aperture = new THREE.Mesh(new THREE.CylinderGeometry(scale * 1.2, scale * 1.2, scale * 0.2, 32), darkMat);
+        // Aperture opening
+        const aperture = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 1.2, scale * 1.2, scale * 0.2, 32, this.geometryCache),
+            darkMat
+        );
         aperture.rotation.z = Math.PI / 2;
         aperture.position.x = scale * 9.6;
         hubble.add(aperture);
         
-        const aft = new THREE.Mesh(new THREE.CylinderGeometry(scale * 2.1, scale * 2.1, scale * 2, 32), goldMat);
+        // Aft section
+        const aft = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 2.1, scale * 2.1, scale * 2, 32, this.geometryCache),
+            goldMat
+        );
         aft.rotation.z = Math.PI / 2;
         aft.position.x = -scale * 7;
         hubble.add(aft);
         
+        // Solar panel creation with geometry caching
         const createPanel = (yPos) => {
-            const panel = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.1, scale * 2.5, scale * 7.1), panelMat);
+            const panel = new THREE.Mesh(
+                GeometryFactory.createBox(scale * 0.1, scale * 2.5, scale * 7.1, this.geometryCache),
+                panelMat
+            );
             panel.position.y = yPos;
             
-            const frame1 = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.15, scale * 2.6, scale * 0.1), bodyMat);
+            const frame1 = new THREE.Mesh(
+                GeometryFactory.createBox(scale * 0.15, scale * 2.6, scale * 0.1, this.geometryCache),
+                bodyMat
+            );
             frame1.position.z = scale * 3.5;
             panel.add(frame1);
             
-            const frame2 = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.15, scale * 2.6, scale * 0.1), bodyMat);
+            const frame2 = new THREE.Mesh(
+                GeometryFactory.createBox(scale * 0.15, scale * 2.6, scale * 0.1, this.geometryCache),
+                bodyMat
+            );
             frame2.position.z = -scale * 3.5;
             panel.add(frame2);
             
             for (let i = -3; i <= 3; i++) {
-                const line = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.12, scale * 0.02, scale * 7.1), bodyMat);
+                const line = new THREE.Mesh(
+                    GeometryFactory.createBox(scale * 0.12, scale * 0.02, scale * 7.1, this.geometryCache),
+                    bodyMat
+                );
                 line.position.y = scale * i * 0.4;
                 panel.add(line);
             }
@@ -4501,22 +4498,35 @@ createHyperrealisticHubble(satData) {
         hubble.add(createPanel(scale * 5));
         hubble.add(createPanel(-scale * 5));
         
-        const antenna = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.8, scale * 1.5, 16), bodyMat);
+        // Communication antenna
+        const antenna = new THREE.Mesh(
+            GeometryFactory.createCone(scale * 0.8, scale * 1.5, 16, this.geometryCache),
+            bodyMat
+        );
         antenna.rotation.x = Math.PI / 2;
         antenna.position.set(-scale * 5, 0, scale * 3);
         hubble.add(antenna);
         
+        // Small antennas
         for (let i = 0; i < 2; i++) {
-            const smallAntenna = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.1, scale * 0.1, scale * 0.8, 8), bodyMat);
+            const smallAntenna = new THREE.Mesh(
+                GeometryFactory.createCylinder(scale * 0.1, scale * 0.1, scale * 0.8, 8, this.geometryCache),
+                bodyMat
+            );
             smallAntenna.position.set(-scale * 6, i === 0 ? scale * 1.5 : -scale * 1.5, scale * 2);
             hubble.add(smallAntenna);
         }
         
-        const bay = new THREE.Mesh(new THREE.BoxGeometry(scale * 1.5, scale * 1.5, scale * 2), goldMat);
+        // Equipment bay with geometry caching
+        const bay = new THREE.Mesh(
+            GeometryFactory.createBox(scale * 1.5, scale * 1.5, scale * 2, this.geometryCache),
+            goldMat
+        );
         bay.position.set(-scale * 4, 0, -scale * 2.5);
         hubble.add(bay);
         
-        const radiatorGeom = new THREE.BoxGeometry(scale * 0.1, scale * 0.8, scale * 2);
+        // Radiators with geometry caching (reuse same geometry)
+        const radiatorGeom = GeometryFactory.createBox(scale * 0.1, scale * 0.8, scale * 2, this.geometryCache);
         for (let i = 0; i < 3; i++) {
             const radiator = new THREE.Mesh(radiatorGeom, bodyMat);
             radiator.position.set(-scale * 2 + i * scale * 2, 0, scale * 2.8);
@@ -4527,14 +4537,15 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticJWST(satData) {
-        if (DEBUG.enabled) console.log(' Creating hyperrealistic James Webb Space Telescope');
+        if (DEBUG.enabled) console.log('🛰 Creating hyperrealistic James Webb Space Telescope');
         const jwst = new THREE.Group();
         // Scale based on the spacecraft's display size
         const scale = satData.size || 0.04;
         
-        const goldMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.1, metalness: 1.0, emissive: 0xFFAA00, emissiveIntensity: 0.2 });
-        const shieldMat = new THREE.MeshStandardMaterial({ color: 0xE8E8E8, roughness: 0.2, metalness: 0.5, side: THREE.DoubleSide });
-        const structMat = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.6, metalness: 0.8 });
+        // Use spacecraft material presets
+        const goldMat = MaterialFactory.createSpacecraftMaterial('goldBright');
+        const shieldMat = MaterialFactory.createSpacecraftMaterial('shield');
+        const structMat = MaterialFactory.createSpacecraftMaterial('structure');
         
         const hexRadius = scale * 0.66;
         const createHex = () => {
@@ -4559,6 +4570,7 @@ createHyperrealisticHubble(satData) {
             [-3, 0], [-2.25, -1.3], [-0.75, -2.6], [0.75, -2.6], [2.25, -1.3], [1.5, 2.6]
         ];
         
+        // Create all mirror segments
         mirrorPos.forEach(pos => {
             const hex = new THREE.Mesh(hexGeom, goldMat);
             hex.position.set(scale * pos[0], scale * pos[1], scale * 3);
@@ -4566,13 +4578,19 @@ createHyperrealisticHubble(satData) {
             jwst.add(hex);
         });
         
-        const secMirror = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.35, scale * 0.35, scale * 0.1, 32), goldMat);
+        // Secondary mirror with geometry caching
+        const secMirror = new THREE.Mesh(
+            GeometryFactory.createCylinder(scale * 0.35, scale * 0.35, scale * 0.1, 32, this.geometryCache),
+            goldMat
+        );
         secMirror.position.z = scale * 7;
         jwst.add(secMirror);
         
+        // Support struts with geometry caching
+        const strutGeom = GeometryFactory.createCylinder(scale * 0.05, scale * 0.05, scale * 4, 8, this.geometryCache);
         for (let i = 0; i < 3; i++) {
             const angle = (Math.PI * 2 / 3) * i;
-            const strut = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.05, scale * 0.05, scale * 4, 8), structMat);
+            const strut = new THREE.Mesh(strutGeom, structMat);
             strut.position.x = Math.cos(angle) * scale * 2;
             strut.position.y = Math.sin(angle) * scale * 2;
             strut.position.z = scale * 5;
@@ -4580,10 +4598,15 @@ createHyperrealisticHubble(satData) {
             jwst.add(strut);
         }
         
-        const bus = new THREE.Mesh(new THREE.BoxGeometry(scale * 2, scale * 2, scale * 1.5), new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.7 }));
+        // Spacecraft bus with geometry caching
+        const bus = new THREE.Mesh(
+            GeometryFactory.createBox(scale * 2, scale * 2, scale * 1.5, this.geometryCache),
+            MaterialFactory.createSpacecraftMaterial('body')
+        );
         bus.position.z = scale * 1.5;
         jwst.add(bus);
         
+        // Sunshield layers (5 layers with varying shades)
         for (let layer = 0; layer < 5; layer++) {
             const shieldLayer = new THREE.Mesh(new THREE.PlaneGeometry(scale * 21.2, scale * 14.2), shieldMat.clone());
             shieldLayer.material.color.setHex(0xE8E8E8 - layer * 0x0a0a0a);
@@ -4591,20 +4614,29 @@ createHyperrealisticHubble(satData) {
             jwst.add(shieldLayer);
         }
         
+        // Sunshield support beams with geometry caching
+        const beamGeom = GeometryFactory.createCylinder(scale * 0.08, scale * 0.08, scale * 14.2, 8, this.geometryCache);
         for (let i = -1; i <= 1; i++) {
-            const beam = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.08, scale * 0.08, scale * 14.2, 8), structMat);
+            const beam = new THREE.Mesh(beamGeom, structMat);
             beam.position.set(scale * i * 10, 0, -scale * 1);
             beam.rotation.x = Math.PI / 2;
             jwst.add(beam);
         }
         
-        const solarMat = new THREE.MeshStandardMaterial({ color: 0x0a1a3d, roughness: 0.2, metalness: 0.9, emissive: 0x051020, emissiveIntensity: 0.15 });
-        const panel = new THREE.Mesh(new THREE.BoxGeometry(scale * 2.5, scale * 0.05, scale * 6), solarMat);
+        // Solar panel with geometry caching
+        const panel = new THREE.Mesh(
+            GeometryFactory.createBox(scale * 2.5, scale * 0.05, scale * 6, this.geometryCache),
+            MaterialFactory.createSpacecraftMaterial('solarPanel')
+        );
         panel.position.set(scale * 3, 0, -scale * 1);
         panel.rotation.y = Math.PI / 2;
         jwst.add(panel);
         
-        const antenna = new THREE.Mesh(new THREE.ConeGeometry(scale * 1, scale * 0.5, 32), new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.2, metalness: 0.9 }));
+        // High-gain antenna with geometry caching
+        const antenna = new THREE.Mesh(
+            GeometryFactory.createCone(scale * 1, scale * 0.5, 32, this.geometryCache),
+            MaterialFactory.createSpacecraftMaterial('white')
+        );
         antenna.position.z = -scale * 2;
         antenna.rotation.x = Math.PI;
         jwst.add(antenna);
