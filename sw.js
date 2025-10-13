@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.1.0 - Modularization, Translation fixes, Moon orbit optimizations, Saturn system corrections
+// Version 2.1.1 - Language selector UI improvements (removed flags, fixed text visibility)
 
-const CACHE_VERSION = '2.1.0';
+const CACHE_VERSION = '2.1.1';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
