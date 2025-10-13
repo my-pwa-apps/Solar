@@ -323,229 +323,140 @@ class App {
  
  // Find and focus on the selected object
  if (this.solarSystemModule) {
- let targetObject = null;
- 
- // Map dropdown values to actual objects
- switch(value) {
- case 'sun':
- targetObject = this.solarSystemModule.sun;
- break;
- case 'mercury':
- case 'venus':
- case 'earth':
- case 'mars':
- case 'jupiter':
- case 'saturn':
- case 'uranus':
- case 'neptune':
- targetObject = this.solarSystemModule.planets[value];
- break;
- case 'moon':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === t('moon'));
- break;
- case 'pluto':
- targetObject = this.solarSystemModule.planets.pluto;
- break;
- // Moons
- case 'phobos':
- targetObject = this.solarSystemModule.moons?.phobos;
- break;
- case 'deimos':
- targetObject = this.solarSystemModule.moons?.deimos;
- break;
- case 'io':
- targetObject = this.solarSystemModule.moons?.io;
- break;
- case 'europa':
- targetObject = this.solarSystemModule.moons?.europa;
- break;
- case 'ganymede':
- targetObject = this.solarSystemModule.moons?.ganymede;
- break;
- case 'callisto':
- targetObject = this.solarSystemModule.moons?.callisto;
- break;
- case 'titan':
- targetObject = this.solarSystemModule.moons?.titan;
- break;
- case 'enceladus':
- targetObject = this.solarSystemModule.moons?.enceladus;
- break;
- case 'rhea':
- targetObject = this.solarSystemModule.moons?.rhea;
- break;
- case 'titania':
- targetObject = this.solarSystemModule.moons?.titania;
- break;
- case 'miranda':
- targetObject = this.solarSystemModule.moons?.miranda;
- break;
- case 'triton':
- targetObject = this.solarSystemModule.moons?.triton;
- break;
- case 'charon':
- targetObject = this.solarSystemModule.moons?.charon;
- break;
- // Nearby Stars
- case 'alpha-centauri':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Alpha Centauri A');
- break;
- case 'proxima-centauri':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Proxima Centauri');
- break;
- // Exoplanets
- case 'proxima-b':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Proxima Centauri b');
- break;
- case 'kepler-452b':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Kepler-452b');
- break;
- case 'trappist-1e':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' TRAPPIST-1e');
- break;
- case 'kepler-186f':
- targetObject = this.solarSystemModule.objects.find(obj => obj.userData.name === ' Kepler-186f');
- break;
- // Spacecraft & Satellites
- case 'iss':
- targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name.includes('ISS') || s.userData.name.includes('International Space Station'));
- break;
- case 'hubble':
- targetObject = this.solarSystemModule.satellites?.find(s => s.userData.name.includes('Hubble'));
- break;
- case 'voyager-1':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Voyager 1'));
- break;
- case 'voyager-2':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Voyager 2'));
- break;
- case 'new-horizons':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('New Horizons'));
- break;
- case 'jwst':
- case 'james-webb':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('James Webb'));
- break;
- case 'juno':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Juno'));
- break;
- case 'cassini':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Cassini'));
- break;
- case 'pioneer-10':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Pioneer 10'));
- break;
- case 'pioneer-11':
- targetObject = this.solarSystemModule.spacecraft?.find(s => s.userData.name.includes('Pioneer 11'));
- break;
- // Nebulae
- case 'orion-nebula':
- targetObject = this.solarSystemModule.nebulae?.find(n => n.userData.name.includes('Orion'));
- break;
- case 'crab-nebula':
- targetObject = this.solarSystemModule.nebulae?.find(n => n.userData.name.includes('Crab'));
- break;
- case 'ring-nebula':
- targetObject = this.solarSystemModule.nebulae?.find(n => n.userData.name.includes('Ring'));
- break;
- // Galaxies
- case 'andromeda-galaxy':
- targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Andromeda'));
- break;
- case 'whirlpool-galaxy':
- targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Whirlpool'));
- break;
- case 'sombrero-galaxy':
- targetObject = this.solarSystemModule.galaxies?.find(g => g.userData.name.includes('Sombrero'));
- break;
- // Constellations - Zodiac
- case 'constellation-aries':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Aries'));
- break;
- case 'constellation-taurus':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Taurus'));
- break;
- case 'constellation-gemini':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Gemini'));
- if (DEBUG.enabled) console.log(` [Nav Debug] Gemini search result:`, targetObject ? targetObject.userData.name : 'NOT FOUND', `(total constellations: ${this.solarSystemModule.constellations?.length || 0})`);
- break;
- case 'constellation-cancer':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cancer'));
- break;
- case 'constellation-leo':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Leo'));
- break;
- case 'constellation-virgo':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Virgo'));
- break;
- case 'constellation-libra':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Libra'));
- break;
- case 'constellation-scorpius':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Scorpius'));
- if (DEBUG.enabled) console.log(` [Nav Debug] Scorpius search result:`, targetObject ? targetObject.userData.name : 'NOT FOUND', `(total constellations: ${this.solarSystemModule.constellations?.length || 0})`);
- break;
- case 'constellation-sagittarius':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Sagittarius'));
- break;
- case 'constellation-capricornus':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Capricornus'));
- break;
- case 'constellation-aquarius':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Aquarius'));
- break;
- case 'constellation-pisces':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Pisces'));
- break;
- // Constellations - Other
- case 'constellation-orion':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Orion'));
- break;
- case 'constellation-big-dipper':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Big Dipper') || c.userData.name.includes('Ursa Major'));
- break;
- case 'constellation-little-dipper':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Little Dipper') || c.userData.name.includes('Ursa Minor'));
- break;
- case 'constellation-southern-cross':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Southern Cross') || c.userData.name.includes('Crux'));
- break;
- case 'constellation-cassiopeia':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cassiopeia'));
- break;
- case 'constellation-cygnus':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Cygnus'));
- break;
- case 'constellation-lyra':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Lyra'));
- break;
- case 'constellation-andromeda':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Andromeda') && c.userData.name.includes('Princess'));
- break;
- case 'constellation-perseus':
- targetObject = this.solarSystemModule.constellations?.find(c => c.userData.name.includes('Perseus'));
- break;
- default:
- console.warn(` [Nav] âœ— No case match for value: "${value}"`);
- break;
- }
- 
- console.log(` [Nav] Navigation dropdown value: "${value}"`);
- console.log(` [Nav] After switch - targetObject:`, targetObject ? `Found: ${targetObject.userData?.name}` : 'NULL');
+ const targetObject = this.findObjectByNavigationValue(value);
  
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
- console.log(` [Nav] âœ“ Found and navigating to: ${info.name} (type: ${targetObject.userData.type || 'planet'})`);
+ console.log(` [Nav] âœ" Found and navigating to: ${info.name} (type: ${targetObject.userData.type || 'planet'})`);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
  } else {
  console.warn(` [Nav] âœ— Object not found for value: "${value}"`);
- console.warn(` [Nav] Available constellations:`, this.solarSystemModule.constellations?.map(c => c.userData.name) || []);
  }
  }
  });
  }
  }
+ 
+ findObjectByNavigationValue(value) {
+ if (!this.solarSystemModule) return null;
+ 
+ // Define navigation mapping with categories for easy maintenance
+ const navigationMap = {
+ // Sun and Planets (direct property access)
+ 'sun': () => this.solarSystemModule.sun,
+ 'mercury': () => this.solarSystemModule.planets.mercury,
+ 'venus': () => this.solarSystemModule.planets.venus,
+ 'earth': () => this.solarSystemModule.planets.earth,
+ 'mars': () => this.solarSystemModule.planets.mars,
+ 'jupiter': () => this.solarSystemModule.planets.jupiter,
+ 'saturn': () => this.solarSystemModule.planets.saturn,
+ 'uranus': () => this.solarSystemModule.planets.uranus,
+ 'neptune': () => this.solarSystemModule.planets.neptune,
+ 'pluto': () => this.solarSystemModule.planets.pluto,
+ 
+ // Earth's Moon (special case - translated name)
+ 'moon': () => this.solarSystemModule.moons[t('moon').toLowerCase()],
+ 
+ // Moons (direct moon registry access)
+ 'phobos': () => this.solarSystemModule.moons.phobos,
+ 'deimos': () => this.solarSystemModule.moons.deimos,
+ 'io': () => this.solarSystemModule.moons.io,
+ 'europa': () => this.solarSystemModule.moons.europa,
+ 'ganymede': () => this.solarSystemModule.moons.ganymede,
+ 'callisto': () => this.solarSystemModule.moons.callisto,
+ 'titan': () => this.solarSystemModule.moons.titan,
+ 'enceladus': () => this.solarSystemModule.moons.enceladus,
+ 'rhea': () => this.solarSystemModule.moons.rhea,
+ 'titania': () => this.solarSystemModule.moons.titania,
+ 'miranda': () => this.solarSystemModule.moons.miranda,
+ 'triton': () => this.solarSystemModule.moons.triton,
+ 'charon': () => this.solarSystemModule.moons.charon,
+ };
+ 
+ // Check direct mapping first
+ if (navigationMap[value]) {
+ return navigationMap[value]();
+ }
+ 
+ // Pattern-based lookups for arrays (stars, exoplanets, spacecraft, etc.)
+ const searchPatterns = [
+ { prefix: 'constellation-', array: 'constellations', patterns: {
+ 'aries': ['Aries'],
+ 'taurus': ['Taurus'],
+ 'gemini': ['Gemini'],
+ 'cancer': ['Cancer'],
+ 'leo': ['Leo'],
+ 'virgo': ['Virgo'],
+ 'libra': ['Libra'],
+ 'scorpius': ['Scorpius'],
+ 'sagittarius': ['Sagittarius'],
+ 'capricornus': ['Capricornus'],
+ 'aquarius': ['Aquarius'],
+ 'pisces': ['Pisces'],
+ 'orion': ['Orion'],
+ 'big-dipper': ['Big Dipper', 'Ursa Major'],
+ 'little-dipper': ['Little Dipper', 'Ursa Minor'],
+ 'southern-cross': ['Southern Cross', 'Crux'],
+ 'cassiopeia': ['Cassiopeia'],
+ 'cygnus': ['Cygnus'],
+ 'lyra': ['Lyra'],
+ 'andromeda': ['Andromeda', 'Princess'],
+ 'perseus': ['Perseus'],
+ }},
+ { prefix: '', array: 'satellites', patterns: {
+ 'iss': ['ISS', 'International Space Station'],
+ 'hubble': ['Hubble'],
+ }},
+ { prefix: '', array: 'spacecraft', patterns: {
+ 'voyager-1': ['Voyager 1'],
+ 'voyager-2': ['Voyager 2'],
+ 'new-horizons': ['New Horizons'],
+ 'jwst': ['James Webb'],
+ 'james-webb': ['James Webb'],
+ 'juno': ['Juno'],
+ 'cassini': ['Cassini'],
+ 'pioneer-10': ['Pioneer 10'],
+ 'pioneer-11': ['Pioneer 11'],
+ }},
+ { prefix: '', array: 'nebulae', patterns: {
+ 'orion-nebula': ['Orion'],
+ 'crab-nebula': ['Crab'],
+ 'ring-nebula': ['Ring'],
+ }},
+ { prefix: '', array: 'galaxies', patterns: {
+ 'andromeda-galaxy': ['Andromeda'],
+ 'whirlpool-galaxy': ['Whirlpool'],
+ 'sombrero-galaxy': ['Sombrero'],
+ }},
+ { prefix: '', array: 'objects', patterns: {
+ 'alpha-centauri': [' Alpha Centauri A'],
+ 'proxima-centauri': [' Proxima Centauri'],
+ 'proxima-b': [' Proxima Centauri b'],
+ 'kepler-452b': [' Kepler-452b'],
+ 'trappist-1e': [' TRAPPIST-1e'],
+ 'kepler-186f': [' Kepler-186f'],
+ }},
+ ];
+ 
+ // Search through pattern-based lookups
+ for (const category of searchPatterns) {
+ const searchKey = category.prefix ? value.replace(category.prefix, '') : value;
+ const patterns = category.patterns[searchKey];
+ 
+ if (patterns && this.solarSystemModule[category.array]) {
+ const found = this.solarSystemModule[category.array].find(obj => 
+ patterns.some(pattern => obj.userData.name.includes(pattern))
+ );
+ if (found) return found;
+ }
+ }
+ 
+ console.warn(` [Nav] No mapping found for value: "${value}"`);
+ return null;
+ }
+ 
+ // Legacy switch statement removed - replaced with findObjectByNavigationValue()
  
  handleCanvasClick(event) {
  console.log(' Canvas clicked!');
@@ -756,11 +667,3 @@ if (document.readyState === 'loading') {
 } else {
  new App();
 }
-
-
-
-
-// ===========================
-// INITIALIZE APPLICATION
-// ===========================
-const app = new App();

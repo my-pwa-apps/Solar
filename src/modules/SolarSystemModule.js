@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { TEXTURE_CACHE, cachedTextureGeneration } from './TextureCache.js';
-import { CONFIG, DEBUG, IS_MOBILE } from './utils.js';
+import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory } from './utils.js';
 
 // i18n.js is loaded globally in index.html, access via window.t
 const t = window.t || ((key) => key);
@@ -787,34 +787,8 @@ export class SolarSystemModule {
  }
 
  createCloudTexture(size = 512) {
- // Create wispy cloud patterns
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y, seed = 0) => {
- const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const fbm = (x, y, octaves = 4) => {
- let value = 0;
- let amplitude = 1;
- let frequency = 1;
- let maxValue = 0;
- 
- for (let i = 0; i < octaves; i++) {
- value += noise(x * frequency, y * frequency, i) * amplitude;
- maxValue += amplitude;
- amplitude *= 0.5;
- frequency *= 2;
- }
- return value / maxValue;
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Create wispy cloud patterns using reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -822,8 +796,8 @@ export class SolarSystemModule {
  const nx = x / size;
  const ny = y / size;
  
- // Wispy cloud pattern
- const cloud = fbm(nx * 6, ny * 6, 6);
+ // Wispy cloud pattern using reusable FBM
+ const cloud = TextureGeneratorUtils.fbm(nx * 6, ny * 6, 6);
  const cloudIntensity = Math.max(0, (cloud - 0.4) * 2);
  
  // White clouds
@@ -835,20 +809,15 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- 
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  // ===== HYPERREALISTIC TEXTURE GENERATORS =====
  
  createSunTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ // Use reusable utilities
+ const { canvas, ctx } = TextureGeneratorUtils.createCanvas(size);
  
  // Gradient from core to edge
  const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
@@ -889,16 +858,12 @@ export class SolarSystemModule {
  ctx.fill();
  }
  
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createSunBumpMap(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ // Use reusable utilities
+ const { canvas, ctx } = TextureGeneratorUtils.createCanvas(size);
  
  // Base gray
  ctx.fillStyle = '#808080';
@@ -918,9 +883,7 @@ export class SolarSystemModule {
  ctx.fill();
  }
  
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  // REMOVED: createEarthNightLights() - was 105 lines of unused city lights code
@@ -1696,18 +1659,8 @@ export class SolarSystemModule {
  // ===== MOON TEXTURES =====
  
  createPhobosTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -1715,7 +1668,7 @@ export class SolarSystemModule {
  const nx = x / size, ny = y / size;
  
  // Dark gray carbonaceous surface with reddish dust
- const gray = 80 + noise(nx * 30, ny * 30) * 50;
+ const gray = 80 + TextureGeneratorUtils.noise(nx * 30, ny * 30) * 50;
  
  data[idx] = gray * 0.85; // Slightly red-tinted
  data[idx + 1] = gray * 0.75;
@@ -1724,7 +1677,7 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
  
  // Add large Stickney crater (about 1/3 diameter)
  const centerX = size * 0.4;
@@ -1739,24 +1692,12 @@ export class SolarSystemModule {
  ctx.arc(centerX, centerY, craterRadius, 0, Math.PI * 2);
  ctx.fill();
  
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createDeimosTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -1764,7 +1705,7 @@ export class SolarSystemModule {
  const nx = x / size, ny = y / size;
  
  // Lighter gray than Phobos, smoother surface
- const gray = 100 + noise(nx * 25, ny * 25) * 40;
+ const gray = 100 + TextureGeneratorUtils.noise(nx * 25, ny * 25) * 40;
  
  data[idx] = gray * 0.90;
  data[idx + 1] = gray * 0.85;
@@ -1773,26 +1714,13 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- 
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createIoTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -1800,8 +1728,8 @@ export class SolarSystemModule {
  const nx = x / size, ny = y / size;
  
  // Volcanic yellow/orange/red surface
- const volcanic = noise(nx * 20, ny * 20);
- const sulfur = noise(nx * 10, ny * 10);
+ const volcanic = TextureGeneratorUtils.noise(nx * 20, ny * 20);
+ const sulfur = TextureGeneratorUtils.noise(nx * 10, ny * 10);
  
  let r, g, b;
  if (volcanic < 0.3) {
@@ -1828,18 +1756,13 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- 
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createEuropaTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ // Use reusable utilities
+ const { canvas, ctx } = TextureGeneratorUtils.createCanvas(size);
  
  // Icy white/cream base
  ctx.fillStyle = '#f5ede0';
@@ -1862,24 +1785,12 @@ export class SolarSystemModule {
  ctx.stroke();
  }
  
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createTitanTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -1887,7 +1798,7 @@ export class SolarSystemModule {
  const nx = x / size, ny = y / size;
  
  // Orange atmosphere with darker surface features
- const terrain = noise(nx * 15, ny * 15);
+ const terrain = TextureGeneratorUtils.noise(nx * 15, ny * 15);
  const r = 255;
  const g = 140 + terrain * 60;
  const b = 50 + terrain * 30;
@@ -1899,26 +1810,13 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- 
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createMercuryTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -1926,10 +1824,10 @@ export class SolarSystemModule {
  const nx = x / size, ny = y / size;
  
  // Base gray-brown color
- let gray = 120 + noise(nx * 30, ny * 30) * 60;
+ let gray = 120 + TextureGeneratorUtils.noise(nx * 30, ny * 30) * 60;
  
  // Ray systems
- if (noise(nx * 100, ny * 100) > 0.92) {
+ if (TextureGeneratorUtils.noise(nx * 100, ny * 100) > 0.92) {
  gray = Math.min(255, gray * 1.3);
  }
  
@@ -1940,7 +1838,7 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
  
  // Add craters
  for (let i = 0; i < 300; i++) {
@@ -1959,16 +1857,12 @@ export class SolarSystemModule {
  ctx.fill();
  }
  
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createMercuryBumpMap(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
+ // Use reusable utilities
+ const { canvas, ctx } = TextureGeneratorUtils.createCanvas(size);
  
  ctx.fillStyle = '#808080';
  ctx.fillRect(0, 0, size, size);
@@ -1990,35 +1884,12 @@ export class SolarSystemModule {
  ctx.fill();
  }
  
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createVenusTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const fbm = (x, y, octaves = 5) => {
- let value = 0, amp = 1, freq = 1, maxVal = 0;
- for (let i = 0; i < octaves; i++) {
- value += noise(x * freq, y * freq) * amp;
- maxVal += amp;
- amp *= 0.5;
- freq *= 2;
- }
- return value / maxVal;
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -2026,7 +1897,7 @@ export class SolarSystemModule {
  const nx = x / size, ny = y / size;
  
  // Swirling sulfuric acid clouds
- const cloudPattern = fbm(nx * 6, ny * 8, 6);
+ const cloudPattern = TextureGeneratorUtils.fbm(nx * 6, ny * 8, 6);
  const swirl = Math.sin(nx * Math.PI * 10 + cloudPattern * 3) * 0.5 + 0.5;
  
  const brightness = 180 + cloudPattern * 60 + swirl * 20;
@@ -2038,36 +1909,13 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createJupiterTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const fbm = (x, y, octaves = 4) => {
- let value = 0, amp = 1, freq = 1, maxVal = 0;
- for (let i = 0; i < octaves; i++) {
- value += noise(x * freq, y * freq) * amp;
- maxVal += amp;
- amp *= 0.5;
- freq *= 2;
- }
- return value / maxVal;
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -2077,7 +1925,7 @@ export class SolarSystemModule {
  // Horizontal bands with turbulence
  const bandY = ny * 12; // 12 major bands
  const bandPattern = Math.sin(bandY * Math.PI) * 0.5 + 0.5;
- const turbulence = fbm(nx * 8, ny * 4, 5) * 0.4;
+ const turbulence = TextureGeneratorUtils.fbm(nx * 8, ny * 4, 5) * 0.4;
  const combined = bandPattern + turbulence;
  
  let r, g, b;
@@ -2113,10 +1961,8 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createJupiterBumpMap(size) {
@@ -2156,29 +2002,8 @@ export class SolarSystemModule {
  }
  
  createSaturnTexture(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const fbm = (x, y, octaves = 4) => {
- let value = 0, amp = 1, freq = 1, maxVal = 0;
- for (let i = 0; i < octaves; i++) {
- value += noise(x * freq, y * freq) * amp;
- maxVal += amp;
- amp *= 0.5;
- freq *= 2;
- }
- return value / maxVal;
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -2188,7 +2013,7 @@ export class SolarSystemModule {
  // Subtle horizontal bands
  const bandY = ny * 15;
  const bandPattern = Math.sin(bandY * Math.PI) * 0.3 + 0.7;
- const turbulence = fbm(nx * 6, ny * 3, 4) * 0.2;
+ const turbulence = TextureGeneratorUtils.fbm(nx * 6, ny * 3, 4) * 0.2;
  const combined = bandPattern + turbulence;
  
  // Pale gold/cream colors
@@ -2203,25 +2028,13 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
  createSaturnBumpMap(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y) => {
- const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -2229,7 +2042,7 @@ export class SolarSystemModule {
  const nx = x / size, ny = y / size;
  
  // Subtle atmospheric variation
- const elevation = noise(nx * 15, ny * 6) * 0.8 + noise(nx * 30, ny * 12) * 0.2;
+ const elevation = TextureGeneratorUtils.noise(nx * 15, ny * 6) * 0.8 + TextureGeneratorUtils.noise(nx * 30, ny * 12) * 0.2;
  const gray = Math.floor(128 + elevation * 30);
  
  data[idx] = gray;
@@ -2239,26 +2052,14 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
 
  createUranusTexture(size) {
  // Uranus: Featureless cyan-blue atmosphere with subtle banding
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y, seed) => {
- const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -2271,8 +2072,8 @@ export class SolarSystemModule {
  const band = Math.sin(latitude * Math.PI * 12) * 0.02;
  
  // Very subtle atmospheric variations
- const clouds = noise(nx * 8, ny * 8, 1) * 0.03;
- const detail = noise(nx * 20, ny * 20, 2) * 0.015;
+ const clouds = TextureGeneratorUtils.noise(nx * 8, ny * 8, 1) * 0.03;
+ const detail = TextureGeneratorUtils.noise(nx * 20, ny * 20, 2) * 0.015;
  
  // Base cyan-blue color with methane tint
  const brightness = 0.65 + band + clouds + detail;
@@ -2283,26 +2084,14 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
 
  createNeptuneTexture(size) {
  // Neptune: Deep blue atmosphere with Great Dark Spot and wind features
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y, seed) => {
- const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -2321,8 +2110,8 @@ export class SolarSystemModule {
  const darkSpot = distToSpot < 0.15 ? -0.25 * (1 - distToSpot / 0.15) : 0;
  
  // Swirling atmospheric features
- const swirl = noise(nx * 12 + ny * 2, ny * 10, 1) * 0.06;
- const detail = noise(nx * 25, ny * 25, 2) * 0.03;
+ const swirl = TextureGeneratorUtils.noise(nx * 12 + ny * 2, ny * 10, 1) * 0.06;
+ const detail = TextureGeneratorUtils.noise(nx * 25, ny * 25, 2) * 0.03;
  
  // Deep blue with white clouds
  const brightness = 0.55 + band + wave + swirl + detail + darkSpot;
@@ -2333,26 +2122,14 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
 
  createPlutoTexture(size) {
  // Pluto: Heart-shaped Tombaugh Regio, nitrogen ice, reddish-brown terrain
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y, seed) => {
- const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
  
  for (let y = 0; y < size; y++) {
  for (let x = 0; x < size; x++) {
@@ -2373,16 +2150,16 @@ export class SolarSystemModule {
  const isHeart = heartDist < 0;
  
  // Base terrain variations
- const terrain = noise(nx * 15, ny * 15, 1) * 0.4;
- const mountains = noise(nx * 30, ny * 30, 2) * 0.2;
- const detail = noise(nx * 50, ny * 50, 3) * 0.1;
+ const terrain = TextureGeneratorUtils.noise(nx * 15, ny * 15, 1) * 0.4;
+ const mountains = TextureGeneratorUtils.noise(nx * 30, ny * 30, 2) * 0.2;
+ const detail = TextureGeneratorUtils.noise(nx * 50, ny * 50, 3) * 0.1;
  
  // Tholins (reddish-brown organic compounds)
  const tholin = terrain + mountains + detail;
  
  if (isHeart) {
  // Sputnik Planitia - bright nitrogen ice
- const iceBrightness = 0.9 + noise(nx * 40, ny * 40, 4) * 0.1;
+ const iceBrightness = 0.9 + TextureGeneratorUtils.noise(nx * 40, ny * 40, 4) * 0.1;
  data[idx] = Math.floor(240 * iceBrightness);
  data[idx + 1] = Math.floor(235 * iceBrightness);
  data[idx + 2] = Math.floor(220 * iceBrightness);
@@ -2398,10 +2175,8 @@ export class SolarSystemModule {
  }
  }
  
- ctx.putImageData(imageData, 0, 0);
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
+ TextureGeneratorUtils.applyImageData(ctx, imageData);
+ return TextureGeneratorUtils.finalizeTexture(canvas);
  }
 
  createPlanetMaterial(config) {
@@ -2749,7 +2524,7 @@ export class SolarSystemModule {
  } else if (moonName.includes('io')) {
  // Io: Yellow/orange/red volcanic surface with detailed texture
  const ioTexture = this.createIoTexture(1024);
- moonMaterial = new THREE.MeshStandardMaterial({
+ moonMaterial = MaterialFactory.createStandardMaterial({
  map: ioTexture,
  roughness: 0.7,
  metalness: 0.0,
@@ -2760,7 +2535,7 @@ export class SolarSystemModule {
  } else if (moonName.includes('europa')) {
  // Europa: Icy white with crack patterns
  const europaTexture = this.createEuropaTexture(1024);
- moonMaterial = new THREE.MeshStandardMaterial({
+ moonMaterial = MaterialFactory.createStandardMaterial({
  map: europaTexture,
  roughness: 0.3,
  metalness: 0.2
@@ -2769,7 +2544,7 @@ export class SolarSystemModule {
  } else if (moonName.includes('titan')) {
  // Titan: Orange atmosphere with surface features
  const titanTexture = this.createTitanTexture(1024);
- moonMaterial = new THREE.MeshStandardMaterial({
+ moonMaterial = MaterialFactory.createStandardMaterial({
  map: titanTexture,
  roughness: 0.6,
  metalness: 0.0,
@@ -2779,22 +2554,19 @@ export class SolarSystemModule {
  if (DEBUG.enabled) console.log(`[Moon Texture] Created Titan texture (1024x1024)`);
  } else if (moonName.includes('enceladus')) {
  // Enceladus: Bright white ice
- moonMaterial = new THREE.MeshStandardMaterial({
- color: 0xffffff,
+ moonMaterial = MaterialFactory.createColoredMaterial(0xffffff, {
  roughness: 0.2,
  metalness: 0.3
  });
  } else if (moonName.includes('triton')) {
  // Triton: Pinkish nitrogen ice
- moonMaterial = new THREE.MeshStandardMaterial({
- color: 0xffcccc,
+ moonMaterial = MaterialFactory.createColoredMaterial(0xffcccc, {
  roughness: 0.4,
  metalness: 0.1
  });
  } else {
  // Default moon material
- moonMaterial = new THREE.MeshStandardMaterial({
- color: config.color,
+ moonMaterial = MaterialFactory.createColoredMaterial(config.color, {
  roughness: 0.9,
  metalness: 0.1
  });
