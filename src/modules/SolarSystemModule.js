@@ -3437,7 +3437,7 @@ export class SolarSystemModule {
  { name: 'Alhena', ra: 99.4, dec: 16.4, mag: 1.9, color: 0xFFFFF0 },
  { name: 'Mebsuta', ra: 100.0, dec: 25.1, mag: 3.0, color: 0xFFFFE0 }
  ],
- lines: [[0,2], [1,3]] // Two parallel lines representing the twin brothers
+ lines: [[1,0], [0,2], [2,3], [3,1]] // Rectangle pattern showing the twin figures
  },
  {
  name: 'Cancer (The Crab)',
@@ -3459,7 +3459,7 @@ export class SolarSystemModule {
  { name: 'Algieba', ra: 154.9, dec: 19.8, mag: 2.0, color: 0xFFA500 },
  { name: 'Zosma', ra: 168.5, dec: 20.5, mag: 2.6, color: 0xFFFFF0 }
  ],
- lines: [[0,2], [0,3], [3,1], [2,3]] // Lion's body
+ lines: [[2,0], [0,3], [3,1]] // Triangle shape (Algieba-Regulus-Zosma-Denebola)
  },
  {
  name: 'Virgo (The Maiden)',
@@ -3543,7 +3543,7 @@ export class SolarSystemModule {
  // === FAMOUS NON-ZODIAC CONSTELLATIONS ===
  {
  name: 'Orion (The Hunter)',
- description: '? Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
+ description: '⭐ Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
  stars: [
  { name: 'Betelgeuse', ra: 88.8, dec: 7.4, mag: 0.5, color: 0xFF4500 }, // Red supergiant
  { name: 'Rigel', ra: 78.6, dec: -8.2, mag: 0.1, color: 0x87CEEB }, // Blue supergiant
@@ -3553,7 +3553,7 @@ export class SolarSystemModule {
  { name: 'Mintaka', ra: 83.0, dec: -0.3, mag: 2.2, color: 0xE0FFFF }, // Belt star 3
  { name: 'Saiph', ra: 86.9, dec: -9.7, mag: 2.1, color: 0xB0E0E6 }
  ],
- lines: [[0,2], [2,3], [3,4], [4,5], [5,1], [1,6], [6,3]] // Connect stars
+ lines: [[2,0], [0,4], [4,1], [1,6], [6,5], [5,4], [4,3]] // Hourglass/bowtie shape with belt
  },
  {
  name: 'Big Dipper (Ursa Major)',
@@ -3604,7 +3604,7 @@ export class SolarSystemModule {
  { name: 'Ruchbah', ra: 21.5, dec: 60.2, mag: 2.7, color: 0xFFFFF0 },
  { name: 'Segin', ra: 25.6, dec: 63.7, mag: 3.4, color: 0xFFFFE0 }
  ],
- lines: [[0,1], [1,2], [2,3], [3,4]] // W shape
+ lines: [[1,0], [0,2], [2,3], [3,4]] // W/M shape (Caph-Schedar-Gamma-Ruchbah-Segin)
  },
  {
  name: 'Cygnus (The Swan)',
@@ -3627,7 +3627,7 @@ export class SolarSystemModule {
  { name: 'Sulafat', ra: 284.7, dec: 32.7, mag: 3.2, color: 0xE0FFFF },
  { name: 'Delta Lyrae', ra: 283.8, dec: 36.9, mag: 4.3, color: 0xE0FFFF }
  ],
- lines: [[0,3], [0,1], [1,2]] // Lyre shape
+ lines: [[0,3], [3,1], [1,2], [2,0]] // Parallelogram shape (traditional lyre/harp)
  },
  {
  name: 'Andromeda (The Princess)',
@@ -6877,25 +6877,22 @@ createHyperrealisticHubble(satData) {
  // Calculate camera end position based on object type
  let endPos;
 
- if (userData.type === 'Constellation') {
-     // For constellations: We view them from NEAR the origin (Earth's perspective)
-     // looking OUTWARD toward the constellation at distance 10000
+ if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
+     // For distant objects (constellations, galaxies, nebulae): Position camera AT the object
+     // Use an offset to view from outside, similar to how galaxies work
+     // This ensures we're far from the solar system and looking at the distant object
      
-     // Direction from origin to constellation center
-     const directionToConstellation = targetPosition.clone().normalize();
-     
-     // Position camera closer to origin, looking outward at constellation
-     // This simulates viewing from Earth (origin) toward the stars
-     const viewDistance = 200; // Close to origin for proper viewing angle
+     // Position camera at the constellation location with an offset for viewing
+     const angle = Math.random() * Math.PI * 2;
+     const elevation = 0.3;
      endPos = new THREE.Vector3(
-         directionToConstellation.x * viewDistance,
-         directionToConstellation.y * viewDistance,
-         directionToConstellation.z * viewDistance
+         targetPosition.x + Math.cos(angle) * distance,
+         targetPosition.y + distance * elevation,
+         targetPosition.z + Math.sin(angle) * distance
      );
      
-     // Important: Set target FIRST, then position camera looking FROM position TO target
-     // This way camera faces the constellation
-     controls.target.copy(targetPosition); // Look at constellation center at distance 10000
+     controls.target.copy(targetPosition); // Look at the distant object's center
+     console.log(` [${userData.type}] Positioned at distant object location, looking at center`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
      // For ISS and other spacecraft: position camera to see BOTH ISS and Earth
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
