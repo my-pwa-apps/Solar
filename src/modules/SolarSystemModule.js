@@ -4529,7 +4529,8 @@ createHyperrealisticHubble(satData) {
     createHyperrealisticJWST(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic James Webb Space Telescope');
         const jwst = new THREE.Group();
-        const scale = 0.003;
+        // Scale based on the spacecraft's display size
+        const scale = satData.size || 0.04;
         
         const goldMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, roughness: 0.1, metalness: 1.0, emissive: 0xFFAA00, emissiveIntensity: 0.2 });
         const shieldMat = new THREE.MeshStandardMaterial({ color: 0xE8E8E8, roughness: 0.2, metalness: 0.5, side: THREE.DoubleSide });
@@ -4614,7 +4615,8 @@ createHyperrealisticHubble(satData) {
     createHyperrealisticPioneer(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic Pioneer probe');
         const pioneer = new THREE.Group();
-        const scale = 0.002;
+        // Scale based on the spacecraft's display size
+        const scale = satData.size || 0.07;
         
         // Materials
         const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
@@ -4669,7 +4671,8 @@ createHyperrealisticHubble(satData) {
     createHyperrealisticVoyager(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic Voyager probe');
         const voyager = new THREE.Group();
-        const scale = 0.0015;
+        // Scale based on the spacecraft's display size
+        const scale = satData.size || 0.08;
         
         // Materials
         const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
@@ -4742,7 +4745,8 @@ createHyperrealisticHubble(satData) {
     createHyperrealisticCassini(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic Cassini spacecraft');
         const cassini = new THREE.Group();
-        const scale = 0.0012;
+        // Scale based on the spacecraft's display size
+        const scale = satData.size || 0.06;
         
         // Materials
         const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
@@ -4812,7 +4816,8 @@ createHyperrealisticHubble(satData) {
     createHyperrealisticJuno(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic Juno spacecraft');
         const juno = new THREE.Group();
-        const scale = 0.0015;
+        // Scale based on the spacecraft's display size (for orbiters, size from data)
+        const scale = satData.size || 0.04;
         
         // Materials
         const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
@@ -4899,7 +4904,8 @@ createHyperrealisticHubble(satData) {
     createHyperrealisticNewHorizons(satData) {
         if (DEBUG.enabled) console.log(' Creating hyperrealistic New Horizons probe');
         const newHorizons = new THREE.Group();
-        const scale = 0.002;
+        // Scale based on the spacecraft's display size
+        const scale = satData.size || 0.06;
         
         // Materials
         const goldMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, roughness: 0.2, metalness: 0.9 });
@@ -5680,18 +5686,24 @@ createHyperrealisticHubble(satData) {
  }
  } // End of generic spacecraft creation else block
  
- // Add subtle visibility glow - proportional to actual size
- const glowSize = craft.size * 2.5; // Subtle glow for visibility
- const glowGeometry = new THREE.SphereGeometry(glowSize, 16, 16);
- const glowMaterial = new THREE.MeshBasicMaterial({
- color: craft.color,
- transparent: true,
- opacity: 0.3,
- blending: THREE.AdditiveBlending,
- depthWrite: false
- });
- const glow = new THREE.Mesh(glowGeometry, glowMaterial);
- spacecraftGroup.add(glow);
+ // Add subtle visibility glow - but NOT for hyperrealistic models (they have enough detail)
+ const isHyperrealistic = craft.name.includes('Voyager') || craft.name.includes('Pioneer') || 
+                          craft.name.includes('Juno') || craft.name.includes('Cassini') || 
+                          craft.name.includes('James Webb') || craft.name.includes('New Horizons');
+ 
+ if (!isHyperrealistic) {
+     const glowSize = craft.size * 2.5; // Subtle glow for visibility
+     const glowGeometry = new THREE.SphereGeometry(glowSize, 16, 16);
+     const glowMaterial = new THREE.MeshBasicMaterial({
+         color: craft.color,
+         transparent: true,
+         opacity: 0.3,
+         blending: THREE.AdditiveBlending,
+         depthWrite: false
+     });
+     const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+     spacecraftGroup.add(glow);
+ }
  
  // Add small bright navigation marker for distant spacecraft
  if (craft.distance > 200) {

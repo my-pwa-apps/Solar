@@ -119,12 +119,51 @@ Each spacecraft now renders with:
 
 All 5 requested spacecraft (plus New Horizons) now use their hyperrealistic implementations, matching the quality level of ISS and Hubble. The generic spacecraft creation code is only used for spacecraft that don't have dedicated hyperrealistic models (GPS, Starlink, etc.).
 
+## Bug Fix: Scale and Visibility Issue
+
+### Problem Discovered
+After initial implementation, hyperrealistic spacecraft appeared as white circles instead of detailed models.
+
+### Root Causes
+1. **Hardcoded tiny scales**: Functions used fixed scales (0.0015, 0.002, 0.003) instead of respecting `craft.size` parameter
+2. **Glow sphere obscuring detail**: Generic glow sphere (size * 2.5 = 0.2 radius) was **much larger** than the tiny hyperrealistic models
+3. **Voyager example**: Model scale 0.0015 vs glow sphere 0.2 = **133x size difference!**
+
+### Solution Applied
+1. **Dynamic scaling** - Changed all hyperrealistic functions to use `satData.size` parameter:
+   ```javascript
+   // Before: const scale = 0.0015; (fixed, too small)
+   // After:  const scale = satData.size || 0.08; (uses actual spacecraft size)
+   ```
+
+2. **Selective glow removal** - Skip glow sphere for hyperrealistic models:
+   ```javascript
+   const isHyperrealistic = craft.name.includes('Voyager') || 
+                            craft.name.includes('Pioneer') || ...
+   if (!isHyperrealistic) {
+       // Only add glow to generic spacecraft
+   }
+   ```
+
+### Functions Updated
+- `createHyperrealisticVoyager()` - Now scales to 0.08
+- `createHyperrealisticPioneer()` - Now scales to 0.07
+- `createHyperrealisticJWST()` - Now scales to 0.04
+- `createHyperrealisticJuno()` - Now scales to 0.04
+- `createHyperrealisticCassini()` - Now scales to 0.06
+- `createHyperrealisticNewHorizons()` - Now scales to 0.06
+
 ## Files Modified
 
-- `src/modules/SolarSystemModule.js` - Added routing logic at line 5539-5556, added closing brace at line 5681
+- `src/modules/SolarSystemModule.js` - Multiple changes:
+  - Added routing logic at line 5539-5556
+  - Added closing brace at line 5681
+  - Updated 6 hyperrealistic functions to use dynamic scaling (lines 4670, 4621, 4584, 4815, 4745, 4903)
+  - Added selective glow logic at line 5685-5700
 
 ## Commits
 
-Lines changed: +18 additions
+Lines changed: +35 additions, 6 modifications
 Zero errors, zero warnings
 Browser-ready
+**Action Required**: Refresh browser to see properly scaled hyperrealistic spacecraft
