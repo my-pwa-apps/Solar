@@ -6878,21 +6878,25 @@ createHyperrealisticHubble(satData) {
  let endPos;
 
  if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
-     // For distant objects (constellations, galaxies, nebulae): Position camera AT the object
-     // Use an offset to view from outside, similar to how galaxies work
-     // This ensures we're far from the solar system and looking at the distant object
+     // For distant objects: Position camera BEYOND the object, away from origin
+     // This ensures the solar system is behind the camera, not blocking the view
      
-     // Position camera at the constellation location with an offset for viewing
-     const angle = Math.random() * Math.PI * 2;
-     const elevation = 0.3;
-     endPos = new THREE.Vector3(
-         targetPosition.x + Math.cos(angle) * distance,
-         targetPosition.y + distance * elevation,
-         targetPosition.z + Math.sin(angle) * distance
-     );
+     // Direction from origin to constellation center
+     const directionFromOrigin = targetPosition.clone().normalize();
      
-     controls.target.copy(targetPosition); // Look at the distant object's center
-     console.log(` [${userData.type}] Positioned at distant object location, looking at center`);
+     // Position camera FURTHER OUT beyond the constellation, looking back at it
+     // This puts the solar system behind the camera
+     const cameraDistance = targetPosition.length() + distance; // Beyond the constellation
+     const angle = Math.random() * Math.PI * 0.5 - Math.PI * 0.25; // ±45 degrees variation
+     const sideVector = new THREE.Vector3(-directionFromOrigin.z, 0, directionFromOrigin.x).normalize();
+     
+     endPos = new THREE.Vector3()
+         .addScaledVector(directionFromOrigin, cameraDistance) // Move far out in same direction as constellation
+         .addScaledVector(sideVector, distance * Math.sin(angle)) // Offset to the side
+         .add(new THREE.Vector3(0, distance * 0.3, 0)); // Slight elevation
+     
+     controls.target.copy(targetPosition); // Look back at the constellation center
+     console.log(` [${userData.type}] Camera beyond object at distance ${cameraDistance.toFixed(0)}, looking back at center`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
      // For ISS and other spacecraft: position camera to see BOTH ISS and Earth
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
