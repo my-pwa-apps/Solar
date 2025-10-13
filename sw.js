@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.0.0 - Multilingual support (English, Dutch, French, German, Spanish, Portuguese)
+// Version 2.1.0 - Modularization, Translation fixes, Moon orbit optimizations, Saturn system corrections
 
-const CACHE_VERSION = '2.0.0';
+const CACHE_VERSION = '2.1.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -18,6 +18,11 @@ const STATIC_CACHE_FILES = [
   './index.html',
   './src/main.js',
   './src/i18n.js',
+  './src/modules/SceneManager.js',
+  './src/modules/SolarSystemModule.js',
+  './src/modules/TextureCache.js',
+  './src/modules/UIManager.js',
+  './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
   './manifest.json',
