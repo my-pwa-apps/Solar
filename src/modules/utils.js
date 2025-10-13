@@ -1,6 +1,7 @@
 // ===========================
 // CONSTANTS & CONFIG
 // ===========================
+import * as THREE from 'three';
 
 // Debug configuration - enable with URL parameters: ?debug=true&debug-vr=true&debug-textures=true
 export const DEBUG = {
