@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- Language Detection Script - Must load first -->
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.0.0" crossorigin="use-credentials">
     <script>
         // Priority order: 1) Stored preference, 2) URL parameter, 3) Browser/OS language
         const urlParams = new URLSearchParams(window.location.search);
@@ -50,11 +51,11 @@
             'pt': './manifest.pt.json'
         };
         
-        // Dynamically set the manifest with cache-busting
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = (manifestFiles[langCode] || './manifest.json') + '?v=2.0.0';
-        document.head.appendChild(manifestLink);
+        // Dynamically set the manifest href with cache-busting (reuse existing link so Edge discovers early)
+        const manifestLink = document.getElementById('pwa-manifest');
+        if (manifestLink) {
+            manifestLink.href = (manifestFiles[langCode] || './manifest.json') + '?v=2.0.0';
+        }
         
         const languageNames = { en: 'English', nl: 'Nederlands', fr: 'Français', de: 'Deutsch', es: 'Español', pt: 'Português' };
         console.log('[Language] Detected:', languageNames[langCode] || langCode, '| Source:', storedLang ? 'Stored' : urlLang ? 'URL' : 'OS/Browser');

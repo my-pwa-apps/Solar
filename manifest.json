@@ -1,5 +1,5 @@
 {
-  "id": "/solar/",
+  "id": "https://my-pwa-apps.github.io/Solar/",
   "name": "Space Voyage - Interactive 3D Solar System",
   "short_name": "Space Voyage",
   "description": "Explore our Solar System in stunning 3D with VR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this interactive educational experience.",
@@ -17,6 +17,12 @@
     "entertainment"
   ],
   "icons": [
+    {
+      "src": "icons/manifest-icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "icons/manifest-icon-192.maskable.png",
       "sizes": "192x192",
@@ -44,12 +50,6 @@
     {
       "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-16.png",
       "sizes": "16x16",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-24.png",
-      "sizes": "24x24",
       "type": "image/png",
       "purpose": "any"
     },
@@ -297,117 +297,12 @@
       "type": "image/png"
     },
     {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-30.png",
-      "sizes": "30x30",
-      "type": "image/png"
-    },
-    {
       "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-36.png",
-      "sizes": "36x36",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-40.png",
-      "sizes": "40x40",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-44.png",
-      "sizes": "44x44",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-48.png",
-      "sizes": "48x48",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-60.png",
-      "sizes": "60x60",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-64.png",
-      "sizes": "64x64",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-72.png",
-      "sizes": "72x72",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-80.png",
-      "sizes": "80x80",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-96.png",
-      "sizes": "96x96",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png",
       "sizes": "256x256",
       "type": "image/png"
     },
     {
       "src": "icons/windows11/StoreLogo.scale-100.png",
-      "sizes": "50x50",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/StoreLogo.scale-200.png",
-      "sizes": "100x100",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square150x150Logo.scale-100.png",
-      "sizes": "150x150",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Square150x150Logo.scale-200.png",
-      "sizes": "300x300",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Wide310x150Logo.scale-100.png",
-      "sizes": "310x150",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/Wide310x150Logo.scale-200.png",
-      "sizes": "620x300",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/LargeTile.scale-100.png",
-      "sizes": "310x310",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/windows11/LargeTile.scale-200.png",
-      "sizes": "620x620",
-      "type": "image/png"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "./screenshots/solar1.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Space Voyage - Solar System View"
-    },
-    {
-      "src": "./screenshots/solar2.png",
-      "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Space Voyage - Planetary Detail"
