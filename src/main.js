@@ -562,31 +562,39 @@ class App {
 
  this.sceneManager.raycaster.setFromCamera(mouse, this.sceneManager.camera);
  
- // Build a comprehensive list of objects to raycast against
- // Include both direct objects and all scene children (catches moons when focused on planet)
- const raycastTargets = [...this.solarSystemModule.objects];
- this.sceneManager.scene.traverse((child) => {
- if (child.isMesh && child.userData && child.userData.name && child.userData.type === 'Moon') {
- raycastTargets.push(child);
- }
- });
+ // Raycast against all objects (non-recursive first to catch top-level objects)
+ // Then check recursively if needed
+ let intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, false);
  
- const intersects = this.sceneManager.raycaster.intersectObjects(raycastTargets, true);
+ // If no direct hits, check recursively (for child meshes)
+ if (intersects.length === 0) {
+ intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
+ }
 
  if (intersects.length > 0) {
- // Find the first intersected object that has a name
- // This ensures we get the closest named object (e.g., Moon instead of Earth behind it)
+ // Process intersections in distance order (closest first)
  let target = null;
- for (let i = 0; i < intersects.length; i++) {
+ 
+ for (let i = 0; i < Math.min(intersects.length, 10); i++) {
  let candidate = intersects[i].object;
- // Traverse up to find the named object
- while (candidate && !candidate.userData?.name) {
- candidate = candidate.parent;
- }
- if (candidate && candidate.userData && candidate.userData.name) {
+ 
+ // Check if this object has a name directly
+ if (candidate.userData && candidate.userData.name) {
  target = candidate;
- break; // Use the first (closest) named object
+ break;
  }
+ 
+ // Otherwise traverse up to find the named parent
+ let parent = candidate.parent;
+ while (parent && parent !== this.sceneManager.scene) {
+ if (parent.userData && parent.userData.name) {
+ target = parent;
+ break;
+ }
+ parent = parent.parent;
+ }
+ 
+ if (target) break;
  }
 
  if (target && target.userData && target.userData.name) {
