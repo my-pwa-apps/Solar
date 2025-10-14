@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.1.9 - Draggable panels, compact mobile layout, floating speed control
+// Version 2.2.0 - Vertical speed slider, draggable panels, compact mobile layout
 
-const CACHE_VERSION = '2.1.9';
+const CACHE_VERSION = '2.2.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
