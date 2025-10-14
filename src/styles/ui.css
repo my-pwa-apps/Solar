@@ -61,16 +61,6 @@
     width: 32px;
     height: 32px;
     display: block;
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0px);
-    }
-    50% {
-        transform: translateY(-4px);
-    }
 }
 
 .logo h1 {
@@ -106,8 +96,12 @@
     font-family: 'Segoe UI', system-ui, sans-serif;
     line-height: 1.4;
     height: 44px;
+    min-height: 44px;
+    max-height: 44px;
     box-sizing: border-box;
     cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
     width: 220px;
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
@@ -121,6 +115,8 @@
     -webkit-user-select: none;
     user-select: none;
     vertical-align: middle;
+    margin: 0;
+    display: inline-block;
 }
 
 #nav-quick-nav:hover,
