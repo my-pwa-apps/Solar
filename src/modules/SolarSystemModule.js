@@ -134,7 +134,8 @@ export class SolarSystemModule {
     { progress: 50, message: t('creatingDwarfPlanets'), task: async () => await this.createDwarfPlanets(scene) },
  { progress: 62, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
  { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
- { progress: 68, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
+ { progress: 67, message: t('creatingOortCloud'), task: () => this.createOortCloud(scene) },
+ { progress: 69, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
  { progress: 71, message: t('creatingOrbitalPaths'), task: () => this.createOrbitalPaths(scene) },
  { progress: 74, message: t('creatingConstellations'), task: () => this.createConstellations(scene) },
  { progress: 77, message: t('creatingDistantStars'), task: () => this.createDistantStars(scene) },
@@ -627,7 +628,7 @@ export class SolarSystemModule {
             { name: 'Orcus', radius: 0.06, color: 0xB0B0C0, distance: 2100, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
             { name: 'Quaoar', radius: 0.065, color: 0xC8A088, distance: 2150, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
             { name: 'Gonggong', radius: 0.064, color: 0xBB7766, distance: 2500, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
-            { name: 'Sedna', radius: 0.055, color: 0xCC6644, distance: 4000, speed: 0.000005, rotationSpeed: 0.006, tilt: 12, description: 'Extreme distant object, possible inner Oort cloud.', funFact: 'Orbit ~11,400 years.', realSize: '~995 km est.' },
+            { name: 'Sedna', radius: 0.055, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: '🌌 Inner Oort Cloud object with extreme elliptical orbit (76-937 AU). One of the most distant known solar system bodies, Sedna never comes close enough to Neptune to be influenced by it, suggesting it formed in the Oort Cloud region.', funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars. Discovery challenged our understanding of the solar system\'s edge.', realSize: '~995 km diameter' },
             { name: 'Salacia', radius: 0.058, color: 0x996655, distance: 2250, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
             { name: 'Varda', radius: 0.052, color: 0xAA8866, distance: 2350, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
             { name: 'Varuna', radius: 0.05, color: 0xAA7755, distance: 2050, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
@@ -1155,13 +1156,12 @@ export class SolarSystemModule {
 
  // Ceres texture loader (Dawn mission global map)
  createCeresTextureReal(size) {
-    // Alternative Ceres texture sources
+    // Ceres textures - using direct links to avoid CORS issues
     const primary = [
-        'https://planetpixelemporium.com/download/download.php?earthmap1k.jpg', // If available
-        'https://www.solarsystemscope.com/textures/download/2k_ceres_fictional.jpg' // Alternative
+        'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg' // Similar cratered surface
     ];
     const pluginFallbacks = [];
-    // Use Mercury-style cratered texture as fallback since Ceres is rocky
+    // Use Mercury-style cratered texture as fallback since Ceres is rocky and heavily cratered
     return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, pluginFallbacks);
  }
  
@@ -3187,6 +3187,158 @@ export class SolarSystemModule {
  this.objects.push(kuiperBeltGroup);
  
  if (DEBUG.enabled) console.log(` Kuiper Belt: ${largeKBOCount + mediumKBOCount + smallKBOCount + scatteredCount} objects`);
+ }
+
+ createOortCloud(scene) {
+ // ===== HYPER-REALISTIC OORT CLOUD =====
+ // A spherical shell of icy planetesimals surrounding the entire solar system
+ // Real distances: 50,000-200,000 AU (inner Oort cloud: 2,000-20,000 AU)
+ // The Oort Cloud is the source of long-period comets
+ 
+ const oortCloudGroup = new THREE.Group();
+ oortCloudGroup.name = 'oortCloud';
+ 
+ // Scale distances appropriately
+ // Realistic scale: 50,000 AU = 2,564,000 units, 200,000 AU = 10,256,000 units
+ // Educational scale: Compressed to 5,000-15,000 units (far beyond Kuiper Belt at 2400)
+ // Using spherical shell distribution rather than disk
+ const innerRadius = this.realisticScale ? 2564000 : 5000;
+ const outerRadius = this.realisticScale ? 10256000 : 15000;
+ 
+ // Inner Oort Cloud (Hills cloud) - denser concentration
+ const innerOortCount = 800;
+ const innerOortGeometry = new THREE.BufferGeometry();
+ const innerOortPositions = new Float32Array(innerOortCount * 3);
+ const innerOortColors = new Float32Array(innerOortCount * 3);
+ const innerOortSizes = new Float32Array(innerOortCount);
+ 
+ for (let i = 0; i < innerOortCount; i++) {
+ // Spherical distribution
+ const theta = Math.random() * Math.PI * 2; // Azimuth
+ const phi = Math.acos(2 * Math.random() - 1); // Inclination (uniform sphere)
+ const radius = innerRadius + Math.random() * (outerRadius - innerRadius) * 0.3; // Inner 30%
+ 
+ innerOortPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+ innerOortPositions[i * 3 + 1] = radius * Math.cos(phi);
+ innerOortPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+ 
+ // Icy composition: pale white-blue
+ const ice = 0.6 + Math.random() * 0.3;
+ innerOortColors[i * 3] = ice * 0.85;
+ innerOortColors[i * 3 + 1] = ice * 0.9;
+ innerOortColors[i * 3 + 2] = ice;
+ 
+ innerOortSizes[i] = 0.4 + Math.random() * 0.6;
+ }
+ 
+ innerOortGeometry.setAttribute('position', new THREE.BufferAttribute(innerOortPositions, 3));
+ innerOortGeometry.setAttribute('color', new THREE.BufferAttribute(innerOortColors, 3));
+ innerOortGeometry.setAttribute('size', new THREE.BufferAttribute(innerOortSizes, 1));
+ 
+ const innerOortMaterial = new THREE.PointsMaterial({
+ vertexColors: true,
+ sizeAttenuation: true,
+ transparent: true,
+ opacity: 0.5
+ });
+ 
+ const innerOort = new THREE.Points(innerOortGeometry, innerOortMaterial);
+ oortCloudGroup.add(innerOort);
+ 
+ // Outer Oort Cloud - sparse, spherical shell
+ const outerOortCount = 1500;
+ const outerOortGeometry = new THREE.BufferGeometry();
+ const outerOortPositions = new Float32Array(outerOortCount * 3);
+ const outerOortColors = new Float32Array(outerOortCount * 3);
+ const outerOortSizes = new Float32Array(outerOortCount);
+ 
+ for (let i = 0; i < outerOortCount; i++) {
+ // Spherical distribution
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.acos(2 * Math.random() - 1);
+ const radius = innerRadius + (outerRadius - innerRadius) * (0.3 + Math.random() * 0.7); // Outer 70%
+ 
+ outerOortPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+ outerOortPositions[i * 3 + 1] = radius * Math.cos(phi);
+ outerOortPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+ 
+ // Very faint icy objects
+ const faint = 0.5 + Math.random() * 0.25;
+ outerOortColors[i * 3] = faint * 0.82;
+ outerOortColors[i * 3 + 1] = faint * 0.88;
+ outerOortColors[i * 3 + 2] = faint * 0.95;
+ 
+ outerOortSizes[i] = 0.25 + Math.random() * 0.4;
+ }
+ 
+ outerOortGeometry.setAttribute('position', new THREE.BufferAttribute(outerOortPositions, 3));
+ outerOortGeometry.setAttribute('color', new THREE.BufferAttribute(outerOortColors, 3));
+ outerOortGeometry.setAttribute('size', new THREE.BufferAttribute(outerOortSizes, 1));
+ 
+ const outerOortMaterial = new THREE.PointsMaterial({
+ vertexColors: true,
+ sizeAttenuation: true,
+ transparent: true,
+ opacity: 0.35
+ });
+ 
+ const outerOort = new THREE.Points(outerOortGeometry, outerOortMaterial);
+ oortCloudGroup.add(outerOort);
+ 
+ // Sparse cometary nuclei - the source of long-period comets
+ const cometaryCount = 400;
+ const cometaryGeometry = new THREE.BufferGeometry();
+ const cometaryPositions = new Float32Array(cometaryCount * 3);
+ const cometaryColors = new Float32Array(cometaryCount * 3);
+ const cometarySizes = new Float32Array(cometaryCount);
+ 
+ for (let i = 0; i < cometaryCount; i++) {
+ // Random spherical distribution
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.acos(2 * Math.random() - 1);
+ const radius = innerRadius + Math.random() * (outerRadius - innerRadius);
+ 
+ cometaryPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+ cometaryPositions[i * 3 + 1] = radius * Math.cos(phi);
+ cometaryPositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+ 
+ // Slightly brighter to represent larger nuclei
+ const bright = 0.65 + Math.random() * 0.25;
+ cometaryColors[i * 3] = bright * 0.88;
+ cometaryColors[i * 3 + 1] = bright * 0.92;
+ cometaryColors[i * 3 + 2] = bright;
+ 
+ cometarySizes[i] = 0.5 + Math.random() * 0.8;
+ }
+ 
+ cometaryGeometry.setAttribute('position', new THREE.BufferAttribute(cometaryPositions, 3));
+ cometaryGeometry.setAttribute('color', new THREE.BufferAttribute(cometaryColors, 3));
+ cometaryGeometry.setAttribute('size', new THREE.BufferAttribute(cometarySizes, 1));
+ 
+ const cometaryMaterial = new THREE.PointsMaterial({
+ vertexColors: true,
+ sizeAttenuation: true,
+ transparent: true,
+ opacity: 0.55
+ });
+ 
+ const cometaryNuclei = new THREE.Points(cometaryGeometry, cometaryMaterial);
+ oortCloudGroup.add(cometaryNuclei);
+ 
+ oortCloudGroup.userData = {
+ name: 'Oort Cloud',
+ type: 'Oort Cloud',
+ description: '🌨️ The Oort Cloud is a vast spherical shell of icy objects surrounding our entire solar system! It extends from about 50,000 to 200,000 AU from the Sun. Long-period comets like Hale-Bopp originate from this distant realm. The Oort Cloud contains trillions of icy bodies and marks the gravitational boundary of our solar system!',
+ funFact: 'The Oort Cloud is so far away that light from the Sun takes over 1.5 years to reach its outer edge! It would take Voyager 1 about 300 years to reach the inner edge.',
+ count: innerOortCount + outerOortCount + cometaryCount,
+ radius: this.realisticScale ? 10256000 : 15000
+ };
+ 
+ scene.add(oortCloudGroup);
+ this.oortCloud = oortCloudGroup;
+ this.objects.push(oortCloudGroup);
+ 
+ if (DEBUG.enabled) console.log(`☁️ Oort Cloud: ${innerOortCount + outerOortCount + cometaryCount} objects (${this.realisticScale ? 'Realistic' : 'Educational'} scale)`);
  }
 
  createOrbitalPaths(scene) {
@@ -6558,16 +6710,28 @@ createHyperrealisticHubble(satData) {
  updateScale() {
  // Update all planetary positions based on scale mode
  const scaleFactors = this.realisticScale ? {
- // Realistic scale (AU converted to scene units, 1 AU = 150 units)
- mercury: 57.9,
- venus: 108.2,
- earth: 150,
- mars: 227.9,
- jupiter: 778.6,
- saturn: 1433.5,
- uranus: 2872.5,
- neptune: 4495.1,
- pluto: 5906.4
+ // Realistic scale (AU converted to scene units, using 51.28 units per AU)
+ mercury: 57.9,    // 0.39 AU
+ venus: 108.2,     // 0.72 AU
+ earth: 150,       // 1.0 AU
+ mars: 227.9,      // 1.52 AU
+ jupiter: 778.6,   // 5.20 AU
+ saturn: 1433.5,   // 9.54 AU
+ uranus: 2872.5,   // 19.19 AU
+ neptune: 4495.1,  // 30.07 AU
+ pluto: 5906.4,    // 39.48 AU
+ // Dwarf planets at realistic scale
+ ceres: 142,       // 2.77 AU (asteroid belt)
+ haumea: 2205,     // 43 AU (Kuiper belt)
+ makemake: 2308,   // 45 AU (Kuiper belt)
+ eris: 3436,       // 67 AU (scattered disk - perihelion, aphelion ~97.5 AU = 5000 units)
+ orcus: 2010,      // 39.2 AU (Plutino)
+ quaoar: 2226,     // 43.4 AU (Kuiper belt)
+ gonggong: 3461,   // 67.5 AU (scattered disk)
+ sedna: 25948,     // 506 AU (inner Oort cloud - semi-major axis, perihelion 76 AU, aphelion 937 AU)
+ salacia: 2164,    // 42.2 AU (Kuiper belt)
+ varda: 2195,      // 42.8 AU (Kuiper belt)
+ varuna: 2169      // 42.3 AU (Kuiper belt)
  } : {
  // Educational scale - proportionally compressed but maintaining relative distances
  // Real AU ratios (Mercury = 1x): Venus 1.85x, Earth 2.56x, Mars 3.90x, 
@@ -6587,10 +6751,22 @@ createHyperrealisticHubble(satData) {
  saturn: 490,   // 24.5x Mercury (9.54 AU) - was 180, Rhea at +12 = 502
  uranus: 984,   // 49.2x Mercury (19.19 AU) - was 235, Titania at +5 = 989
  neptune: 1542, // 77.1x Mercury (30.07 AU) - was 270, Triton at +5 = 1547 (clears Kuiper at 700)
- pluto: 2024    // 101.2x Mercury (39.48 AU) - was 340, inside Kuiper belt as it should be
+ pluto: 2024,   // 101.2x Mercury (39.48 AU) - was 340, inside Kuiper belt as it should be
+ // Dwarf planets beyond Pluto
+ ceres: 140,    // 2.77 AU - in asteroid belt
+ haumea: 2139,  // ~43 AU - Kuiper belt
+ makemake: 2279, // ~45 AU - Kuiper belt
+ eris: 2483,    // ~67 AU - scattered disk (average distance)
+ orcus: 2024,   // ~39 AU - similar to Pluto (2:3 resonance with Neptune)
+ quaoar: 2189,  // ~43.4 AU - Kuiper belt
+ gonggong: 3457, // ~67.5 AU - scattered disk
+ sedna: 4500,   // ~87.7 AU equivalent in educational (actual: ~506 AU avg, but compressed to be visible beyond Kuiper belt yet before Oort cloud)
+ salacia: 2234, // ~42.2 AU - Kuiper belt
+ varda: 2328,   // ~42.8 AU - Kuiper belt
+ varuna: 2139   // ~42.3 AU - Kuiper belt
  };
  
- // Update planet distances
+ // Update planet distances (including dwarf planets)
  Object.entries(this.planets).forEach(([name, planet]) => {
  if (planet && planet.userData) {
  const newDistance = scaleFactors[name];
@@ -6806,8 +6982,52 @@ createHyperrealisticHubble(satData) {
  }
  });
  }
+
+ // Update Oort Cloud positions based on scale (spherical shell)
+ if (this.oortCloud && this.oortCloud.children) {
+ // Define scale parameters for both modes
+ const oldParams = this.realisticScale ? 
+ { inner: 5000, outer: 15000 } : // We're switching FROM educational TO realistic
+ { inner: 2564000, outer: 10256000 }; // We're switching FROM realistic TO educational
  
- if (DEBUG.enabled) console.log(` Belts updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
+ const newParams = this.realisticScale ? 
+ { inner: 2564000, outer: 10256000 } : // Switching TO realistic (50,000-200,000 AU)
+ { inner: 5000, outer: 15000 }; // Switching TO educational (far beyond Kuiper Belt)
+ 
+ this.oortCloud.children.forEach(particleSystem => {
+ if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
+ const positions = particleSystem.geometry.attributes.position.array;
+ const particleCount = positions.length / 3;
+ 
+ for (let i = 0; i < particleCount; i++) {
+ // Get current spherical coordinates
+ const x = positions[i * 3];
+ const y = positions[i * 3 + 1];
+ const z = positions[i * 3 + 2];
+ const currentRadius = Math.sqrt(x * x + y * y + z * z);
+ 
+ // Calculate angles (theta and phi)
+ const theta = Math.atan2(z, x);
+ const phi = Math.acos(y / currentRadius);
+ 
+ // Normalize radius from current scale to 0-1 range
+ const normalizedRadius = Math.max(0, Math.min(1, (currentRadius - oldParams.inner) / (oldParams.outer - oldParams.inner)));
+ 
+ // Apply to new scale
+ const newRadius = newParams.inner + (normalizedRadius * (newParams.outer - newParams.inner));
+ 
+ // Convert back to Cartesian coordinates
+ positions[i * 3] = newRadius * Math.sin(phi) * Math.cos(theta);
+ positions[i * 3 + 1] = newRadius * Math.cos(phi);
+ positions[i * 3 + 2] = newRadius * Math.sin(phi) * Math.sin(theta);
+ }
+ 
+ particleSystem.geometry.attributes.position.needsUpdate = true;
+ }
+ });
+ }
+ 
+ if (DEBUG.enabled) console.log(`☁️ Belts updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
  }
  
  updateSpacecraftPositions() {
@@ -6860,15 +7080,21 @@ createHyperrealisticHubble(satData) {
  
  // Scale factors for comet distances (semi-major axis of their elliptical orbits)
  const cometScaleFactors = this.realisticScale ? {
- // Realistic scale - Halley's Comet: ~35 AU, Hale-Bopp: ~250 AU, NEOWISE: ~10 AU
- 'Halley\'s Comet': 5250, // ~35 AU
- 'Comet Hale-Bopp': 37500, // ~250 AU
- 'Comet NEOWISE': 1500 // ~10 AU
+ // Realistic scale using actual AU values * 51.28 units per AU
+ 'Halley\'s Comet': 1795,  // ~35 AU actual
+ 'Comet Hale-Bopp': 12820, // ~250 AU actual
+ 'Comet Hyakutake': 1540,  // ~30 AU actual
+ 'Comet Lovejoy': 770,     // ~15 AU actual (sungrazer)
+ 'Comet Encke': 385,       // ~7.5 AU actual (shortest period)
+ 'Comet Swift-Tuttle': 2570 // ~50 AU actual
  } : {
- // Educational scale - proportionally compressed (51.28 units per AU)
- 'Halley\'s Comet': 1795,  // 35 AU * 51.28 (was 200)
- 'Comet Hale-Bopp': 12820, // 250 AU * 51.28 (was 250)
- 'Comet NEOWISE': 513      // 10 AU * 51.28 (was 180)
+ // Educational scale - same distances (comets use educational scale by default in creation)
+ 'Halley\'s Comet': 1795,  // 35 AU
+ 'Comet Hale-Bopp': 12820, // 250 AU
+ 'Comet Hyakutake': 1540,  // 30 AU
+ 'Comet Lovejoy': 770,     // 15 AU
+ 'Comet Encke': 385,       // 7.5 AU
+ 'Comet Swift-Tuttle': 2570 // 50 AU
  };
  
  this.comets.forEach(comet => {
@@ -7050,10 +7276,12 @@ createHyperrealisticHubble(satData) {
  // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);
  } else if (userData.isComet) {
- // Comets: zoom close to see nucleus, coma, and tail details
- // Close enough to see the hyperrealistic features but far enough to see tail shape
- distance = Math.max(actualRadius * 20, 3);
- console.log(` [Comet] Camera distance: ${distance.toFixed(2)} for ${userData.name}`);
+ // Comets: zoom to see nucleus, coma, and tail details
+ // Comets are small (nucleus 0.0008-0.005) but have large coma and tails
+ // Position camera close enough to see details but far enough to appreciate scale
+ // Use larger multiplier since comets have extensive tails
+ distance = Math.max(actualRadius * 300, 8);
+ console.log(` [Comet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (nucleus size: ${actualRadius.toFixed(4)})`);
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
