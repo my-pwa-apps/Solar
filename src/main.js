@@ -313,6 +313,11 @@ class App {
  this.sceneManager.renderer.domElement.addEventListener('click', (e) => {
  this.handleCanvasClick(e);
  });
+
+ // Canvas hover for object labels
+ this.sceneManager.renderer.domElement.addEventListener('mousemove', (e) => {
+ this.handleCanvasHover(e);
+ });
  
  // Navigation dropdown
  const dropdown = document.getElementById('object-dropdown');
@@ -535,6 +540,60 @@ class App {
  this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
  }
  }
+ }
+
+ handleCanvasHover(event) {
+ if (!this.solarSystemModule) return;
+
+ // Throttle hover checks to avoid performance issues
+ const now = Date.now();
+ if (!this._lastHoverCheck) this._lastHoverCheck = 0;
+ if (now - this._lastHoverCheck < 50) return; // Check max every 50ms (20fps)
+ this._lastHoverCheck = now;
+
+ const hoverLabel = document.getElementById('hover-label');
+ if (!hoverLabel) return;
+
+ const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
+ const mouse = new THREE.Vector2(
+ ((event.clientX - rect.left) / rect.width) * 2 - 1,
+ -((event.clientY - rect.top) / rect.height) * 2 + 1
+ );
+
+ this.sceneManager.raycaster.setFromCamera(mouse, this.sceneManager.camera);
+ const intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
+
+ if (intersects.length > 0) {
+ let target = intersects[0].object;
+ // Traverse up to find the named object
+ while (target.parent && !target.userData.name) {
+ target = target.parent;
+ }
+
+ if (target.userData && target.userData.name) {
+ // Translate object name using same logic as getObjectInfo()
+ const t = window.t || ((key) => key);
+ const nameKey = target.userData.name.toLowerCase().replace(/\s+/g, '');
+ let translatedName = target.userData.name;
+ if (nameKey && window.t && window.t(nameKey) !== nameKey) {
+ translatedName = t(nameKey);
+ }
+ 
+ // Show hover label with translated name
+ hoverLabel.textContent = translatedName;
+ hoverLabel.style.left = `${event.clientX}px`;
+ hoverLabel.style.top = `${event.clientY}px`;
+ hoverLabel.classList.add('visible');
+ 
+ // Change cursor to pointer
+ this.sceneManager.renderer.domElement.style.cursor = 'pointer';
+ return;
+ }
+ }
+
+ // Hide label if no object hovered
+ hoverLabel.classList.remove('visible');
+ this.sceneManager.renderer.domElement.style.cursor = 'default';
  }
  
  setupKeyboardShortcuts() {

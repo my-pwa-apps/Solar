@@ -842,6 +842,45 @@
     transform: translateX(-50%) translateY(-12px);
 }
 
+/* Hover Label for 3D Objects */
+#hover-label {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10000;
+    background: var(--fluent-bg-primary);
+    -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(30px);
+    color: var(--fluent-text-primary);
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--fluent-border);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate(-50%, -150%);
+    transition: opacity 0.15s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+#hover-label.visible {
+    opacity: 0.95;
+}
+
+#hover-label::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--fluent-border);
+}
+
 /* Performance indicator */
 #fps-counter {
     position: fixed;
