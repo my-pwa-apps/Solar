@@ -296,9 +296,11 @@
         </div>
         <p id="loading-percentage">0%</p>
     </div>
-    <aside id="info-panel" class="hidden" role="complementary" aria-labelledby="object-name">
-        <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel">✕</button>
-        <h2 id="object-name" data-i18n="selectObject">Select an Object</h2>
+    <aside id="info-panel" class="hidden draggable-panel" role="complementary" aria-labelledby="object-name">
+        <div class="panel-header drag-handle" title="Drag to move">
+            <h2 id="object-name" data-i18n="selectObject">Select an Object</h2>
+            <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel">✕</button>
+        </div>
         <div class="info-content">
             <p><strong data-i18n="type">Type:</strong> <span id="object-type">-</span></p>
             <p><strong data-i18n="distance">Distance:</strong> <span id="object-distance">-</span></p>
@@ -308,19 +310,24 @@
             </div>
         </div>
     </aside>
+
+    <!-- Floating Speed Control -->
+    <div id="speed-control" class="draggable-panel" role="region" aria-label="Animation speed control">
+        <div class="panel-header drag-handle" title="Drag to move">
+            <span class="panel-title" data-i18n="speedLabel">Speed</span>
+        </div>
+        <div class="panel-content">
+            <input type="range" id="time-speed" min="0" max="5" value="1" step="0.1" aria-label="Animation speed" />
+            <span id="time-speed-label" data-i18n="realTime">1x</span>
+        </div>
+    </div>
     <!-- Bottom Bar -->
     <footer id="main-footer" role="contentinfo">
         <div class="footer-controls">
-            <div class="control-group">
-                <label for="time-speed" data-i18n="speedLabel">Speed:</label>
-                <input type="range" id="time-speed" min="0" max="5" value="1" step="0.1" aria-label="Animation speed" />
-                <span id="time-speed-label" data-i18n="realTime">1x Real-time</span>
-            </div>
-            
             <button id="toggle-orbits" aria-label="Toggle orbital paths" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits">Orbits</button>
-            <button id="toggle-constellations" aria-label="Toggle constellations" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">Constellations</button>
-            <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">Labels OFF</button>
-            <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">Educational Scale</button>
+            <button id="toggle-constellations" aria-label="Toggle constellations" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">Stars</button>
+            <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">Labels</button>
+            <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">Scale</button>
             <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)" data-i18n="resetView">Reset</button>
         </div>
         
@@ -640,6 +647,97 @@
                 });
             }
         }
+
+        // Make panels draggable
+        function makeDraggable(panelElement) {
+            const handle = panelElement.querySelector('.drag-handle');
+            if (!handle) return;
+
+            let isDragging = false;
+            let currentX = 0;
+            let currentY = 0;
+            let initialX = 0;
+            let initialY = 0;
+
+            handle.style.cursor = 'move';
+
+            handle.addEventListener('mousedown', dragStart);
+            handle.addEventListener('touchstart', dragStart, { passive: false });
+
+            function dragStart(e) {
+                // Only allow left mouse button
+                if (e.type === 'mousedown' && e.button !== 0) return;
+
+                e.preventDefault();
+                isDragging = true;
+                panelElement.style.transition = 'none';
+
+                if (e.type === 'touchstart') {
+                    initialX = e.touches[0].clientX - currentX;
+                    initialY = e.touches[0].clientY - currentY;
+                } else {
+                    initialX = e.clientX - currentX;
+                    initialY = e.clientY - currentY;
+                }
+
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchmove', drag, { passive: false });
+                document.addEventListener('touchend', dragEnd);
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                let clientX, clientY;
+                if (e.type === 'touchmove') {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+
+                currentX = clientX - initialX;
+                currentY = clientY - initialY;
+
+                // Keep panel within viewport bounds
+                const rect = panelElement.getBoundingClientRect();
+                const maxX = window.innerWidth - rect.width;
+                const maxY = window.innerHeight - rect.height;
+
+                currentX = Math.max(0, Math.min(currentX, maxX));
+                currentY = Math.max(0, Math.min(currentY, maxY));
+
+                panelElement.style.left = currentX + 'px';
+                panelElement.style.top = currentY + 'px';
+                panelElement.style.right = 'auto';
+                panelElement.style.bottom = 'auto';
+            }
+
+            function dragEnd() {
+                isDragging = false;
+                panelElement.style.transition = '';
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', dragEnd);
+                document.removeEventListener('touchmove', drag);
+                document.removeEventListener('touchend', dragEnd);
+            }
+        }
+
+        // Initialize draggable panels on load
+        window.addEventListener('load', () => {
+            const infoPanelElement = document.getElementById('info-panel');
+            const speedControlElement = document.getElementById('speed-control');
+            
+            if (infoPanelElement) {
+                makeDraggable(infoPanelElement);
+            }
+            if (speedControlElement) {
+                makeDraggable(speedControlElement);
+            }
+        });
     </script>
 </body>
 </html>
