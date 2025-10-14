@@ -143,7 +143,7 @@
     box-sizing: border-box;
     cursor: pointer;
     appearance: none;
-    min-width: 140px;
+    min-width: 220px;
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
     background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1.5L6 6.5L11 1.5" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     background-repeat: no-repeat;
@@ -1069,20 +1069,13 @@ select {
         align-items: center;
     }
 
-    #nav-quick-nav {
+    #nav-quick-nav,
+    .language-selector {
         padding: 6px 24px 6px 8px;
         font-size: 12px;
         min-width: 80px;
         max-width: 120px;
         flex: 0 1 auto;
-    }
-    
-    .language-selector {
-        padding: 6px 24px 6px 8px;
-        font-size: 12px;
-        min-width: 60px;
-        max-width: 80px;
-        flex: 0 0 auto;
     }
 
     #main-footer {
