@@ -84,7 +84,7 @@
     backdrop-filter: blur(4px);
 }
 
-#nav-quick-nav,
+.nav-dropdown,
 .language-selector {
     background: var(--fluent-bg-secondary);
     color: var(--fluent-text-primary);
@@ -119,8 +119,8 @@
     display: inline-block;
 }
 
-#nav-quick-nav:hover,
-#nav-quick-nav:focus,
+.nav-dropdown:hover,
+.nav-dropdown:focus,
 .language-selector:hover,
 .language-selector:focus {
     background: var(--fluent-bg-primary);
@@ -135,7 +135,7 @@
 }
 
 .language-selector option,
-#nav-quick-nav option,
+.nav-dropdown option,
 .footer-controls select option {
     background: var(--fluent-bg-primary);
     color: var(--fluent-text-primary);
@@ -144,7 +144,7 @@
 }
 
 .language-selector optgroup,
-#nav-quick-nav optgroup,
+.nav-dropdown optgroup,
 .footer-controls select optgroup {
     background: var(--fluent-bg-secondary);
     color: var(--fluent-accent);
@@ -1039,7 +1039,7 @@ select {
         align-items: center;
     }
 
-    #nav-quick-nav,
+    .nav-dropdown,
     .language-selector {
         padding: 6px 24px 6px 8px;
         font-size: 12px;
@@ -1545,7 +1545,7 @@ select {
         font-size: 12px;
     }
     
-    #nav-quick-nav,
+    .nav-dropdown,
     .language-selector {
         font-size: 12px;
         padding: 6px 8px;

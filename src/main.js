@@ -377,6 +377,19 @@ class App {
  'miranda': () => this.solarSystemModule.moons.miranda,
  'triton': () => this.solarSystemModule.moons.triton,
  'charon': () => this.solarSystemModule.moons.charon,
+ 
+ // Dwarf Planets (stored in planets registry)
+ 'ceres': () => this.solarSystemModule.planets.ceres,
+ 'haumea': () => this.solarSystemModule.planets.haumea,
+ 'makemake': () => this.solarSystemModule.planets.makemake,
+ 'eris': () => this.solarSystemModule.planets.eris,
+ 'orcus': () => this.solarSystemModule.planets.orcus,
+ 'quaoar': () => this.solarSystemModule.planets.quaoar,
+ 'gonggong': () => this.solarSystemModule.planets.gonggong,
+ 'sedna': () => this.solarSystemModule.planets.sedna,
+ 'salacia': () => this.solarSystemModule.planets.salacia,
+ 'varda': () => this.solarSystemModule.planets.varda,
+ 'varuna': () => this.solarSystemModule.planets.varuna,
  };
  
  // Check direct mapping first
@@ -441,6 +454,14 @@ class App {
  'kepler-452b': [' Kepler-452b'],
  'trappist-1e': [' TRAPPIST-1e'],
  'kepler-186f': [' Kepler-186f'],
+ }},
+ { prefix: '', array: 'comets', patterns: {
+ 'halley': ["Halley's Comet"],
+ 'hale-bopp': ["Hale-Bopp", "Comet Hale-Bopp"],
+ 'hyakutake': ["Hyakutake", "Comet Hyakutake"],
+ 'lovejoy': ["Lovejoy", "Comet Lovejoy"],
+ 'encke': ["Encke", "Comet Encke"],
+ 'swift-tuttle': ["Swift-Tuttle", "Comet Swift-Tuttle"],
  }},
  ];
  

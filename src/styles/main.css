@@ -166,51 +166,7 @@ body {
     align-items: center;
 }
 
-.nav-dropdown {
-    background: var(--fluent-bg-acrylic);
-    color: var(--fluent-text-primary);
-    border: 1px solid var(--fluent-border);
-    border-radius: 4px;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 400;
-    cursor: pointer;
-    outline: none;
-    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
-    -webkit-backdrop-filter: blur(30px);
-    backdrop-filter: blur(30px);
-    box-shadow: var(--fluent-shadow);
-    min-width: 200px;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-.nav-dropdown:hover {
-    background: var(--fluent-bg-secondary);
-    border-color: var(--fluent-accent);
-}
-
-.nav-dropdown:focus {
-    border-color: var(--fluent-accent);
-    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.4);
-}
-
-.nav-dropdown option {
-    background: var(--fluent-bg-primary);
-    color: var(--fluent-text-primary);
-    padding: 10px;
-    font-size: 14px;
-}
-
-.nav-dropdown optgroup {
-    background: var(--fluent-bg-secondary);
-    color: var(--fluent-accent);
-    font-weight: 600;
-    font-size: 14px;
-    padding: 8px;
-}
+/* Navigation dropdown styles moved to ui.css for consistency */
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -222,11 +178,7 @@ body {
         gap: 8px;
     }
     
-    .nav-dropdown {
-        min-width: 150px;
-        font-size: 13px;
-        padding: 6px 10px;
-    }
+    /* Nav dropdown mobile styles moved to ui.css */
     
     #help-button {
         padding: 6px 10px;

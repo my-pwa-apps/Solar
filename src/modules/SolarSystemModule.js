@@ -4427,16 +4427,22 @@ export class SolarSystemModule {
 
  createComets(scene) {
  // Create comets with REALISTIC sizes (typically 1-60 km)
- // Halley: ~15 km, Hale-Bopp: ~60 km, NEOWISE: ~5 km
+ // All comets rendered with hyperrealistic nucleus, coma, and dual tails
  this.comets = [];
  
  const cometsData = [
- // Halley: 15 km / 12,742 km = 0.0012, orbit: ~35 AU
+ // Halley: 15 km nucleus, 35 AU orbit
  { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.001, size: 0.002, description: t('descHalley') },
- // Hale-Bopp: 60 km / 12,742 km = 0.0047, orbit: ~250 AU
+ // Hale-Bopp: 60 km nucleus (massive!), ~250 AU orbit
  { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: t('descHaleBopp') },
- // NEOWISE: 5 km / 12,742 km = 0.0004, orbit: ~10 AU
- { name: 'Comet NEOWISE', distance: 513, eccentricity: 0.999, speed: 0.0012, size: 0.001, description: t('descNeowise') }
+ // Hyakutake: 4 km nucleus, spectacular in 1996
+ { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, speed: 0.0011, size: 0.0015, description: 'Comet Hyakutake passed extremely close to Earth in 1996, becoming one of the brightest comets in decades with a tail stretching across half the sky!' },
+ // Lovejoy: ~500m nucleus, Kreutz sungrazer
+ { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, speed: 0.0015, size: 0.0008, description: 'Comet Lovejoy (C/2011 W3) survived a close pass through the Sun\'s corona! It\'s part of the Kreutz sungrazers - fragments of a giant comet that broke up centuries ago.' },
+ // Encke: 4.8 km nucleus, shortest period (3.3 years)
+ { name: 'Comet Encke', distance: 385, eccentricity: 0.847, speed: 0.002, size: 0.0018, description: 'Comet Encke has the shortest orbital period of any known comet - only 3.3 years! It\'s named after Johann Franz Encke who calculated its orbit in 1819.' },
+ // Swift-Tuttle: 26 km nucleus, source of Perseid meteor shower
+ { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, speed: 0.0009, size: 0.003, description: 'Comet Swift-Tuttle is the parent body of the spectacular Perseid meteor shower! With a 26 km nucleus, it\'s the largest object that regularly passes near Earth.' }
  ];
 
  cometsData.forEach((cometData, index) => {
@@ -7038,8 +7044,10 @@ createHyperrealisticHubble(satData) {
  // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);
  } else if (userData.isComet) {
- // Comets: zoom to see nucleus and inner coma details
- distance = Math.max(actualRadius * 12, 2);
+ // Comets: zoom close to see nucleus, coma, and tail details
+ // Close enough to see the hyperrealistic features but far enough to see tail shape
+ distance = Math.max(actualRadius * 20, 3);
+ console.log(` [Comet] Camera distance: ${distance.toFixed(2)} for ${userData.name}`);
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
@@ -7321,22 +7329,31 @@ createHyperrealisticHubble(satData) {
      );
      controls.target.copy(targetPosition);
  } else if (userData.isComet) {
-     // Comets: Position camera to showcase tail and nucleus
-     // Camera should be positioned to see both the coma and the tail streaming away from sun
+     // Comets: Chase camera to follow comet and showcase nucleus, coma, and tails
+     // Position camera behind comet (opposite to velocity) to see tails streaming back
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
      const sunDirection = targetPosition.clone().sub(sunPosition).normalize();
      
-     // Position camera at an angle to see both nucleus and tail
-     const sideVector = new THREE.Vector3(-sunDirection.z, 0, sunDirection.x).normalize();
-     const angleVariation = Math.random() * Math.PI * 0.3 - Math.PI * 0.15; // Â±27 degrees
+     // Get comet's velocity direction (perpendicular to sun direction for orbit)
+     const velocityDir = new THREE.Vector3(-sunDirection.z, 0, sunDirection.x).normalize();
      
-     endPos = targetPosition.clone()
-         .add(sunDirection.clone().multiplyScalar(distance * 0.5)) // Partially in front
-         .add(sideVector.multiplyScalar(distance * Math.sin(angleVariation) * 0.8)) // To the side
-         .add(new THREE.Vector3(0, distance * 0.4, 0)); // Above to see tail shape
+     // Position camera behind and slightly above the comet to see:
+     // 1. The nucleus and coma in front
+     // 2. Both tails streaming back towards camera
+     // 3. Good perspective of the comet's trajectory
+     const cameraOffset = new THREE.Vector3();
+     cameraOffset.add(velocityDir.clone().multiplyScalar(-distance * 1.2)); // Behind comet
+     cameraOffset.add(sunDirection.clone().multiplyScalar(distance * 0.3)); // Slightly towards sun side
+     cameraOffset.add(new THREE.Vector3(0, distance * 0.5, 0)); // Above for better view
      
+     endPos = targetPosition.clone().add(cameraOffset);
      controls.target.copy(targetPosition);
-     console.log(` [Comet] Tail showcase view - camera positioned to see nucleus and tail`);
+     
+     // Enable chase-cam following for smooth comet tracking
+     this.cameraFollowMode = true;
+     this.cameraCoRotateMode = true;
+     
+     console.log(` [Comet Chase-Cam] Following ${userData.name} - camera positioned to see nucleus and tails`);
  } else if (userData.type === 'asteroid') {
      // Asteroids: Close dramatic angle to show irregular shape
      const angle = Math.random() * Math.PI * 2;
