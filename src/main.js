@@ -471,6 +471,9 @@ class App {
  const patterns = category.patterns[searchKey];
  
  if (patterns && this.solarSystemModule[category.array]) {
+ console.log(` [Nav] Searching ${category.array} for "${searchKey}" with patterns:`, patterns);
+ console.log(` [Nav] Array has ${this.solarSystemModule[category.array].length} items`);
+ 
  let found;
  
  if (category.exactMatch) {
@@ -481,12 +484,17 @@ class App {
  );
  } else {
  // For other categories: use includes() for flexible matching
- found = this.solarSystemModule[category.array].find(obj => 
- patterns.some(pattern => obj.userData.name.includes(pattern))
- );
+ found = this.solarSystemModule[category.array].find(obj => {
+ const match = patterns.some(pattern => obj.userData.name.includes(pattern));
+ if (match) console.log(` [Nav] ✓ Matched "${obj.userData.name}"`);
+ return match;
+ });
  }
  
- if (found) return found;
+ if (found) {
+ console.log(` [Nav] ✓ Found object: ${found.userData.name}`);
+ return found;
+ }
  }
  }
  

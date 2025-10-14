@@ -634,8 +634,11 @@ export class SolarSystemModule {
         ];
 
         catalog.forEach(cfg => {
-            if (this.planets[cfg.name.toLowerCase()]) return;
-            this.createPlanet(scene, {
+            const key = cfg.name.toLowerCase();
+            if (this.planets[key]) return;
+            
+            // Create planet and store in registry
+            this.planets[key] = this.createPlanet(scene, {
                 name: cfg.name,
                 radius: cfg.radius,
                 color: cfg.color,
