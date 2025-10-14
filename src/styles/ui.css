@@ -810,55 +810,6 @@
     display: none; /* Moved to footer */
 }
 
-/* Fluent Help Button */
-#help-button {
-    background: var(--fluent-accent);
-    color: white;
-    border: 1px solid var(--fluent-accent);
-    padding: 10px 20px;
-    border-radius: 4px;
-    font-size: 14px;
-    font-weight: 400;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0, 120, 212, 0.3);
-    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
-    white-space: nowrap;
-    position: relative;
-    overflow: hidden;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-#help-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-#help-button:hover::before {
-    opacity: 1;
-}
-
-#help-button:hover {
-    background: var(--fluent-accent-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 120, 212, 0.4);
-}
-
-#help-button:active {
-    background: var(--fluent-accent-pressed);
-    transform: translateY(0);
-}
-
 /* Fluent Tooltip */
 [data-tooltip] {
     position: relative;
@@ -1099,13 +1050,6 @@ select {
         min-width: 60px;
         max-width: 80px;
         flex: 0 0 auto;
-    }
-
-    #help-button {
-        padding: 6px 10px;
-        font-size: 12px;
-        flex: 0 0 auto;
-        white-space: nowrap;
     }
 
     #main-footer {
@@ -1601,8 +1545,7 @@ select {
     }
     
     #nav-quick-nav,
-    .language-selector,
-    #help-button {
+    .language-selector {
         font-size: 12px;
         padding: 6px 8px;
     }
