@@ -51,6 +51,27 @@
     }
 }
 
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-icon {
+    font-size: 24px;
+    line-height: 1;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
 .logo h1 {
     font-size: 18px;
     font-weight: 600;
@@ -81,6 +102,8 @@
     font-size: 14px;
     font-weight: 400;
     font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.4;
+    height: 44px;
     cursor: pointer;
     appearance: none;
     min-width: 220px;
@@ -113,6 +136,8 @@
     font-size: 14px;
     font-weight: 400;
     font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.4;
+    height: 44px;
     cursor: pointer;
     appearance: none;
     min-width: 140px;
@@ -1022,6 +1047,10 @@ select {
         overflow-x: auto;
     }
 
+    .logo-icon {
+        font-size: 18px;
+    }
+
     .logo h1 {
         font-size: 14px;
         flex: 0 0 auto;
@@ -1540,8 +1569,12 @@ select {
         padding: 6px 8px;
     }
     
+    .logo-icon {
+        font-size: 16px;
+    }
+
     .logo h1 {
-        font-size: 14px;
+        font-size: 12px;
     }
     
     #nav-quick-nav,
