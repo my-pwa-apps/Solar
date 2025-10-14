@@ -561,16 +561,35 @@ class App {
  );
 
  this.sceneManager.raycaster.setFromCamera(mouse, this.sceneManager.camera);
- const intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
+ 
+ // Build a comprehensive list of objects to raycast against
+ // Include both direct objects and all scene children (catches moons when focused on planet)
+ const raycastTargets = [...this.solarSystemModule.objects];
+ this.sceneManager.scene.traverse((child) => {
+ if (child.isMesh && child.userData && child.userData.name && child.userData.type === 'Moon') {
+ raycastTargets.push(child);
+ }
+ });
+ 
+ const intersects = this.sceneManager.raycaster.intersectObjects(raycastTargets, true);
 
  if (intersects.length > 0) {
- let target = intersects[0].object;
+ // Find the first intersected object that has a name
+ // This ensures we get the closest named object (e.g., Moon instead of Earth behind it)
+ let target = null;
+ for (let i = 0; i < intersects.length; i++) {
+ let candidate = intersects[i].object;
  // Traverse up to find the named object
- while (target.parent && !target.userData.name) {
- target = target.parent;
+ while (candidate && !candidate.userData?.name) {
+ candidate = candidate.parent;
+ }
+ if (candidate && candidate.userData && candidate.userData.name) {
+ target = candidate;
+ break; // Use the first (closest) named object
+ }
  }
 
- if (target.userData && target.userData.name) {
+ if (target && target.userData && target.userData.name) {
  // Translate object name using same logic as getObjectInfo()
  const t = window.t || ((key) => key);
  const nameKey = target.userData.name.toLowerCase().replace(/\s+/g, '');
