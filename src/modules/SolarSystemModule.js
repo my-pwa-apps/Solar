@@ -1155,10 +1155,13 @@ export class SolarSystemModule {
 
  // Ceres texture loader (Dawn mission global map)
  createCeresTextureReal(size) {
+    // Alternative Ceres texture sources
     const primary = [
-        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/ceresmap1k.jpg'
+        'https://planetpixelemporium.com/download/download.php?earthmap1k.jpg', // If available
+        'https://www.solarsystemscope.com/textures/download/2k_ceres_fictional.jpg' // Alternative
     ];
     const pluginFallbacks = [];
+    // Use Mercury-style cratered texture as fallback since Ceres is rocky
     return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, pluginFallbacks);
  }
  
@@ -7332,31 +7335,36 @@ createHyperrealisticHubble(satData) {
      );
      controls.target.copy(targetPosition);
  } else if (userData.isComet) {
-     // Comets: Chase camera to follow comet and showcase nucleus, coma, and tails
-     // Position camera behind comet (opposite to velocity) to see tails streaming back
+     // Comets: Chase camera positioned to see nucleus, coma, and spectacular tails
+     // Position camera to the side and slightly in front to see the comet with tails behind it
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
      const sunDirection = targetPosition.clone().sub(sunPosition).normalize();
      
-     // Get comet's velocity direction (perpendicular to sun direction for orbit)
-     const velocityDir = new THREE.Vector3(-sunDirection.z, 0, sunDirection.x).normalize();
+     // Tails point away from sun, so position camera at an angle that shows:
+     // 1. The nucleus/coma clearly
+     // 2. Tails streaming away from sun (behind the comet from camera view)
+     // 3. Good lighting and perspective
      
-     // Position camera behind and slightly above the comet to see:
-     // 1. The nucleus and coma in front
-     // 2. Both tails streaming back towards camera
-     // 3. Good perspective of the comet's trajectory
+     // Camera at 45-degree angle: side view with tails visible
+     const sideAngle = Math.PI * 0.25; // 45 degrees
+     const perpVector = new THREE.Vector3(-sunDirection.z, 0, sunDirection.x).normalize();
+     
      const cameraOffset = new THREE.Vector3();
-     cameraOffset.add(velocityDir.clone().multiplyScalar(-distance * 1.2)); // Behind comet
-     cameraOffset.add(sunDirection.clone().multiplyScalar(distance * 0.3)); // Slightly towards sun side
-     cameraOffset.add(new THREE.Vector3(0, distance * 0.5, 0)); // Above for better view
+     // Position to the side (perpendicular to sun direction)
+     cameraOffset.add(perpVector.multiplyScalar(distance * Math.cos(sideAngle) * 1.5));
+     // Slightly towards sun (but not directly) to see comet lit
+     cameraOffset.add(sunDirection.clone().multiplyScalar(distance * Math.sin(sideAngle) * 0.8));
+     // Above for cinematic angle
+     cameraOffset.add(new THREE.Vector3(0, distance * 0.6, 0));
      
      endPos = targetPosition.clone().add(cameraOffset);
-     controls.target.copy(targetPosition);
+     controls.target.copy(targetPosition); // Always look AT the comet
      
      // Enable chase-cam following for smooth comet tracking
      this.cameraFollowMode = true;
      this.cameraCoRotateMode = true;
      
-     console.log(` [Comet Chase-Cam] Following ${userData.name} - camera positioned to see nucleus and tails`);
+     console.log(` [Comet Chase-Cam] Following ${userData.name} - cinematic angle to see nucleus and tails`);
  } else if (userData.type === 'asteroid') {
      // Asteroids: Close dramatic angle to show irregular shape
      const angle = Math.random() * Math.PI * 2;
