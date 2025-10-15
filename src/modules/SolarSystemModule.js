@@ -1019,9 +1019,16 @@ export class SolarSystemModule {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 16;
     tex.needsUpdate = true;
-    const planet = this.planets[planetName.toLowerCase()];
+    
+    // Handle Sun specially (stored in this.sun, not this.planets)
+    const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
+    
     if (planet && planet.material) {
         planet.material.map = tex;
+        // Also update emissiveMap for the Sun to show the texture in its glow
+        if (planetName.toLowerCase() === 'sun') {
+            planet.material.emissiveMap = tex;
+        }
         planet.material.needsUpdate = true;
         planet.userData.remoteTextureLoaded = true;
         planet.userData.remoteTextureURL = url;
@@ -1039,9 +1046,15 @@ export class SolarSystemModule {
 
  // Internal: apply procedural texture after all remote failed
  _applyProceduralPlanetTexture(planetName, tex) {
-    const planet = this.planets[planetName.toLowerCase()];
+    // Handle Sun specially (stored in this.sun, not this.planets)
+    const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
+    
     if (planet && planet.material) {
         planet.material.map = tex;
+        // Also update emissiveMap for the Sun to show the texture in its glow
+        if (planetName.toLowerCase() === 'sun') {
+            planet.material.emissiveMap = tex;
+        }
         planet.material.needsUpdate = true;
     }
     const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
