@@ -128,10 +128,6 @@
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     outline: none;
-    background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1.5L6 6.5L11 1.5" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
-    background-repeat: no-repeat;
-    background-position: calc(100% - 12px) center;
-    background-size: 12px 8px;
 }
 
 .language-selector option,
@@ -632,119 +628,6 @@
     font-weight: 700;
     padding: 8px 12px;
 }
-
-/* Object Explorer List - REMOVED (replaced by header dropdown navigation) */
-/*
-#object-list {
-    position: fixed;
-    top: 80px;
-    right: 10px;
-    background: linear-gradient(135deg, rgba(30, 30, 60, 0.9), rgba(20, 20, 40, 0.9));
-    padding: 12px;
-    border-radius: 12px;
-    max-height: 70vh;
-    overflow-y: auto;
-    border: 2px solid rgba(74, 144, 226, 0.5);
-    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(100, 150, 255, 0.08);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    max-width: 240px;
-    z-index: 50;
-    animation: slideInRight 0.4s ease-out;
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-#object-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-#object-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-}
-
-#object-list::-webkit-scrollbar-thumb {
-    background: #4a90e2;
-    border-radius: 10px;
-}
-
-#object-list h3 {
-    color: #FFD700;
-    margin-bottom: 10px;
-    font-size: 16px;
-    font-weight: 700;
-    text-align: center;
-    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
-}
-
-.object-category {
-    margin: 12px 0;
-}
-
-.object-category h4 {
-    color: #FF6B6B;
-    margin-bottom: 5px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: 'Poppins', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
-    padding: 5px 8px;
-    background: rgba(255, 107, 107, 0.2);
-    border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.object-item {
-    padding: 8px 10px;
-    margin: 4px 0;
-    cursor: pointer;
-    border-radius: 8px;
-    font-size: 12px;
-    font-family: 'Poppins', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
-    background: rgba(255, 255, 255, 0.05);
-    border-left: 3px solid transparent;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.object-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 100%;
-    background: linear-gradient(90deg, rgba(74, 144, 226, 0.4), rgba(155, 89, 182, 0.4));
-    transition: width 0.3s ease;
-    z-index: -1;
-}
-
-.object-item:hover::before {
-    width: 100%;
-}
-
-.object-item:hover {
-    background: rgba(74, 144, 226, 0.2);
-    border-left-color: #FFD700;
-    transform: translateX(8px) scale(1.02);
-    box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
-}
-
-.object-item:active {
-    transform: translateX(6px) scale(0.98);
-}
-*/
 
 /* Fluent Floating XR Buttons */
 .footer-xr-controls > div {
@@ -1250,8 +1133,8 @@ select {
     transform: translateX(-50%);
     z-index: 100;
     background: var(--fluent-bg-acrylic);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    backdrop-filter: blur(30px) saturate(150%);
     border-radius: 20px;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
     padding: 26px 30px 28px;
@@ -1261,7 +1144,6 @@ select {
     border: 1px solid var(--fluent-border);
     color: var(--fluent-text-primary);
     font-family: 'Segoe UI', system-ui, sans-serif;
-    backdrop-filter: blur(30px) saturate(150%);
 }
 
 #install-prompt.hidden {
