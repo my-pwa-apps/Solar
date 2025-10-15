@@ -4777,33 +4777,67 @@ export class SolarSystemModule {
  const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
  cometGroup.add(nucleus);
  
- // Surface ice patches (bright spots)
- for (let i = 0; i < 8; i++) {
- const patchGeometry = new THREE.SphereGeometry(cometData.size * 0.15, 8, 8);
+ // Surface ice patches (bright spots) - MORE realistic distribution
+ for (let i = 0; i < 15; i++) {
+ const patchSize = cometData.size * (0.1 + Math.random() * 0.15);
+ const patchGeometry = new THREE.SphereGeometry(patchSize, 6, 6);
  const patchMaterial = new THREE.MeshStandardMaterial({
- color: 0xe8f4f8,
- roughness: 0.7,
- metalness: 0.1,
- emissive: 0x6699cc,
- emissiveIntensity: 0.3
+ color: 0xf0f8ff, // Bright icy white
+ roughness: 0.4,
+ metalness: 0.2,
+ emissive: 0x88ccff,
+ emissiveIntensity: 0.5 + Math.random() * 0.3
  });
  const patch = new THREE.Mesh(patchGeometry, patchMaterial);
+ // Random position on surface
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.random() * Math.PI;
+ const r = cometData.size * (0.9 + Math.random() * 0.2);
  patch.position.set(
- (Math.random() - 0.5) * cometData.size * 1.5,
- (Math.random() - 0.5) * cometData.size * 1.5,
- (Math.random() - 0.5) * cometData.size * 1.5
+ r * Math.sin(phi) * Math.cos(theta),
+ r * Math.sin(phi) * Math.sin(theta),
+ r * Math.cos(phi)
  );
  cometGroup.add(patch);
  }
  
- // Coma - glowing cloud with gradient opacity
- const comaLayers = 3;
+ // Active gas jets (bright spots showing outgassing)
+ for (let i = 0; i < 5; i++) {
+ const jetGeometry = new THREE.SphereGeometry(cometData.size * 0.08, 8, 8);
+ const jetMaterial = new THREE.MeshBasicMaterial({
+ color: 0xffffff,
+ transparent: true,
+ opacity: 0.8,
+ blending: THREE.AdditiveBlending
+ });
+ const jet = new THREE.Mesh(jetGeometry, jetMaterial);
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.random() * Math.PI;
+ const r = cometData.size * 1.1;
+ jet.position.set(
+ r * Math.sin(phi) * Math.cos(theta),
+ r * Math.sin(phi) * Math.sin(theta),
+ r * Math.cos(phi)
+ );
+ cometGroup.add(jet);
+ }
+ 
+ // HYPERREALISTIC COMA - Multi-layered glowing atmosphere
+ const comaLayers = 6; // More layers for depth
  for (let layer = 0; layer < comaLayers; layer++) {
- const layerSize = cometData.size * (2.5 + layer * 0.8);
- const layerOpacity = 0.25 - layer * 0.08;
+ const layerSize = cometData.size * (3 + layer * 2); // Larger, more dramatic coma
+ const layerOpacity = 0.3 * (1 - layer / comaLayers) * (0.8 + Math.random() * 0.4);
  const comaGeo = new THREE.SphereGeometry(layerSize, 32, 32);
+ 
+ // Color gradient: bright cyan-white → blue → cyan
+ let comaColor;
+ if (layer === 0) comaColor = 0xf0ffff; // Brightest white-cyan core
+ else if (layer === 1) comaColor = 0xccf0ff;
+ else if (layer === 2) comaColor = 0xaaddff;
+ else comaColor = 0x88bbee; // Outer layers more blue
+ 
  const comaMat = new THREE.MeshBasicMaterial({
- color: layer === 0 ? 0xaaddff : 0x88ccff,
+ color: comaColor,
  transparent: true,
  opacity: layerOpacity,
  side: THREE.BackSide,
@@ -4814,9 +4848,21 @@ export class SolarSystemModule {
  cometGroup.add(coma);
  }
  
- // ===== HYPER-REALISTIC DUST TAIL =====
- // Curved, yellowish, with turbulent structure
- const dustParticles = 400;
+ // Inner bright core (nucleus glow)
+ const nucleusGlowGeo = new THREE.SphereGeometry(cometData.size * 1.5, 32, 32);
+ const nucleusGlowMat = new THREE.MeshBasicMaterial({
+ color: 0xffffff,
+ transparent: true,
+ opacity: 0.6,
+ blending: THREE.AdditiveBlending,
+ depthWrite: false
+ });
+ const nucleusGlow = new THREE.Mesh(nucleusGlowGeo, nucleusGlowMat);
+ cometGroup.add(nucleusGlow);
+ 
+ // ===== SPECTACULAR DUST TAIL =====
+ // Curved, broad, golden-yellow with turbulent structure
+ const dustParticles = 800; // More particles for density
  const dustTailGeometry = new THREE.BufferGeometry();
  const dustTailPositions = new Float32Array(dustParticles * 3);
  const dustTailColors = new Float32Array(dustParticles * 3);
@@ -4824,12 +4870,13 @@ export class SolarSystemModule {
  
  for (let i = 0; i < dustParticles; i++) {
  const t = i / dustParticles;
- const spread = t * 12; // Expanding spread
- const curve = t * t * 15; // Parabolic curve
+ const spread = t * 20; // Wider, more dramatic spread
+ const curve = t * t * 25; // Longer, more curved tail
+ const turbulence = Math.sin(i * 0.5) * spread * 0.15; // Add turbulence
  
- dustTailPositions[i * 3] = curve + (Math.random() - 0.5) * spread * 0.5;
+ dustTailPositions[i * 3] = curve + turbulence + (Math.random() - 0.5) * spread * 0.3;
  dustTailPositions[i * 3 + 1] = (Math.random() - 0.5) * spread;
- dustTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+ dustTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.8;
  
  // Size decreases with distance, with variation
  dustTailSizes[i] = (4 + Math.random() * 2) * (1 - t * 0.8);
@@ -4857,9 +4904,9 @@ export class SolarSystemModule {
  const dustTail = new THREE.Points(dustTailGeometry, dustTailMaterial);
  cometGroup.add(dustTail);
  
- // ===== HYPER-REALISTIC ION TAIL =====
- // Straight, narrow, blue plasma stream
- const ionParticles = 300;
+ // ===== BRILLIANT ION TAIL =====
+ // Straight, narrow, electric blue plasma stream with wisps
+ const ionParticles = 600; // More particles for brilliant effect
  const ionTailGeometry = new THREE.BufferGeometry();
  const ionTailPositions = new Float32Array(ionParticles * 3);
  const ionTailColors = new Float32Array(ionParticles * 3);
@@ -4867,21 +4914,23 @@ export class SolarSystemModule {
  
  for (let i = 0; i < ionParticles; i++) {
  const t = i / ionParticles;
- const spread = t * 4; // Narrower than dust tail
- const length = t * 25; // Longer than dust tail
+ const spread = t * 6; // Narrower than dust tail but with wisps
+ const length = t * 35; // Longer, more dramatic ion tail
+ const wisp = Math.sin(i * 0.3) * spread * 0.2; // Wispy structure
  
- ionTailPositions[i * 3] = length + (Math.random() - 0.5) * 0.5;
+ ionTailPositions[i * 3] = length + wisp + (Math.random() - 0.5) * 0.3;
  ionTailPositions[i * 3 + 1] = (Math.random() - 0.5) * spread;
- ionTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+ ionTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.8;
  
- // Size variation with wispy structures
- ionTailSizes[i] = (2.5 + Math.random() * 1.5) * (1 - t * 0.85);
+ // Size variation with brilliant streaks
+ const ionBrightness = Math.pow(1 - t, 0.4) * (0.8 + Math.random() * 0.4);
+ ionTailSizes[i] = (3 + Math.random() * 3) * ionBrightness;
  
- // Blue plasma gradient
- const intensity = (1 - t * 0.6) * (0.7 + Math.random() * 0.3);
- ionTailColors[i * 3] = 0.5 * intensity; // R
- ionTailColors[i * 3 + 1] = 0.8 * intensity; // G
- ionTailColors[i * 3 + 2] = 1.0 * intensity; // B
+ // Electric blue plasma gradient - brilliant cyan-blue
+ const intensity = (1 - t * 0.5) * ionBrightness;
+ ionTailColors[i * 3] = 0.4 * intensity; // R - less red for purer blue
+ ionTailColors[i * 3 + 1] = 0.85 * intensity; // G - strong cyan
+ ionTailColors[i * 3 + 2] = 1.0 * intensity; // B - full blue
  }
  
  ionTailGeometry.setAttribute('position', new THREE.BufferAttribute(ionTailPositions, 3));
@@ -4892,7 +4941,7 @@ export class SolarSystemModule {
  vertexColors: true,
  sizeAttenuation: true,
  transparent: true,
- opacity: 0.65,
+ opacity: 0.85, // Higher opacity for brilliant plasma effect
  blending: THREE.AdditiveBlending,
  depthWrite: false
  });
@@ -7501,8 +7550,8 @@ createHyperrealisticHubble(satData) {
  object.rotation.y = angleToSun + Math.PI; // Rotate so +X points away from sun
  
  // Scale up comet to be visible (nucleus is tiny - only 0.002-0.005 units!)
- // This makes the 15-25 unit tails actually visible from camera distance
- const detailViewScale = 50.0; // Make nucleus/coma/tails MUCH larger for visibility
+ // With enhanced tails (25-35 units), scale of 15x gives perfect visibility
+ const detailViewScale = 15.0; // Sweet spot: visible but not overwhelming
  object.scale.set(detailViewScale, detailViewScale, detailViewScale);
  
  console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
