@@ -7734,7 +7734,14 @@ createHyperrealisticHubble(satData) {
      this.cameraFollowMode = true;
      this.cameraCoRotateMode = true;
      
-     console.log(` [Comet Chase-Cam] Following ${userData.name} - cinematic angle to see nucleus + tails`);
+     if (DEBUG.enabled) {
+         const distFromSun = Math.sqrt(targetPosition.x**2 + targetPosition.y**2 + targetPosition.z**2);
+         console.log(` [Comet Chase-Cam] ${userData.name}:`);
+         console.log(`   Comet position: (${targetPosition.x.toFixed(1)}, ${targetPosition.y.toFixed(1)}, ${targetPosition.z.toFixed(1)})`);
+         console.log(`   Distance from Sun: ${distFromSun.toFixed(1)} units`);
+         console.log(`   Camera position: (${endPos.x.toFixed(1)}, ${endPos.y.toFixed(1)}, ${endPos.z.toFixed(1)})`);
+         console.log(`   Camera distance from comet: ${distance} units`);
+     }
  } else if (userData.type === 'asteroid') {
      // Asteroids: Close dramatic angle to show irregular shape
      const angle = Math.random() * Math.PI * 2;
