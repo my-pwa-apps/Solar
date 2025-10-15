@@ -435,6 +435,10 @@ class App {
  'cassini': ['Cassini'],
  'pioneer-10': ['Pioneer 10'],
  'pioneer-11': ['Pioneer 11'],
+ }},
+ { prefix: '', array: 'satellites', patterns: {
+ 'iss': ['ISS', 'International Space Station'],
+ 'hubble': ['Hubble'],
  'gps-navstar': ['GPS Satellite', 'NAVSTAR'],
  }},
  { prefix: '', array: 'nebulae', patterns: {
