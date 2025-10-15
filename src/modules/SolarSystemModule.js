@@ -1319,6 +1319,56 @@ export class SolarSystemModule {
     // Use Mercury-style cratered texture as fallback since Ceres is rocky and heavily cratered
     return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, pluginFallbacks);
  }
+
+ // Io texture loader - NASA Galileo mission photorealistic volcanic surface
+ createIoTextureReal(size) {
+    const primary = [
+        'https://www.solarsystemscope.com/textures/download/2k_io.jpg',
+        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/iomap1k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Io', primary, this.createIoTexture, size, []);
+ }
+
+ // Europa texture loader - NASA Galileo icy surface with reddish cracks
+ createEuropaTextureReal(size) {
+    const primary = [
+        'https://www.solarsystemscope.com/textures/download/2k_europa.jpg',
+        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/europamap1k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Europa', primary, this.createEuropaTexture, size, []);
+ }
+
+ // Ganymede texture loader - Largest moon in solar system
+ createGanymedeTextureReal(size) {
+    const primary = [
+        'https://www.solarsystemscope.com/textures/download/2k_ganymede.jpg'
+    ];
+    return this.loadPlanetTextureReal('Ganymede', primary, this.createMoonTexture, size, []);
+ }
+
+ // Callisto texture loader - Ancient cratered surface
+ createCallistoTextureReal(size) {
+    const primary = [
+        'https://www.solarsystemscope.com/textures/download/2k_callisto.jpg'
+    ];
+    return this.loadPlanetTextureReal('Callisto', primary, this.createMoonTexture, size, []);
+ }
+
+ // Titan texture loader - Saturn's largest moon with thick orange atmosphere
+ createTitanTextureReal(size) {
+    const primary = [
+        'https://www.solarsystemscope.com/textures/download/2k_titan.jpg'
+    ];
+    return this.loadPlanetTextureReal('Titan', primary, this.createTitanTexture, size, []);
+ }
+
+ // Enceladus texture loader - Saturn's icy geologically active moon
+ createEnceladusTextureReal(size) {
+    const primary = [
+        'https://www.solarsystemscope.com/textures/download/2k_enceladus.jpg'
+    ];
+    return this.loadPlanetTextureReal('Enceladus', primary, this.createMoonTexture, size, []);
+ }
  
  async createEarthTexture(size) {
  const cacheKey = `earth_texture_${size}`;
@@ -2893,42 +2943,67 @@ export class SolarSystemModule {
  });
  if (DEBUG.enabled) console.log(`[Moon Texture] Created Deimos texture (1024x1024)`);
  } else if (moonName.includes('io')) {
- // Io: Yellow/orange/red volcanic surface with detailed texture
- const ioTexture = this.createIoTexture(1024);
+ // Io: NASA Galileo photorealistic volcanic surface - most volcanically active body
+ const ioTexture = this.createIoTextureReal(2048);
  moonMaterial = MaterialFactory.createStandardMaterial({
  map: ioTexture,
- roughness: 0.7,
+ roughness: 0.75,
  metalness: 0.0,
- emissive: 0xff6600,
- emissiveIntensity: 0.15
+ emissive: 0xff4400, // Subtle volcanic glow
+ emissiveIntensity: 0.12 // Active volcanoes!
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Created Io texture (1024x1024)`);
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Io photorealistic texture (2048)`);
  } else if (moonName.includes('europa')) {
- // Europa: Icy white with crack patterns
- const europaTexture = this.createEuropaTexture(1024);
+ // Europa: NASA Galileo icy surface - smooth ice with reddish-brown cracks
+ const europaTexture = this.createEuropaTextureReal(2048);
  moonMaterial = MaterialFactory.createStandardMaterial({
  map: europaTexture,
- roughness: 0.3,
- metalness: 0.2
+ roughness: 0.25, // Very smooth ice surface
+ metalness: 0.15, // Ice has slight reflectivity
+ emissive: 0xccddff,
+ emissiveIntensity: 0.02 // Very subtle ice glow
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Created Europa texture (1024x1024)`);
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Europa photorealistic texture (2048)`);
+ } else if (moonName.includes('ganymede')) {
+ // Ganymede: Largest moon in solar system, mix of old dark terrain and bright grooved terrain
+ const ganymedeTexture = this.createGanymedeTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: ganymedeTexture,
+ roughness: 0.85,
+ metalness: 0.05
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Ganymede photorealistic texture (2048)`);
+ } else if (moonName.includes('callisto')) {
+ // Callisto: Ancient, heavily cratered surface - oldest terrain in solar system
+ const callistoTexture = this.createCallistoTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: callistoTexture,
+ roughness: 0.92,
+ metalness: 0.02
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Callisto photorealistic texture (2048)`);
  } else if (moonName.includes('titan')) {
- // Titan: Orange atmosphere with surface features
- const titanTexture = this.createTitanTexture(1024);
+ // Titan: Saturn's largest moon with thick orange atmosphere (Cassini-Huygens)
+ const titanTexture = this.createTitanTextureReal(2048);
  moonMaterial = MaterialFactory.createStandardMaterial({
  map: titanTexture,
- roughness: 0.6,
+ roughness: 0.95, // Thick hazy atmosphere
  metalness: 0.0,
- emissive: 0x663300,
- emissiveIntensity: 0.1
+ emissive: 0xff8844,
+ emissiveIntensity: 0.08 // Subtle atmospheric glow
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Created Titan texture (1024x1024)`);
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Titan photorealistic texture (2048)`);
  } else if (moonName.includes('enceladus')) {
- // Enceladus: Bright white ice
- moonMaterial = MaterialFactory.createColoredMaterial(0xffffff, {
- roughness: 0.2,
- metalness: 0.3
+ // Enceladus: Bright icy moon with active geysers at south pole
+ const enceladusTexture = this.createEnceladusTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: enceladusTexture,
+ roughness: 0.2, // Extremely smooth fresh ice
+ metalness: 0.2, // Reflective ice surface
+ emissive: 0xeeffff,
+ emissiveIntensity: 0.05 // Bright reflective ice
  });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Enceladus photorealistic texture (2048)`);
  } else if (moonName.includes('triton')) {
  // Triton: Pinkish nitrogen ice
  moonMaterial = MaterialFactory.createColoredMaterial(0xffcccc, {
