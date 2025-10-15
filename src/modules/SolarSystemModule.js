@@ -4917,11 +4917,12 @@ export class SolarSystemModule {
  isComet: true // Flag for special zoom handling
  };
  
+ cometGroup.visible = true; // Ensure comet is visible
  scene.add(cometGroup);
  this.objects.push(cometGroup);
  this.comets.push(cometGroup);
  
- if (DEBUG.enabled) console.log(` ${cometData.name} created`);
+ if (DEBUG.enabled) console.log(` ${cometData.name} created at distance ${cometData.distance}`);
  });
  }
 
