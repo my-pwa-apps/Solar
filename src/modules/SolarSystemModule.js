@@ -948,7 +948,9 @@ export class SolarSystemModule {
         finalURL: null,
         phase: 'init',
         startedAt: performance.now(),
-        proceduralGenerated: false
+        proceduralGenerated: false,
+        timeouts: 0,
+        errors: []
     };
 
     // Create a tiny placeholder texture (mid-gray) so material has something immediately.
@@ -966,18 +968,56 @@ export class SolarSystemModule {
     let phase = 'primary';
     let primaryIndex = 0;
     let pluginIndex = 0;
+    let currentTimeout = null;
+    
     const tryNext = () => {
         const meta = this._pendingTextureMeta[planetKey];
+        
+        // Clear any existing timeout
+        if (currentTimeout) {
+            clearTimeout(currentTimeout);
+            currentTimeout = null;
+        }
         if (phase === 'primary') {
             if (primaryIndex < primaryTextureURLs.length) {
                 const url = primaryTextureURLs[primaryIndex];
                 console.log(`🔭 Loading ${planetName} primary texture ${primaryIndex + 1}/${primaryTextureURLs.length} ...`);
                 meta.phase = 'primary';
-                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'primary'), undefined, (error) => {
-                    console.warn(`⚠️ ${planetName} primary source ${primaryIndex + 1} failed: ${url}`);
-                    if (error) console.warn(`   Error details:`, error.type || error.message || 'Network or CORS issue');
-                    primaryIndex++; tryNext();
-                });
+                
+                // Set timeout for Quest VR (10 seconds max per texture)
+                let loadTimedOut = false;
+                currentTimeout = setTimeout(() => {
+                    loadTimedOut = true;
+                    meta.timeouts++;
+                    console.warn(`⏱️ ${planetName} primary source ${primaryIndex + 1} timed out after 10s: ${url}`);
+                    meta.errors.push({ url, error: 'Timeout after 10s', phase: 'primary' });
+                    primaryIndex++;
+                    tryNext();
+                }, 10000);
+                
+                loader.load(
+                    url, 
+                    (tex) => {
+                        if (!loadTimedOut) {
+                            clearTimeout(currentTimeout);
+                            currentTimeout = null;
+                            this._onPlanetTextureSuccess(planetName, tex, url, 'primary');
+                        }
+                    }, 
+                    undefined, 
+                    (error) => {
+                        if (!loadTimedOut) {
+                            clearTimeout(currentTimeout);
+                            currentTimeout = null;
+                            const errorMsg = error?.message || error?.type || 'Network or CORS issue';
+                            console.warn(`⚠️ ${planetName} primary source ${primaryIndex + 1} failed: ${url}`);
+                            console.warn(`   Error: ${errorMsg}`);
+                            meta.errors.push({ url, error: errorMsg, phase: 'primary' });
+                            primaryIndex++;
+                            tryNext();
+                        }
+                    }
+                );
                 return;
             }
             // Move to plugin phase
@@ -988,11 +1028,41 @@ export class SolarSystemModule {
                 const url = pluginRepoURLs[pluginIndex];
                 console.log(`🧩 Loading ${planetName} plugin repository texture ${pluginIndex + 1}/${pluginRepoURLs.length} ...`);
                 meta.phase = 'plugin';
-                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'plugin'), undefined, (error) => {
-                    console.warn(`⚠️ ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
-                    if (error) console.warn(`   Error details:`, error.type || error.message || 'Network or CORS issue');
-                    pluginIndex++; tryNext();
-                });
+                
+                // Set timeout for Quest VR (10 seconds max per texture)
+                let loadTimedOut = false;
+                currentTimeout = setTimeout(() => {
+                    loadTimedOut = true;
+                    meta.timeouts++;
+                    console.warn(`⏱️ ${planetName} plugin source ${pluginIndex + 1} timed out after 10s: ${url}`);
+                    meta.errors.push({ url, error: 'Timeout after 10s', phase: 'plugin' });
+                    pluginIndex++;
+                    tryNext();
+                }, 10000);
+                
+                loader.load(
+                    url, 
+                    (tex) => {
+                        if (!loadTimedOut) {
+                            clearTimeout(currentTimeout);
+                            currentTimeout = null;
+                            this._onPlanetTextureSuccess(planetName, tex, url, 'plugin');
+                        }
+                    }, 
+                    undefined, 
+                    (error) => {
+                        if (!loadTimedOut) {
+                            clearTimeout(currentTimeout);
+                            currentTimeout = null;
+                            const errorMsg = error?.message || error?.type || 'Network or CORS issue';
+                            console.warn(`⚠️ ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
+                            console.warn(`   Error: ${errorMsg}`);
+                            meta.errors.push({ url, error: errorMsg, phase: 'plugin' });
+                            pluginIndex++;
+                            tryNext();
+                        }
+                    }
+                );
                 return;
             }
             // All remote attempts failed – generate procedural now
@@ -1000,16 +1070,29 @@ export class SolarSystemModule {
         }
         if (phase === 'procedural') {
             console.warn(`🌀 All remote texture sources for ${planetName} failed. Generating procedural texture...`);
+            console.warn(`   Total errors: ${meta.errors.length}, Timeouts: ${meta.timeouts}`);
             meta.phase = 'procedural';
-            const maybePromise = proceduralFunction.call(this, size);
-            if (maybePromise && typeof maybePromise.then === 'function') {
-                maybePromise.then((tex) => {
+            
+            // Wrap procedural generation in try-catch for Quest safety
+            try {
+                const maybePromise = proceduralFunction.call(this, size);
+                if (maybePromise && typeof maybePromise.then === 'function') {
+                    maybePromise.then((tex) => {
+                        console.log(`✅ ${planetName} procedural texture generated successfully`);
+                        this._applyProceduralPlanetTexture(planetName, tex);
+                    }).catch((err) => {
+                        console.error(`❌ ${planetName} procedural texture generation failed:`, err);
+                        meta.errors.push({ error: err.message, phase: 'procedural' });
+                        // Keep placeholder texture as last resort
+                    });
+                } else {
                     console.log(`✅ ${planetName} procedural texture generated successfully`);
-                    this._applyProceduralPlanetTexture(planetName, tex);
-                });
-            } else {
-                console.log(`✅ ${planetName} procedural texture generated successfully`);
-                this._applyProceduralPlanetTexture(planetName, maybePromise);
+                    this._applyProceduralPlanetTexture(planetName, maybePromise);
+                }
+            } catch (err) {
+                console.error(`❌ ${planetName} procedural texture generation failed:`, err);
+                meta.errors.push({ error: err.message, phase: 'procedural' });
+                // Keep placeholder texture as last resort
             }
         }
     };
@@ -1022,14 +1105,25 @@ export class SolarSystemModule {
  // Internal: apply successful remote texture
  _onPlanetTextureSuccess(planetName, tex, url, sourceType) {
     console.log(`✅ ${planetName} texture loaded from ${sourceType} source: ${url}`);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 16;
-    tex.needsUpdate = true;
     
-    // Handle Sun specially (stored in this.sun, not this.planets)
-    const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
-    
-    if (planet && planet.material) {
+    try {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 16;
+        tex.needsUpdate = true;
+        
+        // Handle Sun specially (stored in this.sun, not this.planets)
+        const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
+        
+        if (!planet) {
+            console.warn(`⚠️ ${planetName} object not found when applying texture`);
+            return;
+        }
+        
+        if (!planet.material) {
+            console.warn(`⚠️ ${planetName} has no material to apply texture to`);
+            return;
+        }
+        
         planet.material.map = tex;
         // Also update emissiveMap for the Sun to show the texture in its glow
         if (planetName.toLowerCase() === 'sun') {
@@ -1038,38 +1132,54 @@ export class SolarSystemModule {
         planet.material.needsUpdate = true;
         planet.userData.remoteTextureLoaded = true;
         planet.userData.remoteTextureURL = url;
-    }
-    const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
-    if (meta) {
-        meta.success = true;
-        meta.finalURL = url;
-        meta.finishedAt = performance.now();
-        meta.durationMs = meta.finishedAt - meta.startedAt;
-        meta.remoteSourceType = sourceType;
-        meta.phase = 'done';
+        
+        const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
+        if (meta) {
+            meta.success = true;
+            meta.finalURL = url;
+            meta.finishedAt = performance.now();
+            meta.durationMs = meta.finishedAt - meta.startedAt;
+            meta.remoteSourceType = sourceType;
+            meta.phase = 'done';
+        }
+    } catch (err) {
+        console.error(`❌ Error applying ${planetName} texture:`, err);
     }
  }
 
  // Internal: apply procedural texture after all remote failed
  _applyProceduralPlanetTexture(planetName, tex) {
-    // Handle Sun specially (stored in this.sun, not this.planets)
-    const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
-    
-    if (planet && planet.material) {
+    try {
+        // Handle Sun specially (stored in this.sun, not this.planets)
+        const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
+        
+        if (!planet) {
+            console.warn(`⚠️ ${planetName} object not found when applying procedural texture`);
+            return;
+        }
+        
+        if (!planet.material) {
+            console.warn(`⚠️ ${planetName} has no material to apply procedural texture to`);
+            return;
+        }
+        
         planet.material.map = tex;
         // Also update emissiveMap for the Sun to show the texture in its glow
         if (planetName.toLowerCase() === 'sun') {
             planet.material.emissiveMap = tex;
         }
         planet.material.needsUpdate = true;
-    }
-    const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
-    if (meta) {
-        meta.success = false;
-        meta.finishedAt = performance.now();
-        meta.durationMs = meta.finishedAt - meta.startedAt;
-        meta.proceduralGenerated = true;
-        meta.phase = 'proceduralApplied';
+        
+        const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
+        if (meta) {
+            meta.success = false;
+            meta.finishedAt = performance.now();
+            meta.durationMs = meta.finishedAt - meta.startedAt;
+            meta.proceduralGenerated = true;
+            meta.phase = 'proceduralApplied';
+        }
+    } catch (err) {
+        console.error(`❌ Error applying ${planetName} procedural texture:`, err);
     }
  }
  
