@@ -7469,6 +7469,32 @@ createHyperrealisticHubble(satData) {
  
  const targetPosition = new THREE.Vector3();
  
+ // Special handling for comets - move to detail view position FIRST
+ if (userData.isComet) {
+ // Enable "detail view" mode to bring comet to viewable distance
+ if (this.focusedComet && this.focusedComet !== object) {
+ // Disable detail view for previously focused comet
+ this.focusedComet.userData.detailView = false;
+ }
+ this.focusedComet = object;
+ object.userData.detailView = true;
+ 
+ console.log(` [Comet Detail View] Enabling for ${userData.name} - bringing to viewable distance`);
+ 
+ // IMMEDIATELY move comet to detail view position
+ const detailDistance = 200;
+ const currentPos = object.position.clone();
+ const orbitDirection = Math.sqrt(currentPos.x ** 2 + currentPos.z ** 2);
+ if (orbitDirection > 0) {
+ object.position.x = (currentPos.x / orbitDirection) * detailDistance;
+ object.position.z = (currentPos.z / orbitDirection) * detailDistance;
+ // Keep Y position (vertical wobble)
+ }
+ 
+ console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
+ console.log(`   New position: (${object.position.x.toFixed(1)}, ${object.position.y.toFixed(1)}, ${object.position.z.toFixed(1)})`);
+ }
+ 
  // Special handling for constellations - use center of star pattern
  if (userData.type === 'Constellation' && userData.centerPosition) {
  targetPosition.set(
@@ -7743,34 +7769,8 @@ createHyperrealisticHubble(satData) {
      );
      controls.target.copy(targetPosition);
  } else if (userData.isComet) {
-     // Comets: Enable "detail view" mode to bring comet to viewable distance
-     // Store reference to focused comet
-     if (this.focusedComet && this.focusedComet !== object) {
-         // Disable detail view for previously focused comet
-         this.focusedComet.userData.detailView = false;
-     }
-     this.focusedComet = object;
-     object.userData.detailView = true;
-     
-     console.log(` [Comet Detail View] Enabling for ${userData.name} - bringing to viewable distance`);
-     
-     // IMMEDIATELY move comet to detail view position
-     const detailDistance = 200;
-     const currentPos = object.position.clone();
-     const orbitDirection = Math.sqrt(currentPos.x ** 2 + currentPos.z ** 2);
-     if (orbitDirection > 0) {
-         object.position.x = (currentPos.x / orbitDirection) * detailDistance;
-         object.position.z = (currentPos.z / orbitDirection) * detailDistance;
-         // Keep Y position (vertical wobble)
-     }
-     
-     // Update targetPosition to new detail view position
-     targetPosition = object.position.clone();
-     
-     console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
-     console.log(`   New position: (${targetPosition.x.toFixed(1)}, ${targetPosition.y.toFixed(1)}, ${targetPosition.z.toFixed(1)})`);
-     
      // Comets: Chase camera positioned to see nucleus, coma, and spectacular tails
+     // (Detail view positioning already done above before getWorldPosition)
      // Tails point away from sun - position camera to show the full majesty
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
      const cometToSunDir = sunPosition.clone().sub(targetPosition).normalize();
