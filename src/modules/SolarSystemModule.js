@@ -2856,25 +2856,17 @@ export class SolarSystemModule {
  if (moonName.includes('moon') && !moonName.includes('ganymede') && !moonName.includes('callisto')) {
  // Earth's Moon: REAL NASA LRO texture with photorealistic craters and maria
  const moonTexture = this.createMoonTextureReal(2048);
- 
- // Try loading real bump/normal maps from NASA/community sources
- const moonBumpMap = new THREE.TextureLoader().load(
- 'https://www.solarsystemscope.com/textures/download/2k_moon_normal.jpg',
- undefined,
- undefined,
- () => {
- // Fallback to procedural if loading fails
- console.log('Using procedural moon bump map (fallback)');
- }
- );
+ const moonBumpMap = this.createMoonBumpMap(2048); // Procedural crater depth
+ const moonNormalMap = this.createMoonNormalMap(2048); // Procedural normals
  
  moonMaterial = new THREE.MeshStandardMaterial({
  map: moonTexture,
- normalMap: moonBumpMap,
+ normalMap: moonNormalMap,
  normalScale: new THREE.Vector2(2.5, 2.5), // Realistic crater depth
+ bumpMap: moonBumpMap,
+ bumpScale: 0.015,
  roughness: 0.98, // Extremely rough - lunar regolith scatters light
  metalness: 0.0, // Zero metal - pure rock and dust
- bumpScale: 0.015,
  // Critical for realistic moon phases - no ambient/emissive light
  emissive: 0x000000,
  emissiveIntensity: 0.0,
