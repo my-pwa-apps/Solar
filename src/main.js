@@ -36,9 +36,9 @@ class App {
  
  try {
  // Check cache status
+ if (DEBUG.PERFORMANCE) {
  const cacheReady = await warmupTextureCache();
- if (cacheReady && DEBUG.PERFORMANCE) {
- console.log(' Fast start: All essential textures cached');
+ if (cacheReady) console.log('⚡ Fast start: Essential textures cached');
  }
  
  // Initialize managers
@@ -57,22 +57,20 @@ class App {
  this.setupHelpButton();
  this.uiManager.updateLoadingProgress(15, t('loadingSolarSystem'));
 
- // Load Solar System module directly
- const moduleStartTime = performance.now();
+ // Load Solar System module
  this.solarSystemModule = new SolarSystemModule(this.uiManager);
  this.uiManager.updateLoadingProgress(20, t('creatingSun'));
  
- // The init method now handles its own async loading and will call startExperience() when done
+ // Init handles async loading and calls startExperience() when done
  await this.solarSystemModule.init(this.sceneManager.scene);
 
- // After initial load, schedule verification of remote texture loads
- if (this.solarSystemModule && typeof this.solarSystemModule.verifyTextureLoads === 'function') {
-	 this.solarSystemModule.verifyTextureLoads(5000); // wait 5s to allow async remote textures
+ // Schedule verification of remote texture loads
+ if (this.solarSystemModule?.verifyTextureLoads) {
+	 this.solarSystemModule.verifyTextureLoads(5000);
  }
  
  if (DEBUG.PERFORMANCE) {
- const totalTime = performance.now() - appStartTime;
- console.log(` Module loaded in ${totalTime.toFixed(0)}ms`);
+ console.log(`📦 Loaded in ${(performance.now() - appStartTime).toFixed(0)}ms`);
  }
  } catch (error) {
  console.error(' Failed to initialize Space Voyage:', error);
@@ -82,12 +80,6 @@ class App {
  
  startExperience() {
  // Called by SolarSystemModule after all assets are loaded
- if (DEBUG.enabled) {
- console.log('🚀 Starting experience...');
- console.log('📦 SceneManager:', !!this.sceneManager, '| SolarSystem:', !!this.solarSystemModule);
- console.log('📦 Scene:', !!this.sceneManager?.scene, '| Renderer:', !!this.sceneManager?.renderer, '| Camera:', !!this.sceneManager?.camera);
- }
- 
  // Setup UI for Solar System
  this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
  
@@ -98,8 +90,7 @@ class App {
  this.uiManager.hideLoading();
  
  if (DEBUG.enabled) {
- console.log('🎬 Animation ready | Sun:', !!this.solarSystemModule.sun, '| Planets:', Object.keys(this.solarSystemModule.planets).length);
- console.log('� Scene children:', this.sceneManager.scene?.children?.length, '| Objects:', this.solarSystemModule.objects.length);
+ console.log(`🚀 Ready | Planets: ${Object.keys(this.solarSystemModule.planets).length} | Objects: ${this.solarSystemModule.objects.length}`);
  }
  
  // Start animation loop
@@ -124,10 +115,6 @@ class App {
  this.sceneManager.camera, this.sceneManager.controls);
  }
  });
- 
- if (DEBUG.enabled) {
- console.log(` Space Voyage ready! Planets: ${Object.keys(this.solarSystemModule.planets).length} | Objects: ${this.solarSystemModule.objects.length}`);
- }
  }
 
  setupGlobalFunctions() {
@@ -475,33 +462,17 @@ class App {
  const patterns = category.patterns[searchKey];
  
  if (patterns && this.solarSystemModule[category.array]) {
- let found;
+ // Search using exact or flexible matching based on category
+ const found = category.exactMatch
+ ? this.solarSystemModule[category.array].find(obj => 
+ patterns.some(pattern => obj.userData.name.startsWith(pattern)))
+ : this.solarSystemModule[category.array].find(obj => 
+ patterns.some(pattern => obj.userData.name.includes(pattern)));
  
- if (DEBUG.enabled) {
- console.log(` [Nav] Searching ${category.array} (${this.solarSystemModule[category.array]?.length || 0} items) for patterns:`, patterns);
- }
- 
- if (category.exactMatch) {
- // For constellations: use exact startsWith() matching to avoid ambiguity
- // (e.g., "Orion" constellation vs "Orion Nebula")
- found = this.solarSystemModule[category.array].find(obj => 
- patterns.some(pattern => obj.userData.name.startsWith(pattern))
- );
- } else {
- // For other categories: use includes() for flexible matching
- found = this.solarSystemModule[category.array].find(obj => 
- patterns.some(pattern => obj.userData.name.includes(pattern))
- );
- }
- 
- if (found) {
- if (DEBUG.enabled) console.log(` [Nav] Found: ${found.userData.name}`);
- return found;
- }
+ if (found) return found;
  }
  }
  
- if (DEBUG.enabled) console.warn(` [Nav] No mapping found for value: "${value}"`);
  return null;
  }
 
@@ -722,7 +693,6 @@ class App {
  const iss = this.solarSystemModule.spacecraft.find(s => s.userData.name.includes('ISS'));
  if (iss) {
  this.solarSystemModule.focusOnObject(iss, this.sceneManager.camera, this.sceneManager.controls);
- console.log(' Focusing on International Space Station');
  }
  }
  break;
@@ -733,7 +703,6 @@ class App {
  if (voyagers.length > 0) {
  this._voyagerIndex = ((this._voyagerIndex || 0) + 1) % voyagers.length;
  this.solarSystemModule.focusOnObject(voyagers[this._voyagerIndex], this.sceneManager.camera, this.sceneManager.controls);
- console.log(` Focusing on ${voyagers[this._voyagerIndex].userData.name}`);
  }
  }
  break;
@@ -744,7 +713,6 @@ class App {
  if (rovers.length > 0) {
  this._roverIndex = ((this._roverIndex || 0) + 1) % rovers.length;
  this.solarSystemModule.focusOnObject(rovers[this._roverIndex], this.sceneManager.camera, this.sceneManager.controls);
- console.log(` Focusing on ${rovers[this._roverIndex].userData.name}`);
  }
  }
  break;
@@ -755,7 +723,6 @@ class App {
  if (probes.length > 0) {
  this._probeIndex = ((this._probeIndex || 0) + 1) % probes.length;
  this.focusOnObject(probes[this._probeIndex], this.camera, this.controls);
- console.log(`??? Focusing on ${probes[this._probeIndex].userData.name}`);
  }
  }
  break;

@@ -1518,8 +1518,6 @@ function t(key) {
 // Apply translations to the page
 function applyTranslations() {
     const lang = getCurrentLanguage();
-    const languageNames = { en: 'English', nl: 'Nederlands', fr: 'French', de: 'German', es: 'Spanish', pt: 'Portuguese' };
-    console.log(`[i18n] Applying ${languageNames[lang] || lang} translations`);
     
     // Update all elements with data-i18n attribute
     document.querySelectorAll('[data-i18n]').forEach(element => {
@@ -1564,8 +1562,8 @@ if (typeof module !== 'undefined' && module.exports) {
 // Function to change language
 function setLanguage(lang) {
     const supportedLanguages = ['en', 'nl', 'fr', 'de', 'es', 'pt'];
+    // Validate and default to English if unsupported
     if (!supportedLanguages.includes(lang)) {
-        console.warn('[i18n] Invalid language:', lang, '- using English');
         lang = 'en';
     }
     
@@ -1592,9 +1590,6 @@ function setLanguage(lang) {
     
     // Re-apply translations
     applyTranslations();
-    
-    const languageNames = { en: 'English', nl: 'Nederlands', fr: 'Fran×§ais', de: 'Deutsch', es: 'Espa×±ol', pt: 'Português' };
-    console.log('[i18n] Language changed to:', languageNames[lang] || lang);
 }
 
 // Initialize language UI on page load
