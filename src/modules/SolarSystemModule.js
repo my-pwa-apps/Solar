@@ -7419,11 +7419,10 @@ createHyperrealisticHubble(satData) {
  // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);
  } else if (userData.isComet) {
- // Comets: zoom to see nucleus, coma, and tail details
- // Comets are small (nucleus 0.0008-0.005) but have large coma and tails
- // Position camera close enough to see details but far enough to appreciate scale
- // Use larger multiplier since comets have extensive tails
- distance = Math.max(actualRadius * 300, 8);
+ // Comets: zoom to see nucleus, coma, and LONG tails
+ // Comets have tiny nucleus (0.0008-0.005) but tails extend 30-100+ units
+ // Position camera far enough back to see the full spectacle
+ distance = 80; // Fixed distance to capture nucleus + coma + full tails
  console.log(` [Comet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (nucleus size: ${actualRadius.toFixed(4)})`);
  } else {
  // Regular objects: standard zoom
@@ -7707,35 +7706,30 @@ createHyperrealisticHubble(satData) {
      controls.target.copy(targetPosition);
  } else if (userData.isComet) {
      // Comets: Chase camera positioned to see nucleus, coma, and spectacular tails
-     // Position camera to the side and slightly in front to see the comet with tails behind it
+     // Tails point away from sun - position camera to show the full majesty
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
-     const sunDirection = targetPosition.clone().sub(sunPosition).normalize();
+     const cometToSunDir = sunPosition.clone().sub(targetPosition).normalize();
      
-     // Tails point away from sun, so position camera at an angle that shows:
-     // 1. The nucleus/coma clearly
-     // 2. Tails streaming away from sun (behind the comet from camera view)
-     // 3. Good lighting and perspective
+     // Position camera at 45° angle from sun-comet line, elevated for cinematic view
+     // This shows: nucleus (center), coma (glow), and tails streaming AWAY from camera toward us
+     const rightVector = new THREE.Vector3(-cometToSunDir.z, 0, cometToSunDir.x).normalize();
      
-     // Camera at 45-degree angle: side view with tails visible
-     const sideAngle = Math.PI * 0.25; // 45 degrees
-     const perpVector = new THREE.Vector3(-sunDirection.z, 0, sunDirection.x).normalize();
+     // Camera offset: 
+     // - 70% along sun direction (slightly toward sun for lighting)
+     // - 50% to the side (perpendicular for better view)  
+     // - 40% elevated (cinematic angle from above)
+     endPos = targetPosition.clone()
+         .add(cometToSunDir.clone().multiplyScalar(distance * 0.7))
+         .add(rightVector.multiplyScalar(distance * 0.5))
+         .add(new THREE.Vector3(0, distance * 0.4, 0));
      
-     const cameraOffset = new THREE.Vector3();
-     // Position to the side (perpendicular to sun direction)
-     cameraOffset.add(perpVector.multiplyScalar(distance * Math.cos(sideAngle) * 1.5));
-     // Slightly towards sun (but not directly) to see comet lit
-     cameraOffset.add(sunDirection.clone().multiplyScalar(distance * Math.sin(sideAngle) * 0.8));
-     // Above for cinematic angle
-     cameraOffset.add(new THREE.Vector3(0, distance * 0.6, 0));
-     
-     endPos = targetPosition.clone().add(cameraOffset);
-     controls.target.copy(targetPosition); // Always look AT the comet
+     controls.target.copy(targetPosition); // Look at comet nucleus
      
      // Enable chase-cam following for smooth comet tracking
      this.cameraFollowMode = true;
      this.cameraCoRotateMode = true;
      
-     console.log(` [Comet Chase-Cam] Following ${userData.name} - cinematic angle to see nucleus and tails`);
+     console.log(` [Comet Chase-Cam] Following ${userData.name} - cinematic angle to see nucleus + tails`);
  } else if (userData.type === 'asteroid') {
      // Asteroids: Close dramatic angle to show irregular shape
      const angle = Math.random() * Math.PI * 2;
