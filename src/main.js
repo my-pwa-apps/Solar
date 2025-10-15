@@ -435,6 +435,7 @@ class App {
  'cassini': ['Cassini'],
  'pioneer-10': ['Pioneer 10'],
  'pioneer-11': ['Pioneer 11'],
+ 'gps-navstar': ['GPS Satellite', 'NAVSTAR'],
  }},
  { prefix: '', array: 'nebulae', patterns: {
  'orion-nebula': ['Orion'],
