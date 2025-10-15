@@ -307,7 +307,7 @@ export class SceneManager {
  if (supported) {
  const arButton = document.createElement('button');
  arButton.id = 'ARButton';
- arButton.style.cssText = 'position: fixed; bottom: 80px; right: 150px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
+ arButton.style.cssText = 'position: fixed; bottom: 80px; right: 80px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
  arButton.innerHTML = '<span style="font-weight: 600; font-size: 16px;">AR</span>'; // Clear text label
  arButton.title = 'Enter AR Mode';
  

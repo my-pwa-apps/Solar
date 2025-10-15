@@ -982,7 +982,7 @@ export class SolarSystemModule {
     let pluginIndex = 0;
     let currentTimeout = null;
     
-    const tryNext = () => {
+    const tryNext = async () => {
         const meta = this._pendingTextureMeta[planetKey];
         
         // Clear any existing timeout
@@ -993,6 +993,28 @@ export class SolarSystemModule {
         if (phase === 'primary') {
             if (primaryIndex < primaryTextureURLs.length) {
                 const url = primaryTextureURLs[primaryIndex];
+                
+                // Check cache first
+                const cacheKey = `${planetName.toLowerCase()}_texture_${url}`;
+                const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
+                if (cachedDataURL) {
+                    console.log(`🗄️ Loading ${planetName} from cache (source ${primaryIndex + 1}/${primaryTextureURLs.length})`);
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => {
+                        const tex = new THREE.Texture(img);
+                        tex.needsUpdate = true;
+                        this._onPlanetTextureSuccess(planetName, tex, url, 'cached');
+                    };
+                    img.onerror = () => {
+                        console.warn(`⚠️ Cached texture failed for ${planetName}, loading from network`);
+                        primaryIndex++;
+                        tryNext();
+                    };
+                    img.src = cachedDataURL;
+                    return;
+                }
+                
                 console.log(`🔭 Loading ${planetName} primary texture ${primaryIndex + 1}/${primaryTextureURLs.length} ...`);
                 meta.phase = 'primary';
                 
@@ -1122,6 +1144,22 @@ export class SolarSystemModule {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = 16;
         tex.needsUpdate = true;
+        
+        // Cache the successfully loaded texture for future use
+        const cacheKey = `${planetName.toLowerCase()}_texture_${url}`;
+        if (tex.image && tex.image instanceof HTMLImageElement) {
+            // Convert image to data URL and cache it
+            const canvas = document.createElement('canvas');
+            canvas.width = tex.image.width;
+            canvas.height = tex.image.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(tex.image, 0, 0);
+            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+            TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => 
+                console.warn(`⚠️ Failed to cache texture for ${planetName}:`, err)
+            );
+            console.log(`💾 Cached texture for ${planetName} (${(dataURL.length / 1024).toFixed(0)}KB)`);
+        }
         
         // Find the object: check sun, planets, and moons
         const lowerName = planetName.toLowerCase();
@@ -6058,7 +6096,7 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'GPS Satellite (NAVSTAR)',
- distance: 4.2,
+ distance: 3.16, // 20,180 km altitude = 3.16x Earth radius (more accurate)
  speed: 2.0,
  size: 0.015,
  color: 0x00FF00,
