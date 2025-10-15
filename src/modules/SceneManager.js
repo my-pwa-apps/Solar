@@ -265,7 +265,7 @@ export class SceneManager {
  const vrButton = document.createElement('button');
  vrButton.id = 'VRButton';
  vrButton.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
- vrButton.innerHTML = ''; // VR headset emoji
+ vrButton.innerHTML = '<span style="font-weight: 600; font-size: 16px;">VR</span>'; // Clear text label
  vrButton.title = 'Enter VR Mode';
  
  // Hover effect
@@ -308,7 +308,7 @@ export class SceneManager {
  const arButton = document.createElement('button');
  arButton.id = 'ARButton';
  arButton.style.cssText = 'position: fixed; bottom: 80px; right: 150px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
- arButton.innerHTML = ''; // Mobile device for AR
+ arButton.innerHTML = '<span style="font-weight: 600; font-size: 16px;">AR</span>'; // Clear text label
  arButton.title = 'Enter AR Mode';
  
  // Hover effect
@@ -469,6 +469,7 @@ export class SceneManager {
  orbitsVisible: module?.orbitsVisible ?? true,
  labelsVisible: this.labelsVisible,
  realisticScale: module?.realisticScale ?? false,
+ constellationsVisible: module?.constellationsVisible ?? true,
  lasersVisible: this.lasersVisible,
  focusedObject: module?.focusedObject || null,
  statusMessage: this.vrStatusMessage,
@@ -655,6 +656,15 @@ export class SceneManager {
  drawButton({
  col: 2,
  row: 1,
+ label: state.constellationsVisible ? ' Constellations ON' : ' Constellations OFF',
+ action: 'constellations',
+ baseColor: '#FFB900',
+ active: state.constellationsVisible
+ });
+
+ drawButton({
+ col: 3,
+ row: 1,
  label: state.realisticScale ? ' Realistic' : ' Educational',
  action: 'scale',
  baseColor: '#FF8C00',
@@ -664,19 +674,20 @@ export class SceneManager {
  this.vrQuickNavMap.set('earth', module?.planets?.earth || null);
 
  drawButton({
- col: 3,
- row: 1,
+ col: 0,
+ row: 2,
  label: ' Focus Earth',
  action: 'focus:earth',
  baseColor: '#10893E',
  active: earthName ? state.focusedObject?.userData?.name === earthName : false
  });
 
- const quickTargets = this.getVRQuickNavTargets().slice(0, 8);
+ const quickTargets = this.getVRQuickNavTargets().slice(0, 7);
 
  quickTargets.forEach((target, index) => {
- const row = 2 + Math.floor(index / columns);
- const col = index % columns;
+ const adjustedIndex = index + 1; // Account for Earth button at row 2, col 0
+ const row = 2 + Math.floor(adjustedIndex / columns);
+ const col = adjustedIndex % columns;
  const isActive = state.focusedObject === target.object;
  drawButton({
  col,
@@ -689,7 +700,7 @@ export class SceneManager {
  this.vrQuickNavMap.set(target.id, target.object);
  });
 
- const extraRow = 2 + Math.ceil(quickTargets.length / columns);
+ const extraRow = 2 + Math.ceil((quickTargets.length + 1) / columns);
 
  drawButton({
  col: 0,
@@ -1034,6 +1045,12 @@ export class SceneManager {
  case 'labels':
  document.getElementById('toggle-details')?.click();
  this.updateVRStatus(' Labels toggled');
+ scheduleRefresh(120);
+ break;
+
+ case 'constellations':
+ document.getElementById('toggle-constellations')?.click();
+ this.updateVRStatus(' Constellations toggled');
  scheduleRefresh(120);
  break;
 
