@@ -3903,7 +3903,8 @@ export class SolarSystemModule {
  { 
  name: 'Orion Nebula', 
  color: 0xFF69B4, 
- position: { x: 6000, y: 1000, z: 3000 }, 
+ ra: 83.8, // 5h 35m - Located in Orion's sword
+ dec: -5.4, // -5° 23' - Below Orion's belt
  size: 400, 
  type: 'emission', // Star-forming region
  description: ' The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!'
@@ -3911,7 +3912,8 @@ export class SolarSystemModule {
  { 
  name: 'Crab Nebula', 
  color: 0x87CEEB, 
- position: { x: -5500, y: -800, z: 4500 }, 
+ ra: 83.6, // 5h 34m - In Taurus constellation
+ dec: 22.0, // +22° 01' - Near Taurus's northern horn
  size: 300, 
  type: 'supernova', // Supernova remnant with filaments
  description: ' The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!'
@@ -3919,7 +3921,8 @@ export class SolarSystemModule {
  { 
  name: 'Ring Nebula', 
  color: 0x9370DB, 
- position: { x: 4500, y: 1500, z: -5000 }, 
+ ra: 283.4, // 18h 53m - In Lyra constellation, near Vega
+ dec: 33.0, // +33° 02' - Between Sheliak and Sulafat
  size: 250, 
  type: 'planetary', // Planetary nebula (ring shape)
  description: ' The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.'
@@ -3997,7 +4000,16 @@ export class SolarSystemModule {
  const particles = new THREE.Points(geometry, material);
  group.add(particles);
  
- group.position.set(nebData.position.x, nebData.position.y, nebData.position.z);
+ // Convert RA/Dec to 3D Cartesian coordinates (like constellations)
+ // Nebulae should be positioned farther out than constellations
+ const nebulaDistance = CONFIG.CONSTELLATION.DISTANCE * 1.5; // Place nebulae 1.5x farther than constellations
+ const position = CoordinateUtils.sphericalToCartesian(
+ nebData.ra,
+ nebData.dec,
+ nebulaDistance
+ );
+ 
+ group.position.set(position.x, position.y, position.z);
  
  group.userData = {
  name: nebData.name,
@@ -4008,7 +4020,9 @@ export class SolarSystemModule {
  funFact: nebData.name === 'Orion Nebula' ? 'New stars are being born here right now!' :
  nebData.name === 'Crab Nebula' ? 'It\'s expanding at 1,500 km/s!' :
  'Planetary nebulae have nothing to do with planets - they just look round like planets through old telescopes!',
- basePosition: { x: nebData.position.x, y: nebData.position.y, z: nebData.position.z }
+ ra: nebData.ra,
+ dec: nebData.dec,
+ basePosition: { x: position.x, y: position.y, z: position.z }
  };
  
  scene.add(group);
