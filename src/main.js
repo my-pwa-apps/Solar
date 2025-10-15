@@ -86,6 +86,13 @@ class App {
  // Setup controls
  this.setupControls();
  
+ // Hide tooltip when camera controls are used
+ if (this.sceneManager?.controls) {
+ this.sceneManager.controls.addEventListener('start', () => {
+ this.hideHoverLabel();
+ });
+ }
+ 
  // Hide loading screen
  this.uiManager.hideLoading();
  
@@ -300,6 +307,16 @@ class App {
  // Canvas hover for object labels
  this.sceneManager.renderer.domElement.addEventListener('mousemove', (e) => {
  this.handleCanvasHover(e);
+ });
+
+ // Hide tooltip when mouse leaves canvas
+ this.sceneManager.renderer.domElement.addEventListener('mouseleave', () => {
+ this.hideHoverLabel();
+ });
+
+ // Hide tooltip on interactions (click, drag start)
+ this.sceneManager.renderer.domElement.addEventListener('mousedown', () => {
+ this.hideHoverLabel();
  });
  
  // Navigation dropdown
@@ -565,6 +582,16 @@ class App {
  }
  }
 
+ hideHoverLabel() {
+ if (this._hoverLabel) {
+ this._hoverLabel.classList.remove('visible');
+ }
+ if (this.sceneManager?.renderer?.domElement) {
+ this.sceneManager.renderer.domElement.style.cursor = 'default';
+ }
+ this._currentHoveredObject = null;
+ }
+
  handleCanvasHover(event) {
  if (!this.solarSystemModule) return;
 
@@ -583,6 +610,9 @@ class App {
  const target = this._raycastNamedObject(event, false);
  
  if (target) {
+ // Store current hovered object
+ this._currentHoveredObject = target;
+ 
  // Translate object name
  const t = window.t || ((key) => key);
  const nameKey = target.userData.name.toLowerCase().replace(/\s+/g, '');
@@ -592,14 +622,13 @@ class App {
  
  // Show hover label with translated name
  this._hoverLabel.textContent = translatedName;
- this._hoverLabel.style.left = `${event.clientX}px`;
- this._hoverLabel.style.top = `${event.clientY}px`;
+ this._hoverLabel.style.left = `${event.clientX + 15}px`;
+ this._hoverLabel.style.top = `${event.clientY + 15}px`;
  this._hoverLabel.classList.add('visible');
  this.sceneManager.renderer.domElement.style.cursor = 'pointer';
  } else {
  // Hide label if no object hovered
- this._hoverLabel.classList.remove('visible');
- this.sceneManager.renderer.domElement.style.cursor = 'default';
+ this.hideHoverLabel();
  }
  }
  
