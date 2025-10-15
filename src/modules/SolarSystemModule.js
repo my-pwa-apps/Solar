@@ -7754,6 +7754,22 @@ createHyperrealisticHubble(satData) {
      
      console.log(` [Comet Detail View] Enabling for ${userData.name} - bringing to viewable distance`);
      
+     // IMMEDIATELY move comet to detail view position
+     const detailDistance = 200;
+     const currentPos = object.position.clone();
+     const orbitDirection = Math.sqrt(currentPos.x ** 2 + currentPos.z ** 2);
+     if (orbitDirection > 0) {
+         object.position.x = (currentPos.x / orbitDirection) * detailDistance;
+         object.position.z = (currentPos.z / orbitDirection) * detailDistance;
+         // Keep Y position (vertical wobble)
+     }
+     
+     // Update targetPosition to new detail view position
+     targetPosition = object.position.clone();
+     
+     console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
+     console.log(`   New position: (${targetPosition.x.toFixed(1)}, ${targetPosition.y.toFixed(1)}, ${targetPosition.z.toFixed(1)})`);
+     
      // Comets: Chase camera positioned to see nucleus, coma, and spectacular tails
      // Tails point away from sun - position camera to show the full majesty
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
