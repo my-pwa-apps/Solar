@@ -272,12 +272,14 @@
 
 /* Fluent Info Panel - Floating Card */
 #info-panel {
-    top: 80px;
+    top: 90px;
     left: 20px;
     max-width: 320px;
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
     z-index: 50;
     font-size: 14px;
+    /* Ensure close button is never covered by topbar */
+    margin-top: 10px;
 }
 
 #info-panel:hover {
@@ -404,11 +406,11 @@
     background: var(--fluent-bg-secondary);
     border: 1px solid var(--fluent-border);
     color: var(--fluent-text-primary);
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -418,6 +420,10 @@
     -webkit-user-select: none;
     user-select: none;
     flex-shrink: 0;
+    /* Better touch target size for mobile */
+    min-width: 44px;
+    min-height: 44px;
+    z-index: 1;
 }
 
 .close-btn:hover {
@@ -1131,14 +1137,15 @@ select {
     
     #info-panel {
         left: 10px;
-        top: 60px;
+        top: 70px;
         max-width: calc(100vw - 20px);
         max-height: 40vh;
+        margin-top: 10px;
     }
     
     #speed-control {
         right: 10px;
-        top: 60px;
+        top: 80px;
         min-width: 70px;
     }
     

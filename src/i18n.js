@@ -8,7 +8,7 @@ const translations = {
         subtitle: "Interactive 3D Solar System",
         
         // Navigation
-        quickNavigation: "Quick Navigation",
+        quickNavigation: "Navigation",
         
         // Object categories
         ourStar: "Our Star",
@@ -266,7 +266,7 @@ const translations = {
         subtitle: "Interactief 3D Zonnestelsel",
         
         // Navigatie
-        quickNavigation: "Snelle Navigatie",
+        quickNavigation: "Navigatie",
         
         // Object categorieën
         ourStar: "Onze Ster",
@@ -521,7 +521,7 @@ const translations = {
         subtitle: "Système Solaire 3D Interactif",
         
         // Navigation
-        quickNavigation: "Navigation Rapide",
+        quickNavigation: "Navigation",
         
         // Catégories d'objets
         ourStar: "Notre ×‰toile",
@@ -768,7 +768,7 @@ const translations = {
         subtitle: "Interaktives 3D-Sonnensystem",
         
         // Navigation
-        quickNavigation: "Schnellnavigation",
+        quickNavigation: "Navigation",
         
         // Objektkategorien
         ourStar: "Unser Stern",
@@ -1015,7 +1015,7 @@ const translations = {
         subtitle: "Sistema Solar 3D Interactivo",
         
         // Navegación
-        quickNavigation: "Navegación Rápida",
+        quickNavigation: "Navegación",
         
         // Categor×­as de objetos
         ourStar: "Nuestra Estrella",
@@ -1262,7 +1262,7 @@ const translations = {
         subtitle: "Sistema Solar 3D Interativo",
         
         // Navegação
-        quickNavigation: "Navegação Rápida",
+        quickNavigation: "Navegação",
         
         // Categorias de objetos
         ourStar: "Nossa Estrela",
