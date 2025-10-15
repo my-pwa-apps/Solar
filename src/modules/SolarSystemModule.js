@@ -6579,9 +6579,35 @@ createHyperrealisticHubble(satData) {
  
  // Simplified elliptical orbit
  const r = a * (1 - e * e) / (1 + e * cosAngle);
+ 
+ // Check if this comet is in "detail view" mode (when focused)
+ if (userData.detailView) {
+ // Store the real orbital position
+ userData.orbitPosition = {
+ x: r * cosAngle,
+ y: Math.sin(angle * 0.5) * 20,
+ z: r * sinAngle
+ };
+ // Position at viewable distance from sun (200 units)
+ const detailDistance = 200;
+ const orbitDirection = Math.sqrt(
+ userData.orbitPosition.x ** 2 + 
+ userData.orbitPosition.z ** 2
+ );
+ if (orbitDirection > 0) {
+ comet.position.x = (userData.orbitPosition.x / orbitDirection) * detailDistance;
+ comet.position.z = (userData.orbitPosition.z / orbitDirection) * detailDistance;
+ } else {
+ comet.position.x = detailDistance;
+ comet.position.z = 0;
+ }
+ comet.position.y = userData.orbitPosition.y;
+ } else {
+ // Normal orbital position
  comet.position.x = r * cosAngle;
  comet.position.z = r * sinAngle;
  comet.position.y = Math.sin(angle * 0.5) * 20;
+ }
  
  // Show/hide comet tails based on toggle
  if (userData.dustTail) {
@@ -7381,6 +7407,13 @@ createHyperrealisticHubble(satData) {
  
  // Determine actual object size (not inflated glow size)
  const userData = object.userData;
+ 
+ // Disable detail view for previously focused comet when focusing on non-comet
+ if (!userData.isComet && this.focusedComet) {
+ this.focusedComet.userData.detailView = false;
+ this.focusedComet = null;
+ console.log(' [Detail View] Disabled - focusing on non-comet object');
+ }
  let actualRadius;
  
  if (userData.isSpacecraft || userData.isComet) {
@@ -7710,6 +7743,17 @@ createHyperrealisticHubble(satData) {
      );
      controls.target.copy(targetPosition);
  } else if (userData.isComet) {
+     // Comets: Enable "detail view" mode to bring comet to viewable distance
+     // Store reference to focused comet
+     if (this.focusedComet && this.focusedComet !== object) {
+         // Disable detail view for previously focused comet
+         this.focusedComet.userData.detailView = false;
+     }
+     this.focusedComet = object;
+     object.userData.detailView = true;
+     
+     console.log(` [Comet Detail View] Enabling for ${userData.name} - bringing to viewable distance`);
+     
      // Comets: Chase camera positioned to see nucleus, coma, and spectacular tails
      // Tails point away from sun - position camera to show the full majesty
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
