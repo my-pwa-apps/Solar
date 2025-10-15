@@ -4420,23 +4420,29 @@ export class SolarSystemModule {
  const galaxiesData = [
  { 
  name: 'Andromeda Galaxy', 
- position: { x: 12000, y: 2000, z: -8000 }, 
+ ra: 10.7,    // 0h 42m 44s - In Andromeda constellation, near Mirach
+ dec: 41.3,   // +41° 16' 09" - Northern hemisphere autumn sky
  size: 600, 
  type: 'spiral', 
+ angularSize: 178, // 178 arcminutes - appears 6x larger than full moon!
  description: ' The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).'
  },
  { 
  name: 'Whirlpool Galaxy', 
- position: { x: -10000, y: -1500, z: -9000 }, 
+ ra: 202.5,   // 13h 29m 53s - In Canes Venatici, below Big Dipper's handle
+ dec: 47.2,   // +47° 11' 43" - Northern spring sky
  size: 400, 
- type: 'spiral', 
+ type: 'spiral',
+ angularSize: 11, // 11 arcminutes
  description: ' The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.'
  },
  { 
  name: 'Sombrero Galaxy', 
- position: { x: -8000, y: 3000, z: 7000 }, 
+ ra: 189.5,   // 12h 39m 59s - In Virgo constellation, western edge
+ dec: -11.6,  // -11° 37' 23" - Southern declination, visible from both hemispheres
  size: 350, 
- type: 'elliptical', 
+ type: 'elliptical',
+ angularSize: 9, // 9 arcminutes
  description: ' The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!'
  }
  ];
@@ -4527,7 +4533,16 @@ export class SolarSystemModule {
  const core = new THREE.Mesh(coreGeo, coreMat);
  group.add(core);
  
- group.position.set(galData.position.x, galData.position.y, galData.position.z);
+ // Convert RA/Dec to 3D Cartesian coordinates (same as nebulae and constellations)
+ // Galaxies should be positioned even farther out than nebulae
+ const galaxyDistance = CONFIG.CONSTELLATION.DISTANCE * 2.0; // 2x constellation distance, 1.33x nebula distance
+ const position = CoordinateUtils.sphericalToCartesian(
+ galData.ra,
+ galData.dec,
+ galaxyDistance
+ );
+ 
+ group.position.set(position.x, position.y, position.z);
  group.rotation.x = Math.random() * Math.PI * 0.3;
  group.rotation.y = Math.random() * Math.PI * 2;
  
@@ -4538,10 +4553,13 @@ export class SolarSystemModule {
  description: galData.description,
  distance: 'Millions of light-years',
  realSize: '100,000+ light-years across',
+ angularSize: galData.angularSize, // Angular size in arcminutes
+ ra: galData.ra,
+ dec: galData.dec,
  funFact: galData.name === 'Andromeda Galaxy' ? 'Andromeda is approaching us at 110 km/s!' :
  galData.name === 'Whirlpool Galaxy' ? 'You can see this galaxy with a good pair of binoculars!' :
  'Despite billions of stars, galaxies are mostly empty space!',
- basePosition: { x: galData.position.x, y: galData.position.y, z: galData.position.z }
+ basePosition: { x: position.x, y: position.y, z: position.z }
  };
  
  scene.add(group);
