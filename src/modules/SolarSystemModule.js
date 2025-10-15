@@ -3902,29 +3902,62 @@ export class SolarSystemModule {
  const nebulaeData = [
  { 
  name: 'Orion Nebula', 
- color: 0xFF69B4, 
  ra: 83.8, // 5h 35m - Located in Orion's sword
  dec: -5.4, // -5° 23' - Below Orion's belt
  size: 400, 
  type: 'emission', // Star-forming region
+ // Spectral emission colors (astronomically accurate)
+ colors: {
+ hydrogen: 0xFF2244,    // H-alpha (656.3 nm) - Deep red
+ oxygen: 0x00FF88,      // O-III (495.9, 500.7 nm) - Cyan-green
+ sulfur: 0xFF6644,      // S-II (671.6, 673.1 nm) - Red-orange
+ continuum: 0xCCDDFF    // Reflected starlight - Blue-white
+ },
+ brightness: 1.2,        // Orion is very bright
+ density: 0.7,           // High density gas cloud
+ turbulence: 0.4,        // Moderate turbulence
+ centralStars: 4,        // Trapezium cluster
  description: ' The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!'
  },
  { 
  name: 'Crab Nebula', 
- color: 0x87CEEB, 
  ra: 83.6, // 5h 34m - In Taurus constellation
  dec: 22.0, // +22° 01' - Near Taurus's northern horn
  size: 300, 
  type: 'supernova', // Supernova remnant with filaments
+ colors: {
+ hydrogen: 0xFF4422,    // H-alpha filaments - Orange-red
+ synchrotron: 0x88CCFF, // Synchrotron radiation - Blue-white
+ oxygen: 0x00DD66,      // O-III emission
+ continuum: 0xAABBDD    // Background glow
+ },
+ brightness: 0.9,
+ density: 0.3,           // Lower density, expanding shell
+ turbulence: 0.8,        // High turbulence from explosion
+ filaments: true,        // Distinct filamentary structure
+ pulsar: true,           // Central pulsar (animated)
+ expansionRate: 0.002,   // Expanding at 1,500 km/s
  description: ' The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!'
  },
  { 
  name: 'Ring Nebula', 
- color: 0x9370DB, 
  ra: 283.4, // 18h 53m - In Lyra constellation, near Vega
  dec: 33.0, // +33° 02' - Between Sheliak and Sulafat
  size: 250, 
  type: 'planetary', // Planetary nebula (ring shape)
+ colors: {
+ oxygen: 0x44DDAA,      // O-III inner ring - Blue-green
+ hydrogen: 0xFF3355,    // H-alpha outer halo - Deep red
+ helium: 0xFFAA66,      // He-II emission - Orange
+ continuum: 0xEEEEFF    // Central star light
+ },
+ brightness: 0.7,
+ density: 0.5,
+ turbulence: 0.2,        // Low turbulence, symmetric
+ ringStructure: true,    // Distinct ring/torus shape
+ centralStar: true,      // White dwarf at center
+ innerRadius: 0.4,       // Ring proportions
+ outerRadius: 0.7,
  description: ' The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.'
  }
  ];
@@ -3932,73 +3965,8 @@ export class SolarSystemModule {
  for (const nebData of nebulaeData) {
  const group = new THREE.Group();
  
- // Create procedural nebula with particles
- const particleCount = 8000;
- const geometry = new THREE.BufferGeometry();
- const positions = new Float32Array(particleCount * 3);
- const colors = new Float32Array(particleCount * 3);
- const sizes = new Float32Array(particleCount);
- 
- const color = new THREE.Color(nebData.color);
- 
- for (let i = 0; i < particleCount; i++) {
- let x, y, z;
- 
- if (nebData.type === 'planetary') {
- // Ring shape for planetary nebula
- const angle = Math.random() * Math.PI * 2;
- const radius = nebData.size * 0.4 + Math.random() * nebData.size * 0.3;
- const thickness = (Math.random() - 0.5) * nebData.size * 0.15;
- x = Math.cos(angle) * radius;
- y = Math.sin(angle) * radius;
- z = thickness;
- } else if (nebData.type === 'supernova') {
- // Filamentary structure for supernova remnant
- const theta = Math.random() * Math.PI * 2;
- const phi = Math.random() * Math.PI;
- const r = Math.pow(Math.random(), 0.3) * nebData.size;
- x = r * Math.sin(phi) * Math.cos(theta);
- y = r * Math.sin(phi) * Math.sin(theta);
- z = r * Math.cos(phi);
- } else {
- // Cloudy emission nebula
- const theta = Math.random() * Math.PI * 2;
- const phi = Math.random() * Math.PI;
- const r = Math.pow(Math.random(), 0.5) * nebData.size;
- x = r * Math.sin(phi) * Math.cos(theta);
- y = r * Math.sin(phi) * Math.sin(theta);
- z = r * Math.cos(phi);
- }
- 
- positions[i * 3] = x;
- positions[i * 3 + 1] = y;
- positions[i * 3 + 2] = z;
- 
- // Color variation
- const colorVariation = 0.8 + Math.random() * 0.4;
- colors[i * 3] = color.r * colorVariation;
- colors[i * 3 + 1] = color.g * colorVariation;
- colors[i * 3 + 2] = color.b * colorVariation;
- 
- sizes[i] = Math.random() * 3 + 1;
- }
- 
- geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
- geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
- geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
- 
- const material = new THREE.PointsMaterial({
- size: 2,
- vertexColors: true,
- transparent: true,
- opacity: 0.8,
- blending: THREE.AdditiveBlending,
- sizeAttenuation: true,
- depthWrite: false
- });
- 
- const particles = new THREE.Points(geometry, material);
- group.add(particles);
+ // Create hyperrealistic multi-layer nebula
+ this.createHyperrealisticNebula(group, nebData);
  
  // Convert RA/Dec to 3D Cartesian coordinates (like constellations)
  // Nebulae should be positioned farther out than constellations
@@ -4029,6 +3997,374 @@ export class SolarSystemModule {
  this.objects.push(group);
  this.nebulae.push(group);
  }
+ }
+
+ createHyperrealisticNebula(group, nebData) {
+ // Create multi-layer hyperrealistic procedural nebula
+ // Using spectral emission colors and volumetric rendering techniques
+ 
+ const particleCount = 15000; // More particles for detail
+ 
+ // === LAYER 1: Primary Emission (H-alpha) ===
+ if (nebData.colors.hydrogen) {
+ const hydrogenLayer = this.createNebulaLayer(
+ nebData, 
+ nebData.colors.hydrogen, 
+ particleCount * 0.4, // 40% of particles
+ 1.0, // Full size
+ 0.7, // Opacity
+ nebData.brightness * 0.8
+ );
+ group.add(hydrogenLayer);
+ }
+ 
+ // === LAYER 2: Oxygen Emission (O-III) ===
+ if (nebData.colors.oxygen) {
+ const oxygenLayer = this.createNebulaLayer(
+ nebData, 
+ nebData.colors.oxygen, 
+ particleCount * 0.3, // 30% of particles
+ 0.85, // Slightly smaller
+ 0.6, // More transparent
+ nebData.brightness * 0.6
+ );
+ group.add(oxygenLayer);
+ }
+ 
+ // === LAYER 3: Sulfur/Helium Emission ===
+ if (nebData.colors.sulfur || nebData.colors.helium) {
+ const tertiaryColor = nebData.colors.sulfur || nebData.colors.helium;
+ const tertiaryLayer = this.createNebulaLayer(
+ nebData, 
+ tertiaryColor, 
+ particleCount * 0.15, // 15% of particles
+ 0.95,
+ 0.5,
+ nebData.brightness * 0.5
+ );
+ group.add(tertiaryLayer);
+ }
+ 
+ // === LAYER 4: Dust/Dark Regions ===
+ const dustLayer = this.createDustLayer(nebData, particleCount * 0.1);
+ group.add(dustLayer);
+ 
+ // === LAYER 5: Bright Core/Stars ===
+ if (nebData.colors.continuum) {
+ const coreLayer = this.createNebulaLayer(
+ nebData, 
+ nebData.colors.continuum, 
+ particleCount * 0.05, // 5% bright core
+ 0.3, // Small core
+ 0.9,
+ nebData.brightness * 1.5 // Very bright
+ );
+ group.add(coreLayer);
+ }
+ 
+ // === Add Central Stars ===
+ if (nebData.centralStars) {
+ for (let i = 0; i < nebData.centralStars; i++) {
+ const star = this.createCentralStar(nebData, i);
+ group.add(star);
+ }
+ }
+ 
+ // === Add Pulsar (for Crab Nebula) ===
+ if (nebData.pulsar) {
+ const pulsar = this.createPulsar(nebData);
+ group.add(pulsar);
+ // Store for animation
+ group.userData.pulsar = pulsar;
+ }
+ 
+ // === Add Central White Dwarf (for Ring Nebula) ===
+ if (nebData.centralStar) {
+ const whiteDwarf = this.createWhiteDwarf(nebData);
+ group.add(whiteDwarf);
+ }
+ 
+ // === Filamentary Structure (for supernova) ===
+ if (nebData.filaments) {
+ const filamentLayer = this.createFilaments(nebData, particleCount * 0.2);
+ group.add(filamentLayer);
+ }
+ }
+ 
+ createNebulaLayer(nebData, colorHex, particleCount, sizeScale, opacity, brightness) {
+ // Create a single emission layer with spectral color
+ const geometry = new THREE.BufferGeometry();
+ const positions = new Float32Array(particleCount * 3);
+ const colors = new Float32Array(particleCount * 3);
+ const sizes = new Float32Array(particleCount);
+ 
+ const color = new THREE.Color(colorHex);
+ 
+ for (let i = 0; i < particleCount; i++) {
+ let x, y, z, density;
+ 
+ if (nebData.type === 'planetary' && nebData.ringStructure) {
+ // Ring/torus structure for planetary nebulae
+ const angle = Math.random() * Math.PI * 2;
+ const vertAngle = (Math.random() - 0.5) * Math.PI * 0.3; // Thickness
+ const radiusVariation = Math.random();
+ const radius = nebData.size * (nebData.innerRadius + radiusVariation * (nebData.outerRadius - nebData.innerRadius));
+ 
+ x = radius * Math.cos(angle);
+ y = radius * Math.sin(angle);
+ z = radius * Math.sin(vertAngle) * 0.3; // Barrel shape
+ 
+ // Density falloff from ring
+ density = 1.0 - Math.abs(radiusVariation - 0.5) * 2.0;
+ 
+ } else if (nebData.type === 'supernova') {
+ // Expanding shell with filaments
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.random() * Math.PI;
+ const r = Math.pow(Math.random(), 0.25) * nebData.size * sizeScale; // Bias toward shell
+ 
+ x = r * Math.sin(phi) * Math.cos(theta);
+ y = r * Math.sin(phi) * Math.sin(theta);
+ z = r * Math.cos(phi);
+ 
+ // Shell density (hollow center, dense shell)
+ const normalizedR = r / (nebData.size * sizeScale);
+ density = Math.exp(-Math.pow((normalizedR - 0.7) / 0.2, 2)); // Gaussian around r=0.7
+ 
+ } else {
+ // Emission nebula - cloudy, turbulent structure
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.random() * Math.PI;
+ const r = Math.pow(Math.random(), 0.5 + nebData.density * 0.5) * nebData.size * sizeScale;
+ 
+ // Add turbulence
+ const turbulence = nebData.turbulence || 0.3;
+ const turbX = (Math.random() - 0.5) * nebData.size * turbulence * 0.3;
+ const turbY = (Math.random() - 0.5) * nebData.size * turbulence * 0.3;
+ const turbZ = (Math.random() - 0.5) * nebData.size * turbulence * 0.3;
+ 
+ x = r * Math.sin(phi) * Math.cos(theta) + turbX;
+ y = r * Math.sin(phi) * Math.sin(theta) + turbY;
+ z = r * Math.cos(phi) + turbZ;
+ 
+ // Core-to-edge density gradient
+ density = Math.pow(1.0 - r / (nebData.size * sizeScale), 2);
+ }
+ 
+ positions[i * 3] = x;
+ positions[i * 3 + 1] = y;
+ positions[i * 3 + 2] = z;
+ 
+ // Color with brightness variation based on density
+ const brightnessVar = 0.7 + Math.random() * 0.3;
+ const densityBrightness = Math.pow(density, 0.5) * brightness * brightnessVar;
+ 
+ colors[i * 3] = color.r * densityBrightness;
+ colors[i * 3 + 1] = color.g * densityBrightness;
+ colors[i * 3 + 2] = color.b * densityBrightness;
+ 
+ // Size variation based on density
+ sizes[i] = (2 + Math.random() * 4) * Math.pow(density, 0.3);
+ }
+ 
+ geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+ geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+ 
+ const material = new THREE.PointsMaterial({
+ size: 2.5,
+ vertexColors: true,
+ transparent: true,
+ opacity: opacity,
+ blending: THREE.AdditiveBlending,
+ sizeAttenuation: true,
+ depthWrite: false
+ });
+ 
+ return new THREE.Points(geometry, material);
+ }
+ 
+ createDustLayer(nebData, particleCount) {
+ // Create dark dust lanes (absorption)
+ const geometry = new THREE.BufferGeometry();
+ const positions = new Float32Array(particleCount * 3);
+ const colors = new Float32Array(particleCount * 3);
+ const sizes = new Float32Array(particleCount);
+ 
+ const dustColor = new THREE.Color(0x222244); // Dark blue-grey
+ 
+ for (let i = 0; i < particleCount; i++) {
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.random() * Math.PI;
+ const r = Math.pow(Math.random(), 0.4) * nebData.size * 0.6;
+ 
+ positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+ positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+ positions[i * 3 + 2] = r * Math.cos(phi);
+ 
+ // Darker dust color
+ const darkness = 0.3 + Math.random() * 0.3;
+ colors[i * 3] = dustColor.r * darkness;
+ colors[i * 3 + 1] = dustColor.g * darkness;
+ colors[i * 3 + 2] = dustColor.b * darkness;
+ 
+ sizes[i] = 3 + Math.random() * 5; // Larger dust particles
+ }
+ 
+ geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+ geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+ 
+ const material = new THREE.PointsMaterial({
+ size: 3,
+ vertexColors: true,
+ transparent: true,
+ opacity: 0.4,
+ blending: THREE.NormalBlending, // Normal blending for dust (not additive)
+ sizeAttenuation: true,
+ depthWrite: false
+ });
+ 
+ return new THREE.Points(geometry, material);
+ }
+ 
+ createFilaments(nebData, particleCount) {
+ // Create filamentary structures for supernova remnants
+ const geometry = new THREE.BufferGeometry();
+ const positions = new Float32Array(particleCount * 3);
+ const colors = new Float32Array(particleCount * 3);
+ const sizes = new Float32Array(particleCount);
+ 
+ const filamentColor = new THREE.Color(nebData.colors.hydrogen);
+ const numFilaments = 12; // Number of filament strands
+ 
+ for (let i = 0; i < particleCount; i++) {
+ // Pick a filament strand
+ const strand = Math.floor(Math.random() * numFilaments);
+ const strandAngle = (strand / numFilaments) * Math.PI * 2;
+ const strandPhi = Math.random() * Math.PI;
+ 
+ // Position along filament with noise
+ const t = Math.random(); // Position along strand
+ const r = t * nebData.size * 0.9;
+ const noise = (Math.random() - 0.5) * 30;
+ 
+ positions[i * 3] = (r * Math.sin(strandPhi) * Math.cos(strandAngle)) + noise;
+ positions[i * 3 + 1] = (r * Math.sin(strandPhi) * Math.sin(strandAngle)) + noise;
+ positions[i * 3 + 2] = (r * Math.cos(strandPhi)) + noise * 0.5;
+ 
+ // Bright filament color
+ const brightness = 0.8 + Math.random() * 0.4;
+ colors[i * 3] = filamentColor.r * brightness;
+ colors[i * 3 + 1] = filamentColor.g * brightness;
+ colors[i * 3 + 2] = filamentColor.b * brightness;
+ 
+ sizes[i] = 1 + Math.random() * 2; // Thin filaments
+ }
+ 
+ geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+ geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+ 
+ const material = new THREE.PointsMaterial({
+ size: 1.5,
+ vertexColors: true,
+ transparent: true,
+ opacity: 0.9,
+ blending: THREE.AdditiveBlending,
+ sizeAttenuation: true,
+ depthWrite: false
+ });
+ 
+ return new THREE.Points(geometry, material);
+ }
+ 
+ createCentralStar(nebData, index) {
+ // Create bright stars at nebula center (e.g., Trapezium in Orion)
+ const starGroup = new THREE.Group();
+ const offset = (index - nebData.centralStars / 2) * 15;
+ 
+ // Star core
+ const coreGeo = new THREE.SphereGeometry(5, 16, 16);
+ const coreMat = new THREE.MeshBasicMaterial({
+ color: 0xFFFFFF,
+ transparent: true,
+ opacity: 1.0,
+ toneMapped: false
+ });
+ const core = new THREE.Mesh(coreGeo, coreMat);
+ core.position.set(offset, offset * 0.3, 0);
+ starGroup.add(core);
+ 
+ // Star glow
+ const glowGeo = new THREE.SphereGeometry(15, 16, 16);
+ const glowMat = new THREE.MeshBasicMaterial({
+ color: 0xCCDDFF,
+ transparent: true,
+ opacity: 0.4,
+ blending: THREE.AdditiveBlending
+ });
+ const glow = new THREE.Mesh(glowGeo, glowMat);
+ glow.position.copy(core.position);
+ starGroup.add(glow);
+ 
+ return starGroup;
+ }
+ 
+ createPulsar(nebData) {
+ // Create animated pulsar for Crab Nebula
+ const pulsarGroup = new THREE.Group();
+ 
+ // Pulsar core (will pulse)
+ const coreGeo = new THREE.SphereGeometry(3, 16, 16);
+ const coreMat = new THREE.MeshBasicMaterial({
+ color: 0xFFFFFF,
+ transparent: true,
+ opacity: 1.0,
+ emissive: 0xFFFFFF,
+ emissiveIntensity: 2.0,
+ toneMapped: false
+ });
+ const core = new THREE.Mesh(coreGeo, coreMat);
+ pulsarGroup.add(core);
+ 
+ // Store for animation
+ pulsarGroup.userData.pulsarCore = core;
+ pulsarGroup.userData.pulsarMaterial = coreMat;
+ pulsarGroup.userData.pulsePhase = Math.random() * Math.PI * 2;
+ 
+ return pulsarGroup;
+ }
+ 
+ createWhiteDwarf(nebData) {
+ // Create white dwarf star at center of planetary nebula
+ const starGroup = new THREE.Group();
+ 
+ // White dwarf core
+ const coreGeo = new THREE.SphereGeometry(4, 16, 16);
+ const coreMat = new THREE.MeshBasicMaterial({
+ color: 0xEEFFFF,
+ transparent: true,
+ opacity: 1.0,
+ emissive: 0xCCDDFF,
+ emissiveIntensity: 1.5,
+ toneMapped: false
+ });
+ const core = new THREE.Mesh(coreGeo, coreMat);
+ starGroup.add(core);
+ 
+ // Blue-white glow
+ const glowGeo = new THREE.SphereGeometry(12, 16, 16);
+ const glowMat = new THREE.MeshBasicMaterial({
+ color: 0xDDEEFF,
+ transparent: true,
+ opacity: 0.5,
+ blending: THREE.AdditiveBlending
+ });
+ const glow = new THREE.Mesh(glowGeo, glowMat);
+ starGroup.add(glow);
+ 
+ return starGroup;
  }
 
  createConstellations(scene) {
