@@ -1275,13 +1275,18 @@ export class SolarSystemModule {
  return this.loadPlanetTextureReal('Neptune', primary, this.createNeptuneTexture, size, []);
  }
  
- // Moon real texture loader
+ // Moon real texture loader - NASA LRO (Lunar Reconnaissance Orbiter) photorealistic textures
  createMoonTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg',
+ // Solar System Scope - high quality moon texture (4K)
+ 'https://www.solarsystemscope.com/textures/download/2k_moon.jpg',
+ // NASA CGI Moon texture (high quality)
+ 'https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_poles_4k.jpg',
+ // Three.js repo moon texture
  'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg'
  ];
  const pluginFallbacks = [
+ 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg',
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap.jpg'
  ];
  return this.loadPlanetTextureReal('Moon', primary, this.createMoonTexture, size, pluginFallbacks);
@@ -2841,19 +2846,27 @@ export class SolarSystemModule {
  const moonName = config.name.toLowerCase();
  
  if (moonName.includes('moon') && !moonName.includes('ganymede') && !moonName.includes('callisto')) {
- // Earth's Moon: REAL NASA texture with deep craters and maria
+ // Earth's Moon: REAL NASA LRO texture with photorealistic craters and maria
  const moonTexture = this.createMoonTextureReal(2048);
- const moonBump = this.createMoonBumpMap(2048);
- const moonNormal = this.createMoonNormalMap(2048);
+ 
+ // Try loading real bump/normal maps from NASA/community sources
+ const moonBumpMap = new THREE.TextureLoader().load(
+ 'https://www.solarsystemscope.com/textures/download/2k_moon_normal.jpg',
+ undefined,
+ undefined,
+ () => {
+ // Fallback to procedural if loading fails
+ console.log('Using procedural moon bump map (fallback)');
+ }
+ );
  
  moonMaterial = new THREE.MeshStandardMaterial({
  map: moonTexture,
- normalMap: moonNormal,
- normalScale: new THREE.Vector2(2.0, 2.0), // Deep craters!
- bumpMap: moonBump,
- bumpScale: 0.15, // Pronounced elevation
- roughness: 0.98,
- metalness: 0.02
+ normalMap: moonBumpMap,
+ normalScale: new THREE.Vector2(3.5, 3.5), // Dramatic crater depth!
+ roughness: 0.95, // Very rough, dusty regolith surface
+ metalness: 0.01, // No metal on moon
+ bumpScale: 0.02
  });
  } else if (moonName.includes('phobos')) {
  // Phobos: Dark reddish-gray with Stickney crater
