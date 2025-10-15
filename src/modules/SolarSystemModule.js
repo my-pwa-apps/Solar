@@ -244,16 +244,17 @@ export class SolarSystemModule {
  scene.add(sunLight);
  this.sun.userData.sunLight = sunLight;
  
- // Ambient light - significantly increased to see dark sides clearly
- const ambientLight = new THREE.AmbientLight(0x444466, 2.0); // Bright ambient for dark side visibility
+ // Ambient light - subtle fill light for starlight reflection (not too bright!)
+ // Lower value = more dramatic moon phases and realistic planet shadows
+ const ambientLight = new THREE.AmbientLight(0x404050, 0.4); // Subtle starlight ambient
  ambientLight.name = 'ambientLight';
  scene.add(ambientLight);
  
  if (DEBUG.enabled) {
- console.log(' Lighting: Sun intensity 9 (warm white), Ambient 2.0, Tone mapping 1.2');
- console.log(' - Enhanced dark side visibility with increased ambient light');
- console.log(' - Higher exposure prevents dark tone crushing');
- console.log(' - Ambient light makes dark sides clearly visible');
+ console.log(' Lighting: Sun intensity 9 (warm white), Ambient 0.4 (subtle), Tone mapping 1.2');
+ console.log(' - Subtle ambient simulates starlight reflection');
+ console.log(' - Realistic moon phases with proper shadow terminator');
+ console.log(' - Dramatic day/night contrast on planets');
  console.log(' - Sun light reaches all planets without decay');
  console.log(' - Eclipses will cast 4K shadows');
  }
@@ -2870,10 +2871,16 @@ export class SolarSystemModule {
  moonMaterial = new THREE.MeshStandardMaterial({
  map: moonTexture,
  normalMap: moonBumpMap,
- normalScale: new THREE.Vector2(3.5, 3.5), // Dramatic crater depth!
- roughness: 0.95, // Very rough, dusty regolith surface
- metalness: 0.01, // No metal on moon
- bumpScale: 0.02
+ normalScale: new THREE.Vector2(2.5, 2.5), // Realistic crater depth
+ roughness: 0.98, // Extremely rough - lunar regolith scatters light
+ metalness: 0.0, // Zero metal - pure rock and dust
+ bumpScale: 0.015,
+ // Critical for realistic moon phases - no ambient/emissive light
+ emissive: 0x000000,
+ emissiveIntensity: 0.0,
+ // Enhanced physical properties for accurate light scattering
+ envMapIntensity: 0.1, // Minimal environment reflection
+ aoMapIntensity: 1.0 // Accurate shadowing in craters
  });
  } else if (moonName.includes('phobos')) {
  // Phobos: Dark reddish-gray with Stickney crater
