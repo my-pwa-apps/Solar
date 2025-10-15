@@ -973,8 +973,9 @@ export class SolarSystemModule {
                 const url = primaryTextureURLs[primaryIndex];
                 console.log(`🔭 Loading ${planetName} primary texture ${primaryIndex + 1}/${primaryTextureURLs.length} ...`);
                 meta.phase = 'primary';
-                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'primary'), undefined, () => {
+                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'primary'), undefined, (error) => {
                     console.warn(`⚠️ ${planetName} primary source ${primaryIndex + 1} failed: ${url}`);
+                    if (error) console.warn(`   Error details:`, error.type || error.message || 'Network or CORS issue');
                     primaryIndex++; tryNext();
                 });
                 return;
@@ -987,8 +988,9 @@ export class SolarSystemModule {
                 const url = pluginRepoURLs[pluginIndex];
                 console.log(`🧩 Loading ${planetName} plugin repository texture ${pluginIndex + 1}/${pluginRepoURLs.length} ...`);
                 meta.phase = 'plugin';
-                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'plugin'), undefined, () => {
+                loader.load(url, (tex) => this._onPlanetTextureSuccess(planetName, tex, url, 'plugin'), undefined, (error) => {
                     console.warn(`⚠️ ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
+                    if (error) console.warn(`   Error details:`, error.type || error.message || 'Network or CORS issue');
                     pluginIndex++; tryNext();
                 });
                 return;
@@ -1001,8 +1003,12 @@ export class SolarSystemModule {
             meta.phase = 'procedural';
             const maybePromise = proceduralFunction.call(this, size);
             if (maybePromise && typeof maybePromise.then === 'function') {
-                maybePromise.then((tex) => this._applyProceduralPlanetTexture(planetName, tex));
+                maybePromise.then((tex) => {
+                    console.log(`✅ ${planetName} procedural texture generated successfully`);
+                    this._applyProceduralPlanetTexture(planetName, tex);
+                });
             } else {
+                console.log(`✅ ${planetName} procedural texture generated successfully`);
                 this._applyProceduralPlanetTexture(planetName, maybePromise);
             }
         }
@@ -1093,15 +1099,17 @@ export class SolarSystemModule {
  return this.loadPlanetTextureReal('Venus', primary, this.createVenusTexture, size, []);
  }
  
- // Earth real texture loader - FIXED to use same pattern as other planets
+ // Earth real texture loader - Optimized with reliable fallback chain
  createEarthTextureRealFixed(size) {
+ // Use most reliable sources first (same repos as Sun and Jupiter which work in VR)
  const primary = [
- 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg',
- 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_8k.jpg',
+ 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/earthmap1k.jpg',
  'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg'
  ];
+ // Secondary fallbacks for higher quality if primary works
  const pluginFallbacks = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/earthmap1k.jpg'
+ 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg',
+ 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_8k.jpg'
  ];
  return this.loadPlanetTextureReal('Earth', primary, this.createEarthTexture, size, pluginFallbacks);
  }

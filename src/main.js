@@ -82,12 +82,11 @@ class App {
  
  startExperience() {
  // Called by SolarSystemModule after all assets are loaded
+ if (DEBUG.enabled) {
  console.log('🚀 Starting experience...');
- console.log('📦 SceneManager exists:', !!this.sceneManager);
- console.log('📦 SolarSystemModule exists:', !!this.solarSystemModule);
- console.log('📦 Scene exists:', !!this.sceneManager?.scene);
- console.log('📦 Renderer exists:', !!this.sceneManager?.renderer);
- console.log('📦 Camera exists:', !!this.sceneManager?.camera);
+ console.log('📦 SceneManager:', !!this.sceneManager, '| SolarSystem:', !!this.solarSystemModule);
+ console.log('📦 Scene:', !!this.sceneManager?.scene, '| Renderer:', !!this.sceneManager?.renderer, '| Camera:', !!this.sceneManager?.camera);
+ }
  
  // Setup UI for Solar System
  this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
@@ -98,13 +97,10 @@ class App {
  // Hide loading screen
  this.uiManager.hideLoading();
  
- console.log('🎬 Starting animation loop...');
- console.log('☀️ Sun position:', this.solarSystemModule.sun?.position);
- console.log('🌍 Earth position:', this.solarSystemModule.planets?.earth?.position);
- console.log('🖼️ Canvas in DOM:', !!document.querySelector('canvas'));
- console.log('🖼️ Canvas parent:', this.sceneManager.renderer?.domElement?.parentElement?.id);
- console.log('🎨 Scene background:', this.sceneManager.scene?.background);
- console.log('📊 Scene children count:', this.sceneManager.scene?.children?.length);
+ if (DEBUG.enabled) {
+ console.log('🎬 Animation ready | Sun:', !!this.solarSystemModule.sun, '| Planets:', Object.keys(this.solarSystemModule.planets).length);
+ console.log('� Scene children:', this.sceneManager.scene?.children?.length, '| Objects:', this.solarSystemModule.objects.length);
+ }
  
  // Start animation loop
  this.sceneManager.animate(() => {
@@ -129,9 +125,9 @@ class App {
  }
  });
  
- console.log(` Space Voyage ready!`);
- console.log(` Planets loaded: ${Object.keys(this.solarSystemModule.planets).length}`);
- console.log(` Objects in scene: ${this.solarSystemModule.objects.length}`);
+ if (DEBUG.enabled) {
+ console.log(` Space Voyage ready! Planets: ${Object.keys(this.solarSystemModule.planets).length} | Objects: ${this.solarSystemModule.objects.length}`);
+ }
  }
 
  setupGlobalFunctions() {
@@ -237,7 +233,7 @@ class App {
  const visible = !this.solarSystemModule.orbitsVisible;
  this.solarSystemModule.toggleOrbits(visible);
  orbitsButton.classList.toggle('toggle-on', visible);
- console.log(` Orbits toggled: ${visible ? 'ON' : 'OFF'}`);
+ if (DEBUG.enabled) console.log(` Orbits: ${visible ? 'ON' : 'OFF'}`);
  }
  });
  }
@@ -255,7 +251,7 @@ class App {
  const visible = !this.solarSystemModule.constellationsVisible;
  this.solarSystemModule.toggleConstellations(visible);
  constellationsButton.classList.toggle('toggle-on', visible);
- console.log(` Constellations toggled: ${visible ? 'ON' : 'OFF'}`);
+ if (DEBUG.enabled) console.log(` Constellations: ${visible ? 'ON' : 'OFF'}`);
  }
  });
  }
@@ -293,7 +289,7 @@ class App {
  labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
  labelsButton.textContent = this.sceneManager.labelsVisible ? 
  t('toggleLabelsOn') : t('toggleLabels');
- console.log(` Labels toggled: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+ if (DEBUG.enabled) console.log(` Labels: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
  }
  }
  });
@@ -326,8 +322,6 @@ class App {
  const value = e.target.value;
  if (!value) return; // Ignore the placeholder option
  
- console.log(` Dropdown navigation to: ${value}`);
- 
  // Reset dropdown to placeholder
  dropdown.value = '';
  
@@ -338,10 +332,10 @@ class App {
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
- console.log(` [Nav] âœ" Found and navigating to: ${info.name} (type: ${targetObject.userData.type || 'planet'})`);
+ if (DEBUG.enabled) console.log(` Nav: ${info.name} (${targetObject.userData.type || 'planet'})`);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
- } else {
- console.warn(` [Nav] âœ— Object not found for value: "${value}"`);
+ } else if (DEBUG.enabled) {
+ console.warn(` Nav: Object not found: "${value}"`);
  }
  }
  });
@@ -476,9 +470,6 @@ class App {
  const patterns = category.patterns[searchKey];
  
  if (patterns && this.solarSystemModule[category.array]) {
- console.log(` [Nav] Searching ${category.array} for "${searchKey}" with patterns:`, patterns);
- console.log(` [Nav] Array has ${this.solarSystemModule[category.array].length} items`);
- 
  let found;
  
  if (category.exactMatch) {
@@ -489,56 +480,105 @@ class App {
  );
  } else {
  // For other categories: use includes() for flexible matching
- found = this.solarSystemModule[category.array].find(obj => {
- const match = patterns.some(pattern => obj.userData.name.includes(pattern));
- if (match) console.log(` [Nav] ✓ Matched "${obj.userData.name}"`);
- return match;
- });
+ found = this.solarSystemModule[category.array].find(obj => 
+ patterns.some(pattern => obj.userData.name.includes(pattern))
+ );
  }
  
- if (found) {
- console.log(` [Nav] ✓ Found object: ${found.userData.name}`);
- return found;
- }
+ if (found) return found;
  }
  }
  
- console.warn(` [Nav] No mapping found for value: "${value}"`);
+ if (DEBUG.enabled) console.warn(` [Nav] No mapping found for value: "${value}"`);
+ return null;
+ }
+
+ // ===========================
+ // HELPER METHODS
+ // ===========================
+
+ /**
+  * Calculate normalized mouse coordinates from a click/hover event
+  * @param {MouseEvent} event - The mouse event
+  * @returns {{x: number, y: number}} Normalized coordinates (-1 to 1)
+  */
+ _getMouseCoordinates(event) {
+ const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
+ return {
+ x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+ y: -((event.clientY - rect.top) / rect.height) * 2 + 1
+ };
+ }
+
+ /**
+  * Find the first named object in the parent chain
+  * @param {THREE.Object3D} object - Starting object
+  * @returns {THREE.Object3D|null} The first object with userData.name
+  */
+ _findNamedParent(object) {
+ let current = object;
+ while (current && current !== this.sceneManager.scene) {
+ if (current.userData && current.userData.name) {
+ return current;
+ }
+ current = current.parent;
+ }
+ return null;
+ }
+
+ /**
+  * Perform raycasting and find the closest named object
+  * @param {MouseEvent} event - The mouse event
+  * @param {boolean} recursiveFirst - Whether to check recursively first
+  * @returns {THREE.Object3D|null} The intersected named object
+  */
+ _raycastNamedObject(event, recursiveFirst = false) {
+ if (!this.solarSystemModule) return null;
+
+ const mouse = this._getMouseCoordinates(event);
+ const mouseVec = new THREE.Vector2(mouse.x, mouse.y);
+ 
+ this.sceneManager.raycaster.setFromCamera(mouseVec, this.sceneManager.camera);
+ 
+ let intersects;
+ if (recursiveFirst) {
+ intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
+ } else {
+ // Try non-recursive first for better performance
+ intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, false);
+ if (intersects.length === 0) {
+ intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
+ }
+ }
+
+ // Find the first named object in intersections
+ for (let i = 0; i < Math.min(intersects.length, 10); i++) {
+ const candidate = intersects[i].object;
+ 
+ // Check if this object has a name directly
+ if (candidate.userData && candidate.userData.name) {
+ return candidate;
+ }
+ 
+ // Otherwise traverse up to find the named parent
+ const named = this._findNamedParent(candidate);
+ if (named) return named;
+ }
+
  return null;
  }
  
- // Legacy switch statement removed - replaced with findObjectByNavigationValue()
+ // ===========================
+ // EVENT HANDLERS
+ // ===========================
  
  handleCanvasClick(event) {
- console.log(' Canvas clicked!');
- if (!this.solarSystemModule) {
- console.warn(' No solar system module!');
- return;
- }
+ const target = this._raycastNamedObject(event, true);
  
- console.log(` Checking ${this.solarSystemModule.objects.length} objects for intersection...`);
- 
- const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
- const mouse = new THREE.Vector2(
- ((event.clientX - rect.left) / rect.width) * 2 - 1,
- -((event.clientY - rect.top) / rect.height) * 2 + 1
- );
-
- this.sceneManager.raycaster.setFromCamera(mouse, this.sceneManager.camera);
- const intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
-
- console.log(` Found ${intersects.length} intersections`);
- if (intersects.length > 0) {
- let target = intersects[0].object;
- while (target.parent && !target.userData.name) {
- target = target.parent;
- }
-
- if (target.userData && target.userData.name) {
+ if (target) {
  const info = this.solarSystemModule.getObjectInfo(target);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
- }
  }
  }
 
@@ -551,76 +591,33 @@ class App {
  if (now - this._lastHoverCheck < 50) return; // Check max every 50ms (20fps)
  this._lastHoverCheck = now;
 
- const hoverLabel = document.getElementById('hover-label');
- if (!hoverLabel) return;
+ // Cache hover label element
+ if (!this._hoverLabel) {
+ this._hoverLabel = document.getElementById('hover-label');
+ }
+ if (!this._hoverLabel) return;
 
- const rect = this.sceneManager.renderer.domElement.getBoundingClientRect();
- const mouse = new THREE.Vector2(
- ((event.clientX - rect.left) / rect.width) * 2 - 1,
- -((event.clientY - rect.top) / rect.height) * 2 + 1
- );
-
- this.sceneManager.raycaster.setFromCamera(mouse, this.sceneManager.camera);
+ const target = this._raycastNamedObject(event, false);
  
- // Raycast against all objects (non-recursive first to catch top-level objects)
- // Then check recursively if needed
- let intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, false);
- 
- // If no direct hits, check recursively (for child meshes)
- if (intersects.length === 0) {
- intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
- }
-
- if (intersects.length > 0) {
- // Process intersections in distance order (closest first)
- let target = null;
- 
- for (let i = 0; i < Math.min(intersects.length, 10); i++) {
- let candidate = intersects[i].object;
- 
- // Check if this object has a name directly
- if (candidate.userData && candidate.userData.name) {
- target = candidate;
- break;
- }
- 
- // Otherwise traverse up to find the named parent
- let parent = candidate.parent;
- while (parent && parent !== this.sceneManager.scene) {
- if (parent.userData && parent.userData.name) {
- target = parent;
- break;
- }
- parent = parent.parent;
- }
- 
- if (target) break;
- }
-
- if (target && target.userData && target.userData.name) {
- // Translate object name using same logic as getObjectInfo()
+ if (target) {
+ // Translate object name
  const t = window.t || ((key) => key);
  const nameKey = target.userData.name.toLowerCase().replace(/\s+/g, '');
- let translatedName = target.userData.name;
- if (nameKey && window.t && window.t(nameKey) !== nameKey) {
- translatedName = t(nameKey);
- }
+ const translatedName = (nameKey && window.t && window.t(nameKey) !== nameKey) 
+ ? t(nameKey) 
+ : target.userData.name;
  
  // Show hover label with translated name
- hoverLabel.textContent = translatedName;
- hoverLabel.style.left = `${event.clientX}px`;
- hoverLabel.style.top = `${event.clientY}px`;
- hoverLabel.classList.add('visible');
- 
- // Change cursor to pointer
+ this._hoverLabel.textContent = translatedName;
+ this._hoverLabel.style.left = `${event.clientX}px`;
+ this._hoverLabel.style.top = `${event.clientY}px`;
+ this._hoverLabel.classList.add('visible');
  this.sceneManager.renderer.domElement.style.cursor = 'pointer';
- return;
- }
- }
-
+ } else {
  // Hide label if no object hovered
- hoverLabel.classList.remove('visible');
+ this._hoverLabel.classList.remove('visible');
  this.sceneManager.renderer.domElement.style.cursor = 'default';
+ }
  }
  
  setupKeyboardShortcuts() {
