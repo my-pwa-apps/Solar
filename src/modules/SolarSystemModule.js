@@ -7502,7 +7502,7 @@ createHyperrealisticHubble(satData) {
  
  // Scale up comet to be visible (nucleus is tiny - only 0.002-0.005 units!)
  // This makes the 15-25 unit tails actually visible from camera distance
- const detailViewScale = 5.0; // Make nucleus/coma/tails 5x larger
+ const detailViewScale = 50.0; // Make nucleus/coma/tails MUCH larger for visibility
  object.scale.set(detailViewScale, detailViewScale, detailViewScale);
  
  console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
