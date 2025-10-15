@@ -1122,8 +1122,16 @@ export class SolarSystemModule {
         tex.anisotropy = 16;
         tex.needsUpdate = true;
         
-        // Handle Sun specially (stored in this.sun, not this.planets)
-        const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
+        // Find the object: check sun, planets, and moons
+        const lowerName = planetName.toLowerCase();
+        let planet;
+        if (lowerName === 'sun') {
+            planet = this.sun;
+        } else if (this.planets[lowerName]) {
+            planet = this.planets[lowerName];
+        } else if (this.moons[lowerName]) {
+            planet = this.moons[lowerName];
+        }
         
         if (!planet) {
             console.warn(`⚠️ ${planetName} object not found when applying texture`);
@@ -1278,15 +1286,14 @@ export class SolarSystemModule {
  // Moon real texture loader - NASA LRO (Lunar Reconnaissance Orbiter) photorealistic textures
  createMoonTextureReal(size) {
  const primary = [
- // Solar System Scope - high quality moon texture (4K)
+ // Solar System Scope - high quality moon texture (2K/4K)
  'https://www.solarsystemscope.com/textures/download/2k_moon.jpg',
- // NASA CGI Moon texture (high quality)
- 'https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_poles_4k.jpg',
- // Three.js repo moon texture
- 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg'
+ // Three.js repo moon texture (reliable fallback)
+ 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg',
+ // Alternative high-res moon textures
+ 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg'
  ];
  const pluginFallbacks = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg',
  'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap.jpg'
  ];
  return this.loadPlanetTextureReal('Moon', primary, this.createMoonTexture, size, pluginFallbacks);
