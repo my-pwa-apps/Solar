@@ -666,7 +666,6 @@ export class SolarSystemModule {
                 dwarf: true
             });
         });
-        console.log(`🪐 Added ${catalog.length} dwarf planets & candidates`);
     }
 
     createProceduralTexture(type, size = 512) {
@@ -998,7 +997,6 @@ export class SolarSystemModule {
                 const cacheKey = `${planetName.toLowerCase()}_texture_${url}`;
                 const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
                 if (cachedDataURL) {
-                    console.log(`🗄️ Loading ${planetName} from cache (source ${primaryIndex + 1}/${primaryTextureURLs.length})`);
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
                     img.onload = () => {
@@ -1007,15 +1005,12 @@ export class SolarSystemModule {
                         this._onPlanetTextureSuccess(planetName, tex, url, 'cached');
                     };
                     img.onerror = () => {
-                        console.warn(`⚠️ Cached texture failed for ${planetName}, loading from network`);
                         primaryIndex++;
                         tryNext();
                     };
                     img.src = cachedDataURL;
                     return;
                 }
-                
-                console.log(`🔭 Loading ${planetName} primary texture ${primaryIndex + 1}/${primaryTextureURLs.length} ...`);
                 meta.phase = 'primary';
                 
                 // Set timeout for Quest VR (10 seconds max per texture)
@@ -1060,7 +1055,6 @@ export class SolarSystemModule {
         if (phase === 'plugin') {
             if (pluginIndex < pluginRepoURLs.length) {
                 const url = pluginRepoURLs[pluginIndex];
-                console.log(`🧩 Loading ${planetName} plugin repository texture ${pluginIndex + 1}/${pluginRepoURLs.length} ...`);
                 meta.phase = 'plugin';
                 
                 // Set timeout for Quest VR (10 seconds max per texture)
@@ -1138,8 +1132,6 @@ export class SolarSystemModule {
 
  // Internal: apply successful remote texture
  _onPlanetTextureSuccess(planetName, tex, url, sourceType) {
-    console.log(`✅ ${planetName} texture loaded from ${sourceType} source: ${url}`);
-    
     try {
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = 16;
@@ -1155,10 +1147,9 @@ export class SolarSystemModule {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(tex.image, 0, 0);
             const dataURL = canvas.toDataURL('image/jpeg', 0.95);
-            TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => 
-                console.warn(`⚠️ Failed to cache texture for ${planetName}:`, err)
-            );
-            console.log(`💾 Cached texture for ${planetName} (${(dataURL.length / 1024).toFixed(0)}KB)`);
+            TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
+                // Cache write failed - texture will be reloaded next time
+            });
         }
         
         // Find the object: check sun, planets, and moons
@@ -1611,9 +1602,9 @@ export class SolarSystemModule {
  
  // Cache the texture for future use
  const dataURL = canvas.toDataURL('image/png');
- TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => 
- console.warn('Failed to cache texture:', err)
- );
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
+ // Cache write failed - will regenerate next time
+ });
  
  // Create texture BEFORE adding clouds
  const texture = new THREE.CanvasTexture(canvas);
@@ -2873,16 +2864,6 @@ export class SolarSystemModule {
 
  scene.add(planet);
  this.objects.push(planet);
- 
- // DIAGNOSTIC: Verify planet was added
- console.log(`? Planet "${config.name}" added to scene:`);
- console.log(` - Position: (${planet.position.x}, ${planet.position.y}, ${planet.position.z})`);
- console.log(` - Radius: ${config.radius}`);
- console.log(` - Material type: ${planet.material.type}`);
- console.log(` - Material color: 0x${planet.material.color?.getHexString()}`);
- console.log(` - Has texture map: ${!!planet.material.map}`);
- console.log(` - Visible: ${planet.visible}`);
- console.log(` - In scene: ${planet.parent === scene}`);
 
     // Merge any pending remote texture metadata captured before planet object existed
     const meta = this._pendingTextureMeta?.[config.name.toLowerCase()];
