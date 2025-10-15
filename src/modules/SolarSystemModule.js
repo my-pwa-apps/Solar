@@ -7411,6 +7411,8 @@ createHyperrealisticHubble(satData) {
  // Disable detail view for previously focused comet when focusing on non-comet
  if (!userData.isComet && this.focusedComet) {
  this.focusedComet.userData.detailView = false;
+ this.focusedComet.scale.set(1, 1, 1); // Reset scale
+ this.focusedComet.rotation.y = 0; // Reset rotation
  this.focusedComet = null;
  console.log(' [Detail View] Disabled - focusing on non-comet object');
  }
@@ -7491,8 +7493,22 @@ createHyperrealisticHubble(satData) {
  // Keep Y position (vertical wobble)
  }
  
+ // Orient comet so tails point away from sun
+ // Tails are built along positive X axis, so rotate to point away from sun
+ const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
+ const cometToSun = sunPosition.clone().sub(object.position);
+ const angleToSun = Math.atan2(cometToSun.z, cometToSun.x);
+ object.rotation.y = angleToSun + Math.PI; // Rotate so +X points away from sun
+ 
+ // Scale up comet to be visible (nucleus is tiny - only 0.002-0.005 units!)
+ // This makes the 15-25 unit tails actually visible from camera distance
+ const detailViewScale = 5.0; // Make nucleus/coma/tails 5x larger
+ object.scale.set(detailViewScale, detailViewScale, detailViewScale);
+ 
  console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
  console.log(`   New position: (${object.position.x.toFixed(1)}, ${object.position.y.toFixed(1)}, ${object.position.z.toFixed(1)})`);
+ console.log(`   Tail rotation: ${(object.rotation.y * 180 / Math.PI).toFixed(1)}° (pointing away from sun)`);
+ console.log(`   Scale: ${detailViewScale}x for visibility`);
  }
  
  // Special handling for constellations - use center of star pattern
