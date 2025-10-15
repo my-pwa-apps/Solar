@@ -7689,7 +7689,7 @@ createHyperrealisticHubble(satData) {
      // Constellations: never follow
      this.cameraFollowMode = false;
      this.cameraCoRotateMode = false;
- } else if (userData.orbitPlanet && !isPlanetOrbitingSun) {
+ } else if ((userData.orbitPlanet || userData.parentPlanet) && !isPlanetOrbitingSun) {
      // All objects orbiting a planet (spacecraft, moons, etc.): enable chase-cam
      this.cameraFollowMode = true;
      this.cameraCoRotateMode = true; // Chase-cam mode: camera orbits WITH object
@@ -7847,9 +7847,9 @@ createHyperrealisticHubble(satData) {
          targetPosition.z + distance
      );
      controls.target.copy(targetPosition);
- } else if (userData.type === 'moon' && userData.orbitPlanet) {
+ } else if (userData.type === 'Moon' && userData.parentPlanet) {
      // Moons: Chase-cam perspective showing moon and parent planet surface
-     parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+     parentPlanet = this.planets[userData.parentPlanet.toLowerCase()];
      if (parentPlanet) {
          // Calculate moon direction from planet
          const moonDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
