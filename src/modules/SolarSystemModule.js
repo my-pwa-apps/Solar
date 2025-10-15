@@ -32,8 +32,8 @@ export class SolarSystemModule {
  // Scale mode: false = educational (compressed), true = realistic (vast)
  this.realisticScale = false;
  
- // Comet tails visibility: true = show spectacular hyperrealistic tails
- this.cometTailsVisible = true;
+ // Comet tails visibility: false = hidden (better visual performance)
+ this.cometTailsVisible = false;
  
  // Orbits visibility: true = visible by default
  this.orbitsVisible = true;
