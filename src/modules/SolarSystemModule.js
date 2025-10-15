@@ -220,6 +220,7 @@ export class SolarSystemModule {
  
  this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
         this.sun.userData = {
+            id: 'sun',
             name: t('sun'),
             type: t('typeStar'),
             distance: 0,
@@ -324,6 +325,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
  this.planets.mercury = this.createPlanet(scene, {
+ id: 'mercury',
  name: t('mercury'),
  radius: 0.383,
  color: 0x8C7853,
@@ -340,6 +342,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
         this.planets.venus = this.createPlanet(scene, {
+            id: 'venus',
             name: t('venus'),
             radius: 0.950,
             color: 0xFFC649,
@@ -358,6 +361,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
         this.planets.earth = this.createPlanet(scene, {
+            id: 'earth',
             name: t('earth'),
             radius: 1.0,
             color: 0x2233FF,
@@ -387,6 +391,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
         this.planets.mars = this.createPlanet(scene, {
+            id: 'mars',
             name: t('mars'),
             radius: 0.532,
             color: 0xCD5C5C,
@@ -424,6 +429,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
         this.planets.jupiter = this.createPlanet(scene, {
+            id: 'jupiter',
             name: t('jupiter'),
             radius: 10.97,
             color: 0xDAA520,
@@ -481,6 +487,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
         this.planets.saturn = this.createPlanet(scene, {
+            id: 'saturn',
             name: t('saturn'),
             radius: 9.14,
             color: 0xFAD5A5,
@@ -533,6 +540,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
         this.planets.uranus = this.createPlanet(scene, {
+            id: 'uranus',
             name: t('uranus'),
             radius: 3.98,
             color: 0x4FD0E7,
@@ -569,6 +577,7 @@ export class SolarSystemModule {
  await new Promise(resolve => requestAnimationFrame(resolve));
  
         this.planets.neptune = this.createPlanet(scene, {
+            id: 'neptune',
             name: t('neptune'),
             radius: 3.86,
             color: 0x4169E1,
@@ -592,6 +601,7 @@ export class SolarSystemModule {
             description: t('descTriton')
         }); // Pluto: 2,377 km / 12,742 km = 0.187
  this.planets.pluto = this.createPlanet(scene, {
+ id: 'pluto',
  name: t('pluto'),
  radius: 0.187,
  color: 0xD4A373,
@@ -640,6 +650,7 @@ export class SolarSystemModule {
             
             // Create planet and store in registry
             this.planets[key] = this.createPlanet(scene, {
+                id: key,
                 name: cfg.name,
                 radius: cfg.radius,
                 color: cfg.color,
@@ -2660,12 +2671,13 @@ export class SolarSystemModule {
  planet.receiveShadow = true; // But can receive shadows from moons
  planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 
- // Get real astronomical data for this planet
- const planetKey = config.name.toLowerCase();
+ // Get real astronomical data for this planet - USE ENGLISH KEY, NOT TRANSLATED NAME
+ const planetKey = (config.id || config.name).toLowerCase();
  const astroData = this.ASTRONOMICAL_DATA[planetKey] || {};
  
  planet.userData = {
- name: config.name,
+ id: config.id || config.name.toLowerCase(), // English key for lookups
+ name: config.name, // Translated display name
  type: config.dwarf ? t('typeDwarfPlanet') : t('typePlanet'),
  distance: config.distance,
  radius: config.radius,
@@ -7643,7 +7655,7 @@ createHyperrealisticHubble(satData) {
      }
  } else if (userData.type === 'planet' || userData.isPlanet) {
      // Planets: Cinematic angles that showcase their features
-     const planetName = userData.name.toLowerCase();
+     const planetName = (userData.id || userData.name).toLowerCase();
      let angleOffset = 0;
      let elevationFactor = 0.4;
      let distanceMultiplier = 1.0;
