@@ -7374,6 +7374,10 @@ createHyperrealisticHubble(satData) {
  return;
  }
  
+ if (DEBUG.enabled) {
+ console.log(` [Focus] Focusing on: ${object.userData.name}, type: ${object.userData.type}, isComet: ${object.userData.isComet}`);
+ }
+ 
  // Determine actual object size (not inflated glow size)
  const userData = object.userData;
  let actualRadius;

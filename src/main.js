@@ -477,6 +477,10 @@ class App {
  if (patterns && this.solarSystemModule[category.array]) {
  let found;
  
+ if (DEBUG.enabled) {
+ console.log(` [Nav] Searching ${category.array} (${this.solarSystemModule[category.array]?.length || 0} items) for patterns:`, patterns);
+ }
+ 
  if (category.exactMatch) {
  // For constellations: use exact startsWith() matching to avoid ambiguity
  // (e.g., "Orion" constellation vs "Orion Nebula")
@@ -490,7 +494,10 @@ class App {
  );
  }
  
- if (found) return found;
+ if (found) {
+ if (DEBUG.enabled) console.log(` [Nav] Found: ${found.userData.name}`);
+ return found;
+ }
  }
  }
  
