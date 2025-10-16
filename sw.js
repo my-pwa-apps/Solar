@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.3 - Responsive panel positioning, removed spacecraft/rover code
+// Version 2.2.4 - Extracted PWA and ServiceWorker managers
 
-const CACHE_VERSION = '2.2.3';
+const CACHE_VERSION = '2.2.4';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -23,6 +23,9 @@ const STATIC_CACHE_FILES = [
   './src/modules/TextureCache.js',
   './src/modules/UIManager.js',
   './src/modules/PanelManager.js',
+  './src/modules/PWAManager.js',
+  './src/modules/ServiceWorkerManager.js',
+  './src/modules/LanguageManager.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
