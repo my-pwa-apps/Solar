@@ -642,7 +642,7 @@ export class SolarSystemModule {
             { name: 'Gonggong', radius: 0.064, color: 0xBB7766, distance: 2500, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
             { name: 'Sedna', radius: 0.055, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: '?? Inner Oort Cloud object with extreme elliptical orbit (76-937 AU). One of the most distant known solar system bodies, Sedna never comes close enough to Neptune to be influenced by it, suggesting it formed in the Oort Cloud region.', funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars. Discovery challenged our understanding of the solar system\'s edge.', realSize: '~995 km diameter' },
             { name: 'Salacia', radius: 0.058, color: 0x996655, distance: 2250, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
-            { name: 'Varda', radius: 0.052, color: 0xAA8866, distance: 2350, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
+            { name: 'Varda', radius: 0.052, color: 0xAA8866, distance: 2350, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarï¿½.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
             { name: 'Varuna', radius: 0.05, color: 0xAA7755, distance: 2050, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
         ];
 
@@ -1096,7 +1096,7 @@ export class SolarSystemModule {
                 );
                 return;
             }
-            // All remote attempts failed – generate procedural now
+            // All remote attempts failed ï¿½ generate procedural now
             phase = 'procedural';
         }
         if (phase === 'procedural') {
@@ -3913,7 +3913,7 @@ export class SolarSystemModule {
  { 
  name: 'Orion Nebula', 
  ra: 83.8, // 5h 35m - Located in Orion's sword
- dec: -5.4, // -5° 23' - Below Orion's belt
+ dec: -5.4, // -5ï¿½ 23' - Below Orion's belt
  size: 400, 
  type: 'emission', // Star-forming region
  // Spectral emission colors (astronomically accurate)
@@ -3932,7 +3932,7 @@ export class SolarSystemModule {
  { 
  name: 'Crab Nebula', 
  ra: 83.6, // 5h 34m - In Taurus constellation
- dec: 22.0, // +22° 01' - Near Taurus's northern horn
+ dec: 22.0, // +22ï¿½ 01' - Near Taurus's northern horn
  size: 300, 
  type: 'supernova', // Supernova remnant with filaments
  colors: {
@@ -3952,7 +3952,7 @@ export class SolarSystemModule {
  { 
  name: 'Ring Nebula', 
  ra: 283.4, // 18h 53m - In Lyra constellation, near Vega
- dec: 33.0, // +33° 02' - Between Sheliak and Sulafat
+ dec: 33.0, // +33ï¿½ 02' - Between Sheliak and Sulafat
  size: 250, 
  type: 'planetary', // Planetary nebula (ring shape)
  colors: {
@@ -4767,7 +4767,7 @@ export class SolarSystemModule {
  { 
  name: 'Andromeda Galaxy', 
  ra: 10.7,    // 0h 42m 44s - In Andromeda constellation, near Mirach
- dec: 41.3,   // +41° 16' 09" - Northern hemisphere autumn sky
+ dec: 41.3,   // +41ï¿½ 16' 09" - Northern hemisphere autumn sky
  size: 600, 
  type: 'spiral', 
  angularSize: 178, // 178 arcminutes - appears 6x larger than full moon!
@@ -4776,7 +4776,7 @@ export class SolarSystemModule {
  { 
  name: 'Whirlpool Galaxy', 
  ra: 202.5,   // 13h 29m 53s - In Canes Venatici, below Big Dipper's handle
- dec: 47.2,   // +47° 11' 43" - Northern spring sky
+ dec: 47.2,   // +47ï¿½ 11' 43" - Northern spring sky
  size: 400, 
  type: 'spiral',
  angularSize: 11, // 11 arcminutes
@@ -4785,7 +4785,7 @@ export class SolarSystemModule {
  { 
  name: 'Sombrero Galaxy', 
  ra: 189.5,   // 12h 39m 59s - In Virgo constellation, western edge
- dec: -11.6,  // -11° 37' 23" - Southern declination, visible from both hemispheres
+ dec: -11.6,  // -11ï¿½ 37' 23" - Southern declination, visible from both hemispheres
  size: 350, 
  type: 'elliptical',
  angularSize: 9, // 9 arcminutes
@@ -8047,7 +8047,7 @@ createHyperrealisticHubble(satData) {
  
  console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
  console.log(`   New position: (${object.position.x.toFixed(1)}, ${object.position.y.toFixed(1)}, ${object.position.z.toFixed(1)})`);
- console.log(`   Tail rotation: ${(object.rotation.y * 180 / Math.PI).toFixed(1)}° (pointing away from sun)`);
+ console.log(`   Tail rotation: ${(object.rotation.y * 180 / Math.PI).toFixed(1)}ï¿½ (pointing away from sun)`);
  console.log(`   Scale: ${detailViewScale}x for visibility`);
  }
  
@@ -8331,7 +8331,7 @@ createHyperrealisticHubble(satData) {
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
      const cometToSunDir = sunPosition.clone().sub(targetPosition).normalize();
      
-     // Position camera at 45° angle from sun-comet line, elevated for cinematic view
+     // Position camera at 45ï¿½ angle from sun-comet line, elevated for cinematic view
      // This shows: nucleus (center), coma (glow), and tails streaming AWAY from camera toward us
      const rightVector = new THREE.Vector3(-cometToSunDir.z, 0, cometToSunDir.x).normalize();
      
