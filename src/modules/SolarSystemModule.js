@@ -1242,7 +1242,7 @@ export class SolarSystemModule {
  // Sun real texture loader
  createSunTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/sunmap.jpg'
+ './textures/planets/sun.jpg'
  ];
  const pluginFallbacks = []; // already using plugin as primary
  return this.loadPlanetTextureReal('Sun', primary, this.createSunTexture, size, pluginFallbacks);
@@ -1251,7 +1251,7 @@ export class SolarSystemModule {
  // Mercury real texture loader
  createMercuryTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/mercurymap.jpg'
+ './textures/planets/mercury.jpg'
  ];
  const pluginFallbacks = [];
  return this.loadPlanetTextureReal('Mercury', primary, this.createMercuryTexture, size, pluginFallbacks);
@@ -1260,30 +1260,27 @@ export class SolarSystemModule {
  // Venus real texture loader
  createVenusTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/venusmap.jpg'
+ './textures/planets/venus.jpg'
  ];
  return this.loadPlanetTextureReal('Venus', primary, this.createVenusTexture, size, []);
  }
  
  // Earth real texture loader - Optimized with reliable fallback chain
  createEarthTextureRealFixed(size) {
- // Use most reliable sources first (same repos as Sun and Jupiter which work in VR)
+ // Use local self-hosted textures
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/earthmap1k.jpg',
- 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg'
+ './textures/planets/earth_1k.jpg',
+ './textures/planets/earth_atmos_2k.jpg'
  ];
- // Secondary fallbacks for higher quality if primary works
- const pluginFallbacks = [
- 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg',
- 'https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_8k.jpg'
- ];
+ // No external fallbacks - use procedural if local fails
+ const pluginFallbacks = [];
  return this.loadPlanetTextureReal('Earth', primary, this.createEarthTexture, size, pluginFallbacks);
  }
  
  // Mars real texture loader
  createMarsTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/marsmap1k.jpg'
+ './textures/planets/mars_1k.jpg'
  ];
  return this.loadPlanetTextureReal('Mars', primary, this.createMarsTexture, size, []);
  }
@@ -1291,7 +1288,7 @@ export class SolarSystemModule {
  // Jupiter real texture loader
  createJupiterTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/jupitermap.jpg'
+ './textures/planets/jupiter.jpg'
  ];
  return this.loadPlanetTextureReal('Jupiter', primary, this.createJupiterTexture, size, []);
  }
@@ -1299,7 +1296,7 @@ export class SolarSystemModule {
  // Saturn real texture loader
  createSaturnTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/saturnmap.jpg'
+ './textures/planets/saturn.jpg'
  ];
  return this.loadPlanetTextureReal('Saturn', primary, this.createSaturnTexture, size, []);
  }
@@ -1307,7 +1304,7 @@ export class SolarSystemModule {
  // Uranus real texture loader
  createUranusTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/uranusmap.jpg'
+ './textures/planets/uranus.jpg'
  ];
  return this.loadPlanetTextureReal('Uranus', primary, this.createUranusTexture, size, []);
  }
@@ -1315,7 +1312,7 @@ export class SolarSystemModule {
  // Neptune real texture loader
  createNeptuneTextureReal(size) {
  const primary = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/neptunemap.jpg'
+ './textures/planets/neptune.jpg'
  ];
  return this.loadPlanetTextureReal('Neptune', primary, this.createNeptuneTexture, size, []);
  }
@@ -1323,16 +1320,11 @@ export class SolarSystemModule {
  // Moon real texture loader - NASA LRO (Lunar Reconnaissance Orbiter) photorealistic textures
  createMoonTextureReal(size) {
  const primary = [
- // Solar System Scope - high quality moon texture (2K/4K)
- 'https://www.solarsystemscope.com/textures/download/2k_moon.jpg',
- // Three.js repo moon texture (reliable fallback)
- 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg',
- // Alternative high-res moon textures
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap1k.jpg'
+ // Local self-hosted textures
+ './textures/moons/moon_1k.jpg',
+ './textures/moons/moon_threejs_1k.jpg'
  ];
- const pluginFallbacks = [
- 'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/moonmap.jpg'
- ];
+ const pluginFallbacks = [];
  return this.loadPlanetTextureReal('Moon', primary, this.createMoonTexture, size, pluginFallbacks);
  }
 
