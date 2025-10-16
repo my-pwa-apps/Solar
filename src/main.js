@@ -425,26 +425,7 @@ class App {
  'andromeda': ['Andromeda (The Princess)'], // Distinct from "Andromeda Galaxy"
  'perseus': ['Perseus (The Hero)'],
  }},
- { prefix: '', array: 'satellites', patterns: {
- 'iss': ['ISS', 'International Space Station'],
- 'hubble': ['Hubble'],
- }},
- { prefix: '', array: 'spacecraft', patterns: {
- 'voyager-1': ['Voyager 1'],
- 'voyager-2': ['Voyager 2'],
- 'new-horizons': ['New Horizons'],
- 'jwst': ['James Webb'],
- 'james-webb': ['James Webb'],
- 'juno': ['Juno'],
- 'cassini': ['Cassini'],
- 'pioneer-10': ['Pioneer 10'],
- 'pioneer-11': ['Pioneer 11'],
- }},
- { prefix: '', array: 'satellites', patterns: {
- 'iss': ['ISS', 'International Space Station'],
- 'hubble': ['Hubble'],
- 'gps-navstar': ['GPS Satellite', 'NAVSTAR'],
- }},
+ // Removed spacecraft/satellite patterns - these features are no longer in the app
  { prefix: '', array: 'nebulae', patterns: {
  'orion-nebula': ['Orion'],
  'crab-nebula': ['Crab'],
@@ -716,35 +697,8 @@ class App {
  spaceSpeedSlider.dispatchEvent(new Event('input'));
  }
  break;
- case 'i':
- // Find and focus on ISS
- if (this.solarSystemModule?.spacecraft) {
- const iss = this.solarSystemModule.spacecraft.find(s => s.userData.name.includes('ISS'));
- if (iss) {
- this.solarSystemModule.focusOnObject(iss, this.sceneManager.camera, this.sceneManager.controls);
- }
- }
- break;
- case 'v':
- // Cycle through Voyager probes
- if (this.solarSystemModule?.spacecraft) {
- const voyagers = this.solarSystemModule.spacecraft.filter(s => s.userData.name.includes('Voyager'));
- if (voyagers.length > 0) {
- this._voyagerIndex = ((this._voyagerIndex || 0) + 1) % voyagers.length;
- this.solarSystemModule.focusOnObject(voyagers[this._voyagerIndex], this.sceneManager.camera, this.sceneManager.controls);
- }
- }
- break;
- case 'm':
- // Cycle through Mars rovers
- if (this.solarSystemModule?.spacecraft) {
- const rovers = this.solarSystemModule.spacecraft.filter(s => s.userData.type === 'rover');
- if (rovers.length > 0) {
- this._roverIndex = ((this._roverIndex || 0) + 1) % rovers.length;
- this.solarSystemModule.focusOnObject(rovers[this._roverIndex], this.sceneManager.camera, this.sceneManager.controls);
- }
- }
- break;
+ // Removed spacecraft/satellite focus shortcuts (ISS, Voyager, Mars rovers)
+ // These features are no longer in the app
  case 'p':
  // Cycle through deep space probes
  if (this.spacecraft) {

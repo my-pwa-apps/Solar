@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.2 - Added logo icon, fixed button heights, removed help button
+// Version 2.2.3 - Responsive panel positioning, removed spacecraft/rover code
 
-const CACHE_VERSION = '2.2.2';
+const CACHE_VERSION = '2.2.3';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
