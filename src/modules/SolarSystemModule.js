@@ -1644,6 +1644,27 @@ export class SolarSystemModule {
  }
  
  createEarthBumpMap(size) {
+ const cacheKey = `earth_bump_${size}`;
+ 
+ // Check MEMORY cache only (synchronous, instant)
+ if (TEXTURE_CACHE.cache.has(cacheKey)) {
+ const cachedDataURL = TEXTURE_CACHE.cache.get(cacheKey);
+ const img = new Image();
+ img.src = cachedDataURL;
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d');
+ ctx.drawImage(img, 0, 0, size, size);
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ console.log(`✅ Earth bump map loaded from memory cache`);
+ return texture;
+ }
+ 
+ // Generate texture (no cache hit)
+ console.log(`🎨 Generating Earth bump map (${size}x${size})...`);
+ const startTime = performance.now();
  const canvas = document.createElement('canvas');
  canvas.width = size;
  canvas.height = size;
@@ -1696,12 +1717,39 @@ export class SolarSystemModule {
  }
  
  ctx.putImageData(imageData, 0, 0);
+ 
+ // Cache asynchronously in background (non-blocking)
+ const dataURL = canvas.toDataURL('image/png');
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+ 
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
+ console.log(`⏱️ Earth bump map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
  
  createEarthNormalMap(size) {
+ const cacheKey = `earth_normal_${size}`;
+ 
+ // Check MEMORY cache only (synchronous, instant)
+ if (TEXTURE_CACHE.cache.has(cacheKey)) {
+ const cachedDataURL = TEXTURE_CACHE.cache.get(cacheKey);
+ const img = new Image();
+ img.src = cachedDataURL;
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d');
+ ctx.drawImage(img, 0, 0, size, size);
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ console.log(`✅ Earth normal map loaded from memory cache`);
+ return texture;
+ }
+ 
+ // Generate texture (no cache hit)
+ console.log(`🎨 Generating Earth normal map (${size}x${size})...`);
+ const startTime = performance.now();
  // Normal map for mountain ranges and ocean trenches
  const canvas = document.createElement('canvas');
  canvas.width = size;
@@ -1751,12 +1799,39 @@ export class SolarSystemModule {
  }
  
  ctx.putImageData(imageData, 0, 0);
+ 
+ // Cache asynchronously in background (non-blocking)
+ const dataURL = canvas.toDataURL('image/png');
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+ 
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
+ console.log(`⏱️ Earth normal map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
  
  createEarthSpecularMap(size) {
+ const cacheKey = `earth_specular_${size}`;
+ 
+ // Check MEMORY cache only (synchronous, instant)
+ if (TEXTURE_CACHE.cache.has(cacheKey)) {
+ const cachedDataURL = TEXTURE_CACHE.cache.get(cacheKey);
+ const img = new Image();
+ img.src = cachedDataURL;
+ const canvas = document.createElement('canvas');
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d');
+ ctx.drawImage(img, 0, 0, size, size);
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+ console.log(`✅ Earth specular map loaded from memory cache`);
+ return texture;
+ }
+ 
+ // Generate texture (no cache hit)
+ console.log(`🎨 Generating Earth specular map (${size}x${size})...`);
+ const startTime = performance.now();
  // Oceans are shiny, land is rough
  const canvas = document.createElement('canvas');
  canvas.width = size;
@@ -1793,8 +1868,14 @@ export class SolarSystemModule {
  }
  
  ctx.putImageData(imageData, 0, 0);
+ 
+ // Cache asynchronously in background (non-blocking)
+ const dataURL = canvas.toDataURL('image/png');
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+ 
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
+ console.log(`⏱️ Earth specular map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
  
@@ -2577,10 +2658,12 @@ export class SolarSystemModule {
  switch(id) {
  case 'earth':
  // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
+ console.time('⏱️ Total Earth Material Creation');
  const earthTexture = this.createEarthTextureRealFixed(4096); // 4K resolution!
  const earthBump = this.createEarthBumpMap(4096);
  const earthSpecular = this.createEarthSpecularMap(4096);
  const earthNormal = this.createEarthNormalMap(4096);
+ console.timeEnd('⏱️ Total Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
  // NO emissive - planets don't emit light, they only reflect it
