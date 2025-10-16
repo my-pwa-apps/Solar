@@ -690,8 +690,8 @@
             const panelId = panelElement.id;
             const savedPosition = localStorage.getItem(`panel-position-${panelId}`);
             
-            // For info-panel, always use CSS bottom positioning (don't restore saved position)
-            if (savedPosition && panelId !== 'info-panel') {
+            // Try to restore saved position for ALL panels (including info-panel)
+            if (savedPosition) {
                 try {
                     const { x, y } = JSON.parse(savedPosition);
                     const rect = panelElement.getBoundingClientRect();
@@ -716,7 +716,7 @@
                         panelElement.style.bottom = 'auto';
                     } else {
                         // Invalid saved position - clear it and use CSS default
-                        console.warn(`Invalid saved position for ${panelId} (y: ${y}, minTop: ${minTop}). Resetting to CSS default.`);
+                        console.warn(`Invalid saved position for ${panelId} (x: ${x}, y: ${y}, constraints: left >= ${minLeft}, top >= ${minTop}). Resetting to CSS default.`);
                         localStorage.removeItem(`panel-position-${panelId}`);
                         // Fall through to CSS default positioning
                         throw new Error('Invalid position');
@@ -843,7 +843,7 @@
                     manuallyDraggedPanels.add(panelId);
                 }
 
-                // Save position to localStorage
+                // Save position to localStorage for ALL panels (including info-panel)
                 try {
                     localStorage.setItem(`panel-position-${panelId}`, JSON.stringify({
                         x: currentX,
