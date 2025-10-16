@@ -243,6 +243,30 @@ class App {
  window.closeHelpModal = () => {
  this.uiManager.closeHelpModal();
  };
+ 
+ // Setup info panel close button with proper event listener
+ this.setupInfoPanelCloseButton();
+ }
+ 
+ setupInfoPanelCloseButton() {
+ const infoPanel = document.getElementById('info-panel');
+ if (!infoPanel) return;
+ 
+ const closeBtn = infoPanel.querySelector('.close-btn');
+ if (!closeBtn) return;
+ 
+ // Add direct click listener as backup to inline onclick
+ closeBtn.addEventListener('click', (e) => {
+ e.stopPropagation();
+ this.uiManager.closeInfoPanel();
+ });
+ 
+ // Ensure touch events work properly on mobile
+ closeBtn.addEventListener('touchend', (e) => {
+ e.preventDefault();
+ e.stopPropagation();
+ this.uiManager.closeInfoPanel();
+ }, { passive: false });
  }
 
  setupHelpButton() {
