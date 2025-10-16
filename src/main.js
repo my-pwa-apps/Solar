@@ -217,9 +217,16 @@ class App {
  // Orbit toggle button
  const orbitsButton = document.getElementById('toggle-orbits');
  if (orbitsButton) {
- // Set initial state based on default visibility
- if (this.solarSystemModule && this.solarSystemModule.orbitsVisible) {
+ // Restore state from localStorage
+ const savedOrbitsState = localStorage.getItem('orbitsVisible');
+ const orbitsVisible = savedOrbitsState !== null ? savedOrbitsState === 'true' : 
+ (this.solarSystemModule && this.solarSystemModule.orbitsVisible);
+ 
+ if (orbitsVisible) {
  orbitsButton.classList.add('toggle-on');
+ if (this.solarSystemModule) {
+ this.solarSystemModule.toggleOrbits(true);
+ }
  }
  
  orbitsButton.addEventListener('click', () => {
@@ -227,7 +234,9 @@ class App {
  const visible = !this.solarSystemModule.orbitsVisible;
  this.solarSystemModule.toggleOrbits(visible);
  orbitsButton.classList.toggle('toggle-on', visible);
- if (DEBUG.enabled) console.log(` Orbits: ${visible ? 'ON' : 'OFF'}`);
+ // Save state to localStorage
+ localStorage.setItem('orbitsVisible', visible.toString());
+ if (DEBUG.enabled) console.log(` Orbits: ${visible ? 'ON' : 'OFF'} (saved)`);
  }
  });
  }
@@ -235,9 +244,16 @@ class App {
  // Constellation toggle button
  const constellationsButton = document.getElementById('toggle-constellations');
  if (constellationsButton) {
- // Set initial state based on default visibility
- if (this.solarSystemModule && this.solarSystemModule.constellationsVisible) {
+ // Restore state from localStorage
+ const savedConstellationsState = localStorage.getItem('constellationsVisible');
+ const constellationsVisible = savedConstellationsState !== null ? savedConstellationsState === 'true' : 
+ (this.solarSystemModule && this.solarSystemModule.constellationsVisible);
+ 
+ if (constellationsVisible) {
  constellationsButton.classList.add('toggle-on');
+ if (this.solarSystemModule) {
+ this.solarSystemModule.toggleConstellations(true);
+ }
  }
  
  constellationsButton.addEventListener('click', () => {
@@ -245,7 +261,9 @@ class App {
  const visible = !this.solarSystemModule.constellationsVisible;
  this.solarSystemModule.toggleConstellations(visible);
  constellationsButton.classList.toggle('toggle-on', visible);
- if (DEBUG.enabled) console.log(` Constellations: ${visible ? 'ON' : 'OFF'}`);
+ // Save state to localStorage
+ localStorage.setItem('constellationsVisible', visible.toString());
+ if (DEBUG.enabled) console.log(` Constellations: ${visible ? 'ON' : 'OFF'} (saved)`);
  }
  });
  }
@@ -253,6 +271,17 @@ class App {
  // Scale toggle button
  const scaleButton = document.getElementById('toggle-scale');
  if (scaleButton) {
+ // Restore state from localStorage
+ const savedScaleState = localStorage.getItem('realisticScale');
+ if (savedScaleState !== null && this.solarSystemModule) {
+ const realisticScale = savedScaleState === 'true';
+ this.solarSystemModule.realisticScale = realisticScale;
+ scaleButton.classList.toggle('active', realisticScale);
+ const t = window.t || ((key) => key);
+ scaleButton.textContent = realisticScale ? 
+ t('toggleScaleRealistic') : t('toggleScale');
+ }
+ 
  scaleButton.addEventListener('click', () => {
  if (this.solarSystemModule) {
  const t = window.t || ((key) => key);
@@ -260,6 +289,10 @@ class App {
  scaleButton.classList.toggle('active');
  scaleButton.textContent = this.solarSystemModule.realisticScale ? 
  t('toggleScaleRealistic') : t('toggleScale');
+ 
+ // Save state to localStorage
+ localStorage.setItem('realisticScale', this.solarSystemModule.realisticScale.toString());
+ if (DEBUG.enabled) console.log(` Scale: ${this.solarSystemModule.realisticScale ? 'Realistic' : 'Educational'} (saved)`);
  
  // Recalculate positions with new scale
  this.solarSystemModule.updateScale();
@@ -272,8 +305,19 @@ class App {
  if (labelsButton) {
  // Use translation function if available, otherwise fallback to English
  const t = window.t || ((key) => key);
- labelsButton.textContent = t('toggleLabels');
- labelsButton.classList.remove('toggle-on');
+ 
+ // Restore state from localStorage
+ const savedLabelsState = localStorage.getItem('labelsVisible');
+ const labelsVisible = savedLabelsState === 'true'; // Default is false
+ 
+ if (this.sceneManager) {
+ this.sceneManager.labelsVisible = labelsVisible;
+ }
+ 
+ labelsButton.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
+ if (labelsVisible) {
+ labelsButton.classList.add('toggle-on');
+ }
  
  labelsButton.addEventListener('click', () => {
  if (this.solarSystemModule && this.solarSystemModule.toggleLabels) {
@@ -283,7 +327,9 @@ class App {
  labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
  labelsButton.textContent = this.sceneManager.labelsVisible ? 
  t('toggleLabelsOn') : t('toggleLabels');
- if (DEBUG.enabled) console.log(` Labels: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'}`);
+ // Save state to localStorage
+ localStorage.setItem('labelsVisible', this.sceneManager.labelsVisible.toString());
+ if (DEBUG.enabled) console.log(` Labels: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'} (saved)`);
  }
  }
  });
