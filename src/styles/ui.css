@@ -269,7 +269,7 @@
 /* Fluent Info Panel - Floating Card */
 #info-panel {
     bottom: 70px; /* Just above bottom bar (~48px footer + 22px margin) */
-    left: 30px; /* Increased left padding for better spacing */
+    left: clamp(20px, 4vw, 30px); /* Responsive left padding: 20px mobile to 30px desktop */
     top: auto; /* Override top positioning */
     max-width: min(320px, calc(100vw - 60px)); /* Responsive width */
     max-height: 40vh; /* Limit height to 40% of viewport */
@@ -324,8 +324,9 @@
 /* Floating Speed Control Panel */
 #speed-control {
     top: 80px;
-    right: 30px; /* Match left spacing of info panel */
+    right: clamp(10px, 3vw, 30px); /* Responsive right spacing */
     min-width: 80px;
+    max-width: calc(100vw - 20px); /* Prevent off-screen on small viewports */
 }
 
 .panel-content {
@@ -1020,18 +1021,19 @@ select {
     }
     
     #info-panel {
-        left: 20px; /* Increased for better mobile spacing */
+        left: 15px; /* Tighter on mobile to maximize space */
         bottom: 62px; /* Just above mobile footer (~44px footer + 18px margin) */
         top: auto; /* Use bottom positioning instead */
-        max-width: calc(100vw - 40px); /* Responsive with left padding */
+        max-width: calc(100vw - 30px); /* Responsive with left padding */
         max-height: 40vh; /* Limit to 40% of viewport height */
         z-index: 50; /* Below header - panel always beneath top bar */
     }
     
     #speed-control {
-        right: 20px; /* Match mobile info panel spacing */
+        right: 15px; /* Tighter spacing on mobile to stay on screen */
         top: 80px;
         min-width: 70px;
+        max-width: 100px; /* Prevent overflow on narrow screens */
     }
     
     #speed-control input[type="range"] {
