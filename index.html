@@ -703,11 +703,15 @@
                 }
             } else {
                 // No saved position - use CSS defaults (bottom positioning for info-panel)
-                // Get computed position from CSS
-                const computedStyle = window.getComputedStyle(panelElement);
+                // Get computed position from CSS and convert to top/left for dragging
                 const rect = panelElement.getBoundingClientRect();
                 currentX = rect.left;
                 currentY = rect.top;
+                // Apply as top/left so dragging works correctly
+                panelElement.style.left = currentX + 'px';
+                panelElement.style.top = currentY + 'px';
+                panelElement.style.right = 'auto';
+                panelElement.style.bottom = 'auto';
             }
 
             handle.style.cursor = 'move';
