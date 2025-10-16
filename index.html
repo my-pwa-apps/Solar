@@ -321,8 +321,8 @@
         <p id="loading-percentage">0%</p>
     </div>
     <aside id="info-panel" class="hidden draggable-panel" role="complementary" aria-labelledby="object-name">
-        <div class="panel-header drag-handle" title="Drag to move">
-            <h2 id="object-name" data-i18n="selectObject">Select an Object</h2>
+        <div class="panel-header">
+            <h2 id="object-name" class="drag-handle" data-i18n="selectObject" title="Drag to move">Select an Object</h2>
             <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel">✕</button>
         </div>
         <div class="info-content">
@@ -337,8 +337,8 @@
 
     <!-- Floating Speed Control -->
     <div id="speed-control" class="draggable-panel" role="region" aria-label="Animation speed control">
-        <div class="panel-header drag-handle" title="Drag to move">
-            <span class="panel-title" data-i18n="speedLabel">Speed</span>
+        <div class="panel-header">
+            <span class="panel-title drag-handle" data-i18n="speedLabel" title="Drag to move">Speed</span>
         </div>
         <div class="panel-content">
             <input type="range" id="time-speed" min="0" max="5" value="1" step="0.1" aria-label="Animation speed" />
@@ -791,6 +791,19 @@
             if (speedControlElement) {
                 makeDraggable(speedControlElement);
             }
+
+            // Ensure close buttons work on touch devices
+            // Stop event propagation so drag handlers don't interfere
+            document.querySelectorAll('.close-btn').forEach(btn => {
+                btn.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                }, { passive: true });
+                btn.addEventListener('touchend', (e) => {
+                    e.stopPropagation();
+                    // Trigger click for touch devices
+                    btn.click();
+                }, { passive: true });
+            });
         });
     </script>
 </body>
