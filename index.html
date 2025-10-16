@@ -788,6 +788,11 @@
                 document.removeEventListener('touchmove', drag);
                 document.removeEventListener('touchend', dragEnd);
 
+                // Mark panel as manually dragged (so resize doesn't reset it)
+                if (panelId !== 'info-panel') {
+                    manuallyDraggedPanels.add(panelId);
+                }
+
                 // Save position to localStorage
                 try {
                     localStorage.setItem(`panel-position-${panelId}`, JSON.stringify({
@@ -799,6 +804,62 @@
                 }
             }
         }
+
+        // Track which panels have been manually dragged
+        const manuallyDraggedPanels = new Set();
+        
+        // Function to reset panel to CSS position
+        function resetPanelPosition(panelElement) {
+            const panelId = panelElement.id;
+            
+            // Don't reset if manually dragged (unless it's info-panel which never saves position)
+            if (manuallyDraggedPanels.has(panelId) && panelId !== 'info-panel') {
+                return;
+            }
+            
+            // Remove inline styles to use CSS positioning
+            panelElement.style.left = '';
+            panelElement.style.top = '';
+            panelElement.style.right = '';
+            panelElement.style.bottom = '';
+            
+            // Force reflow to get updated CSS position
+            panelElement.offsetHeight;
+            
+            // Get computed position and convert to inline styles for dragging
+            const rect = panelElement.getBoundingClientRect();
+            let currentX = rect.left;
+            let currentY = rect.top;
+            
+            // Ensure panel is below header (minimum 100px from top)
+            const minTop = 100;
+            if (currentY < minTop) {
+                currentY = minTop;
+            }
+            
+            // Apply as top/left so dragging works correctly
+            panelElement.style.left = currentX + 'px';
+            panelElement.style.top = currentY + 'px';
+            panelElement.style.right = 'auto';
+            panelElement.style.bottom = 'auto';
+        }
+
+        // Handle window resize - update panel positions to match responsive CSS
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const infoPanelElement = document.getElementById('info-panel');
+                const speedControlElement = document.getElementById('speed-control');
+                
+                if (infoPanelElement) {
+                    resetPanelPosition(infoPanelElement);
+                }
+                if (speedControlElement) {
+                    resetPanelPosition(speedControlElement);
+                }
+            }, 150); // Debounce resize events
+        });
 
         // Initialize draggable panels on load
         window.addEventListener('load', () => {
