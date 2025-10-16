@@ -86,7 +86,7 @@ class App {
  // Setup controls
  this.setupControls();
  
- // Restore saved toggle states now that solar system is initialized
+ // Restore saved toggle states now that solar system is fully initialized
  this.restoreSavedToggleStates();
  
  // Hide tooltip when camera controls are used
@@ -335,6 +335,8 @@ class App {
  const labelsButton = document.getElementById('toggle-details');
  if (labelsButton) {
  labelsButton.addEventListener('click', () => {
+ // Use translation function if available, otherwise fallback to English
+ const t = window.t || ((key) => key);
  if (this.solarSystemModule && this.solarSystemModule.toggleLabels) {
  if (this.sceneManager) {
  this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
