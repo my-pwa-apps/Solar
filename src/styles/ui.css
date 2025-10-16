@@ -1021,9 +1021,9 @@ select {
     
     #info-panel {
         left: 10px;
-        top: 65px; /* Safely below mobile header (~57px + 8px clearance) */
+        top: 80px; /* Well below mobile header with generous clearance */
         max-width: calc(100vw - 20px);
-        max-height: calc(100vh - 130px); /* Adjusted for new top position */
+        max-height: calc(100vh - 145px); /* Adjusted for new top position */
         margin-top: 0;
         z-index: 50; /* Below header - panel always beneath top bar */
     }
