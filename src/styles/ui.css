@@ -269,9 +269,9 @@
 /* Fluent Info Panel - Floating Card */
 #info-panel {
     bottom: 70px; /* Just above bottom bar (~48px footer + 22px margin) */
-    left: 20px;
+    left: 30px; /* Increased left padding for better spacing */
     top: auto; /* Override top positioning */
-    max-width: 320px;
+    max-width: min(320px, calc(100vw - 60px)); /* Responsive width */
     max-height: 40vh; /* Limit height to 40% of viewport */
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
     z-index: 50;
@@ -324,7 +324,7 @@
 /* Floating Speed Control Panel */
 #speed-control {
     top: 80px;
-    right: 20px;
+    right: 30px; /* Match left spacing of info panel */
     min-width: 80px;
 }
 
@@ -1020,16 +1020,16 @@ select {
     }
     
     #info-panel {
-        left: 10px;
+        left: 20px; /* Increased for better mobile spacing */
         bottom: 62px; /* Just above mobile footer (~44px footer + 18px margin) */
         top: auto; /* Use bottom positioning instead */
-        max-width: calc(100vw - 20px);
+        max-width: calc(100vw - 40px); /* Responsive with left padding */
         max-height: 40vh; /* Limit to 40% of viewport height */
         z-index: 50; /* Below header - panel always beneath top bar */
     }
     
     #speed-control {
-        right: 10px;
+        right: 20px; /* Match mobile info panel spacing */
         top: 80px;
         min-width: 70px;
     }
