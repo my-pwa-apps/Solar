@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.4 - Extracted PWA and ServiceWorker managers
+// Version 2.2.5 - CSS deprecation fix force update
 
-const CACHE_VERSION = '2.2.4';
+const CACHE_VERSION = '2.2.5';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
