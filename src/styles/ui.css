@@ -337,11 +337,10 @@
     align-items: center;
 }
 
-/* Vertical Range Slider */
+/* Vertical Range Slider - Modern approach without deprecated slider-vertical */
 #speed-control input[type="range"] {
-    writing-mode: bt-lr; /* IE */
-    -webkit-appearance: slider-vertical; /* Chromium */
-    appearance: slider-vertical;
+    writing-mode: vertical-lr; /* Modern standard for vertical orientation */
+    direction: rtl; /* Reverses direction so max is at top */
     width: 6px;
     height: 150px;
     padding: 0;
@@ -349,6 +348,8 @@
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     outline: none;
+    -webkit-appearance: none; /* Remove default styling */
+    appearance: none;
 }
 
 /* Webkit (Chrome, Safari, Edge) - Vertical */
