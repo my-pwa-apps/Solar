@@ -268,14 +268,14 @@
 
 /* Fluent Info Panel - Floating Card */
 #info-panel {
-    top: 90px;
+    top: 120px;
     left: 20px;
     max-width: 320px;
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
     z-index: 50;
     font-size: 14px;
-    /* Ensure close button is never covered by topbar */
-    margin-top: 10px;
+    /* Positioned lower for better visibility and less header interference */
+    margin-top: 0;
 }
 
 #info-panel:hover {
@@ -1021,9 +1021,9 @@ select {
     
     #info-panel {
         left: 10px;
-        top: 80px; /* Well below mobile header with generous clearance */
+        top: 100px; /* Lower position - well clear of mobile header */
         max-width: calc(100vw - 20px);
-        max-height: calc(100vh - 145px); /* Adjusted for new top position */
+        max-height: calc(100vh - 165px); /* Adjusted for new top position */
         margin-top: 0;
         z-index: 50; /* Below header - panel always beneath top bar */
     }
