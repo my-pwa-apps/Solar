@@ -689,7 +689,9 @@
             // Restore saved position from localStorage
             const panelId = panelElement.id;
             const savedPosition = localStorage.getItem(`panel-position-${panelId}`);
-            if (savedPosition) {
+            
+            // For info-panel, always use CSS bottom positioning (don't restore saved position)
+            if (savedPosition && panelId !== 'info-panel') {
                 try {
                     const { x, y } = JSON.parse(savedPosition);
                     currentX = x;
@@ -702,11 +704,18 @@
                     console.warn(`Failed to restore position for ${panelId}:`, e);
                 }
             } else {
-                // No saved position - use CSS defaults (bottom positioning for info-panel)
+                // Use CSS defaults (bottom positioning for info-panel)
                 // Get computed position from CSS and convert to top/left for dragging
                 const rect = panelElement.getBoundingClientRect();
                 currentX = rect.left;
                 currentY = rect.top;
+                
+                // Ensure panel is below header (minimum 100px from top)
+                const minTop = 100;
+                if (currentY < minTop) {
+                    currentY = minTop;
+                }
+                
                 // Apply as top/left so dragging works correctly
                 panelElement.style.left = currentX + 'px';
                 panelElement.style.top = currentY + 'px';
