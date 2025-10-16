@@ -916,9 +916,6 @@
 
         // Initialize draggable panels on load
         window.addEventListener('load', () => {
-            // Clear old positioning - info panel now uses bottom positioning from CSS
-            localStorage.removeItem('panel-position-info-panel');
-            
             const infoPanelElement = document.getElementById('info-panel');
             const speedControlElement = document.getElementById('speed-control');
             
