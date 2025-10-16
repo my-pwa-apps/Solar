@@ -993,8 +993,8 @@ export class SolarSystemModule {
             if (primaryIndex < primaryTextureURLs.length) {
                 const url = primaryTextureURLs[primaryIndex];
                 
-                // Check cache first
-                const cacheKey = `${planetName.toLowerCase()}_texture_${url}`;
+                // Check cache first (cache by planet name only, not URL)
+                const cacheKey = `${planetName.toLowerCase()}_texture_remote`;
                 const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
                 if (cachedDataURL) {
                     const img = new Image();
@@ -1005,6 +1005,8 @@ export class SolarSystemModule {
                         this._onPlanetTextureSuccess(planetName, tex, url, 'cached');
                     };
                     img.onerror = () => {
+                        // Cached texture is corrupted, clear it and try loading fresh
+                        TEXTURE_CACHE.set(cacheKey, null).catch(() => {});
                         primaryIndex++;
                         tryNext();
                     };
@@ -1137,10 +1139,11 @@ export class SolarSystemModule {
         tex.anisotropy = 16;
         tex.needsUpdate = true;
         
-        // Cache the successfully loaded texture for future use
-        const cacheKey = `${planetName.toLowerCase()}_texture_${url}`;
-        if (tex.image && tex.image instanceof HTMLImageElement) {
-            // Convert image to data URL and cache it
+        // Cache the successfully loaded texture for future use (cache by planet name only)
+        // Don't include URL in cache key so texture persists across language changes
+        const cacheKey = `${planetName.toLowerCase()}_texture_remote`;
+        if (tex.image && tex.image instanceof HTMLImageElement && sourceType !== 'cached') {
+            // Convert image to data URL and cache it (skip if already from cache)
             const canvas = document.createElement('canvas');
             canvas.width = tex.image.width;
             canvas.height = tex.image.height;
@@ -1150,6 +1153,9 @@ export class SolarSystemModule {
             TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
                 // Cache write failed - texture will be reloaded next time
             });
+            if (DEBUG.TEXTURES) {
+                console.log(`💾 Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB`);
+            }
         }
         
         // Find the object: check sun, planets, and moons
