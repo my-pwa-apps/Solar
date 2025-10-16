@@ -694,14 +694,56 @@
             if (savedPosition && panelId !== 'info-panel') {
                 try {
                     const { x, y } = JSON.parse(savedPosition);
-                    currentX = x;
-                    currentY = y;
+                    const rect = panelElement.getBoundingClientRect();
+                    
+                    // Validate saved position against constraints
+                    const edgePadding = 10;
+                    const minTop = 100; // Below header
+                    const minLeft = edgePadding;
+                    const maxX = window.innerWidth - rect.width - edgePadding;
+                    const maxY = window.innerHeight - rect.height - edgePadding;
+                    
+                    // Check if saved position is valid (not under header or off-screen)
+                    const isValidPosition = y >= minTop && x >= minLeft && x <= maxX && y <= maxY;
+                    
+                    if (isValidPosition) {
+                        // Restore saved position
+                        currentX = x;
+                        currentY = y;
+                        panelElement.style.left = currentX + 'px';
+                        panelElement.style.top = currentY + 'px';
+                        panelElement.style.right = 'auto';
+                        panelElement.style.bottom = 'auto';
+                    } else {
+                        // Invalid saved position - clear it and use CSS default
+                        console.warn(`Invalid saved position for ${panelId} (y: ${y}, minTop: ${minTop}). Resetting to CSS default.`);
+                        localStorage.removeItem(`panel-position-${panelId}`);
+                        // Fall through to CSS default positioning
+                        throw new Error('Invalid position');
+                    }
+                } catch (e) {
+                    // Fall back to CSS default positioning
+                    console.warn(`Failed to restore position for ${panelId}:`, e.message);
+                    const rect = panelElement.getBoundingClientRect();
+                    currentX = rect.left;
+                    currentY = rect.top;
+                    
+                    // Apply edge padding constraints
+                    const edgePadding = 10;
+                    const minTop = 100; // Below header
+                    const minLeft = edgePadding;
+                    const maxX = window.innerWidth - rect.width - edgePadding;
+                    const maxY = window.innerHeight - rect.height - edgePadding;
+                    
+                    // Constrain to viewport with padding
+                    currentX = Math.max(minLeft, Math.min(currentX, maxX));
+                    currentY = Math.max(minTop, Math.min(currentY, maxY));
+                    
+                    // Apply as top/left so dragging works correctly
                     panelElement.style.left = currentX + 'px';
                     panelElement.style.top = currentY + 'px';
                     panelElement.style.right = 'auto';
                     panelElement.style.bottom = 'auto';
-                } catch (e) {
-                    console.warn(`Failed to restore position for ${panelId}:`, e);
                 }
             } else {
                 // Use CSS defaults (bottom positioning for info-panel)
