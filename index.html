@@ -710,11 +710,16 @@
                 currentX = rect.left;
                 currentY = rect.top;
                 
-                // Ensure panel is below header (minimum 100px from top)
-                const minTop = 100;
-                if (currentY < minTop) {
-                    currentY = minTop;
-                }
+                // Apply edge padding constraints
+                const edgePadding = 10;
+                const minTop = 100; // Below header
+                const minLeft = edgePadding;
+                const maxX = window.innerWidth - rect.width - edgePadding;
+                const maxY = window.innerHeight - rect.height - edgePadding;
+                
+                // Constrain to viewport with padding
+                currentX = Math.max(minLeft, Math.min(currentX, maxX));
+                currentY = Math.max(minTop, Math.min(currentY, maxY));
                 
                 // Apply as top/left so dragging works correctly
                 panelElement.style.left = currentX + 'px';
@@ -834,11 +839,16 @@
             let currentX = rect.left;
             let currentY = rect.top;
             
-            // Ensure panel is below header (minimum 100px from top)
-            const minTop = 100;
-            if (currentY < minTop) {
-                currentY = minTop;
-            }
+            // Apply edge padding constraints
+            const edgePadding = 10;
+            const minTop = 100; // Below header
+            const minLeft = edgePadding;
+            const maxX = window.innerWidth - rect.width - edgePadding;
+            const maxY = window.innerHeight - rect.height - edgePadding;
+            
+            // Constrain to viewport with padding
+            currentX = Math.max(minLeft, Math.min(currentX, maxX));
+            currentY = Math.max(minTop, Math.min(currentY, maxY));
             
             // Apply as top/left so dragging works correctly
             panelElement.style.left = currentX + 'px';
