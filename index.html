@@ -770,9 +770,12 @@
                 const rect = panelElement.getBoundingClientRect();
                 const maxX = window.innerWidth - rect.width;
                 const maxY = window.innerHeight - rect.height;
+                
+                // Hard constraint: minimum 100px from top (below header)
+                const minTop = 100;
 
                 currentX = Math.max(0, Math.min(currentX, maxX));
-                currentY = Math.max(0, Math.min(currentY, maxY));
+                currentY = Math.max(minTop, Math.min(currentY, maxY));
 
                 panelElement.style.left = currentX + 'px';
                 panelElement.style.top = currentY + 'px';
