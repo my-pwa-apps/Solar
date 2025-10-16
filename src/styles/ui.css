@@ -1021,11 +1021,11 @@ select {
     
     #info-panel {
         left: 10px;
-        top: 60px; /* Reduced from 70px to ensure visibility */
+        top: 58px; /* Positioned below mobile header (49px + 9px margin) */
         max-width: calc(100vw - 20px);
-        max-height: 40vh;
-        margin-top: 0; /* Removed extra margin */
-        z-index: 101; /* Above header to ensure close button is clickable */
+        max-height: calc(100vh - 120px); /* More vertical space */
+        margin-top: 0;
+        z-index: 50; /* Below header - panel always beneath top bar */
     }
     
     #speed-control {
