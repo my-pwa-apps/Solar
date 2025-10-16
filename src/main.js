@@ -35,10 +35,10 @@ class App {
  const appStartTime = performance.now();
  
  try {
- // Check cache status
- if (DEBUG.PERFORMANCE) {
+ // ALWAYS warm up cache from IndexedDB (loads cached textures into memory)
  const cacheReady = await warmupTextureCache();
- if (cacheReady) console.log('⚡ Fast start: Essential textures cached');
+ if (cacheReady && DEBUG.PERFORMANCE) {
+ console.log('⚡ Fast start: All essential textures cached');
  }
  
  // Initialize managers

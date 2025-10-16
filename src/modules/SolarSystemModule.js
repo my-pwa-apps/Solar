@@ -1645,18 +1645,12 @@ export class SolarSystemModule {
  
  createEarthBumpMap(size) {
  const cacheKey = `earth_bump_${size}`;
+ const canvasCacheKey = `${cacheKey}_canvas`;
  
- // Check MEMORY cache only (synchronous, instant)
- if (TEXTURE_CACHE.cache.has(cacheKey)) {
- const cachedDataURL = TEXTURE_CACHE.cache.get(cacheKey);
- const img = new Image();
- img.src = cachedDataURL;
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d');
- ctx.drawImage(img, 0, 0, size, size);
- const texture = new THREE.CanvasTexture(canvas);
+ // Check MEMORY cache for pre-generated canvas (synchronous, instant)
+ if (TEXTURE_CACHE.cache.has(canvasCacheKey)) {
+ const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
+ const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
  console.log(`✅ Earth bump map loaded from memory cache`);
  return texture;
@@ -1718,7 +1712,10 @@ export class SolarSystemModule {
  
  ctx.putImageData(imageData, 0, 0);
  
- // Cache asynchronously in background (non-blocking)
+ // Cache the canvas in memory for instant reuse (synchronous)
+ TEXTURE_CACHE.cache.set(canvasCacheKey, canvas);
+ 
+ // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
  const dataURL = canvas.toDataURL('image/png');
  TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
  
@@ -1730,18 +1727,12 @@ export class SolarSystemModule {
  
  createEarthNormalMap(size) {
  const cacheKey = `earth_normal_${size}`;
+ const canvasCacheKey = `${cacheKey}_canvas`;
  
- // Check MEMORY cache only (synchronous, instant)
- if (TEXTURE_CACHE.cache.has(cacheKey)) {
- const cachedDataURL = TEXTURE_CACHE.cache.get(cacheKey);
- const img = new Image();
- img.src = cachedDataURL;
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d');
- ctx.drawImage(img, 0, 0, size, size);
- const texture = new THREE.CanvasTexture(canvas);
+ // Check MEMORY cache for pre-generated canvas (synchronous, instant)
+ if (TEXTURE_CACHE.cache.has(canvasCacheKey)) {
+ const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
+ const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
  console.log(`✅ Earth normal map loaded from memory cache`);
  return texture;
@@ -1800,7 +1791,10 @@ export class SolarSystemModule {
  
  ctx.putImageData(imageData, 0, 0);
  
- // Cache asynchronously in background (non-blocking)
+ // Cache the canvas in memory for instant reuse (synchronous)
+ TEXTURE_CACHE.cache.set(canvasCacheKey, canvas);
+ 
+ // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
  const dataURL = canvas.toDataURL('image/png');
  TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
  
@@ -1812,18 +1806,12 @@ export class SolarSystemModule {
  
  createEarthSpecularMap(size) {
  const cacheKey = `earth_specular_${size}`;
+ const canvasCacheKey = `${cacheKey}_canvas`;
  
- // Check MEMORY cache only (synchronous, instant)
- if (TEXTURE_CACHE.cache.has(cacheKey)) {
- const cachedDataURL = TEXTURE_CACHE.cache.get(cacheKey);
- const img = new Image();
- img.src = cachedDataURL;
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d');
- ctx.drawImage(img, 0, 0, size, size);
- const texture = new THREE.CanvasTexture(canvas);
+ // Check MEMORY cache for pre-generated canvas (synchronous, instant)
+ if (TEXTURE_CACHE.cache.has(canvasCacheKey)) {
+ const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
+ const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
  console.log(`✅ Earth specular map loaded from memory cache`);
  return texture;
@@ -1869,7 +1857,10 @@ export class SolarSystemModule {
  
  ctx.putImageData(imageData, 0, 0);
  
- // Cache asynchronously in background (non-blocking)
+ // Cache the canvas in memory for instant reuse (synchronous)
+ TEXTURE_CACHE.cache.set(canvasCacheKey, canvas);
+ 
+ // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
  const dataURL = canvas.toDataURL('image/png');
  TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
  

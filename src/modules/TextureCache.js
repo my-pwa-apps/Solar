@@ -110,23 +110,55 @@ export class TextureCache {
 export const TEXTURE_CACHE = new TextureCache();
 
 // Warm up cache with essential textures (run in background)
+// This preloads from IndexedDB into memory so synchronous lookups work
 export async function warmupTextureCache() {
  const essentialTextures = [
  'earth_texture_4096',
+ 'earth_bump_4096',      // NEW: Earth bump map
+ 'earth_normal_4096',    // NEW: Earth normal map
+ 'earth_specular_4096',  // NEW: Earth specular map
  'moon_texture_2048',
  'mars_texture_2048'
  ];
  
+ console.log('🔥 Warming up texture cache from IndexedDB...');
  let cached = 0;
+ 
  for (const key of essentialTextures) {
- if (await TEXTURE_CACHE.get(key)) {
+ const dataURL = await TEXTURE_CACHE.get(key);
+ if (dataURL) {
  cached++;
+ console.log(`  ✅ Loaded ${key} into memory`);
+ 
+ // For bump/normal/specular maps, also create and cache Canvas objects
+ // This allows synchronous access in createEarthBumpMap/Normal/Specular
+ if (key.includes('bump') || key.includes('normal') || key.includes('specular')) {
+ const canvasKey = `${key}_canvas`;
+ 
+ // Create canvas from data URL (async)
+ const img = new Image();
+ img.src = dataURL;
+ await new Promise((resolve) => {
+ img.onload = () => {
+ const canvas = document.createElement('canvas');
+ const size = key.includes('4096') ? 4096 : 2048;
+ canvas.width = size;
+ canvas.height = size;
+ const ctx = canvas.getContext('2d');
+ ctx.drawImage(img, 0, 0);
+ 
+ // Store canvas in memory for synchronous access
+ TEXTURE_CACHE.cache.set(canvasKey, canvas);
+ console.log(`    📦 Canvas cached: ${canvasKey}`);
+ resolve();
+ };
+ img.onerror = () => resolve(); // Skip if error
+ });
+ }
  }
  }
  
- if (DEBUG.PERFORMANCE) {
- console.log(`🔥 Texture cache: ${cached}/${essentialTextures.length} essential textures cached`);
- }
+ console.log(`🔥 Texture cache warmup: ${cached}/${essentialTextures.length} textures loaded into memory`);
  
  return cached === essentialTextures.length;
 }
