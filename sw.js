@@ -22,6 +22,7 @@ const STATIC_CACHE_FILES = [
   './src/modules/SolarSystemModule.js',
   './src/modules/TextureCache.js',
   './src/modules/UIManager.js',
+  './src/modules/PanelManager.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
