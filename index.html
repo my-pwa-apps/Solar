@@ -838,10 +838,8 @@
                 document.removeEventListener('touchmove', drag);
                 document.removeEventListener('touchend', dragEnd);
 
-                // Mark panel as manually dragged (so resize doesn't reset it)
-                if (panelId !== 'info-panel') {
-                    manuallyDraggedPanels.add(panelId);
-                }
+                // Mark ALL panels as manually dragged (so resize doesn't reset them)
+                manuallyDraggedPanels.add(panelId);
 
                 // Save position to localStorage for ALL panels (including info-panel)
                 try {
@@ -862,8 +860,8 @@
         function resetPanelPosition(panelElement) {
             const panelId = panelElement.id;
             
-            // Don't reset if manually dragged (unless it's info-panel which never saves position)
-            if (manuallyDraggedPanels.has(panelId) && panelId !== 'info-panel') {
+            // Don't reset if manually dragged (ALL panels preserve position on resize)
+            if (manuallyDraggedPanels.has(panelId)) {
                 return;
             }
             
