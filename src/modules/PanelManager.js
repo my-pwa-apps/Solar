@@ -70,6 +70,14 @@ export class PanelManager {
         handle.style.cursor = 'move';
 
         const dragStart = (e) => {
+            // Don't start dragging if clicking on close button or other interactive elements
+            if (e.target.classList.contains('close-btn') || 
+                e.target.closest('.close-btn') ||
+                e.target.tagName === 'BUTTON' ||
+                e.target.tagName === 'INPUT') {
+                return;
+            }
+            
             // Only allow left mouse button
             if (e.type === 'mousedown' && e.button !== 0) return;
 
@@ -269,14 +277,32 @@ export class PanelManager {
      */
     setupCloseButtonTouchHandlers() {
         document.querySelectorAll('.close-btn').forEach(btn => {
+            // Prevent drag handler from capturing close button touches
             btn.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-            }, { passive: true });
+                e.stopPropagation(); // Stop event from reaching drag handler
+            }, { passive: false });
             
+            // Handle touch end to trigger close
             btn.addEventListener('touchend', (e) => {
-                e.stopPropagation();
-                btn.click();
-            }, { passive: true });
+                e.preventDefault(); // Prevent ghost clicks
+                e.stopPropagation(); // Stop event from reaching drag handler
+                
+                // Get the onclick function and execute it directly
+                const onclickAttr = btn.getAttribute('onclick');
+                if (onclickAttr) {
+                    // Execute the onclick function
+                    try {
+                        eval(onclickAttr);
+                    } catch (err) {
+                        console.error('Error executing close button onclick:', err);
+                    }
+                }
+            }, { passive: false });
+            
+            // Also handle click event as fallback
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent any interference from parent elements
+            });
         });
     }
 }
