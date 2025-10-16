@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.5 - CSS deprecation fix force update
+// Version 2.2.6 - Self-hosted textures migration
 
-const CACHE_VERSION = '2.2.5';
+const CACHE_VERSION = '2.2.6';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -49,7 +49,21 @@ const STATIC_CACHE_FILES = [
   './icons/windows11/Square44x44Logo.targetsize-48.png',
   './icons/windows11/Square44x44Logo.targetsize-256.png',
   './icons/manifest-icon-192.maskable.png',
-  './icons/manifest-icon-512.maskable.png'
+  './icons/manifest-icon-512.maskable.png',
+  // Planet textures (self-hosted)
+  './textures/planets/sun.jpg',
+  './textures/planets/mercury.jpg',
+  './textures/planets/venus.jpg',
+  './textures/planets/earth_1k.jpg',
+  './textures/planets/earth_atmos_2k.jpg',
+  './textures/planets/mars_1k.jpg',
+  './textures/planets/jupiter.jpg',
+  './textures/planets/saturn.jpg',
+  './textures/planets/uranus.jpg',
+  './textures/planets/neptune.jpg',
+  // Moon textures
+  './textures/moons/moon_1k.jpg',
+  './textures/moons/moon_threejs_1k.jpg'
 ];
 
 // CDN files to cache (Three.js and dependencies)
