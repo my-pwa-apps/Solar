@@ -38,6 +38,9 @@ export class SceneManager {
  lastPosition: new THREE.Vector3()
  };
  
+ // Track previous button states for detecting new presses (not holds)
+ this.previousButtonStates = [{}, {}];
+ 
  this.init();
  }
 
@@ -388,13 +391,14 @@ export class SceneManager {
  console.log('[VR Controls]');
  console.log('  Left Stick: Move forward/back/strafe');
  console.log('  Right Stick: Turn left/right, move up/down');
- console.log('  Trigger: Sprint mode');
- console.log('  Grip: Toggle VR menu');
+ console.log('  Left Trigger: Sprint mode');
+ console.log('  Left Grip: Grab & move to rotate view');
+ console.log('  Left X Button: Toggle VR menu');
  console.log('  Point + Trigger: Select objects');
- console.log('  TIP: Press GRIP BUTTON to open VR menu!');
+ console.log('  TIP: Press X BUTTON to open VR menu!');
  }
  
- // Hide VR UI panel initially - let user toggle with grip
+ // Hide VR UI panel initially - let user toggle with X button
  if (this.vrUIPanel) {
  this.vrUIPanel.visible = false;
  }
@@ -981,89 +985,33 @@ export class SceneManager {
  }
  
  onSqueezeStart(controller, index) {
- // Grip button pressed - Start grab-to-rotate mode
- const session = this.renderer.xr.getSession();
- let triggerHeld = false;
- if (session) {
- const inputSources = session.inputSources;
- for (let i = 0; i < inputSources.length; i++) {
- const gamepad = inputSources[i].gamepad;
- if (gamepad && gamepad.buttons[0] && gamepad.buttons[0].pressed) {
- triggerHeld = true;
- break;
- }
- }
- }
+ // LEFT GRIP: Start grab-to-rotate mode
+ const handedness = controller.userData?.handedness || 
+ (index === 0 ? 'left' : 'right');
  
- // GRAB-TO-ROTATE MODE: Grip without trigger
- if (!triggerHeld) {
- // Start grab-to-rotate
+ if (handedness === 'left' && !this.grabRotateState.active) {
+ // Start grab-to-rotate with left controller
  this.grabRotateState.active = true;
  this.grabRotateState.controllerIndex = index;
  
- // Store starting position in world space
- const worldPos = new THREE.Vector3();
- controller.getWorldPosition(worldPos);
- this.grabRotateState.startPosition.copy(worldPos);
- this.grabRotateState.lastPosition.copy(worldPos);
- 
- // Store starting dolly rotation
+ // Store starting position and rotation
+ controller.getWorldPosition(this.grabRotateState.startPosition);
  this.grabRotateState.startDollyRotation.copy(this.dolly.rotation);
+ this.grabRotateState.lastPosition.copy(this.grabRotateState.startPosition);
  
- if (DEBUG.VR) console.log('[VR] Grab-to-rotate STARTED - Move controller to rotate view');
- this.updateVRStatus('🤚 Grab & Turn to Rotate View');
- } else if (triggerHeld) {
- // Grip+Trigger = Toggle menu (old behavior)
- if (this.vrUIPanel) {
- this.vrUIPanel.visible = !this.vrUIPanel.visible;
- 
- // Position panel in front of user when showing
- if (this.vrUIPanel.visible) {
- // Place 2.5 meters in front, at eye level
- this.vrUIPanel.position.set(0, 1.6, -2.5);
- // Face the user (rotate to face +Z direction)
- this.vrUIPanel.rotation.set(0, 0, 0);
- 
- // Always force lasers ON when menu opens
- this.lasersVisible = true;
- this.controllers.forEach(ctrl => {
- const laser = ctrl.getObjectByName('laser');
- const pointer = ctrl.getObjectByName('pointer');
- if (laser) laser.visible = true;
- if (pointer) pointer.visible = true;
- });
- 
- if (DEBUG.VR) {
- console.log('[VR] Menu OPENED (Grip+Trigger)');
- console.log('[VR] Position:', this.vrUIPanel.position);
- }
- } else {
- if (DEBUG.VR) console.log('[VR] Menu CLOSED');
- }
- 
- // Update status text on panel
- if (this.vrUIPanel.visible) {
- this.updateVRStatus('📋 VR Menu Active - Use laser to interact');
- }
- } else if (!this.vrUIPanel) {
- console.warn('⚠️ VR UI Panel not initialized!');
- }
+ if (DEBUG.VR) console.log('🤚 [VR] Grab-to-rotate STARTED (LEFT GRIP)');
+ this.updateVRStatus('🤚 Grab & Move to Rotate View');
  }
  }
  
  onSqueezeEnd(controller, index) {
- // Grip button released - End grab-to-rotate mode
+ // Grip released - End grab-to-rotate
  if (this.grabRotateState.active && this.grabRotateState.controllerIndex === index) {
  this.grabRotateState.active = false;
  this.grabRotateState.controllerIndex = -1;
  
- if (DEBUG.VR) console.log('[VR] Grab-to-rotate ENDED');
- this.updateVRStatus('👌 Rotation applied');
- 
- // Clear status after a moment
- setTimeout(() => {
+ if (DEBUG.VR) console.log('✋ [VR] Grab-to-rotate ENDED');
  this.updateVRStatus('✨ Ready for interaction');
- }, 1500);
  }
  }
  
@@ -1359,30 +1307,8 @@ export class SceneManager {
  return;
  }
  
- // ============================================
- // GRAB-TO-ROTATE UPDATE
- // ============================================
- if (this.grabRotateState.active && this.grabRotateState.controllerIndex >= 0) {
- const controller = this.controllers[this.grabRotateState.controllerIndex];
- if (controller) {
- // Get current world position of controller
- const currentPos = new THREE.Vector3();
- controller.getWorldPosition(currentPos);
- 
- // Calculate movement delta from last frame
- const delta = new THREE.Vector3().subVectors(currentPos, this.grabRotateState.lastPosition);
- 
- // Apply rotation based on horizontal movement (X-axis)
- // Moving controller right = rotate world left (counterclockwise)
- const rotationSensitivity = 2.5; // Adjust for feel
- if (Math.abs(delta.x) > 0.001) {
- this.dolly.rotation.y -= delta.x * rotationSensitivity;
- }
- 
- // Update last position for next frame
- this.grabRotateState.lastPosition.copy(currentPos);
- }
- }
+ // Grab-to-rotate removed - Left GRIP is now dedicated to menu toggle
+ // Use right thumbstick X-axis for turning instead
  
  // Get controller inputs for movement
  const session = this.renderer.xr.getSession();
@@ -1399,11 +1325,22 @@ export class SceneManager {
  const cameraForward = new THREE.Vector3();
  xrCamera.getWorldDirection(cameraForward);
  cameraForward.y = 0; // Keep horizontal (no flying up/down when looking up/down)
+ 
+ // Safety check: if looking straight up/down, use a default forward
+ if (cameraForward.length() < 0.1) {
+ cameraForward.set(0, 0, -1); // Default forward
+ }
  cameraForward.normalize();
  
  // Get camera's right direction (perpendicular to forward)
  const cameraRight = new THREE.Vector3();
- cameraRight.crossVectors(cameraForward, new THREE.Vector3(0, 1, 0)).normalize();
+ cameraRight.crossVectors(cameraForward, new THREE.Vector3(0, 1, 0));
+ 
+ // Safety check: if cross product is zero, use default right
+ if (cameraRight.length() < 0.1) {
+ cameraRight.set(1, 0, 0); // Default right
+ }
+ cameraRight.normalize();
  
  // Track if trigger is held for sprint
  let sprintMultiplier = 1.0;
@@ -1418,6 +1355,48 @@ export class SceneManager {
  console.warn(` No gamepad for controller ${i}`);
  }
  continue;
+ }
+ 
+ // ============================================
+ // X BUTTON (Button 4 on LEFT controller) - TOGGLE VR MENU
+ // ============================================
+ if (handedness === 'left' && gamepad.buttons[4]) {
+ const xButton = gamepad.buttons[4];
+ if (xButton.pressed) {
+ // Check if this is a new press (not held from previous frame)
+ const prevState = this.previousButtonStates[i][4] || false;
+ if (!prevState) {
+ // NEW PRESS - Toggle VR menu
+ if (!this.vrUIPanel) {
+ console.warn('⚠️ VR UI Panel not initialized!');
+ } else {
+ this.vrUIPanel.visible = !this.vrUIPanel.visible;
+ 
+ // Position panel in front of user when showing
+ if (this.vrUIPanel.visible) {
+ this.vrUIPanel.position.set(0, 1.6, -2.5);
+ this.vrUIPanel.rotation.set(0, 0, 0);
+ 
+ // Always force lasers ON when menu opens
+ this.lasersVisible = true;
+ this.controllers.forEach(ctrl => {
+ const laser = ctrl.getObjectByName('laser');
+ const pointer = ctrl.getObjectByName('pointer');
+ if (laser) laser.visible = true;
+ if (pointer) pointer.visible = true;
+ });
+ 
+ if (DEBUG.VR) console.log('📋 [VR] Menu TOGGLED (X button)');
+ this.updateVRStatus(this.vrUIPanel.visible ? 
+ '📋 VR Menu Active' : '✨ Ready for interaction');
+ this.requestVRMenuRefresh();
+ }
+ }
+ }
+ this.previousButtonStates[i][4] = true;
+ } else {
+ this.previousButtonStates[i][4] = false;
+ }
  }
  
  // ============================================
@@ -1469,25 +1448,30 @@ export class SceneManager {
  if (handedness === 'left') {
  const baseSpeed = 0.25 * sprintMultiplier;
  
- // Forward/Backward & Strafe
- if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
+ // Forward/Backward & Strafe (only if NOT grab-rotating)
+ if (!this.grabRotateState.active && 
+ (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone)) {
  // FORWARD/BACKWARD: Push stick FORWARD to move where you're LOOKING
- // Use camera's forward direction so movement is intuitive
- // In VR controllers, pushing stick forward gives NEGATIVE Y value
+ // Most VR controllers: forward = negative Y, backward = positive Y
+ // We want: forward stick → move forward → add to position
+ // So we negate: -(-1) = +1 for forward movement
  this.dolly.position.add(cameraForward.clone().multiplyScalar(-stickY * baseSpeed));
  
  // STRAFE LEFT/RIGHT: Use camera's right direction
+ // Right stick = positive X, left stick = negative X
  this.dolly.position.add(cameraRight.clone().multiplyScalar(stickX * baseSpeed));
  }
  
- // UP/DOWN with X/Y buttons
- if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
- // X button: Move DOWN
- this.dolly.position.y -= baseSpeed * 0.8;
- }
+ // UP/DOWN with Y button (X button now used for menu)
  if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
- // Y button: Move UP
+ // Y button: Toggle between UP/DOWN based on thumbstick Y
+ if (Math.abs(stickY) > deadzone) {
+ // Use thumbstick Y to control up/down when Y is held
+ this.dolly.position.y += -stickY * baseSpeed * 0.8;
+ } else {
+ // Default: Y button moves UP
  this.dolly.position.y += baseSpeed * 0.8;
+ }
  }
  }
  
@@ -1498,10 +1482,8 @@ export class SceneManager {
  const turnSpeed = 0.03;
  const vertSpeed = 0.25 * sprintMultiplier;
  
- // TURN LEFT/RIGHT (Snap rotation - complements grab-to-rotate)
- // This rotates the entire dolly/world, just like grab-to-rotate
- // Useful for precise 90° turns or quick orientation changes
- if (Math.abs(stickX) > deadzone && !this.grabRotateState.active) {
+ // TURN LEFT/RIGHT (only if NOT grab-rotating)
+ if (!this.grabRotateState.active && Math.abs(stickX) > deadzone) {
  this.dolly.rotation.y -= stickX * turnSpeed;
  }
  
@@ -1520,6 +1502,37 @@ export class SceneManager {
  // B button: Move UP
  this.dolly.position.y += 0.2 * sprintMultiplier;
  }
+ }
+ }
+ 
+ // ============================================
+ // GRAB-TO-ROTATE UPDATE (Active when LEFT GRIP held)
+ // ============================================
+ if (this.grabRotateState.active) {
+ const controller = this.controllers[this.grabRotateState.controllerIndex];
+ if (controller) {
+ const currentPosition = new THREE.Vector3();
+ controller.getWorldPosition(currentPosition);
+ 
+ // Calculate movement delta
+ const delta = new THREE.Vector3().subVectors(
+ currentPosition, 
+ this.grabRotateState.lastPosition
+ );
+ 
+ // Convert controller movement to rotation
+ // Horizontal movement (X) → Yaw rotation (Y-axis)
+ // Vertical movement (Y) → Pitch rotation (X-axis) 
+ const rotationSensitivity = 2.5;
+ this.dolly.rotation.y -= delta.x * rotationSensitivity;
+ this.dolly.rotation.x -= delta.y * rotationSensitivity;
+ 
+ // Clamp X rotation to prevent flipping upside down
+ const maxPitch = Math.PI / 3; // 60 degrees
+ this.dolly.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, this.dolly.rotation.x));
+ 
+ // Update last position for next frame
+ this.grabRotateState.lastPosition.copy(currentPosition);
  }
  }
  }
