@@ -1390,16 +1390,20 @@ export class SceneManager {
  
  const inputSources = session.inputSources;
  
- // FIX: Use DOLLY rotation for consistent movement direction
- // Get dolly's forward direction (based on its rotation)
- const dollyForward = new THREE.Vector3(0, 0, -1);
- dollyForward.applyQuaternion(this.dolly.quaternion);
- dollyForward.y = 0; // Keep horizontal
- dollyForward.normalize();
+ // FIX: Use CAMERA (HMD) direction for consistent movement, not dolly
+ // This ensures "forward" always means "where you're looking"
+ // even after grab-rotating the world
+ const xrCamera = this.renderer.xr.getCamera();
  
- // Get dolly's right direction (perpendicular to forward)
- const dollyRight = new THREE.Vector3();
- dollyRight.crossVectors(dollyForward, new THREE.Vector3(0, 1, 0)).normalize();
+ // Get camera's forward direction (where user is looking)
+ const cameraForward = new THREE.Vector3();
+ xrCamera.getWorldDirection(cameraForward);
+ cameraForward.y = 0; // Keep horizontal (no flying up/down when looking up/down)
+ cameraForward.normalize();
+ 
+ // Get camera's right direction (perpendicular to forward)
+ const cameraRight = new THREE.Vector3();
+ cameraRight.crossVectors(cameraForward, new THREE.Vector3(0, 1, 0)).normalize();
  
  // Track if trigger is held for sprint
  let sprintMultiplier = 1.0;
@@ -1467,13 +1471,13 @@ export class SceneManager {
  
  // Forward/Backward & Strafe
  if (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone) {
- // FORWARD/BACKWARD: Push stick FORWARD to move FORWARD
- // Use dolly's forward direction (not camera) for consistent movement
+ // FORWARD/BACKWARD: Push stick FORWARD to move where you're LOOKING
+ // Use camera's forward direction so movement is intuitive
  // In VR controllers, pushing stick forward gives NEGATIVE Y value
- this.dolly.position.add(dollyForward.clone().multiplyScalar(-stickY * baseSpeed));
+ this.dolly.position.add(cameraForward.clone().multiplyScalar(-stickY * baseSpeed));
  
- // STRAFE LEFT/RIGHT: Use dolly's right direction
- this.dolly.position.add(dollyRight.clone().multiplyScalar(stickX * baseSpeed));
+ // STRAFE LEFT/RIGHT: Use camera's right direction
+ this.dolly.position.add(cameraRight.clone().multiplyScalar(stickX * baseSpeed));
  }
  
  // UP/DOWN with X/Y buttons
@@ -1494,12 +1498,14 @@ export class SceneManager {
  const turnSpeed = 0.03;
  const vertSpeed = 0.25 * sprintMultiplier;
  
- // TURN LEFT/RIGHT
- if (Math.abs(stickX) > deadzone) {
+ // TURN LEFT/RIGHT (Snap rotation - complements grab-to-rotate)
+ // This rotates the entire dolly/world, just like grab-to-rotate
+ // Useful for precise 90° turns or quick orientation changes
+ if (Math.abs(stickX) > deadzone && !this.grabRotateState.active) {
  this.dolly.rotation.y -= stickX * turnSpeed;
  }
  
- // VERTICAL MOVEMENT
+ // VERTICAL MOVEMENT (Up/Down in world space)
  if (Math.abs(stickY) > deadzone) {
  // Negative Y = up, Positive Y = down (inverted for intuitive)
  this.dolly.position.y += -stickY * vertSpeed;

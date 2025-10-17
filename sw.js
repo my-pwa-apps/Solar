@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.7 - VR enhancements: grab-to-rotate, categorized navigation
+// Version 2.2.8 - VR movement fix: head-relative locomotion
 
-const CACHE_VERSION = '2.2.7';
+const CACHE_VERSION = '2.2.8';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
