@@ -29,6 +29,15 @@ export class SceneManager {
  {} // Controller 1
  ];
  
+ // Grab-to-rotate state
+ this.grabRotateState = {
+ active: false,
+ controllerIndex: -1,
+ startPosition: new THREE.Vector3(),
+ startDollyRotation: new THREE.Euler(),
+ lastPosition: new THREE.Vector3()
+ };
+ 
  this.init();
  }
 
@@ -193,6 +202,7 @@ export class SceneManager {
  controller.addEventListener('selectstart', () => this.onSelectStart(controller, i));
  controller.addEventListener('selectend', () => this.onSelectEnd(controller, i));
  controller.addEventListener('squeezestart', () => this.onSqueezeStart(controller, i));
+ controller.addEventListener('squeezeend', () => this.onSqueezeEnd(controller, i));
  controller.userData.index = i;
  this.dolly.add(controller);
  this.controllers.push(controller);
@@ -419,22 +429,29 @@ export class SceneManager {
  }
 
  const canvas = document.createElement('canvas');
- canvas.width = 1024;
- canvas.height = 640;
+ canvas.width = 1400;
+ canvas.height = 1000;
  const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
  this.vrUICanvas = canvas;
  this.vrUIContext = ctx;
  this.vrButtons = [];
  this.vrQuickNavMap = new Map();
- this.vrStatusMessage = this.vrStatusMessage || ' Use Laser to Click Buttons';
- this.vrMenuTitle = this.vrMenuTitle || ' Space Voyage VR';
+ this.vrStatusMessage = this.vrStatusMessage || '✨ Use Laser to Click Buttons';
+ this.vrMenuTitle = this.vrMenuTitle || '🌌 Space Voyage VR';
+ 
+ // Navigation state for scrollable object list
+ this.vrNavState = {
+ currentCategory: '', // '', 'planets', 'moons', 'dwarf', 'comets', 'spacecraft', 'stars', 'nebulae', 'galaxies', 'constellations'
+ scrollOffset: 0,
+ itemsPerPage: 8
+ };
 
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
 
  const aspect = canvas.width / canvas.height;
- const panelHeight = 1.9;
+ const panelHeight = 2.4;
  const panelWidth = panelHeight * aspect;
 
  const geometry = new THREE.PlaneGeometry(panelWidth, panelHeight);
@@ -450,7 +467,7 @@ export class SceneManager {
  this.dolly.add(this.vrUIPanel);
 
  if (DEBUG.enabled || DEBUG.VR) {
- console.log('[VR] UI Panel created');
+ console.log('[VR] UI Panel created (enhanced navigation)');
  }
 
  this.drawVRMenu();
@@ -485,6 +502,79 @@ export class SceneManager {
  }
  return [];
  }
+ 
+ getAllNavigationTargets() {
+ // Get all available navigation targets organized by category
+ const app = window.app || {};
+ const module = app.solarSystemModule;
+ if (!module) return {};
+ 
+ const categories = {
+ planets: [
+ { id: 'sun', label: '☀️ Sun', object: module.sun },
+ { id: 'mercury', label: '☿️ Mercury', object: module.planets?.mercury },
+ { id: 'venus', label: '♀️ Venus', object: module.planets?.venus },
+ { id: 'earth', label: '🌍 Earth', object: module.planets?.earth },
+ { id: 'mars', label: '♂️ Mars', object: module.planets?.mars },
+ { id: 'jupiter', label: '♃ Jupiter', object: module.planets?.jupiter },
+ { id: 'saturn', label: '♄ Saturn', object: module.planets?.saturn },
+ { id: 'uranus', label: '♅ Uranus', object: module.planets?.uranus },
+ { id: 'neptune', label: '♆ Neptune', object: module.planets?.neptune }
+ ],
+ moons: [
+ { id: 'moon', label: '🌙 Moon (Earth)', object: module.moons?.moon },
+ { id: 'phobos', label: 'Phobos (Mars)', object: module.moons?.phobos },
+ { id: 'deimos', label: 'Deimos (Mars)', object: module.moons?.deimos },
+ { id: 'io', label: 'Io (Jupiter)', object: module.moons?.io },
+ { id: 'europa', label: 'Europa (Jupiter)', object: module.moons?.europa },
+ { id: 'ganymede', label: 'Ganymede (Jupiter)', object: module.moons?.ganymede },
+ { id: 'callisto', label: 'Callisto (Jupiter)', object: module.moons?.callisto },
+ { id: 'titan', label: 'Titan (Saturn)', object: module.moons?.titan },
+ { id: 'enceladus', label: 'Enceladus (Saturn)', object: module.moons?.enceladus },
+ { id: 'rhea', label: 'Rhea (Saturn)', object: module.moons?.rhea },
+ { id: 'titania', label: 'Titania (Uranus)', object: module.moons?.titania },
+ { id: 'miranda', label: 'Miranda (Uranus)', object: module.moons?.miranda },
+ { id: 'triton', label: 'Triton (Neptune)', object: module.moons?.triton }
+ ],
+ dwarf: [
+ { id: 'pluto', label: '🔭 Pluto', object: module.planets?.pluto },
+ { id: 'charon', label: 'Charon', object: module.moons?.charon },
+ { id: 'ceres', label: 'Ceres', object: module.planets?.ceres },
+ { id: 'haumea', label: 'Haumea', object: module.planets?.haumea },
+ { id: 'makemake', label: 'Makemake', object: module.planets?.makemake },
+ { id: 'eris', label: 'Eris', object: module.planets?.eris }
+ ],
+ spacecraft: [
+ { id: 'iss', label: '🛰️ ISS', object: module.satellites?.find(s => s.userData?.name === 'ISS') },
+ { id: 'hubble', label: '🔭 Hubble', object: module.satellites?.find(s => s.userData?.name === 'Hubble') },
+ { id: 'jwst', label: '🔭 JWST', object: module.satellites?.find(s => s.userData?.name === 'James Webb') }
+ ],
+ comets: [
+ { id: 'halley', label: '☄️ Halley', object: module.comets?.find(c => c.userData?.name?.includes('Halley')) },
+ { id: 'hale-bopp', label: '☄️ Hale-Bopp', object: module.comets?.find(c => c.userData?.name?.includes('Hale-Bopp')) }
+ ],
+ stars: [
+ { id: 'alpha-centauri', label: '⭐ Alpha Centauri', object: module.distantStars?.find(s => s.userData?.name?.includes('Alpha Centauri')) },
+ { id: 'proxima-centauri', label: '⭐ Proxima Centauri', object: module.distantStars?.find(s => s.userData?.name?.includes('Proxima')) }
+ ],
+ nebulae: [
+ { id: 'orion-nebula', label: '🌫️ Orion Nebula', object: module.nebulae?.find(n => n.userData?.name?.includes('Orion')) },
+ { id: 'crab-nebula', label: '🌫️ Crab Nebula', object: module.nebulae?.find(n => n.userData?.name?.includes('Crab')) },
+ { id: 'ring-nebula', label: '🌫️ Ring Nebula', object: module.nebulae?.find(n => n.userData?.name?.includes('Ring')) }
+ ],
+ galaxies: [
+ { id: 'andromeda-galaxy', label: '🌌 Andromeda', object: module.galaxies?.find(g => g.userData?.name?.includes('Andromeda')) },
+ { id: 'whirlpool-galaxy', label: '🌌 Whirlpool', object: module.galaxies?.find(g => g.userData?.name?.includes('Whirlpool')) }
+ ]
+ };
+ 
+ // Filter out null/undefined objects
+ Object.keys(categories).forEach(key => {
+ categories[key] = categories[key].filter(item => item.object != null);
+ });
+ 
+ return categories;
+ }
 
  drawVRMenu() {
  if (!this.vrUIContext || !this.vrUICanvas) return;
@@ -494,6 +584,15 @@ export class SceneManager {
  const app = window.app || {};
  const module = app.solarSystemModule;
  const state = this.getVRMenuState();
+ 
+ // Initialize navigation state if not exists
+ if (!this.vrNavState) {
+ this.vrNavState = {
+ currentCategory: '',
+ scrollOffset: 0,
+ itemsPerPage: 8
+ };
+ }
 
  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -518,19 +617,19 @@ export class SceneManager {
  ctx.shadowColor = '#0078D4';
  ctx.shadowBlur = 20;
  ctx.fillStyle = '#0078D4';
- ctx.font = 'bold 52px "Segoe UI", Arial, sans-serif';
+ ctx.font = 'bold 54px "Segoe UI", Arial, sans-serif';
  ctx.textAlign = 'center';
  ctx.textBaseline = 'middle';
- ctx.fillText(this.vrMenuTitle, canvas.width / 2, 70);
+ ctx.fillText(this.vrMenuTitle, canvas.width / 2, 60);
  ctx.shadowBlur = 0;
 
- const columnWidth = 210;
+ const columnWidth = 230;
  const columnSpacing = 20;
- const columns = 4;
- const buttonHeight = 68;
+ const columns = 5;
+ const buttonHeight = 70;
  const rowHeight = 90;
  const startX = (canvas.width - (columnWidth * columns + columnSpacing * (columns - 1))) / 2;
- const startY = 140;
+ const startY = 130;
 
  const buttons = [];
  this.vrQuickNavMap = new Map();
@@ -882,7 +981,7 @@ export class SceneManager {
  }
  
  onSqueezeStart(controller, index) {
- // Toggle VR UI with grip button (when not holding trigger)
+ // Grip button pressed - Start grab-to-rotate mode
  const session = this.renderer.xr.getSession();
  let triggerHeld = false;
  if (session) {
@@ -896,8 +995,26 @@ export class SceneManager {
  }
  }
  
- // Only toggle menu if trigger not held (grip alone = menu, grip+trigger = zoom)
- if (!triggerHeld && this.vrUIPanel) {
+ // GRAB-TO-ROTATE MODE: Grip without trigger
+ if (!triggerHeld) {
+ // Start grab-to-rotate
+ this.grabRotateState.active = true;
+ this.grabRotateState.controllerIndex = index;
+ 
+ // Store starting position in world space
+ const worldPos = new THREE.Vector3();
+ controller.getWorldPosition(worldPos);
+ this.grabRotateState.startPosition.copy(worldPos);
+ this.grabRotateState.lastPosition.copy(worldPos);
+ 
+ // Store starting dolly rotation
+ this.grabRotateState.startDollyRotation.copy(this.dolly.rotation);
+ 
+ if (DEBUG.VR) console.log('[VR] Grab-to-rotate STARTED - Move controller to rotate view');
+ this.updateVRStatus('🤚 Grab & Turn to Rotate View');
+ } else if (triggerHeld) {
+ // Grip+Trigger = Toggle menu (old behavior)
+ if (this.vrUIPanel) {
  this.vrUIPanel.visible = !this.vrUIPanel.visible;
  
  // Position panel in front of user when showing
@@ -908,34 +1025,45 @@ export class SceneManager {
  this.vrUIPanel.rotation.set(0, 0, 0);
  
  // Always force lasers ON when menu opens
- // This ensures user can interact with the menu even if lasers were hidden
  this.lasersVisible = true;
- this.controllers.forEach(controller => {
- const laser = controller.getObjectByName('laser');
- const pointer = controller.getObjectByName('pointer');
+ this.controllers.forEach(ctrl => {
+ const laser = ctrl.getObjectByName('laser');
+ const pointer = ctrl.getObjectByName('pointer');
  if (laser) laser.visible = true;
  if (pointer) pointer.visible = true;
  });
  
  if (DEBUG.VR) {
- console.log('[VR] Lasers enabled for menu interaction');
- console.log('[VR] Menu OPENED');
+ console.log('[VR] Menu OPENED (Grip+Trigger)');
  console.log('[VR] Position:', this.vrUIPanel.position);
- console.log('[VR] Press grip button again to close');
  }
  } else {
  if (DEBUG.VR) console.log('[VR] Menu CLOSED');
- // Lasers keep their current state when menu closes (user may have toggled them in menu)
  }
  
  // Update status text on panel
  if (this.vrUIPanel.visible) {
- this.updateVRStatus('VR Menu Active - Use laser to interact');
+ this.updateVRStatus('📋 VR Menu Active - Use laser to interact');
  }
- } else if (triggerHeld) {
- if (DEBUG.VR) console.log(' Grip+Trigger held - zoom mode (menu disabled)');
  } else if (!this.vrUIPanel) {
- console.warn(' VR UI Panel not initialized!');
+ console.warn('⚠️ VR UI Panel not initialized!');
+ }
+ }
+ }
+ 
+ onSqueezeEnd(controller, index) {
+ // Grip button released - End grab-to-rotate mode
+ if (this.grabRotateState.active && this.grabRotateState.controllerIndex === index) {
+ this.grabRotateState.active = false;
+ this.grabRotateState.controllerIndex = -1;
+ 
+ if (DEBUG.VR) console.log('[VR] Grab-to-rotate ENDED');
+ this.updateVRStatus('👌 Rotation applied');
+ 
+ // Clear status after a moment
+ setTimeout(() => {
+ this.updateVRStatus('✨ Ready for interaction');
+ }, 1500);
  }
  }
  
@@ -1200,8 +1328,33 @@ export class SceneManager {
  
  // Ensure dolly exists
  if (!this.dolly) {
- console.warn(' Dolly not found!');
+ console.warn('⚠️ Dolly not found!');
  return;
+ }
+ 
+ // ============================================
+ // GRAB-TO-ROTATE UPDATE
+ // ============================================
+ if (this.grabRotateState.active && this.grabRotateState.controllerIndex >= 0) {
+ const controller = this.controllers[this.grabRotateState.controllerIndex];
+ if (controller) {
+ // Get current world position of controller
+ const currentPos = new THREE.Vector3();
+ controller.getWorldPosition(currentPos);
+ 
+ // Calculate movement delta from last frame
+ const delta = new THREE.Vector3().subVectors(currentPos, this.grabRotateState.lastPosition);
+ 
+ // Apply rotation based on horizontal movement (X-axis)
+ // Moving controller right = rotate world left (counterclockwise)
+ const rotationSensitivity = 2.5; // Adjust for feel
+ if (Math.abs(delta.x) > 0.001) {
+ this.dolly.rotation.y -= delta.x * rotationSensitivity;
+ }
+ 
+ // Update last position for next frame
+ this.grabRotateState.lastPosition.copy(currentPos);
+ }
  }
  
  // Get controller inputs for movement
