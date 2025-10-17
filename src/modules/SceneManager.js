@@ -1141,13 +1141,40 @@ export class SceneManager {
  if (action.startsWith('focus:')) {
  const targetId = action.split(':')[1];
  if (!targetId) {
- this.updateVRStatus(' No target specified');
+ this.updateVRStatus('⚠️ No target specified');
  return;
  }
  const success = this.focusVRTarget(targetId);
  if (success) {
  scheduleRefresh(80);
  }
+ return;
+ }
+ 
+ if (action.startsWith('nav:')) {
+ const category = action.split(':')[1];
+ if (category === 'back') {
+ // Go back to category list
+ this.vrNavState.currentCategory = '';
+ this.vrNavState.scrollOffset = 0;
+ this.updateVRStatus('🔙 Navigation Menu');
+ } else {
+ // Enter a category
+ this.vrNavState.currentCategory = category;
+ this.vrNavState.scrollOffset = 0;
+ const categoryNames = {
+ planets: 'Planets',
+ moons: 'Moons',
+ dwarf: 'Dwarf Planets',
+ spacecraft: 'Spacecraft',
+ comets: 'Comets',
+ stars: 'Stars',
+ nebulae: 'Nebulae',
+ galaxies: 'Galaxies'
+ };
+ this.updateVRStatus(`📂 ${categoryNames[category] || category}`);
+ }
+ scheduleRefresh();
  return;
  }
 

@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.6 - Self-hosted textures migration
+// Version 2.2.7 - VR enhancements: grab-to-rotate, categorized navigation
 
-const CACHE_VERSION = '2.2.6';
+const CACHE_VERSION = '2.2.7';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
