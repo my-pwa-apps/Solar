@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.11 - VR control scheme: left X button = menu, left grip = grab-rotate, trigger = sprint
+// Version 2.2.13 - Using direct fetch for external textures (no CORS proxies), procedural fallbacks
 
-const CACHE_VERSION = '2.2.11';
+const CACHE_VERSION = '2.2.13';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

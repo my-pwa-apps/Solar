@@ -1328,7 +1328,7 @@ export class SolarSystemModule {
  return this.loadPlanetTextureReal('Moon', primary, this.createMoonTexture, size, pluginFallbacks);
  }
 
- // Pluto remote attempt (plugin repo) before procedural
+ // Pluto texture loader - tries external sources via direct fetch, falls back to procedural
  createPlutoTextureReal(size) {
     const primary = [];
     const pluginFallbacks = [
@@ -1337,9 +1337,8 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Pluto', primary, this.createPlutoTexture, size, pluginFallbacks);
  }
 
- // Ceres texture loader (Dawn mission global map)
+ // Ceres texture loader - tries external sources via direct fetch, falls back to procedural (Mercury-style cratered)
  createCeresTextureReal(size) {
-    // Ceres textures - using direct links to avoid CORS issues
     const primary = [
         'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg' // Similar cratered surface
     ];
@@ -1348,7 +1347,7 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, pluginFallbacks);
  }
 
- // Io texture loader - NASA Galileo mission photorealistic volcanic surface
+ // Io texture loader - tries external sources via direct fetch, falls back to procedural volcanic surface
  createIoTextureReal(size) {
     const primary = [
         'https://www.solarsystemscope.com/textures/download/2k_io.jpg',
@@ -1357,7 +1356,7 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Io', primary, this.createIoTexture, size, []);
  }
 
- // Europa texture loader - NASA Galileo icy surface with reddish cracks
+ // Europa texture loader - tries external sources via direct fetch, falls back to procedural icy surface
  createEuropaTextureReal(size) {
     const primary = [
         'https://www.solarsystemscope.com/textures/download/2k_europa.jpg',
@@ -1366,7 +1365,7 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Europa', primary, this.createEuropaTexture, size, []);
  }
 
- // Ganymede texture loader - Largest moon in solar system
+ // Ganymede texture loader - tries external sources via direct fetch, falls back to procedural
  createGanymedeTextureReal(size) {
     const primary = [
         'https://www.solarsystemscope.com/textures/download/2k_ganymede.jpg'
@@ -1374,7 +1373,7 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Ganymede', primary, this.createMoonTexture, size, []);
  }
 
- // Callisto texture loader - Ancient cratered surface
+ // Callisto texture loader - tries external sources via direct fetch, falls back to procedural
  createCallistoTextureReal(size) {
     const primary = [
         'https://www.solarsystemscope.com/textures/download/2k_callisto.jpg'
@@ -1382,7 +1381,7 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Callisto', primary, this.createMoonTexture, size, []);
  }
 
- // Titan texture loader - Saturn's largest moon with thick orange atmosphere
+ // Titan texture loader - tries external sources via direct fetch, falls back to procedural
  createTitanTextureReal(size) {
     const primary = [
         'https://www.solarsystemscope.com/textures/download/2k_titan.jpg'
@@ -1390,7 +1389,7 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Titan', primary, this.createTitanTexture, size, []);
  }
 
- // Enceladus texture loader - Saturn's icy geologically active moon
+ // Enceladus texture loader - tries external sources via direct fetch, falls back to procedural
  createEnceladusTextureReal(size) {
     const primary = [
         'https://www.solarsystemscope.com/textures/download/2k_enceladus.jpg'
