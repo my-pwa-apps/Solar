@@ -682,13 +682,15 @@ class App {
  }
  }
  
- // Collect all named objects from intersections
+ // Collect all named objects from intersections (scan more for moon detection)
  const namedObjects = [];
- for (let i = 0; i < Math.min(intersects.length, 10); i++) {
+ for (let i = 0; i < Math.min(intersects.length, 30); i++) {
  const candidate = intersects[i].object;
  
  if (candidate.userData && candidate.userData.name) {
+ if (!namedObjects.some(n => n.object === candidate)) {
  namedObjects.push({ object: candidate, distance: intersects[i].distance });
+ }
  } else {
  // Traverse up to find the named parent
  const named = this._findNamedParent(candidate);
@@ -701,25 +703,25 @@ class App {
  if (namedObjects.length === 0) return null;
  if (namedObjects.length === 1) return namedObjects[0].object;
  
- // When multiple objects are hit, prefer moons/smaller objects over their parent planets
- // This allows clicking on moons even when the ray passes through the parent planet
- const first = namedObjects[0].object;
+ // PRIORITY: Always prefer moons over planets when both are hit
+ // This handles cases where orbit lines (children of planets) are hit first
  
- // Look for any moons in the hit list that are children of the first object
- for (let i = 1; i < namedObjects.length; i++) {
- const other = namedObjects[i].object;
- // If this is a moon and its parent planet was also hit, prefer the moon
- if (other.userData?.type === 'Moon' && 
- other.userData?.parentPlanet === first.userData?.name) {
- if (DEBUG.enabled) {
- console.log(`[Raycast] Preferring moon "${other.userData.name}" over parent "${first.userData.name}"`);
+ // First, check if there's a moon in the hit list
+ const moonHit = namedObjects.find(n => n.object.userData?.type === 'Moon');
+ if (moonHit) {
+ // Check if the moon's parent planet was also hit
+ const parentName = moonHit.object.userData?.parentPlanet;
+ const parentHit = namedObjects.find(n => n.object.userData?.name === parentName);
+ if (parentHit) {
+ console.log(`[Raycast] Preferring moon "${moonHit.object.userData.name}" over parent "${parentName}"`);
+ return moonHit.object;
  }
- return other;
- }
+ // Moon is hit but not its parent, just return the moon
+ return moonHit.object;
  }
  
- // Default: return the closest object
- return first;
+ // No moon hit, return the first (closest) named object
+ return namedObjects[0].object;
  }
  
  // ===========================
