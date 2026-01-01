@@ -416,7 +416,6 @@ class App {
  });
  }
  // Canvas click for object selection
- console.log('[Setup] Adding click listener to canvas:', this.sceneManager.renderer.domElement);
  this.sceneManager.renderer.domElement.addEventListener('click', (e) => {
  this.handleCanvasClick(e);
  });
@@ -666,21 +665,6 @@ class App {
  intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
  }
  }
-
- // Always log raycast results for debugging
- console.log(`[Raycast] ${intersects.length} intersections, objects array has ${this.solarSystemModule.objects.length} items`);
- 
- // Find the first named object in intersections
- // Intersections are already sorted by distance (closest first)
- if (intersects.length > 0) {
- console.log(`[Raycast] First 5 intersections:`);
- for (let j = 0; j < Math.min(intersects.length, 5); j++) {
- const obj = intersects[j].object;
- const name = obj.userData?.name || obj.name || 'unnamed';
- const type = obj.userData?.type || 'unknown';
- console.log(` ${j}: "${name}" (${type}) at distance ${intersects[j].distance.toFixed(2)}`);
- }
- }
  
  // Collect all named objects from intersections (scan more for moon detection)
  const namedObjects = [];
@@ -709,11 +693,11 @@ class App {
  // First, check if there's a moon in the hit list
  const moonHit = namedObjects.find(n => n.object.userData?.type === 'Moon');
  if (moonHit) {
- // Check if the moon's parent planet was also hit
+ // Check if the moon's parent planet was also hit - prefer moon over parent
  const parentName = moonHit.object.userData?.parentPlanet;
  const parentHit = namedObjects.find(n => n.object.userData?.name === parentName);
- if (parentHit) {
- console.log(`[Raycast] Preferring moon "${moonHit.object.userData.name}" over parent "${parentName}"`);
+ if (parentHit || !parentName) {
+ // Moon hit with parent also hit, or moon without parent tracking
  return moonHit.object;
  }
  // Moon is hit but not its parent, just return the moon
@@ -729,9 +713,7 @@ class App {
  // ===========================
  
  handleCanvasClick(event) {
- console.log('[Click] Canvas clicked at', event.clientX, event.clientY);
  const target = this._raycastNamedObject(event, true);
- console.log('[Click] Raycast target:', target?.userData?.name || 'none');
  
  if (target) {
  const info = this.solarSystemModule.getObjectInfo(target);
