@@ -12,6 +12,10 @@ import { TEXTURE_CACHE, warmupTextureCache } from './modules/TextureCache.js';
 import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
 import { SolarSystemModule } from './modules/SolarSystemModule.js';
+import { audioManager } from './modules/AudioManager.js';
+
+// Make audio manager globally accessible
+window.audioManager = audioManager;
 
 // i18n.js is loaded globally in index.html, access via window.t
 const t = window.t || ((key) => key);
@@ -135,6 +139,8 @@ class App {
  this.setupNavigationSearch();
  this.setupMobileGestureHints();
  this.setupSpaceFacts();
+ this.setupSoundToggle();
+ this.setupButtonSounds();
  
  // Pre-select Earth on first load for better first impression
  this.preSelectEarth();
@@ -726,6 +732,9 @@ class App {
  const target = this._raycastNamedObject(event, true);
  
  if (target) {
+ // Play selection sound
+ audioManager.playSelect();
+ 
  const info = this.solarSystemModule.getObjectInfo(target);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
@@ -824,24 +833,26 @@ class App {
  break;
  case '+':
  case '=':
- // Increase speed
+ // Increase speed (slider 0-100)
  const speedSliderUp = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (speedSliderUp) {
  const currentValue = parseFloat(speedSliderUp.value);
- const newValue = Math.min(10, currentValue + 0.5);
+ const newValue = Math.min(100, currentValue + 5);
  speedSliderUp.value = newValue;
  speedSliderUp.dispatchEvent(new Event('input'));
+ audioManager.playSpeedTick();
  }
  break;
  case '-':
  case '_':
- // Decrease speed
+ // Decrease speed (slider 0-100)
  const speedSliderDown = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (speedSliderDown) {
  const currentValue = parseFloat(speedSliderDown.value);
- const newValue = Math.max(0, currentValue - 0.5);
+ const newValue = Math.max(0, currentValue - 5);
  speedSliderDown.value = newValue;
  speedSliderDown.dispatchEvent(new Event('input'));
+ audioManager.playSpeedTick();
  }
  break;
  case 'escape':
@@ -850,18 +861,19 @@ class App {
  break;
  case ' ':
  case 'space':
- // SPACE = Toggle between Paused and Normal speed
+ // SPACE = Toggle between Paused and Normal speed (50 = 1x)
  e.preventDefault();
  const spaceSpeedSlider = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (spaceSpeedSlider) {
  if (this.timeSpeed === 0) {
- // If paused, go to normal (5 = 1x speed)
- spaceSpeedSlider.value = '5';
+ // If paused, go to normal (50 = 1x speed)
+ spaceSpeedSlider.value = '50';
  } else {
  // If playing, pause
  spaceSpeedSlider.value = '0';
  }
  spaceSpeedSlider.dispatchEvent(new Event('input'));
+ audioManager.playClick();
  }
  break;
  case 'i':
@@ -1037,6 +1049,9 @@ class App {
  ];
  
  randomBtn.addEventListener('click', () => {
+ // Play whoosh sound for discovery
+ audioManager.playWhoosh();
+ 
  // Pick a random object
  const randomValue = discoveryObjects[Math.floor(Math.random() * discoveryObjects.length)];
  const targetObject = this.findObjectByNavigationValue(randomValue);
@@ -1051,6 +1066,9 @@ class App {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
+ 
+ // Play discovery fanfare after a slight delay
+ setTimeout(() => audioManager.playDiscovery(), 300);
  }
  });
  }
@@ -1178,6 +1196,78 @@ class App {
  });
  observer.observe(loadingElement, { attributes: true, attributeFilter: ['class'] });
  }
+ }
+ 
+ /**
+  * Setup sound toggle button in speed panel
+  */
+ setupSoundToggle() {
+ const soundToggle = document.getElementById('sound-toggle');
+ if (!soundToggle) return;
+ 
+ // Load saved preference
+ const soundEnabled = localStorage.getItem('space_voyage_sound') !== 'false';
+ audioManager.enabled = soundEnabled;
+ 
+ // Update button appearance
+ const updateSoundButton = () => {
+ const icon = soundToggle.querySelector('.sound-icon');
+ if (audioManager.enabled) {
+ soundToggle.classList.remove('muted');
+ if (icon) icon.textContent = '🔊';
+ soundToggle.title = 'Sound On (click to mute)';
+ } else {
+ soundToggle.classList.add('muted');
+ if (icon) icon.textContent = '🔇';
+ soundToggle.title = 'Sound Off (click to unmute)';
+ }
+ };
+ 
+ updateSoundButton();
+ 
+ soundToggle.addEventListener('click', () => {
+ audioManager.toggle();
+ localStorage.setItem('space_voyage_sound', audioManager.enabled);
+ updateSoundButton();
+ 
+ // Play a click to confirm sound is on
+ if (audioManager.enabled) {
+ audioManager.playClick();
+ }
+ });
+ }
+ 
+ /**
+  * Add click sounds to footer buttons
+  */
+ setupButtonSounds() {
+ // Add click sounds to all footer buttons (except random-discovery which has its own)
+ const footerButtons = document.querySelectorAll('#main-footer button:not(#random-discovery)');
+ 
+ footerButtons.forEach(btn => {
+ btn.addEventListener('click', () => {
+ audioManager.playClick();
+ });
+ });
+ 
+ // Add sound to navigation dropdown
+ const dropdown = document.getElementById('object-dropdown');
+ if (dropdown) {
+ dropdown.addEventListener('change', () => {
+ if (dropdown.value) {
+ audioManager.playSelect();
+ }
+ });
+ }
+ 
+ // Initialize audio context on first user interaction
+ document.addEventListener('click', () => {
+ audioManager.init();
+ }, { once: true });
+ 
+ document.addEventListener('keydown', () => {
+ audioManager.init();
+ }, { once: true });
  }
 }
 

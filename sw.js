@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.3.0 - UX improvements: onboarding, help button, random discovery, search
+// Version 2.4.0 - Procedural audio, collapsible speed slider, logarithmic speed scale
 
-const CACHE_VERSION = '2.3.0';
+const CACHE_VERSION = '2.4.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -26,6 +26,7 @@ const STATIC_CACHE_FILES = [
   './src/modules/PWAManager.js',
   './src/modules/ServiceWorkerManager.js',
   './src/modules/LanguageManager.js',
+  './src/modules/AudioManager.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',

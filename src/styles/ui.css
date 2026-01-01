@@ -262,12 +262,76 @@
     padding: 16px;
 }
 
-/* Floating Speed Control Panel */
+/* Floating Speed Control Panel (Collapsible) */
 #speed-control {
     top: 80px;
     right: clamp(10px, 3vw, 30px); /* Responsive right spacing */
-    min-width: 80px;
+    min-width: 60px;
     max-width: calc(100vw - 20px); /* Prevent off-screen on small viewports */
+    transition: all 0.3s ease;
+}
+
+#speed-control.collapsed {
+    min-width: 50px;
+}
+
+#speed-control .panel-header {
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Speed toggle button (icon + compact label) */
+.speed-toggle-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    color: var(--fluent-text-primary);
+}
+
+.speed-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.speed-toggle-btn:focus-visible {
+    outline: 2px solid var(--fluent-accent);
+    outline-offset: 2px;
+}
+
+.speed-icon {
+    font-size: 20px;
+}
+
+.speed-compact-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fluent-accent);
+}
+
+/* Collapsible panel content */
+#speed-panel-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    overflow: hidden;
+    max-height: 250px;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
+#speed-panel-content.collapsed {
+    max-height: 0;
+    padding: 0 16px;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .panel-content {
@@ -276,6 +340,45 @@
     flex-direction: column;
     gap: 12px;
     align-items: center;
+}
+
+/* Sound toggle button */
+.sound-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--fluent-border);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-top: 4px;
+}
+
+.sound-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.sound-toggle-btn:focus-visible {
+    outline: 2px solid var(--fluent-accent);
+    outline-offset: 2px;
+}
+
+.sound-toggle-btn.muted .sound-icon::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: #ff4444;
+    transform: rotate(45deg);
+}
+
+.sound-icon {
+    font-size: 14px;
+    position: relative;
 }
 
 /* Vertical Range Slider - Modern approach without deprecated slider-vertical */
@@ -951,12 +1054,34 @@ select {
     #speed-control {
         right: 15px; /* Tighter spacing on mobile to stay on screen */
         top: 80px;
-        min-width: 70px;
-        max-width: 100px; /* Prevent overflow on narrow screens */
+        min-width: 50px;
+        max-width: 70px; /* Prevent overflow on narrow screens */
+    }
+    
+    #speed-control.collapsed {
+        min-width: 45px;
+        max-width: 55px;
     }
     
     #speed-control input[type="range"] {
-        height: 120px; /* Shorter on mobile */
+        height: 100px; /* Shorter on mobile */
+    }
+    
+    #speed-panel-content {
+        max-height: 180px;
+    }
+    
+    .speed-icon {
+        font-size: 16px;
+    }
+    
+    .speed-compact-label {
+        font-size: 10px;
+    }
+    
+    .sound-toggle-btn {
+        width: 28px;
+        height: 28px;
     }
     
     .panel-header h2,
