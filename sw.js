@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.12 - Code cleanup and optimization
+// Version 2.2.13 - Astronomical accuracy fixes, code cleanup, removed duplicates
 
-const CACHE_VERSION = '2.2.12';
+const CACHE_VERSION = '2.2.14';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

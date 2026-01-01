@@ -632,18 +632,19 @@ export class SolarSystemModule {
 
     async createDwarfPlanets(scene) {
         // Pluto already created; add others with texture loaders where available
+        // Radii calculated as: diameter_km / 12742 (Earth's diameter in km)
         const catalog = [
-            { name: 'Ceres', radius: 0.073, color: 0xC8C8B4, distance: 180, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
-            { name: 'Haumea', radius: 0.085, color: 0xE0D6C8, distance: 2200, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: 'Fast-spinning elongated dwarf planet.', funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
-            { name: 'Makemake', radius: 0.075, color: 0xD4B48C, distance: 2300, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: 'Bright Kuiper Belt dwarf planet.', funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
-            { name: 'Eris', radius: 0.09, color: 0xD8D8D8, distance: 2400, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: 'Massive scattered disk dwarf planet.', funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
-            { name: 'Orcus', radius: 0.06, color: 0xB0B0C0, distance: 2100, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
-            { name: 'Quaoar', radius: 0.065, color: 0xC8A088, distance: 2150, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
-            { name: 'Gonggong', radius: 0.064, color: 0xBB7766, distance: 2500, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
-            { name: 'Sedna', radius: 0.055, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: '?? Inner Oort Cloud object with extreme elliptical orbit (76-937 AU). One of the most distant known solar system bodies, Sedna never comes close enough to Neptune to be influenced by it, suggesting it formed in the Oort Cloud region.', funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars. Discovery challenged our understanding of the solar system\'s edge.', realSize: '~995 km diameter' },
-            { name: 'Salacia', radius: 0.058, color: 0x996655, distance: 2250, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
-            { name: 'Varda', radius: 0.052, color: 0xAA8866, distance: 2350, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmar�.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
-            { name: 'Varuna', radius: 0.05, color: 0xAA7755, distance: 2050, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
+            { name: 'Ceres', radius: 0.074, color: 0xC8C8B4, distance: 180, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
+            { name: 'Haumea', radius: 0.086, color: 0xE0D6C8, distance: 2200, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: 'Fast-spinning elongated dwarf planet.', funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
+            { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2300, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: 'Bright Kuiper Belt dwarf planet.', funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
+            { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2400, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: 'Massive scattered disk dwarf planet.', funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
+            { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2100, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
+            { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2150, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
+            { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 2500, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
+            { name: 'Sedna', radius: 0.078, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: 'Inner Oort Cloud object with extreme elliptical orbit (76-937 AU). One of the most distant known solar system bodies.', funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars.', realSize: '~995 km diameter' },
+            { name: 'Salacia', radius: 0.067, color: 0x996655, distance: 2250, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
+            { name: 'Varda', radius: 0.057, color: 0xAA8866, distance: 2350, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
+            { name: 'Varuna', radius: 0.052, color: 0xAA7755, distance: 2050, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
         ];
 
         catalog.forEach(cfg => {
@@ -670,36 +671,10 @@ export class SolarSystemModule {
     }
 
     createProceduralTexture(type, size = 512) {
- // Create canvas for procedural texture
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- // Simple noise function (deterministic pseudo-random)
- const noise = (x, y, seed = 0) => {
- const n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
- return n - Math.floor(n);
- };
- 
- // Multi-octave noise for more natural patterns
- const fbm = (x, y, octaves = 4) => {
- let value = 0;
- let amplitude = 1;
- let frequency = 1;
- let maxValue = 0;
- 
- for (let i = 0; i < octaves; i++) {
- value += noise(x * frequency, y * frequency, i) * amplitude;
- maxValue += amplitude;
- amplitude *= 0.5;
- frequency *= 2;
- }
- return value / maxValue;
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
+ // Use reusable utilities from TextureGeneratorUtils
+ const { canvas, ctx, imageData, data } = TextureGeneratorUtils.createCanvas(size);
+ const noise = TextureGeneratorUtils.noise;
+ const fbm = TextureGeneratorUtils.fbm;
  
  switch(type) {
  case 'earth':

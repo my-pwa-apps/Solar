@@ -416,6 +416,7 @@ class App {
  });
  }
  // Canvas click for object selection
+ console.log('[Setup] Adding click listener to canvas:', this.sceneManager.renderer.domElement);
  this.sceneManager.renderer.domElement.addEventListener('click', (e) => {
  this.handleCanvasClick(e);
  });
@@ -652,6 +653,9 @@ class App {
  
  this.sceneManager.raycaster.setFromCamera(mouseVec, this.sceneManager.camera);
  
+ // Ensure world matrices are up-to-date for child objects (moons are children of planets)
+ this.sceneManager.scene.updateMatrixWorld(true);
+ 
  let intersects;
  if (recursiveFirst) {
  intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
@@ -663,21 +667,59 @@ class App {
  }
  }
 
+ // Always log raycast results for debugging
+ console.log(`[Raycast] ${intersects.length} intersections, objects array has ${this.solarSystemModule.objects.length} items`);
+ 
  // Find the first named object in intersections
+ // Intersections are already sorted by distance (closest first)
+ if (intersects.length > 0) {
+ console.log(`[Raycast] First 5 intersections:`);
+ for (let j = 0; j < Math.min(intersects.length, 5); j++) {
+ const obj = intersects[j].object;
+ const name = obj.userData?.name || obj.name || 'unnamed';
+ const type = obj.userData?.type || 'unknown';
+ console.log(` ${j}: "${name}" (${type}) at distance ${intersects[j].distance.toFixed(2)}`);
+ }
+ }
+ 
+ // Collect all named objects from intersections
+ const namedObjects = [];
  for (let i = 0; i < Math.min(intersects.length, 10); i++) {
  const candidate = intersects[i].object;
  
- // Check if this object has a name directly
  if (candidate.userData && candidate.userData.name) {
- return candidate;
+ namedObjects.push({ object: candidate, distance: intersects[i].distance });
+ } else {
+ // Traverse up to find the named parent
+ const named = this._findNamedParent(candidate);
+ if (named && !namedObjects.some(n => n.object === named)) {
+ namedObjects.push({ object: named, distance: intersects[i].distance });
+ }
+ }
  }
  
- // Otherwise traverse up to find the named parent
- const named = this._findNamedParent(candidate);
- if (named) return named;
+ if (namedObjects.length === 0) return null;
+ if (namedObjects.length === 1) return namedObjects[0].object;
+ 
+ // When multiple objects are hit, prefer moons/smaller objects over their parent planets
+ // This allows clicking on moons even when the ray passes through the parent planet
+ const first = namedObjects[0].object;
+ 
+ // Look for any moons in the hit list that are children of the first object
+ for (let i = 1; i < namedObjects.length; i++) {
+ const other = namedObjects[i].object;
+ // If this is a moon and its parent planet was also hit, prefer the moon
+ if (other.userData?.type === 'Moon' && 
+ other.userData?.parentPlanet === first.userData?.name) {
+ if (DEBUG.enabled) {
+ console.log(`[Raycast] Preferring moon "${other.userData.name}" over parent "${first.userData.name}"`);
  }
-
- return null;
+ return other;
+ }
+ }
+ 
+ // Default: return the closest object
+ return first;
  }
  
  // ===========================
@@ -685,7 +727,9 @@ class App {
  // ===========================
  
  handleCanvasClick(event) {
+ console.log('[Click] Canvas clicked at', event.clientX, event.clientY);
  const target = this._raycastNamedObject(event, true);
+ console.log('[Click] Raycast target:', target?.userData?.name || 'none');
  
  if (target) {
  const info = this.solarSystemModule.getObjectInfo(target);
