@@ -129,6 +129,16 @@ class App {
  // Hide loading screen
  this.uiManager.hideLoading();
  
+ // Setup new UX features
+ this.setupOnboarding();
+ this.setupRandomDiscovery();
+ this.setupNavigationSearch();
+ this.setupMobileGestureHints();
+ this.setupSpaceFacts();
+ 
+ // Pre-select Earth on first load for better first impression
+ this.preSelectEarth();
+ 
  // Start animation loop
  this.sceneManager.animate(() => {
  // Initialize timing on first frame
@@ -744,18 +754,13 @@ class App {
  // Cache hover label element
  if (!this._hoverLabel) {
  this._hoverLabel = document.getElementById(UI_ELEMENTS.HOVER_LABEL);
- console.log('[Hover] Label element:', this._hoverLabel);
  }
- if (!this._hoverLabel) {
- console.warn('[Hover] No hover-label element found!');
- return;
- }
+ if (!this._hoverLabel) return;
 
  // Use recursive=true for hover to properly detect child objects (moons, orbits, etc.)
  const target = this._raycastNamedObject(event, true);
  
  if (target) {
- console.log('[Hover] Target found:', target.userData?.name);
  // Store current hovered object
  this._currentHoveredObject = target;
  
@@ -930,6 +935,249 @@ class App {
  };
  
  updateFPS();
+ }
+ 
+ // ===========================
+ // UX IMPROVEMENTS v2.3
+ // ===========================
+ 
+ preSelectEarth() {
+ // Pre-select Earth on first visit to show users what to expect
+ const isFirstVisit = !localStorage.getItem('space_voyage_visited');
+ 
+ if (isFirstVisit && this.solarSystemModule?.planets?.earth) {
+ // Small delay to ensure everything is rendered
+ setTimeout(() => {
+ const earth = this.solarSystemModule.planets.earth;
+ const info = this.solarSystemModule.getObjectInfo(earth);
+ this.uiManager.updateInfoPanel(info);
+ this.solarSystemModule.focusOnObject(earth, this.sceneManager.camera, this.sceneManager.controls);
+ localStorage.setItem('space_voyage_visited', 'true');
+ }, 500);
+ }
+ }
+ 
+ setupOnboarding() {
+ const overlay = document.getElementById('onboarding-overlay');
+ const nextBtn = document.getElementById('onboarding-next');
+ const startBtn = document.getElementById('onboarding-start');
+ const skipBtn = document.getElementById('onboarding-skip');
+ const dots = document.querySelectorAll('.onboarding-dots .dot');
+ const steps = document.querySelectorAll('.onboarding-step');
+ 
+ if (!overlay) return;
+ 
+ // Check if first visit
+ const hasSeenOnboarding = localStorage.getItem('space_voyage_onboarding_complete');
+ 
+ if (!hasSeenOnboarding) {
+ // Show onboarding after a brief delay
+ setTimeout(() => {
+ overlay.classList.remove('hidden');
+ }, 1000);
+ }
+ 
+ let currentStep = 1;
+ const totalSteps = 3;
+ 
+ const updateStep = (step) => {
+ currentStep = step;
+ 
+ // Update steps
+ steps.forEach(s => s.classList.remove('active'));
+ const activeStep = document.querySelector(`.onboarding-step[data-step="${step}"]`);
+ if (activeStep) activeStep.classList.add('active');
+ 
+ // Update dots
+ dots.forEach(d => d.classList.remove('active'));
+ const activeDot = document.querySelector(`.onboarding-dots .dot[data-step="${step}"]`);
+ if (activeDot) activeDot.classList.add('active');
+ 
+ // Show/hide buttons
+ if (step === totalSteps) {
+ nextBtn?.classList.add('hidden');
+ startBtn?.classList.remove('hidden');
+ } else {
+ nextBtn?.classList.remove('hidden');
+ startBtn?.classList.add('hidden');
+ }
+ };
+ 
+ const closeOnboarding = () => {
+ overlay.classList.add('hidden');
+ localStorage.setItem('space_voyage_onboarding_complete', 'true');
+ };
+ 
+ nextBtn?.addEventListener('click', () => {
+ if (currentStep < totalSteps) {
+ updateStep(currentStep + 1);
+ }
+ });
+ 
+ startBtn?.addEventListener('click', closeOnboarding);
+ skipBtn?.addEventListener('click', closeOnboarding);
+ 
+ dots.forEach(dot => {
+ dot.addEventListener('click', () => {
+ const step = parseInt(dot.dataset.step, 10);
+ if (step) updateStep(step);
+ });
+ });
+ }
+ 
+ setupRandomDiscovery() {
+ const randomBtn = document.getElementById('random-discovery');
+ if (!randomBtn || !this.solarSystemModule) return;
+ 
+ // Curated list of interesting objects for discovery
+ const discoveryObjects = [
+ 'sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn',
+ 'uranus', 'neptune', 'pluto', 'io', 'europa', 'titan', 'enceladus',
+ 'triton', 'ganymede', 'callisto', 'ceres', 'eris', 'haumea'
+ ];
+ 
+ randomBtn.addEventListener('click', () => {
+ // Pick a random object
+ const randomValue = discoveryObjects[Math.floor(Math.random() * discoveryObjects.length)];
+ const targetObject = this.findObjectByNavigationValue(randomValue);
+ 
+ if (targetObject) {
+ // Add a fun spin animation before focusing
+ randomBtn.style.transform = 'rotate(360deg)';
+ setTimeout(() => {
+ randomBtn.style.transform = '';
+ }, 500);
+ 
+ const info = this.solarSystemModule.getObjectInfo(targetObject);
+ this.uiManager.updateInfoPanel(info);
+ this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
+ }
+ });
+ }
+ 
+ setupNavigationSearch() {
+ const searchInput = document.getElementById('nav-search');
+ const dropdown = document.getElementById('object-dropdown');
+ 
+ if (!searchInput || !dropdown) return;
+ 
+ // Store original options
+ const allOptions = Array.from(dropdown.querySelectorAll('option, optgroup'));
+ const originalHTML = dropdown.innerHTML;
+ 
+ searchInput.addEventListener('input', (e) => {
+ const query = e.target.value.toLowerCase().trim();
+ 
+ if (!query) {
+ // Restore original dropdown
+ dropdown.innerHTML = originalHTML;
+ return;
+ }
+ 
+ // Filter options
+ const matchingOptions = [];
+ dropdown.querySelectorAll('option').forEach(option => {
+ if (option.value && option.textContent.toLowerCase().includes(query)) {
+ matchingOptions.push(option.cloneNode(true));
+ }
+ });
+ 
+ // Rebuild dropdown with matches
+ dropdown.innerHTML = '';
+ const placeholder = document.createElement('option');
+ placeholder.value = '';
+ placeholder.textContent = matchingOptions.length > 0 
+ ? `${matchingOptions.length} results for "${query}"`
+ : 'No results found';
+ dropdown.appendChild(placeholder);
+ 
+ matchingOptions.forEach(opt => dropdown.appendChild(opt));
+ });
+ 
+ // Clear search when dropdown is used
+ dropdown.addEventListener('change', () => {
+ if (dropdown.value) {
+ searchInput.value = '';
+ dropdown.innerHTML = originalHTML;
+ }
+ });
+ }
+ 
+ setupMobileGestureHints() {
+ // Only show on touch devices
+ const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+ const hasSeenHints = localStorage.getItem('space_voyage_gesture_hints_seen');
+ 
+ if (!isTouchDevice || hasSeenHints) return;
+ 
+ const hints = document.getElementById('gesture-hints');
+ if (!hints) return;
+ 
+ // Show hints after a delay
+ setTimeout(() => {
+ hints.classList.remove('hidden');
+ 
+ // Auto-hide after 5 seconds
+ setTimeout(() => {
+ hints.classList.add('hidden');
+ localStorage.setItem('space_voyage_gesture_hints_seen', 'true');
+ }, 5000);
+ }, 2000);
+ 
+ // Hide immediately on any touch
+ document.addEventListener('touchstart', () => {
+ hints.classList.add('hidden');
+ localStorage.setItem('space_voyage_gesture_hints_seen', 'true');
+ }, { once: true });
+ }
+ 
+ setupSpaceFacts() {
+ const factText = document.getElementById('fact-text');
+ if (!factText) return;
+ 
+ const spaceFacts = [
+ "The Sun contains 99.86% of the Solar System's mass!",
+ "A day on Venus is longer than its year!",
+ "Jupiter's Great Red Spot is larger than Earth!",
+ "Saturn would float if you could find a big enough bathtub!",
+ "One million Earths could fit inside the Sun!",
+ "The Moon is slowly drifting away from Earth at 3.8 cm per year!",
+ "Neptune's winds can reach speeds of 2,100 km/h!",
+ "Mars has the largest volcano in the Solar System - Olympus Mons!",
+ "Uranus rotates on its side, making it unique among planets!",
+ "Mercury has ice at its poles despite being closest to the Sun!",
+ "Europa may have more water than all of Earth's oceans!",
+ "Titan is the only moon with a thick atmosphere!",
+ "The Voyager 1 probe is the farthest human-made object from Earth!",
+ "A year on Pluto lasts 248 Earth years!",
+ "The asteroid belt contains millions of rocky objects!"
+ ];
+ 
+ let factIndex = 0;
+ 
+ // Rotate facts every 4 seconds during loading
+ const factInterval = setInterval(() => {
+ factIndex = (factIndex + 1) % spaceFacts.length;
+ factText.style.opacity = '0';
+ setTimeout(() => {
+ factText.textContent = spaceFacts[factIndex];
+ factText.style.opacity = '1';
+ }, 200);
+ }, 4000);
+ 
+ // Stop rotating when loading is done
+ const loadingElement = document.getElementById('loading');
+ if (loadingElement) {
+ const observer = new MutationObserver((mutations) => {
+ mutations.forEach((mutation) => {
+ if (mutation.target.classList.contains('hidden')) {
+ clearInterval(factInterval);
+ observer.disconnect();
+ }
+ });
+ });
+ observer.observe(loadingElement, { attributes: true, attributeFilter: ['class'] });
+ }
  }
 }
 

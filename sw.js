@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.13 - Astronomical accuracy fixes, code cleanup, removed duplicates
+// Version 2.3.0 - UX improvements: onboarding, help button, random discovery, search
 
-const CACHE_VERSION = '2.2.14';
+const CACHE_VERSION = '2.3.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -63,7 +63,10 @@ const STATIC_CACHE_FILES = [
   './textures/planets/neptune.jpg',
   // Moon textures
   './textures/moons/moon_1k.jpg',
-  './textures/moons/moon_threejs_1k.jpg'
+  './textures/moons/moon_threejs_1k.jpg',
+  // Dwarf planet textures
+  './textures/dwarf-planets/pluto_1k.jpg',
+  './textures/dwarf-planets/ceres_1k.jpg'
 ];
 
 // CDN files to cache (Three.js and dependencies)

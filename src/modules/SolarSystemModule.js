@@ -1303,73 +1303,62 @@ export class SolarSystemModule {
  return this.loadPlanetTextureReal('Moon', primary, this.createMoonTexture, size, pluginFallbacks);
  }
 
- // Pluto remote attempt (plugin repo) before procedural
+ // Pluto texture loader - self-hosted texture
  createPlutoTextureReal(size) {
-    const primary = [];
-    const pluginFallbacks = [
-        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/plutomap1k.jpg'
+    const primary = [
+        './textures/dwarf-planets/pluto_1k.jpg'
     ];
-    return this.loadPlanetTextureReal('Pluto', primary, this.createPlutoTexture, size, pluginFallbacks);
+    return this.loadPlanetTextureReal('Pluto', primary, this.createPlutoTexture, size, []);
  }
 
- // Ceres texture loader (Dawn mission global map)
+ // Ceres texture loader - self-hosted texture (Dawn mission style cratered surface)
  createCeresTextureReal(size) {
-    // Ceres textures - using direct links to avoid CORS issues
     const primary = [
-        'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg' // Similar cratered surface
+        './textures/dwarf-planets/ceres_1k.jpg'
     ];
-    const pluginFallbacks = [];
     // Use Mercury-style cratered texture as fallback since Ceres is rocky and heavily cratered
-    return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, pluginFallbacks);
+    return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, []);
  }
 
- // Io texture loader - NASA Galileo mission photorealistic volcanic surface
+ // Io texture loader - Volcanic surface with sulfur deposits
  createIoTextureReal(size) {
-    const primary = [
-        'https://www.solarsystemscope.com/textures/download/2k_io.jpg',
-        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/iomap1k.jpg'
-    ];
+    // No reliable external sources - use procedural generation
+    const primary = [];
     return this.loadPlanetTextureReal('Io', primary, this.createIoTexture, size, []);
  }
 
  // Europa texture loader - NASA Galileo icy surface with reddish cracks
  createEuropaTextureReal(size) {
-    const primary = [
-        'https://www.solarsystemscope.com/textures/download/2k_europa.jpg',
-        'https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/europamap1k.jpg'
-    ];
+    // No reliable external sources - use procedural generation
+    const primary = [];
     return this.loadPlanetTextureReal('Europa', primary, this.createEuropaTexture, size, []);
  }
 
  // Ganymede texture loader - Largest moon in solar system
  createGanymedeTextureReal(size) {
-    const primary = [
-        'https://www.solarsystemscope.com/textures/download/2k_ganymede.jpg'
-    ];
+    // No reliable external sources - use procedural generation
+    const primary = [];
     return this.loadPlanetTextureReal('Ganymede', primary, this.createMoonTexture, size, []);
  }
 
  // Callisto texture loader - Ancient cratered surface
  createCallistoTextureReal(size) {
-    const primary = [
-        'https://www.solarsystemscope.com/textures/download/2k_callisto.jpg'
-    ];
+    // No reliable external sources - use procedural generation
+    const primary = [];
     return this.loadPlanetTextureReal('Callisto', primary, this.createMoonTexture, size, []);
  }
 
  // Titan texture loader - Saturn's largest moon with thick orange atmosphere
  createTitanTextureReal(size) {
-    const primary = [
-        'https://www.solarsystemscope.com/textures/download/2k_titan.jpg'
-    ];
+    // No reliable external sources - use procedural generation
+    const primary = [];
     return this.loadPlanetTextureReal('Titan', primary, this.createTitanTexture, size, []);
  }
 
  // Enceladus texture loader - Saturn's icy geologically active moon
  createEnceladusTextureReal(size) {
-    const primary = [
-        'https://www.solarsystemscope.com/textures/download/2k_enceladus.jpg'
-    ];
+    // No reliable external sources - use procedural generation
+    const primary = [];
     return this.loadPlanetTextureReal('Enceladus', primary, this.createMoonTexture, size, []);
  }
  
@@ -4372,8 +4361,6 @@ export class SolarSystemModule {
  color: 0xFFFFFF,
  transparent: true,
  opacity: 1.0,
- emissive: 0xFFFFFF,
- emissiveIntensity: 2.0,
  toneMapped: false
  });
  const core = new THREE.Mesh(coreGeo, coreMat);
@@ -4397,8 +4384,6 @@ export class SolarSystemModule {
  color: 0xEEFFFF,
  transparent: true,
  opacity: 1.0,
- emissive: 0xCCDDFF,
- emissiveIntensity: 1.5,
  toneMapped: false
  });
  const core = new THREE.Mesh(coreGeo, coreMat);
@@ -4966,8 +4951,6 @@ export class SolarSystemModule {
  const alphaAGeo = new THREE.SphereGeometry(12, 64, 64);
  const alphaAMat = new THREE.MeshBasicMaterial({
  color: 0xFFFAE3,
- emissive: 0xFFFAE3,
- emissiveIntensity: 1.5,
  toneMapped: false
  });
  const alphaA = new THREE.Mesh(alphaAGeo, alphaAMat);
@@ -4999,8 +4982,6 @@ export class SolarSystemModule {
  const proximaGeo = new THREE.SphereGeometry(6, 32, 32);
  const proximaMat = new THREE.MeshBasicMaterial({
  color: 0xFF6347,
- emissive: 0xFF4444,
- emissiveIntensity: 1.2,
  toneMapped: false
  });
  const proxima = new THREE.Mesh(proximaGeo, proximaMat);
@@ -5038,8 +5019,6 @@ export class SolarSystemModule {
  const kepler452Geo = new THREE.SphereGeometry(13, 64, 64);
  const kepler452Mat = new THREE.MeshBasicMaterial({
  color: 0xFFFAD4,
- emissive: 0xFFFAD4,
- emissiveIntensity: 1.5,
  toneMapped: false
  });
  const kepler452 = new THREE.Mesh(kepler452Geo, kepler452Mat);
@@ -5073,8 +5052,6 @@ export class SolarSystemModule {
  const trappist1Geo = new THREE.SphereGeometry(5, 32, 32);
  const trappist1Mat = new THREE.MeshBasicMaterial({
  color: 0xFF5533,
- emissive: 0xFF4422,
- emissiveIntensity: 1.3,
  toneMapped: false
  });
  const trappist1 = new THREE.Mesh(trappist1Geo, trappist1Mat);
@@ -5108,8 +5085,6 @@ export class SolarSystemModule {
  const kepler186Geo = new THREE.SphereGeometry(7, 32, 32);
  const kepler186Mat = new THREE.MeshBasicMaterial({
  color: 0xFF6B4A,
- emissive: 0xFF5533,
- emissiveIntensity: 1.2,
  toneMapped: false
  });
  const kepler186 = new THREE.Mesh(kepler186Geo, kepler186Mat);
@@ -6434,9 +6409,7 @@ createHyperrealisticHubble(satData) {
  // Larger center marker
  const markerGeometry = new THREE.SphereGeometry(scale * 3, 8, 8);
  const markerMaterial = new THREE.MeshBasicMaterial({
- color: 0xFFD700,
- emissive: 0xFFD700,
- emissiveIntensity: 0.8
+ color: 0xFFD700
  });
  const marker = new THREE.Mesh(markerGeometry, markerMaterial);
  marker.name = 'Center Marker';

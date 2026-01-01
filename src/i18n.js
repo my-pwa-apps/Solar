@@ -67,6 +67,28 @@ const translations = {
         resetView: "Reset",
         enterVR: "Enter VR",
         enterAR: "Enter AR",
+        help: "Help",
+        randomDiscovery: "Discover",
+        
+        // Onboarding
+        welcomeToSpace: "🚀 Welcome to Space Voyage!",
+        skip: "Skip",
+        next: "Next",
+        startExploring: "Start Exploring! 🌟",
+        onboardingNav: "Navigate the Universe",
+        onboardingNavDesc: "Drag to rotate • Scroll to zoom • Right-click to pan",
+        onboardingExplore: "Explore Objects",
+        onboardingExploreDesc: "Click any planet, moon, or star to learn fascinating facts!",
+        onboardingQuickNav: "Quick Navigation",
+        onboardingQuickNavDesc: "Use the dropdown menu to jump directly to any object",
+        
+        // Mobile gestures
+        pinchToZoom: "Pinch to zoom",
+        dragToRotate: "Drag to rotate",
+        
+        // Loading
+        preparingJourney: "Preparing your space journey...",
+        defaultFact: "The Sun contains 99.86% of the Solar System's mass!",
         
         // Speed control
         speedLabel: "Speed:",

@@ -100,13 +100,13 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.2.13" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.2.13" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.2.13" as="style">
+    <link rel="preload" href="./src/i18n.js?v=2.3.0" as="script">
+    <link rel="preload" href="./src/styles/main.css?v=2.3.0" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.3.0" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.2.13">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.2.13">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.3.0">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.3.0">
     
     <!-- Load translations early -->
     <script src="./src/i18n.js"></script>
@@ -119,7 +119,9 @@
         </div>
         <div class="header-controls">
             <nav id="quick-nav" aria-label="Quick navigation">
-                <select id="object-dropdown" class="nav-dropdown" aria-label="Navigate to celestial object">
+                <div class="nav-search-wrapper">
+                    <input type="text" id="nav-search" class="nav-search" placeholder="🔍 Search objects..." aria-label="Search celestial objects">
+                    <select id="object-dropdown" class="nav-dropdown" aria-label="Navigate to celestial object">
                     <option value="" selected data-i18n="quickNavigation">Navigation</option>
                     <optgroup label="Our Star" data-i18n="ourStar">
                         <option value="sun" data-i18n="sun">Sun</option>
@@ -245,6 +247,7 @@
                         <option value="pioneer-11">Pioneer 11</option>
                     </optgroup>
                 </select>
+                </div>
             </nav>
             <select id="language-selector" class="language-selector" aria-label="Select language">
                 <option value="en">English</option>
@@ -259,12 +262,20 @@
     <main id="canvas-container" role="main" aria-label="3D visualization canvas"></main>
     
     <div id="loading" role="status" aria-live="polite">
+        <div class="loading-header">
+            <span class="loading-rocket">🚀</span>
+            <h2 data-i18n="preparingJourney">Preparing your space journey...</h2>
+        </div>
         <div class="loading-spinner"></div>
         <p id="loading-text" data-i18n="initializing">Initializing...</p>
         <div id="loading-progress">
             <div id="loading-progress-bar"></div>
         </div>
         <p id="loading-percentage">0%</p>
+        <div id="loading-fact" class="space-fact">
+            <span class="fact-icon">💡</span>
+            <span id="fact-text" data-i18n="defaultFact">The Sun contains 99.86% of the Solar System's mass!</span>
+        </div>
     </div>
     <aside id="info-panel" class="hidden draggable-panel" role="complementary" aria-labelledby="object-name" aria-hidden="true">
         <div class="panel-header">
@@ -294,11 +305,13 @@
     <!-- Bottom Bar -->
     <footer id="main-footer" role="contentinfo" aria-label="Control panel">
         <div class="footer-controls" role="group" aria-label="View controls">
-            <button id="toggle-orbits" aria-label="Toggle orbital paths" aria-pressed="false" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits">Orbits</button>
-            <button id="toggle-constellations" aria-label="Toggle constellations" aria-pressed="false" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">Stars</button>
-            <button id="toggle-details" aria-label="Toggle details" aria-pressed="false" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">Labels</button>
-            <button id="toggle-scale" aria-label="Toggle realistic scale" aria-pressed="true" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">Scale</button>
-            <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)" data-i18n="resetView">Reset</button>
+            <button id="toggle-orbits" aria-label="Toggle orbital paths" aria-pressed="false" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits"><span class="btn-icon">◯</span><span class="btn-text">Orbits</span></button>
+            <button id="toggle-constellations" aria-label="Toggle constellations" aria-pressed="false" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations"><span class="btn-icon">✦</span><span class="btn-text">Stars</span></button>
+            <button id="toggle-details" aria-label="Toggle details" aria-pressed="false" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels"><span class="btn-icon">🏷</span><span class="btn-text">Labels</span></button>
+            <button id="toggle-scale" aria-label="Toggle realistic scale" aria-pressed="true" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale"><span class="btn-icon">⚖</span><span class="btn-text">Scale</span></button>
+            <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)" data-i18n="resetView"><span class="btn-icon">↺</span><span class="btn-text">Reset</span></button>
+            <button id="random-discovery" aria-label="Discover random object" data-tooltip="Surprise me! Jump to a random object" data-i18n="randomDiscovery"><span class="btn-icon">🎲</span><span class="btn-text">Discover</span></button>
+            <button id="help-button" aria-label="Show help" data-tooltip="Show controls and features (H)" data-i18n="help"><span class="btn-icon">?</span><span class="btn-text">Help</span></button>
         </div>
         
         <div class="footer-xr-controls" role="group" aria-label="Extended reality controls">
@@ -311,6 +324,54 @@
     
     <!-- Hover Label for 3D Objects -->
     <div id="hover-label" role="tooltip" aria-live="polite" aria-label="Object name"></div>
+    
+    <!-- First-Time Onboarding Overlay -->
+    <div id="onboarding-overlay" class="hidden" role="dialog" aria-labelledby="onboarding-title" aria-modal="true">
+        <div class="onboarding-content">
+            <div class="onboarding-header">
+                <h2 id="onboarding-title" data-i18n="welcomeToSpace">🚀 Welcome to Space Voyage!</h2>
+                <button class="onboarding-skip" id="onboarding-skip" aria-label="Skip tutorial" data-i18n="skip">Skip</button>
+            </div>
+            <div class="onboarding-steps">
+                <div class="onboarding-step active" data-step="1">
+                    <div class="step-icon">🖱️</div>
+                    <h3 data-i18n="onboardingNav">Navigate the Universe</h3>
+                    <p data-i18n="onboardingNavDesc">Drag to rotate • Scroll to zoom • Right-click to pan</p>
+                </div>
+                <div class="onboarding-step" data-step="2">
+                    <div class="step-icon">🪐</div>
+                    <h3 data-i18n="onboardingExplore">Explore Objects</h3>
+                    <p data-i18n="onboardingExploreDesc">Click any planet, moon, or star to learn fascinating facts!</p>
+                </div>
+                <div class="onboarding-step" data-step="3">
+                    <div class="step-icon">🎯</div>
+                    <h3 data-i18n="onboardingQuickNav">Quick Navigation</h3>
+                    <p data-i18n="onboardingQuickNavDesc">Use the dropdown menu to jump directly to any object</p>
+                </div>
+            </div>
+            <div class="onboarding-nav">
+                <div class="onboarding-dots">
+                    <button class="dot active" data-step="1" aria-label="Step 1"></button>
+                    <button class="dot" data-step="2" aria-label="Step 2"></button>
+                    <button class="dot" data-step="3" aria-label="Step 3"></button>
+                </div>
+                <button id="onboarding-next" class="btn-primary" data-i18n="next">Next</button>
+                <button id="onboarding-start" class="btn-primary hidden" data-i18n="startExploring">Start Exploring! 🌟</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Gesture Hints -->
+    <div id="gesture-hints" class="hidden" role="status" aria-live="polite">
+        <div class="gesture-hint" id="gesture-pinch">
+            <div class="gesture-icon">👌</div>
+            <span data-i18n="pinchToZoom">Pinch to zoom</span>
+        </div>
+        <div class="gesture-hint" id="gesture-drag">
+            <div class="gesture-icon">👆</div>
+            <span data-i18n="dragToRotate">Drag to rotate</span>
+        </div>
+    </div>
     
     <!-- Tracking Mode Indicator - REMOVED (was distracting)
     <div id="tracking-indicator" role="status" aria-live="polite">
@@ -366,7 +427,7 @@
     </script>
     
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=2.2.16"></script>
+    <script type="module" src="./src/main.js?v=2.3.0"></script>
     
     <!-- Initialize Modules -->
     <script type="module">
