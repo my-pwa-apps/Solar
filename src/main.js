@@ -129,10 +129,6 @@ class App {
  // Hide loading screen
  this.uiManager.hideLoading();
  
- if (DEBUG.enabled) {
- console.log(`🚀 Ready | Planets: ${Object.keys(this.solarSystemModule.planets).length} | Objects: ${this.solarSystemModule.objects.length}`);
- }
- 
  // Start animation loop
  this.sceneManager.animate(() => {
  // Initialize timing on first frame
@@ -162,7 +158,7 @@ class App {
   * @private
   */
  _restoreToggleState(config) {
- const { storageKey, buttonId, toggleMethod, buttonClass = 'toggle-on', displayName, updateText } = config;
+ const { storageKey, buttonId, toggleMethod, buttonClass = 'toggle-on', updateText } = config;
  const savedState = localStorage.getItem(storageKey);
  
  if (savedState !== null && this.solarSystemModule) {
@@ -177,8 +173,6 @@ class App {
  button.classList.toggle(buttonClass, value);
  if (updateText) updateText(button, value);
  }
- 
- if (DEBUG.enabled) console.log(`✅ Restored ${displayName}: ${value ? 'ON' : 'OFF'}`);
  }
  }
 
@@ -190,16 +184,14 @@ class App {
  this._restoreToggleState({
  storageKey: STORAGE_KEYS.ORBITS,
  buttonId: UI_ELEMENTS.ORBITS_BUTTON,
- toggleMethod: this.solarSystemModule.toggleOrbits,
- displayName: 'orbits'
+ toggleMethod: this.solarSystemModule.toggleOrbits
  });
  
  // Restore constellations visibility
  this._restoreToggleState({
  storageKey: STORAGE_KEYS.CONSTELLATIONS,
  buttonId: UI_ELEMENTS.CONSTELLATIONS_BUTTON,
- toggleMethod: this.solarSystemModule.toggleConstellations,
- displayName: 'constellations'
+ toggleMethod: this.solarSystemModule.toggleConstellations
  });
  
  // Restore labels visibility (special case: needs sceneManager property update)
@@ -214,7 +206,6 @@ class App {
  const t = window.t || ((key) => key);
  labelsButton.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
  }
- if (DEBUG.enabled) console.log(`✅ Restored labels: ${labelsVisible ? 'ON' : 'OFF'}`);
  }
  
  // Restore scale mode (special case: uses 'active' class and updates text)
@@ -229,7 +220,6 @@ class App {
  const t = window.t || ((key) => key);
  scaleButton.textContent = realisticScale ? t('toggleScaleRealistic') : t('toggleScale');
  }
- if (DEBUG.enabled) console.log(`✅ Restored scale: ${realisticScale ? 'Realistic' : 'Educational'}`);
  }
  }
 
@@ -357,7 +347,6 @@ class App {
  this.solarSystemModule.toggleOrbits(visible);
  orbitsButton.classList.toggle('toggle-on', visible);
  localStorage.setItem(STORAGE_KEYS.ORBITS, visible.toString());
- if (DEBUG.enabled) console.log(` Orbits: ${visible ? 'ON' : 'OFF'} (saved)`);
  }
  });
  }
@@ -372,7 +361,6 @@ class App {
  this.solarSystemModule.toggleConstellations(visible);
  constellationsButton.classList.toggle('toggle-on', visible);
  localStorage.setItem(STORAGE_KEYS.CONSTELLATIONS, visible.toString());
- if (DEBUG.enabled) console.log(` Constellations: ${visible ? 'ON' : 'OFF'} (saved)`);
  }
  });
  }
@@ -390,7 +378,6 @@ class App {
  t('toggleScaleRealistic') : t('toggleScale');
  
  localStorage.setItem(STORAGE_KEYS.SCALE, this.solarSystemModule.realisticScale.toString());
- if (DEBUG.enabled) console.log(` Scale: ${this.solarSystemModule.realisticScale ? 'Realistic' : 'Educational'} (saved)`);
  
  // Recalculate positions with new scale
  this.solarSystemModule.updateScale();
@@ -413,7 +400,6 @@ class App {
  labelsButton.textContent = this.sceneManager.labelsVisible ? 
  t('toggleLabelsOn') : t('toggleLabels');
  localStorage.setItem(STORAGE_KEYS.LABELS, this.sceneManager.labelsVisible.toString());
- if (DEBUG.enabled) console.log(` Labels: ${this.sceneManager.labelsVisible ? 'ON' : 'OFF'} (saved)`);
  }
  }
  });
@@ -466,10 +452,7 @@ class App {
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
- if (DEBUG.enabled) console.log(` Nav: ${info.name} (${targetObject.userData.type || 'planet'})`);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
- } else if (DEBUG.enabled) {
- console.warn(` Nav: Object not found: "${value}"`);
  }
  }
  });
@@ -798,7 +781,6 @@ class App {
  if (laser) laser.visible = this.sceneManager.lasersVisible;
  if (pointer) pointer.visible = this.sceneManager.lasersVisible;
  });
- if (DEBUG.VR) console.log(` Laser pointers ${this.sceneManager.lasersVisible ? 'visible' : 'hidden'}`);
  }
  break;
  case '+':
@@ -836,11 +818,9 @@ class App {
  if (this.timeSpeed === 0) {
  // If paused, go to normal (5 = 1x speed)
  spaceSpeedSlider.value = '5';
- if (DEBUG.enabled) console.log(' PLAY (Normal Speed)');
  } else {
  // If playing, pause
  spaceSpeedSlider.value = '0';
- if (DEBUG.enabled) console.log('⏸ PAUSE');
  }
  spaceSpeedSlider.dispatchEvent(new Event('input'));
  }

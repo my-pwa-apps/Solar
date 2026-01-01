@@ -66,14 +66,8 @@ export class UIManager {
  }
 
  hideLoading() {
- console.log('🎭 hideLoading() called');
- console.log('📦 Loading element exists:', !!this.elements.loading);
  if (this.elements.loading) {
- console.log('🔍 Loading element before:', this.elements.loading.className);
- console.log('🔍 Loading element display:', window.getComputedStyle(this.elements.loading).display);
  this.elements.loading.classList.add('hidden');
- console.log('🔍 Loading element after:', this.elements.loading.className);
- console.log('🔍 Loading element display after:', window.getComputedStyle(this.elements.loading).display);
  }
  // Show controls and info panel (explorer removed - using header dropdown instead)
  ['infoPanel', 'controls'].forEach(key => {
@@ -170,12 +164,8 @@ export class UIManager {
  if (solarSystemModule && typeof solarSystemModule.getExplorerContent === 'function') {
  const explorerContent = solarSystemModule.getExplorerContent(focusCallback);
  if (explorerContent && Array.isArray(explorerContent)) {
- this.updateExplorer(' Explore the Solar System', explorerContent);
- } else {
- console.error(' getExplorerContent returned invalid data:', explorerContent);
+ this.updateExplorer('🌌 Explore the Solar System', explorerContent);
  }
- } else {
- console.error(' solarSystemModule or getExplorerContent method not found');
  }
  
  // Setup time speed control
@@ -211,8 +201,6 @@ export class UIManager {
  } else {
  timeSpeedLabel.textContent = `${speed}x`;
  }
- 
- console.log(`[Speed] Changed to: ${speed}x`);
  };
  
  // Add event listener
@@ -224,3 +212,4 @@ export class UIManager {
  updateSpeed(timeSpeedSlider.value);
  }
 }
+

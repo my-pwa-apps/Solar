@@ -21,7 +21,7 @@
     <meta name="ia_archiver" content="noindex, nofollow">
     
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.2.4" crossorigin="use-credentials">
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.2.12" crossorigin="use-credentials">
     <script type="module" src="./src/modules/LanguageManager.js"></script>
     
     <!-- Primary Meta Tags -->
@@ -30,7 +30,6 @@
     <meta name="description" content="Explore our Solar System in stunning 3D with VR/AR support. Navigate through planets, moons, spacecraft, nebulae, and galaxies in this free interactive educational experience.">
     <meta name="keywords" content="space, solar system, 3D, VR, AR, planets, astronomy, education, interactive, WebXR, Three.js, stars, galaxies, NASA, spacecraft">
     <meta name="author" content="Space Voyage">
-    <meta name="robots" content="index, follow">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -52,8 +51,7 @@
     <meta name="twitter:image" content="https://my-pwa-apps.github.io/Solar/screenshots/solar1.png">
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#0078D4" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#000011" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#000011">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Space Voyage">
@@ -102,13 +100,13 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.2.3" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.2.3" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.2.3" as="style">
+    <link rel="preload" href="./src/i18n.js?v=2.2.12" as="script">
+    <link rel="preload" href="./src/styles/main.css?v=2.2.12" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.2.12" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.2.3">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.2.3">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.2.12">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.2.12">
     
     <!-- Load translations early -->
     <script src="./src/i18n.js"></script>
@@ -268,16 +266,16 @@
         </div>
         <p id="loading-percentage">0%</p>
     </div>
-    <aside id="info-panel" class="hidden draggable-panel" role="complementary" aria-labelledby="object-name">
+    <aside id="info-panel" class="hidden draggable-panel" role="complementary" aria-labelledby="object-name" aria-hidden="true">
         <div class="panel-header">
             <h2 id="object-name" class="drag-handle" data-i18n="selectObject" title="Drag to move">Select an Object</h2>
-            <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel">✕</button>
+            <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel" tabindex="0">✕</button>
         </div>
         <div class="info-content">
-            <p><strong data-i18n="type">Type:</strong> <span id="object-type">-</span></p>
-            <p><strong data-i18n="distance">Distance:</strong> <span id="object-distance">-</span></p>
-            <p><strong data-i18n="size">Size:</strong> <span id="object-size">-</span></p>
-            <div id="object-description" class="description-box" data-i18n="clickToExplore">
+            <p><strong data-i18n="type">Type:</strong> <span id="object-type" aria-live="polite">-</span></p>
+            <p><strong data-i18n="distance">Distance:</strong> <span id="object-distance" aria-live="polite">-</span></p>
+            <p><strong data-i18n="size">Size:</strong> <span id="object-size" aria-live="polite">-</span></p>
+            <div id="object-description" class="description-box" data-i18n="clickToExplore" aria-live="polite">
                 Click on objects to explore and learn more
             </div>
         </div>
@@ -289,23 +287,23 @@
             <span class="panel-title drag-handle" data-i18n="speedLabel" title="Drag to move">Speed</span>
         </div>
         <div class="panel-content">
-            <input type="range" id="time-speed" min="0" max="5" value="1" step="0.1" aria-label="Animation speed" />
-            <span id="time-speed-label" data-i18n="realTime">1x</span>
+            <input type="range" id="time-speed" min="0" max="5" value="1" step="0.1" aria-label="Animation speed" aria-valuemin="0" aria-valuemax="5" aria-valuenow="1" />
+            <span id="time-speed-label" data-i18n="realTime" aria-live="polite">1x</span>
         </div>
     </div>
     <!-- Bottom Bar -->
-    <footer id="main-footer" role="contentinfo">
-        <div class="footer-controls">
-            <button id="toggle-orbits" aria-label="Toggle orbital paths" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits">Orbits</button>
-            <button id="toggle-constellations" aria-label="Toggle constellations" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">Stars</button>
-            <button id="toggle-details" aria-label="Toggle details" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">Labels</button>
-            <button id="toggle-scale" aria-label="Toggle realistic scale" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">Scale</button>
+    <footer id="main-footer" role="contentinfo" aria-label="Control panel">
+        <div class="footer-controls" role="group" aria-label="View controls">
+            <button id="toggle-orbits" aria-label="Toggle orbital paths" aria-pressed="false" data-tooltip="Show/hide orbital paths (O)" data-i18n="toggleOrbits">Orbits</button>
+            <button id="toggle-constellations" aria-label="Toggle constellations" aria-pressed="false" data-tooltip="Show/hide star constellations (C)" data-i18n="toggleConstellations">Stars</button>
+            <button id="toggle-details" aria-label="Toggle details" aria-pressed="false" data-tooltip="Toggle object labels (D)" data-i18n="toggleLabels">Labels</button>
+            <button id="toggle-scale" aria-label="Toggle realistic scale" aria-pressed="true" class="scale-btn active" data-tooltip="Switch between educational and realistic scale (S)" data-i18n="toggleScale">Scale</button>
             <button id="reset-view" aria-label="Reset camera view" data-tooltip="Reset camera to default view (R)" data-i18n="resetView">Reset</button>
         </div>
         
-        <div class="footer-xr-controls">
-            <div id="vr-button" class="hidden"></div>
-            <div id="ar-button" class="hidden"></div>
+        <div class="footer-xr-controls" role="group" aria-label="Extended reality controls">
+            <div id="vr-button" class="hidden" aria-live="polite"></div>
+            <div id="ar-button" class="hidden" aria-live="polite"></div>
         </div>
     </footer>
     
@@ -368,7 +366,7 @@
     </script>
     
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=20251010-pwa"></script>
+    <script type="module" src="./src/main.js?v=2.2.12"></script>
     
     <!-- Initialize Modules -->
     <script type="module">

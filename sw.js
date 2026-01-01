@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.11 - VR control scheme: left X button = menu, left grip = grab-rotate, trigger = sprint
+// Version 2.2.12 - Code cleanup and optimization
 
-const CACHE_VERSION = '2.2.11';
+const CACHE_VERSION = '2.2.12';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -76,13 +76,10 @@ const CDN_CACHE_FILES = [
 
 // Install event - cache static files
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Space Voyage v' + CACHE_VERSION);
-  
   event.waitUntil(
     (async () => {
       try {
         const cache = await caches.open(CACHE_NAME);
-        console.log('[SW] Caching static files');
         
         // Cache static files
         await cache.addAll(STATIC_CACHE_FILES);
@@ -92,15 +89,14 @@ self.addEventListener('install', (event) => {
           try {
             await cache.add(url);
           } catch (err) {
-            console.warn(`[SW] Could not cache: ${url}`);
+            // Silently fail - CDN caching is optional
           }
         }
         
-  console.log('[SW] Installation complete');
-  // Notify clients that a new SW is installed and waiting
-  broadcastMessage({ type: 'SW_INSTALLED', version: CACHE_VERSION });
-  // Force the waiting service worker to become active (can also be triggered manually)
-  await self.skipWaiting();
+        // Notify clients that a new SW is installed and waiting
+        broadcastMessage({ type: 'SW_INSTALLED', version: CACHE_VERSION });
+        // Force the waiting service worker to become active
+        await self.skipWaiting();
       } catch (error) {
         console.error('[SW] Installation failed:', error);
       }
@@ -110,8 +106,6 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Space Voyage v' + CACHE_VERSION);
-  
   event.waitUntil(
     (async () => {
       // Clean up old caches
@@ -121,16 +115,12 @@ self.addEventListener('activate', (event) => {
       await Promise.all(
         cacheNames
           .filter(name => !validCaches.includes(name))
-          .map(name => {
-            console.log(`[SW] Deleting old cache: ${name}`);
-            return caches.delete(name);
-          })
+          .map(name => caches.delete(name))
       );
       
       // Take control of all clients immediately
-  await self.clients.claim();
-  console.log('[SW] Activated successfully');
-  broadcastMessage({ type: 'SW_ACTIVATED', version: CACHE_VERSION });
+      await self.clients.claim();
+      broadcastMessage({ type: 'SW_ACTIVATED', version: CACHE_VERSION });
     })()
   );
 });
@@ -320,10 +310,9 @@ async function trimCache(cacheName, maxItems) {
       // Remove oldest entries (FIFO)
       const keysToDelete = keys.slice(0, keys.length - maxItems);
       await Promise.all(keysToDelete.map(key => cache.delete(key)));
-      console.log(`[SW] Trimmed ${keysToDelete.length} items from ${cacheName}`);
     }
   } catch (error) {
-    console.error('[SW] Cache trim failed:', error);
+    // Silently fail - cache trimming is optimization
   }
 }
 
@@ -344,16 +333,8 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Background sync for offline actions (future enhancement)
-self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag);
-  // Future: sync user preferences, saved states, etc.
-});
-
-// Push notifications support (future enhancement)
+// Push notifications support
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push notification received');
-  
   const options = {
     body: event.data ? event.data.text() : 'New update available!',
     icon: './icons/icon-192x192.png',
@@ -371,13 +352,8 @@ self.addEventListener('push', (event) => {
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
-  event.waitUntil(
-    clients.openWindow('./')
-  );
+  event.waitUntil(clients.openWindow('./'));
 });
-
-console.log('[SW] Space Voyage Service Worker v' + CACHE_VERSION + ' loaded');
 
 // Broadcast helper to send messages to all window clients
 function broadcastMessage(message) {
