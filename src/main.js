@@ -744,12 +744,18 @@ class App {
  // Cache hover label element
  if (!this._hoverLabel) {
  this._hoverLabel = document.getElementById(UI_ELEMENTS.HOVER_LABEL);
+ console.log('[Hover] Label element:', this._hoverLabel);
  }
- if (!this._hoverLabel) return;
+ if (!this._hoverLabel) {
+ console.warn('[Hover] No hover-label element found!');
+ return;
+ }
 
- const target = this._raycastNamedObject(event, false);
+ // Use recursive=true for hover to properly detect child objects (moons, orbits, etc.)
+ const target = this._raycastNamedObject(event, true);
  
  if (target) {
+ console.log('[Hover] Target found:', target.userData?.name);
  // Store current hovered object
  this._currentHoveredObject = target;
  
