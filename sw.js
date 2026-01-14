@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.18 - Fix collapsible speed slider button
+// Version 2.2.19 - Rename scale modes to Compact/Expanded
 
-const CACHE_VERSION = '2.2.18';
+const CACHE_VERSION = '2.2.19';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

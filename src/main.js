@@ -276,7 +276,7 @@ class App {
  <p>âŒ¨ <span class="keyboard-shortcut">R</span> Reset camera view</p>
  <p>âŒ¨ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
  <p>âŒ¨ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
- <p>âŒ¨ <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
+ <p>⌨ <span class="keyboard-shortcut">S</span> Toggle scale (compact/expanded)</p>
  <p>âŒ¨ <span class="keyboard-shortcut">L</span> Toggle VR laser pointers (in VR)</p>
  <p>âŒ¨ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
  <p>âŒ¨ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
