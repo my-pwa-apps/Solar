@@ -207,6 +207,43 @@
     flex: 1;
 }
 
+/* Collapse Button */
+.collapse-btn {
+    background: transparent;
+    border: none;
+    color: var(--fluent-text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.collapse-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--fluent-text-primary);
+}
+
+.collapse-btn svg {
+    transition: transform 0.2s ease;
+}
+
+/* Collapsed state for speed control */
+#speed-control.collapsed .panel-content {
+    display: none;
+}
+
+#speed-control.collapsed .collapse-btn svg {
+    transform: rotate(180deg);
+}
+
+#speed-control.collapsed {
+    min-width: auto;
+}
+
 /* Fluent Info Panel - Floating Card */
 #info-panel {
     bottom: 70px; /* Just above bottom bar (~48px footer + 22px margin) */

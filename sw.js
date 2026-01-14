@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.2.13 - Astronomical accuracy fixes, code cleanup, removed duplicates
+// Version 2.2.17 - Collapsible speed slider
 
-const CACHE_VERSION = '2.2.14';
+const CACHE_VERSION = '2.2.17';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

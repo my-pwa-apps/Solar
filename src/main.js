@@ -337,6 +337,27 @@ class App {
  // Time speed control is handled by UIManager
  // App.timeSpeed is updated by UIManager's updateSpeed function via window.app
  
+ // Speed control collapse button
+ const speedCollapseBtn = document.getElementById('speed-collapse-btn');
+ const speedControl = document.getElementById('speed-control');
+ if (speedCollapseBtn && speedControl) {
+ // Restore collapsed state from localStorage
+ const isCollapsed = localStorage.getItem('speedControlCollapsed') === 'true';
+ if (isCollapsed) {
+ speedControl.classList.add('collapsed');
+ speedCollapseBtn.setAttribute('aria-expanded', 'false');
+ speedCollapseBtn.setAttribute('title', 'Expand');
+ }
+ 
+ speedCollapseBtn.addEventListener('click', (e) => {
+ e.stopPropagation();
+ const collapsed = speedControl.classList.toggle('collapsed');
+ speedCollapseBtn.setAttribute('aria-expanded', (!collapsed).toString());
+ speedCollapseBtn.setAttribute('title', collapsed ? 'Expand' : 'Collapse');
+ localStorage.setItem('speedControlCollapsed', collapsed.toString());
+ });
+ }
+ 
  // Orbit toggle button
  // Note: Initial state is restored in restoreSavedToggleStates() after solar system is ready
  const orbitsButton = document.getElementById(UI_ELEMENTS.ORBITS_BUTTON);
