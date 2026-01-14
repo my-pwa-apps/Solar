@@ -70,9 +70,11 @@ export class PanelManager {
         handle.style.cursor = 'move';
 
         const dragStart = (e) => {
-            // Don't start dragging if clicking on close button or other interactive elements
+            // Don't start dragging if clicking on close button, collapse button, or other interactive elements
             if (e.target.classList.contains('close-btn') || 
                 e.target.closest('.close-btn') ||
+                e.target.classList.contains('collapse-btn') ||
+                e.target.closest('.collapse-btn') ||
                 e.target.tagName === 'BUTTON' ||
                 e.target.tagName === 'INPUT') {
                 return;
