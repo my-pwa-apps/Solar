@@ -271,7 +271,7 @@ export class UIManager {
  
  // Save state
  localStorage.setItem('speed_panel_collapsed', !wasCollapsed);
- 
+
  // Play audio feedback
  if (window.audioManager) {
  if (wasCollapsed) {

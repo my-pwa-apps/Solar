@@ -141,7 +141,7 @@ class App {
  this.setupSpaceFacts();
  this.setupSoundToggle();
  this.setupButtonSounds();
- 
+
  // Pre-select Earth on first load for better first impression
  this.preSelectEarth();
  
@@ -755,7 +755,7 @@ class App {
  if (target) {
  // Play selection sound
  audioManager.playSelect();
- 
+
  const info = this.solarSystemModule.getObjectInfo(target);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
@@ -1072,7 +1072,7 @@ class App {
  randomBtn.addEventListener('click', () => {
  // Play whoosh sound for discovery
  audioManager.playWhoosh();
- 
+
  // Pick a random object
  const randomValue = discoveryObjects[Math.floor(Math.random() * discoveryObjects.length)];
  const targetObject = this.findObjectByNavigationValue(randomValue);
@@ -1087,7 +1087,7 @@ class App {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
- 
+
  // Play discovery fanfare after a slight delay
  setTimeout(() => audioManager.playDiscovery(), 300);
  }
@@ -1218,18 +1218,18 @@ class App {
  observer.observe(loadingElement, { attributes: true, attributeFilter: ['class'] });
  }
  }
- 
+
  /**
   * Setup sound toggle button in speed panel
   */
  setupSoundToggle() {
  const soundToggle = document.getElementById('sound-toggle');
  if (!soundToggle) return;
- 
+
  // Load saved preference
  const soundEnabled = localStorage.getItem('space_voyage_sound') !== 'false';
  audioManager.enabled = soundEnabled;
- 
+
  // Update button appearance
  const updateSoundButton = () => {
  const icon = soundToggle.querySelector('.sound-icon');
@@ -1243,34 +1243,34 @@ class App {
  soundToggle.title = 'Sound Off (click to unmute)';
  }
  };
- 
+
  updateSoundButton();
- 
+
  soundToggle.addEventListener('click', () => {
  audioManager.toggle();
  localStorage.setItem('space_voyage_sound', audioManager.enabled);
  updateSoundButton();
- 
+
  // Play a click to confirm sound is on
  if (audioManager.enabled) {
  audioManager.playClick();
  }
  });
  }
- 
+
  /**
   * Add click sounds to footer buttons
   */
  setupButtonSounds() {
  // Add click sounds to all footer buttons (except random-discovery which has its own)
  const footerButtons = document.querySelectorAll('#main-footer button:not(#random-discovery)');
- 
+
  footerButtons.forEach(btn => {
  btn.addEventListener('click', () => {
  audioManager.playClick();
  });
  });
- 
+
  // Add sound to navigation dropdown
  const dropdown = document.getElementById('object-dropdown');
  if (dropdown) {
@@ -1280,12 +1280,12 @@ class App {
  }
  });
  }
- 
+
  // Initialize audio context on first user interaction
  document.addEventListener('click', () => {
  audioManager.init();
  }, { once: true });
- 
+
  document.addEventListener('keydown', () => {
  audioManager.init();
  }, { once: true });
