@@ -185,7 +185,7 @@ const translations = {
         // Object Descriptions
         descSun: 'The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
         descMercury: 'Mercury is the smallest planet and closest to the Sun. Its surface is covered with craters like our Moon. Temperature ranges from -180°C at night to 430°C during the day - the largest temperature swing in the solar system!',
-        descVenus: 'Venus is the hottest planet with surface temperature of 465°C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards compared to most planets!',
+        descVenus: 'Venus is the hottest planet with surface temperature of 465°C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards and has no moons - one of only two planets without any!',
         descEarth: 'Earth is our home, the only known planet with life! 71% is covered by water, creating the blue color visible from space. The atmosphere protects us from harmful radiation and meteors.',
         descMoon: 'Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
         descMars: 'Mars, the Red Planet, gets its color from iron oxide (rust). It has the largest volcano (Olympus Mons - 22 km high) and canyon (Valles Marineris - 4,000 km long) in the solar system. Water ice exists at its poles!',
@@ -450,7 +450,7 @@ const translations = {
         // Object Beschrijvingen
         descSun: 'De Zon is een gele dwergster (G-type hoofdreeksster) met 99,86% van alle massa in ons zonnestelsel. Oppervlaktetemperatuur: 5.778K. Leeftijd: 4,6 miljard jaar. Elke seconde smelt de Zon 600 miljoen ton waterstof samen tot helium!',
         descMercury: 'Mercurius is de kleinste planeet en staat het dichtst bij de Zon. Het oppervlak zit vol kraters, net als onze Maan. De temperatuur schommelt tussen -180°C \'s nachts en 430°C overdag - de grootste temperatuurverschillen in ons zonnestelsel!',
-        descVenus: 'Venus is met 465°C de heetste planeet door een extreem broeikaseffect. De atmosfeer bestaat voor 96% uit CO2 en heeft wolken van zwavelzuur. Venus draait bovendien de andere kant op dan de meeste planeten!',
+        descVenus: 'Venus is met 465°C de heetste planeet door een extreem broeikaseffect. De atmosfeer bestaat voor 96% uit CO2 met wolken van zwavelzuur. Venus draait achteruit en heeft geen manen - een van slechts twee planeten zonder!',
         descEarth: 'De Aarde is ons thuis en de enige bekende planeet met leven! 71% van het oppervlak bestaat uit water, wat onze planeet de blauwe kleur geeft vanuit de ruimte. De atmosfeer beschermt ons tegen gevaarlijke straling en meteorieten.',
         descMoon: 'Onze Maan is de vijfde grootste maan in het zonnestelsel. De Maan zorgt voor eb en vloed, stabiliseert de aardas, en ontstond 4,5 miljard jaar geleden toen een object zo groot als Mars op de Aarde insloeg!',
         descMars: 'Mars, de Rode Planeet, dankt zijn kleur aan ijzeroxide (roest). Mars heeft de hoogste vulkaan (Olympus Mons - 22 km hoog) en de langste kloof (Valles Marineris - 4.000 km lang) in ons zonnestelsel. Bij de polen ligt waterijs!',
@@ -699,7 +699,7 @@ const translations = {
         // Descriptions d'objets
         descSun: 'Le Soleil est une étoile de type G (naine jaune) contenant 99,86% de la masse du Système Solaire. Température de surface: 5 778 K. Âge: 4,6 milliards d\'années. Il fusionne 600 millions de tonnes d\'hydrogène en hélium chaque seconde!',
         descMercury: 'Mercure est la plus petite planète et la plus proche du Soleil. Sa surface est couverte de cratères comme notre Lune. La température varie de -180°C la nuit à 430°C le jour - la plus grande variation de température du système solaire!',
-        descVenus: 'Vénus est la planète la plus chaude avec une température de surface de 465°C due à un effet de serre extrême. Son atmosphère est composée à 96% de CO2 avec des nuages d\'acide sulfurique. Vénus tourne dans le sens inverse de la plupart des planètes!',
+        descVenus: 'Vénus est la planète la plus chaude avec une température de surface de 465°C due à un effet de serre extrême. Son atmosphère est composée à 96% de CO2 avec des nuages d\'acide sulfurique. Vénus tourne à l'envers et n'a pas de lunes - l'une des deux seules planètes sans!',
         descEarth: 'La Terre est notre foyer, la seule planète connue avec la vie! 71% est couvert d\'eau, créant la couleur bleue visible depuis l\'espace. L\'atmosphère nous protège des radiations nocives et des météorites.',
         descMoon: 'La Lune terrestre est la cinquième plus grande lune du système solaire. Elle crée les marées, stabilise l\'inclinaison de la Terre et s\'est formée il y a 4,5 milliards d\'années lorsqu\'un objet de la taille de Mars a percuté la Terre!',
         descMars: 'Mars, la Planète Rouge, doit sa couleur à l\'oxyde de fer (rouille). Elle possède le plus grand volcan (Olympus Mons - 22 km de haut) et le plus long canyon (Valles Marineris - 4 000 km de long) du système solaire. De la glace d\'eau existe à ses pÃ´les!',
@@ -1446,7 +1446,7 @@ const translations = {
         // Descrições de objetos
         descSun: 'O Sol é uma estrela de tipo G (anã amarela) contendo 99,86% da massa do Sistema Solar. Temperatura da superf×­cie: 5.778 K. Idade: 4,6 bilhões de anos. Ele funde 600 milhões de toneladas de hidrogênio em hélio a cada segundo!',
         descMercury: 'Mercúrio é o menor planeta e o mais próximo do Sol. Sua superf×­cie é coberta com crateras como nossa Lua. A temperatura varia de -180°C à noite a 430°C durante o dia - a maior variação de temperatura no sistema solar!',
-        descVenus: 'Vênus é o planeta mais quente com temperatura de superf×­cie de 465°C devido a um efeito estufa extremo. Sua atmosfera é 96% CO2 com nuvens de ácido sulfúrico. Vênus gira para trás em comparação com a maioria dos planetas!',
+        descVenus: 'Vênus é o planeta mais quente com temperatura de superf×­cie de 465°C devido a um efeito estufa extremo. Sua atmosfera é 96% CO2 com nuvens de ácido sulfúrico. Vênus gira para trás e não tem luas - um dos únicos dois planetas sem nenhuma!',
         descEarth: 'A Terra é nosso lar, o único planeta conhecido com vida! 71% é coberto por água, criando a cor azul vis×­vel do espa×§o. A atmosfera nos protege de radiação nociva e meteoros.',
         descMoon: 'A Lua da Terra é a quinta maior lua do sistema solar. Ela cria as marés, estabiliza a inclinação da Terra e foi formada há 4,5 bilhões de anos quando um objeto do tamanho de Marte colidiu com a Terra!',
         descMars: 'Marte, o Planeta Vermelho, deve sua cor ao óxido de ferro (ferrugem). Ele tem o maior vulcão (Olympus Mons - 22 km de altura) e o c×¢nion mais longo (Valles Marineris - 4.000 km de comprimento) do sistema solar. Existe gelo de água em seus polos!',

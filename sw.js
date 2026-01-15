@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.5.7 - Fix sound toggle tooltip and icon update
+// Version 2.5.8 - Add Venus no moons info to descriptions
 
-const CACHE_VERSION = '2.5.7';
+const CACHE_VERSION = '2.5.8';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
