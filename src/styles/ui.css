@@ -321,16 +321,16 @@
     justify-content: center;
 }
 
-/* Speed toggle button (icon + compact label) */
+/* Speed toggle button (compact label + chevron) */
 .speed-toggle-btn {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 8px;
+    padding: 8px 12px;
     border-radius: 8px;
     transition: background 0.2s ease;
     color: var(--fluent-text-primary);
@@ -345,12 +345,17 @@
     outline-offset: 2px;
 }
 
-.speed-icon {
-    font-size: 20px;
+.collapse-chevron {
+    transition: transform 0.3s ease;
+    opacity: 0.7;
+}
+
+.speed-toggle-btn[aria-expanded="false"] .collapse-chevron {
+    transform: rotate(-180deg);
 }
 
 .speed-compact-label {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--fluent-accent);
 }
@@ -534,7 +539,7 @@
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 20px;
     flex-wrap: wrap;
     animation: slideUp 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
@@ -1047,13 +1052,14 @@ select {
         flex-wrap: nowrap; /* Single line */
         overflow-x: auto;
         align-items: center;
+        justify-content: center;
     }
     
     .footer-controls {
         gap: 4px;
         flex-wrap: nowrap;
-        justify-content: flex-start;
-        flex: 1;
+        justify-content: center;
+        flex: 0 1 auto;
     }
     
     .footer-controls button {
@@ -1111,17 +1117,13 @@ select {
         max-height: 180px;
     }
     
-    .speed-icon {
-        font-size: 16px;
-    }
-    
     .speed-compact-label {
-        font-size: 10px;
+        font-size: 12px;
     }
     
-    .sound-toggle-btn {
-        width: 28px;
-        height: 28px;
+    .collapse-chevron {
+        width: 10px;
+        height: 10px;
     }
     
     .panel-header h2,
@@ -1529,24 +1531,47 @@ select {
    UX IMPROVEMENTS v2.3
    =========================== */
 
-/* Button with Icon + Text */
+/* Button with Icon + Text - Icons only by default */
+.footer-controls button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-width: 44px;
+    padding: 10px 12px;
+    position: relative;
+}
+
 .footer-controls button .btn-icon {
-    font-size: 16px;
-    margin-right: 6px;
+    font-size: 18px;
+    flex-shrink: 0;
 }
 
 .footer-controls button .btn-text {
     font-size: 13px;
+    display: inline-block;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    opacity: 0;
+    transition: max-width 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
+    margin-left: 0;
 }
 
-/* Mobile: Icons only */
+/* Show text on hover */
+.footer-controls button:hover .btn-text {
+    max-width: 100px;
+    opacity: 1;
+    margin-left: 6px;
+}
+
+/* Mobile: Always icons only, no hover expansion */
 @media (max-width: 768px) {
     .footer-controls button .btn-text {
         display: none;
     }
     
     .footer-controls button .btn-icon {
-        margin-right: 0;
         font-size: 18px;
     }
     
@@ -1591,11 +1616,18 @@ select {
     color: var(--fluent-text-primary);
     border: 1px solid var(--fluent-border);
     border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 400;
     font-family: 'Segoe UI', system-ui, sans-serif;
-    width: 220px;
-    transition: all 0.15s ease;
+    line-height: 1.4;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    box-sizing: border-box;
+    width: 180px;
+    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .nav-search::placeholder {

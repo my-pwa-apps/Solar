@@ -1553,8 +1553,15 @@ function applyTranslations() {
             // For optgroups, update the label attribute
             element.setAttribute('label', translation);
         } else {
-            // For all other elements, update text content
-            element.textContent = translation;
+            // Check if element has a .btn-text child (icon + text buttons)
+            const btnText = element.querySelector('.btn-text');
+            if (btnText) {
+                // Only update the text span, preserve the icon
+                btnText.textContent = translation;
+            } else {
+                // For all other elements, update text content
+                element.textContent = translation;
+            }
         }
     });
     
