@@ -1,4 +1,4 @@
-﻿// ===========================
+// ===========================
 // SPACE VOYAGE - MODULAR VERSION
 // Main Application Entry Point
 // ===========================
@@ -286,64 +286,64 @@ class App {
  if (helpButton) {
  helpButton.addEventListener('click', () => {
  this.uiManager.showHelp(`
- <h3> Controls</h3>
- <p> <strong>Click & Drag:</strong> Rotate view around selected object</p>
- <p> <strong>Scroll:</strong> Zoom in/out (closer or farther from object)</p>
- <p> <strong>Right Click & Drag:</strong> Pan camera position</p>
- <p> <strong>Click Objects:</strong> Select and focus on object</p>
- <p> <strong>Explorer Panel:</strong> Click object names to jump to them</p>
+ <h3>🖱️ Controls</h3>
+ <p>🖱️ <strong>Click & Drag:</strong> Rotate view around selected object</p>
+ <p>🖱️ <strong>Scroll:</strong> Zoom in/out (closer or farther from object)</p>
+ <p>🖱️ <strong>Right Click & Drag:</strong> Pan camera position</p>
+ <p>👆 <strong>Click Objects:</strong> Select and focus on object</p>
+ <p>📋 <strong>Explorer Panel:</strong> Click object names to jump to them</p>
  
- <h3>âŒ¨ Keyboard Shortcuts</h3>
- <p>âŒ¨ <span class="keyboard-shortcut">H</span> Show this help</p>
- <p>âŒ¨ <span class="keyboard-shortcut">R</span> Reset camera view</p>
- <p>âŒ¨ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
- <p>âŒ¨ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
- <p>⌨ <span class="keyboard-shortcut">S</span> Toggle scale (compact/expanded)</p>
- <p>âŒ¨ <span class="keyboard-shortcut">L</span> Toggle VR laser pointers (in VR)</p>
- <p>âŒ¨ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
- <p>âŒ¨ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
- <p>âŒ¨ <span class="keyboard-shortcut">ESC</span> Close panels</p>
+ <h3>⌨️ Keyboard Shortcuts</h3>
+ <p>⌨️ <span class="keyboard-shortcut">H</span> Show this help</p>
+ <p>⌨️ <span class="keyboard-shortcut">R</span> Reset camera view</p>
+ <p>⌨️ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
+ <p>⌨️ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
+ <p>⌨️ <span class="keyboard-shortcut">S</span> Toggle scale (compact/expanded)</p>
+ <p>⌨️ <span class="keyboard-shortcut">L</span> Toggle VR laser pointers (in VR)</p>
+ <p>⌨️ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
+ <p>⌨️ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
+ <p>⌨️ <span class="keyboard-shortcut">ESC</span> Close panels</p>
  
- <h3> Object Inspection</h3>
- <p> <strong>After selecting an object:</strong></p>
- <p> - Drag to rotate camera around the object</p>
- <p> - Scroll to zoom in for close-up views</p>
- <p> - View object from all sides and angles</p>
- <p> - Camera stays focused as object moves in orbit</p>
+ <h3>🔍 Object Inspection</h3>
+ <p>🔍 <strong>After selecting an object:</strong></p>
+ <p>• Drag to rotate camera around the object</p>
+ <p>• Scroll to zoom in for close-up views</p>
+ <p>• View object from all sides and angles</p>
+ <p>• Camera stays focused as object moves in orbit</p>
  
- <h3> Settings</h3>
+ <h3>⚙️ Settings</h3>
  <p>â± <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
- <p> <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
- <p> <strong>Reset Button:</strong> Return camera to starting position</p>
+ <p>☀️ <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
+ <p>🔄 <strong>Reset Button:</strong> Return camera to starting position</p>
  
- <h3> VR Mode</h3>
- <p> Click "Enter VR" button (bottom right)</p>
- <p> Requires WebXR-compatible VR headset</p>
- <p> <strong>VR Controls:</strong></p>
- <p> - Left stick: Move forward/backward/strafe</p>
- <p> - Right stick: Turn left/right, move up/down</p>
- <p> - Trigger (hold): Sprint mode while moving</p>
- <p> - Grip button: Toggle VR menu (pause, controls, etc.)</p>
- <p> - Point + Trigger: Select planets</p>
- <p> - L key or VR menu: Toggle laser pointers for better immersion</p>
+ <h3>🥽 VR Mode</h3>
+ <p>🥽 Click "Enter VR" button (bottom right)</p>
+ <p>🥽 Requires WebXR-compatible VR headset</p>
+ <p>🎮 <strong>VR Controls:</strong></p>
+ <p>• Left stick: Move forward/backward/strafe</p>
+ <p>• Right stick: Turn left/right, move up/down</p>
+ <p>• Trigger (hold): Sprint mode while moving</p>
+ <p>• Grip button: Toggle VR menu (pause, controls, etc.)</p>
+ <p>• Point + Trigger: Select planets</p>
+ <p>• L key or VR menu: Toggle laser pointers for better immersion</p>
  
- <h3> Tips</h3>
- <p> Increase brightness to see dark sides of planets</p>
- <p> Use speed slider to watch orbits in fast-forward</p>
- <p> Click objects directly or use the explorer panel</p>
- <p> Zoom in close to see surface details and textures</p>
- <p> Rotate around objects to view from all angles</p>
+ <h3>💡 Tips</h3>
+ <p>☀️ Increase brightness to see dark sides of planets</p>
+ <p>⏩ Use speed slider to watch orbits in fast-forward</p>
+ <p>👆 Click objects directly or use the explorer panel</p>
+ <p>🔍 Zoom in close to see surface details and textures</p>
+ <p>🔄 Rotate around objects to view from all angles</p>
  
- <h3> Performance</h3>
- <p> Optimized for 60 FPS on modern devices</p>
- <p> Adaptive quality for mobile devices</p>
- <p> Hardware-accelerated WebGL rendering</p>
- <p> Press <span class="keyboard-shortcut">F</span> to show FPS counter</p>
+ <h3>⚡ Performance</h3>
+ <p>⚡ Optimized for 60 FPS on modern devices</p>
+ <p>📱 Adaptive quality for mobile devices</p>
+ <p>🎮 Hardware-accelerated WebGL rendering</p>
+ <p>📊 Press <span class="keyboard-shortcut">F</span> to show FPS counter</p>
  
- <h3> Explore the Solar System!</h3>
- <p> Navigate through our solar system</p>
- <p> Learn about the Sun, planets, moons, and more</p>
- <p> Discover fascinating facts about each celestial body</p>
+ <h3>🚀 Explore the Solar System!</h3>
+ <p>🌍 Navigate through our solar system</p>
+ <p>📚 Learn about the Sun, planets, moons, and more</p>
+ <p>✨ Discover fascinating facts about each celestial body</p>
  `);
  }, { passive: true });
  }
@@ -1244,14 +1244,19 @@ class App {
 
  // Update button appearance
  const updateSoundButton = () => {
- const icon = soundToggle.querySelector('.sound-icon');
+ const icon = soundToggle.querySelector('.btn-icon');
+ const btnText = soundToggle.querySelector('.btn-text');
  if (audioManager.enabled) {
  soundToggle.classList.remove('muted');
+ soundToggle.setAttribute('aria-pressed', 'true');
  if (icon) icon.textContent = '🔊';
+ if (btnText) btnText.textContent = 'Sound ON';
  soundToggle.title = 'Sound On (click to mute)';
  } else {
  soundToggle.classList.add('muted');
+ soundToggle.setAttribute('aria-pressed', 'false');
  if (icon) icon.textContent = '🔇';
+ if (btnText) btnText.textContent = 'Sound OFF';
  soundToggle.title = 'Sound Off (click to unmute)';
  }
  };
