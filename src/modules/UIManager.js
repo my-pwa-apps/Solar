@@ -10,16 +10,12 @@ export class UIManager {
  this.elements = {
  loading: document.getElementById('loading'),
  infoPanel: document.getElementById('info-panel'),
- controls: document.getElementById('controls'),
- explorer: document.getElementById('object-list'),
  helpModal: document.getElementById('help-modal'),
  objectName: document.getElementById('object-name'),
  objectType: document.getElementById('object-type'),
  objectDistance: document.getElementById('object-distance'),
  objectSize: document.getElementById('object-size'),
  objectDescription: document.getElementById('object-description'),
- explorerTitle: document.getElementById('explorer-title'),
- explorerContent: document.getElementById('explorer-content'),
  helpContent: document.getElementById('help-content'),
  loadingText: document.getElementById('loading-text'),
  loadingProgressBar: document.getElementById('loading-progress-bar'),
@@ -95,39 +91,6 @@ export class UIManager {
  if (this.elements.infoPanel) {
  this.elements.infoPanel.classList.remove('hidden');
  }
- }
-
- updateExplorer(title, categories) {
- if (this.elements.explorerTitle) {
- this.elements.explorerTitle.textContent = title;
- }
-
- if (!this.elements.explorerContent) return;
-
- // Use DocumentFragment for better performance
- const fragment = document.createDocumentFragment();
- 
- categories.forEach(category => {
- const categoryDiv = document.createElement('div');
- categoryDiv.className = 'object-category';
- 
- const header = document.createElement('h4');
- header.textContent = category.title;
- categoryDiv.appendChild(header);
- 
- category.items.forEach(item => {
- const itemDiv = document.createElement('div');
- itemDiv.className = 'object-item';
- itemDiv.textContent = item.name;
- itemDiv.onclick = item.onClick;
- categoryDiv.appendChild(itemDiv);
- });
- 
- fragment.appendChild(categoryDiv);
- });
-
- this.elements.explorerContent.innerHTML = '';
- this.elements.explorerContent.appendChild(fragment);
  }
 
  showHelp(content) {

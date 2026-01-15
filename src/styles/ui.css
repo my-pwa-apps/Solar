@@ -571,11 +571,6 @@
     gap: 10px;
 }
 
-/* Legacy controls ID support */
-#controls {
-    display: none; /* Hidden - replaced by footer */
-}
-
 .control-group {
     display: flex;
     align-items: center;

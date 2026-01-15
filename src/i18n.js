@@ -44,6 +44,15 @@ const translations = {
         triton: "Triton",
         
         // Navigation menu sections
+        jupiterSystem: "Jupiter System",
+        saturnSystem: "Saturn System",
+        uranusSystem: "Uranus System",
+        neptuneSystem: "Neptune System",
+        plutoSystem: "Pluto System",
+        nearbyStars: "Nearby Stars",
+        exoplanets: "Exoplanets",
+        nebulae: "Nebulae",
+        galaxies: "Galaxies",
         navOurStar: "Our Star",
         navInnerPlanets: "Inner Planets (Rocky)",
         navAsteroidBelt: "Asteroid Belt",
@@ -316,6 +325,7 @@ const translations = {
         neptuneSystem: "Neptunus Systeem",
         neptune: "Neptunus",
         pluto: "Pluto",
+        plutoSystem: "Pluto Systeem",
         charon: "Charon",
         enceladus: "Enceladus",
         rhea: "Rhea",
@@ -324,6 +334,11 @@ const translations = {
         triton: "Triton",
         
         // Navigatiemenu secties
+        jupiterSystem: "Jupiter Systeem",
+        nearbyStars: "Nabije Sterren",
+        exoplanets: "Exoplaneten",
+        nebulae: "Nevels",
+        galaxies: "Sterrenstelsels",
         navOurStar: "Onze Ster",
         navInnerPlanets: "Binnenste Planeten (Rotsachtig)",
         navAsteroidBelt: "Astero×¯dengordel",
