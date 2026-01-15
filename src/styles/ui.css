@@ -1597,27 +1597,6 @@ select {
     }
 }
 
-/* Help Button Styling */
-#help-button {
-    background: var(--fluent-accent) !important;
-    border-color: var(--fluent-accent) !important;
-}
-
-#help-button:hover {
-    background: var(--fluent-accent-hover) !important;
-}
-
-/* Random Discovery Button */
-#random-discovery {
-    background: linear-gradient(135deg, #9b59b6, #3498db) !important;
-    border-color: #9b59b6 !important;
-}
-
-#random-discovery:hover {
-    background: linear-gradient(135deg, #8e44ad, #2980b9) !important;
-    transform: translateY(-2px) scale(1.02);
-}
-
 /* Navigation Search Wrapper */
 .nav-search-wrapper {
     display: flex;
