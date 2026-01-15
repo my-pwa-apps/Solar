@@ -234,7 +234,10 @@ class App {
  if (scaleButton) {
  scaleButton.classList.toggle('active', realisticScale);
  const t = window.t || ((key) => key);
- scaleButton.textContent = realisticScale ? t('toggleScaleRealistic') : t('toggleScale');
+ const btnText = scaleButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = realisticScale ? t('toggleScaleRealistic') : t('toggleScale');
+ }
  }
  }
  }
@@ -411,8 +414,11 @@ class App {
  const t = window.t || ((key) => key);
  this.solarSystemModule.realisticScale = !this.solarSystemModule.realisticScale;
  scaleButton.classList.toggle('active');
- scaleButton.textContent = this.solarSystemModule.realisticScale ? 
+ const btnText = scaleButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = this.solarSystemModule.realisticScale ? 
  t('toggleScaleRealistic') : t('toggleScale');
+ }
  
  localStorage.setItem(STORAGE_KEYS.SCALE, this.solarSystemModule.realisticScale.toString());
  
