@@ -1,4 +1,4 @@
-﻿// Internationalization (i18n) - Multi-language support
+// Internationalization (i18n) - Multi-language support
 // Space Voyage - English & Dutch translations
 
 const translations = {
@@ -60,8 +60,8 @@ const translations = {
         // Control buttons
         toggleOrbits: "Orbits",
         toggleConstellations: "Constellations",
-        toggleScale: "Educational Scale",
-        toggleScaleRealistic: "Realistic Scale",
+        toggleScale: "Compact",
+        toggleScaleRealistic: "Expanded",
         toggleLabels: "Labels OFF",
         toggleLabelsOn: "Labels ON",
         resetView: "Reset",
@@ -340,8 +340,8 @@ const translations = {
         // Bedieningsknoppen
         toggleOrbits: "Banen",
         toggleConstellations: "Sterrenbeelden",
-        toggleScale: "Educatieve schaal",
-        toggleScaleRealistic: "Op schaal",
+        toggleScale: "Compact",
+        toggleScaleRealistic: "Uitgebreid",
         toggleLabels: "Labels uit",
         toggleLabelsOn: "Labels aan",
         resetView: "Reset",
@@ -592,13 +592,13 @@ const translations = {
         kuiperBelt: "Ceinture de Kuiper",
         asteroidBelt: "Ceinture d'Astéro×¯des",
         
-        // Boutons de contrÃ´le
+        // Boutons de contrôle
         toggleOrbits: "Orbites",
         toggleConstellations: "Constellations",
-        toggleScale: "×‰chelle ×‰ducative",
-        toggleScaleRealistic: "×‰chelle Réaliste",
-        toggleLabels: "×‰tiquettes D×‰SACTIV×‰ES",
-        toggleLabelsOn: "×‰tiquettes ACTIV×‰ES",
+        toggleScale: "Compact",
+        toggleScaleRealistic: "Étendu",
+        toggleLabels: "Étiquettes DÉSACTIVÉES",
+        toggleLabelsOn: "Étiquettes ACTIVÉES",
         resetView: "Réinitialiser",
         enterVR: "Entrer en RV",
         enterAR: "Entrer en RA",
@@ -842,11 +842,11 @@ const translations = {
         // Steuerungstasten
         toggleOrbits: "Umlaufbahnen",
         toggleConstellations: "Sternbilder",
-        toggleScale: "P×¤dagogischer Ma×Ÿstab",
-        toggleScaleRealistic: "Realistischer Ma×Ÿstab",
+        toggleScale: "Kompakt",
+        toggleScaleRealistic: "Erweitert",
         toggleLabels: "Beschriftungen AUS",
         toggleLabelsOn: "Beschriftungen EIN",
-        resetView: "Zur×¼cksetzen",
+        resetView: "Zurücksetzen",
         enterVR: "VR Starten",
         enterAR: "AR Starten",
         
@@ -1089,8 +1089,8 @@ const translations = {
         // Botones de control
         toggleOrbits: "×“rbitas",
         toggleConstellations: "Constelaciones",
-        toggleScale: "Escala Educativa",
-        toggleScaleRealistic: "Escala Realista",
+        toggleScale: "Compacto",
+        toggleScaleRealistic: "Expandido",
         toggleLabels: "Etiquetas DESACTIVADAS",
         toggleLabelsOn: "Etiquetas ACTIVADAS",
         resetView: "Restablecer",
@@ -1336,8 +1336,8 @@ const translations = {
         // Botões de controle
         toggleOrbits: "×“rbitas",
         toggleConstellations: "Constelações",
-        toggleScale: "Escala Educacional",
-        toggleScaleRealistic: "Escala Realista",
+        toggleScale: "Compacto",
+        toggleScaleRealistic: "Expandido",
         toggleLabels: "Rótulos DESLIGADOS",
         toggleLabelsOn: "Rótulos LIGADOS",
         resetView: "Redefinir",

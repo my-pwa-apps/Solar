@@ -1,5 +1,5 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.4.0 - Procedural audio, collapsible speed slider, logarithmic speed scale
+// Version 2.4.0 - Procedural audio, collapsible speed slider, logarithmic speed scale, Compact/Expanded scale modes
 
 const CACHE_VERSION = '2.4.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;

@@ -292,7 +292,7 @@ class App {
  <p>âŒ¨ <span class="keyboard-shortcut">R</span> Reset camera view</p>
  <p>âŒ¨ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
  <p>âŒ¨ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
- <p>âŒ¨ <span class="keyboard-shortcut">S</span> Toggle realistic scale</p>
+ <p>⌨ <span class="keyboard-shortcut">S</span> Toggle scale (compact/expanded)</p>
  <p>âŒ¨ <span class="keyboard-shortcut">L</span> Toggle VR laser pointers (in VR)</p>
  <p>âŒ¨ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
  <p>âŒ¨ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
@@ -352,6 +352,27 @@ class App {
  setupControls() {
  // Time speed control is handled by UIManager
  // App.timeSpeed is updated by UIManager's updateSpeed function via window.app
+ 
+ // Speed control collapse button
+ const speedCollapseBtn = document.getElementById('speed-collapse-btn');
+ const speedControl = document.getElementById('speed-control');
+ if (speedCollapseBtn && speedControl) {
+ // Restore collapsed state from localStorage
+ const isCollapsed = localStorage.getItem('speedControlCollapsed') === 'true';
+ if (isCollapsed) {
+ speedControl.classList.add('collapsed');
+ speedCollapseBtn.setAttribute('aria-expanded', 'false');
+ speedCollapseBtn.setAttribute('title', 'Expand');
+ }
+ 
+ speedCollapseBtn.addEventListener('click', (e) => {
+ e.stopPropagation();
+ const collapsed = speedControl.classList.toggle('collapsed');
+ speedCollapseBtn.setAttribute('aria-expanded', (!collapsed).toString());
+ speedCollapseBtn.setAttribute('title', collapsed ? 'Expand' : 'Collapse');
+ localStorage.setItem('speedControlCollapsed', collapsed.toString());
+ });
+ }
  
  // Orbit toggle button
  // Note: Initial state is restored in restoreSavedToggleStates() after solar system is ready
