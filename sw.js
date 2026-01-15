@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.4.1 - UX improvements: icon-only buttons, centered footer, code cleanup
+// Version 2.5.0 - UX improvements: tooltips, centered footer, code cleanup
 
-const CACHE_VERSION = '2.4.1';
+const CACHE_VERSION = '2.5.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
