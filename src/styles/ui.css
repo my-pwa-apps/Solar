@@ -257,6 +257,7 @@
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
     z-index: 50;
     font-size: 14px;
+    overflow: hidden; /* Prevent content overflow */
 }
 
 #info-panel:hover {
@@ -270,12 +271,16 @@
     font-size: 16px; /* Reduced from 20px - matches panel header size */
     font-weight: 600;
     letter-spacing: 0.02em;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .info-content p {
     margin: 6px 0;
     font-size: 13px;
     line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .info-content strong {
@@ -285,6 +290,8 @@
 
 .info-content span {
     color: var(--fluent-text-secondary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .description-box {
@@ -296,10 +303,15 @@
     font-style: normal;
     font-size: 13px;
     line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .info-content {
     padding: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(40vh - 40px); /* Account for close button */
 }
 
 /* Floating Speed Control Panel (Collapsible) */
