@@ -120,7 +120,7 @@
         <div class="header-controls">
             <nav id="quick-nav" aria-label="Quick navigation">
                 <div class="nav-search-wrapper">
-                    <input type="text" id="nav-search" class="nav-search" placeholder="?? Search objects..." aria-label="Search celestial objects">
+                    <input type="text" id="nav-search" class="nav-search" placeholder="🔍 Search objects..." aria-label="Search celestial objects">
                     <select id="object-dropdown" class="nav-dropdown" aria-label="Navigate to celestial object">
                     <option value="" selected data-i18n="quickNavigation">Navigation</option>
                     <optgroup label="Our Star" data-i18n="ourStar">
@@ -263,7 +263,7 @@
     
     <div id="loading" role="status" aria-live="polite">
         <div class="loading-header">
-            <span class="loading-rocket">??</span>
+            <span class="loading-rocket">🚀</span>
             <h2 data-i18n="preparingJourney">Preparing your space journey...</h2>
         </div>
         <div class="loading-spinner"></div>
@@ -273,14 +273,14 @@
         </div>
         <p id="loading-percentage">0%</p>
         <div id="loading-fact" class="space-fact">
-            <span class="fact-icon">??</span>
+            <span class="fact-icon">💡</span>
             <span id="fact-text" data-i18n="defaultFact">The Sun contains 99.86% of the Solar System's mass!</span>
         </div>
     </div>
     <aside id="info-panel" class="hidden draggable-panel" role="complementary" aria-labelledby="object-name" aria-hidden="true">
         <div class="panel-header">
             <h2 id="object-name" class="drag-handle" data-i18n="selectObject" title="Drag to move">Select an Object</h2>
-            <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel" tabindex="0">?</button>
+            <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel" tabindex="0">✕</button>
         </div>
         <div class="info-content">
             <p><strong data-i18n="type">Type:</strong> <span id="object-type" aria-live="polite">-</span></p>
@@ -304,7 +304,7 @@
             <input type="range" id="time-speed" min="0" max="100" value="50" step="1" aria-label="Animation speed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" />
             <span id="time-speed-label" data-i18n="realTime" aria-live="polite">1x</span>
             <button id="sound-toggle" class="sound-toggle-btn" aria-label="Toggle sound effects" title="Toggle sound">
-                <span class="sound-icon">??</span>
+                <span class="sound-icon">🔊</span>
             </button>
         </div>
     </div>
@@ -335,22 +335,22 @@
     <div id="onboarding-overlay" class="hidden" role="dialog" aria-labelledby="onboarding-title" aria-modal="true">
         <div class="onboarding-content">
             <div class="onboarding-header">
-                <h2 id="onboarding-title" data-i18n="welcomeToSpace">?? Welcome to Space Voyage!</h2>
+                <h2 id="onboarding-title" data-i18n="welcomeToSpace">🚀 Welcome to Space Voyage!</h2>
                 <button class="onboarding-skip" id="onboarding-skip" aria-label="Skip tutorial" data-i18n="skip">Skip</button>
             </div>
             <div class="onboarding-steps">
                 <div class="onboarding-step active" data-step="1">
-                    <div class="step-icon">???</div>
+                    <div class="step-icon">🖱️</div>
                     <h3 data-i18n="onboardingNav">Navigate the Universe</h3>
-                    <p data-i18n="onboardingNavDesc">Drag to rotate � Scroll to zoom � Right-click to pan</p>
+                    <p data-i18n="onboardingNavDesc">Drag to rotate • Scroll to zoom • Right-click to pan</p>
                 </div>
                 <div class="onboarding-step" data-step="2">
-                    <div class="step-icon">??</div>
+                    <div class="step-icon">🪐</div>
                     <h3 data-i18n="onboardingExplore">Explore Objects</h3>
                     <p data-i18n="onboardingExploreDesc">Click any planet, moon, or star to learn fascinating facts!</p>
                 </div>
                 <div class="onboarding-step" data-step="3">
-                    <div class="step-icon">??</div>
+                    <div class="step-icon">🧭</div>
                     <h3 data-i18n="onboardingQuickNav">Quick Navigation</h3>
                     <p data-i18n="onboardingQuickNavDesc">Use the dropdown menu to jump directly to any object</p>
                 </div>
@@ -362,7 +362,7 @@
                     <button class="dot" data-step="3" aria-label="Step 3"></button>
                 </div>
                 <button id="onboarding-next" class="btn-primary" data-i18n="next">Next</button>
-                <button id="onboarding-start" class="btn-primary hidden" data-i18n="startExploring">Start Exploring! ??</button>
+                <button id="onboarding-start" class="btn-primary hidden" data-i18n="startExploring">Start Exploring! 🌟</button>
             </div>
         </div>
     </div>
@@ -370,11 +370,11 @@
     <!-- Mobile Gesture Hints -->
     <div id="gesture-hints" class="hidden" role="status" aria-live="polite">
         <div class="gesture-hint" id="gesture-pinch">
-            <div class="gesture-icon">??</div>
+            <div class="gesture-icon">🤏</div>
             <span data-i18n="pinchToZoom">Pinch to zoom</span>
         </div>
         <div class="gesture-hint" id="gesture-drag">
-            <div class="gesture-icon">??</div>
+            <div class="gesture-icon">👆</div>
             <span data-i18n="dragToRotate">Drag to rotate</span>
         </div>
     </div>
@@ -390,7 +390,7 @@
     <!-- PWA Install Prompt -->
     <div id="install-prompt" class="hidden" role="dialog" aria-labelledby="install-title">
         <div class="install-content">
-            <div class="install-icon">??</div>
+            <div class="install-icon">📲</div>
             <h3 id="install-title" data-i18n="installTitle">Install Space Voyage</h3>
             <p data-i18n="installMessage">Install this app for a better experience and offline access!</p>
             <div class="install-buttons">
@@ -402,22 +402,22 @@
     
     <!-- Offline Indicator -->
     <div id="offline-indicator" class="hidden" role="status" aria-live="polite">
-        <span class="offline-icon">??</span>
+        <span class="offline-icon">📡</span>
         <span class="offline-text" data-i18n="offlineMode">You're offline</span>
     </div>
     
     <!-- Update Available Notification -->
     <div id="update-notification" class="hidden" role="status" aria-live="polite">
-        <span class="update-icon">??</span>
+        <span class="update-icon">🔄</span>
         <span class="update-text" data-i18n="updateAvailable">Update available!</span>
         <button id="update-reload" class="btn-update" data-i18n="update">Update</button>
-        <button id="update-dismiss" class="btn-dismiss">�</button>
+        <button id="update-dismiss" class="btn-dismiss">✕</button>
     </div>
     
     <!-- Help Modal -->
     <div id="help-modal" class="modal hidden" role="dialog" aria-labelledby="help-title" aria-modal="true">
         <div class="modal-content">
-            <button class="close-btn" onclick="window.closeHelpModal()" aria-label="Close help dialog">?</button>
+            <button class="close-btn" onclick="window.closeHelpModal()" aria-label="Close help dialog">✕</button>
             <h2 id="help-title" data-i18n="welcomeTitle">Welcome to Space Voyage!</h2>
             <div id="help-content" role="document"></div>
         </div>

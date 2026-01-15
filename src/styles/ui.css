@@ -1580,8 +1580,9 @@ select {
 /* Navigation Search Wrapper */
 .nav-search-wrapper {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     position: relative;
 }
 
@@ -1609,6 +1610,11 @@ select {
 }
 
 @media (max-width: 768px) {
+    .nav-search-wrapper {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
     .nav-search {
         width: 100%;
         max-width: 150px;
