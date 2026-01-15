@@ -153,10 +153,6 @@ export class SolarSystemModule {
  const executeStep = async (stepIndex) => {
  if (stepIndex >= loadingSteps.length) {
  // All steps complete
- if (this.uiManager && typeof this.refreshExplorerContent === 'function') {
- this.refreshExplorerContent();
- }
- 
  const totalTime = performance.now() - initStartTime;
  if (DEBUG.PERFORMANCE) {
  console.log(` Full initialization completed in ${totalTime.toFixed(0)}ms`);
@@ -8639,127 +8635,6 @@ createHyperrealisticHubble(satData) {
  console.log(` Labels now: ${newVisibility ? 'VISIBLE ' : 'HIDDEN '} (${this.labels.length} labels toggled)`);
  }
 
- getExplorerContent(focusCallback) {
- const categories = [
- {
- title: ` ${t('navOurStar')}`,
- items: [
- { name: ` ${t('sun')}`, onClick: () => focusCallback(this.sun) }
- ]
- },
- {
- title: ` ${t('navInnerPlanets')}`,
- items: [
- { name: ` ${t('mercury')}`, onClick: () => focusCallback(this.planets.mercury) },
- { name: ` ${t('venus')}`, onClick: () => focusCallback(this.planets.venus) },
- { name: ` ${t('earth')}`, onClick: () => focusCallback(this.planets.earth) },
- { name: ` ${t('moon')}`, onClick: () => focusCallback(this.moons.moon) },
- { name: ` ${t('mars')}`, onClick: () => focusCallback(this.planets.mars) },
- { name: ` ${t('phobos')}`, onClick: () => focusCallback(this.moons.phobos) },
- { name: ` ${t('deimos')}`, onClick: () => focusCallback(this.moons.deimos) }
- ]
- },
- {
- title: ` ${t('navAsteroidBelt')}`,
- items: [
- { name: ` ${t('asteroidBelt')}`, onClick: () => focusCallback(this.asteroidBelt) }
- ]
- },
- {
- title: ` ${t('navOuterPlanets')}`,
- items: [
- { name: ` ${t('jupiter')}`, onClick: () => focusCallback(this.planets.jupiter) },
- { name: ` ${t('io')}`, onClick: () => focusCallback(this.moons.io) },
- { name: ` ${t('europa')}`, onClick: () => focusCallback(this.moons.europa) },
- { name: ` ${t('ganymede')}`, onClick: () => focusCallback(this.moons.ganymede) },
- { name: ` ${t('callisto')}`, onClick: () => focusCallback(this.moons.callisto) },
- { name: ` ${t('saturn')}`, onClick: () => focusCallback(this.planets.saturn) },
- { name: ` ${t('titan')}`, onClick: () => focusCallback(this.moons.titan) },
- { name: ` ${t('enceladus')}`, onClick: () => focusCallback(this.moons.enceladus) },
- { name: ` ${t('rhea')}`, onClick: () => focusCallback(this.moons.rhea) }
- ]
- },
- {
- title: ` ${t('navIceGiants')}`,
- items: [
- { name: ` ${t('uranus')}`, onClick: () => focusCallback(this.planets.uranus) },
- { name: ` ${t('titania')}`, onClick: () => focusCallback(this.moons.titania) },
- { name: ` ${t('miranda')}`, onClick: () => focusCallback(this.moons.miranda) },
- { name: ` ${t('neptune')}`, onClick: () => focusCallback(this.planets.neptune) },
- { name: ` ${t('triton')}`, onClick: () => focusCallback(this.moons.triton) }
- ]
- },
- {
- title: ` ${t('navKuiperBelt')}`,
- items: [
- { name: ` ${t('pluto')}`, onClick: () => focusCallback(this.planets.pluto) },
- { name: ` ${t('charon')}`, onClick: () => focusCallback(this.moons.charon) },
- { name: ` ${t('kuiperBelt')}`, onClick: () => focusCallback(this.kuiperBelt) }
- ]
- },
- {
- title: ` ${t('navComets')}`,
- items: this.comets.map(comet => ({
- name: ` ${comet.userData.name}`,
- onClick: () => focusCallback(comet)
- }))
- },
- {
- title: ` ${t('navSatellites')}`,
- items: this.satellites.map(sat => ({
- name: ` ${sat.userData.name}`,
- onClick: () => focusCallback(sat)
- }))
- },
- {
- title: ` ${t('navSpacecraft')}`,
- items: this.spacecraft.map(craft => ({
- name: ` ${craft.userData.name}`,
- onClick: () => focusCallback(craft)
- }))
- },
- {
- title: ` ${t('navDistantStars')}`,
- items: this.distantStars.map(star => ({
- name: ` ${star.userData.name}`,
- onClick: () => focusCallback(star)
- }))
- },
- {
- title: ' Nebulae',
- items: this.nebulae.map(nebula => ({
- name: ` ${nebula.userData.name}`,
- onClick: () => focusCallback(nebula)
- }))
- },
- {
- title: ' Galaxies',
- items: this.galaxies.map(galaxy => ({
- name: ` ${galaxy.userData.name}`,
- onClick: () => focusCallback(galaxy)
- }))
- },
- {
- title: ' Constellations',
- items: this.constellations.map(constellation => ({
- name: ` ${constellation.userData.name}`,
- onClick: () => focusCallback(constellation)
- }))
- }
- ];
- 
- // Debug logging for constellations
- console.log(`[Explorer] Constellations array length: ${this.constellations?.length || 0}`);
- if (this.constellations?.length > 0) {
- console.log(`[Explorer] First constellation: ${this.constellations[0]?.userData?.name}`);
- }
- 
- // Filter out categories with no items (empty arrays)
- const filtered = categories.filter(category => category.items && category.items.length > 0);
- console.log(`[Explorer] Total categories: ${categories.length}, After filter: ${filtered.length}`);
- return filtered;
- }
- 
  getQuickNavTargets() {
  // Returns array of quick navigation targets for VR menu and quick nav dropdown
  const targets = [];
@@ -8797,25 +8672,6 @@ createHyperrealisticHubble(satData) {
  }
  
  return targets;
- }
- 
- refreshExplorerContent() {
- // Refresh the explorer menu with all loaded objects
- if (!this.uiManager) return;
- 
- const focusCallback = (obj) => {
- if (obj) {
- const info = this.getObjectInfo(obj);
- this.uiManager.updateInfoPanel(info);
- this.focusOnObject(obj, window.app?.sceneManager?.camera, window.app?.sceneManager?.controls);
- }
- };
- 
- const explorerContent = this.getExplorerContent(focusCallback);
- if (explorerContent && Array.isArray(explorerContent)) {
- this.uiManager.updateExplorer(' Explore the Solar System', explorerContent);
- console.log(` Explorer menu refreshed with ${explorerContent.length} categories`);
- }
  }
 }
 

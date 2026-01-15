@@ -1526,12 +1526,11 @@ select {
    UX IMPROVEMENTS v2.3
    =========================== */
 
-/* Button with Icon + Text - Icons only by default */
+/* Button with Icon + Tooltip */
 .footer-controls button {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0;
     min-width: 44px;
     padding: 10px 12px;
     position: relative;
@@ -1542,25 +1541,45 @@ select {
     flex-shrink: 0;
 }
 
+/* Hide text visually but keep for tooltip */
 .footer-controls button .btn-text {
-    font-size: 13px;
-    display: inline-block;
-    max-width: 0;
-    overflow: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 20, 20, 0.95);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
     white-space: nowrap;
     opacity: 0;
-    transition: max-width 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
-    margin-left: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    pointer-events: none;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
 }
 
-/* Show text on hover */
+/* Tooltip arrow */
+.footer-controls button .btn-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(20, 20, 20, 0.95);
+}
+
+/* Show tooltip on hover */
 .footer-controls button:hover .btn-text {
-    max-width: 100px;
     opacity: 1;
-    margin-left: 6px;
+    visibility: visible;
 }
 
-/* Mobile: Always icons only, no hover expansion */
+/* Mobile: Hide tooltips */
 @media (max-width: 768px) {
     .footer-controls button .btn-text {
         display: none;
