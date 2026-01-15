@@ -1,4 +1,4 @@
-// ===========================
+﻿// ===========================
 // SPACE VOYAGE - MODULAR VERSION
 // Main Application Entry Point
 // ===========================
@@ -312,7 +312,7 @@ class App {
  <p>• Camera stays focused as object moves in orbit</p>
  
  <h3>⚙️ Settings</h3>
- <p>â± <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
+ <p>🕐 <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
  <p>☀️ <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
  <p>🔄 <strong>Reset Button:</strong> Return camera to starting position</p>
  
