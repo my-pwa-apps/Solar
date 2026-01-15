@@ -220,7 +220,10 @@ class App {
  if (labelsButton) {
  labelsButton.classList.toggle('toggle-on', labelsVisible);
  const t = window.t || ((key) => key);
- labelsButton.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
+ const btnText = labelsButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
+ }
  }
  }
  
@@ -440,8 +443,11 @@ class App {
  this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
  this.solarSystemModule.toggleLabels(this.sceneManager.labelsVisible);
  labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
- labelsButton.textContent = this.sceneManager.labelsVisible ? 
+ const btnText = labelsButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = this.sceneManager.labelsVisible ? 
  t('toggleLabelsOn') : t('toggleLabels');
+ }
  localStorage.setItem(STORAGE_KEYS.LABELS, this.sceneManager.labelsVisible.toString());
  }
  }
