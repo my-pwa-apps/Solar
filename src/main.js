@@ -1244,20 +1244,21 @@ class App {
 
  // Update button appearance
  const updateSoundButton = () => {
+ const t = window.t || ((key) => key);
  const icon = soundToggle.querySelector('.btn-icon');
  const btnText = soundToggle.querySelector('.btn-text');
  if (audioManager.enabled) {
  soundToggle.classList.remove('muted');
  soundToggle.setAttribute('aria-pressed', 'true');
  if (icon) icon.textContent = '🔊';
- if (btnText) btnText.textContent = 'Sound ON';
- soundToggle.title = 'Sound On (click to mute)';
+ if (btnText) btnText.textContent = t('toggleSoundOn');
+ soundToggle.title = t('toggleSoundOn');
  } else {
  soundToggle.classList.add('muted');
  soundToggle.setAttribute('aria-pressed', 'false');
  if (icon) icon.textContent = '🔇';
- if (btnText) btnText.textContent = 'Sound OFF';
- soundToggle.title = 'Sound Off (click to unmute)';
+ if (btnText) btnText.textContent = t('toggleSoundOff');
+ soundToggle.title = t('toggleSoundOff');
  }
  };
 
