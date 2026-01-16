@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.5.9 - Code cleanup, CSS optimizations, bug fixes
+// Version 2.5.10 - Mobile UI improvements, flag emojis for languages
 
-const CACHE_VERSION = '2.5.9';
+const CACHE_VERSION = '2.5.10';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

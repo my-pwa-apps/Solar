@@ -1031,23 +1031,36 @@ select {
         overflow-x: auto;
     }
 
-    .logo-icon {
-        width: 24px;
-        height: 24px;
-    }
-
-    .logo h1 {
-        font-size: 14px;
-        flex: 0 0 auto;
-        white-space: nowrap;
+    /* Hide logo and title on mobile to make room for navigation */
+    .logo {
+        display: none;
     }
     
     .header-controls {
         display: flex;
         gap: 6px;
         flex: 1;
-        justify-content: flex-end;
+        justify-content: space-between;
         align-items: center;
+        width: 100%;
+    }
+    
+    /* Put search and dropdown on one line */
+    .nav-search-wrapper {
+        flex-direction: row !important;
+        gap: 6px;
+        flex: 1;
+        width: 100%;
+    }
+    
+    .nav-search {
+        flex: 1;
+        min-width: 100px;
+        max-width: none !important;
+        width: auto !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
     }
 
     .nav-dropdown,
@@ -1055,8 +1068,11 @@ select {
         padding: 6px 24px 6px 8px;
         font-size: 12px;
         min-width: 80px;
-        max-width: 120px;
-        flex: 0 1 auto;
+        max-width: 140px;
+        flex: 0 0 auto;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
     }
 
     #main-footer {
@@ -1073,14 +1089,15 @@ select {
         gap: 4px;
         flex-wrap: nowrap;
         justify-content: center;
-        flex: 0 1 auto;
+        flex: 1 1 auto;
+        width: 100%;
     }
     
     .footer-controls button {
         padding: 6px 8px;
         font-size: 11px;
-        flex: 0 0 auto;
-        min-width: 50px;
+        flex: 1 1 auto;
+        min-width: 40px;
         white-space: nowrap;
     }
 
