@@ -932,11 +932,11 @@ class App {
  break;
  case 'p':
  // Cycle through deep space probes
- if (this.spacecraft) {
- const probes = this.spacecraft.filter(s => s.userData.type === 'probe');
+ if (this.solarSystemModule?.spacecraft) {
+ const probes = this.solarSystemModule.spacecraft.filter(s => s.userData.type === 'probe');
  if (probes.length > 0) {
  this._probeIndex = ((this._probeIndex || 0) + 1) % probes.length;
- this.focusOnObject(probes[this._probeIndex], this.camera, this.controls);
+ this.solarSystemModule.focusOnObject(probes[this._probeIndex], this.sceneManager.camera, this.sceneManager.controls);
  }
  }
  break;

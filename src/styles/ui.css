@@ -629,14 +629,7 @@
     box-shadow: 0 0 8px rgba(74, 144, 226, 0.7);
 }
 
-#time-speed-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--fluent-accent);
-    min-width: 45px;
-    text-align: center;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-}
+/* time-speed-label styles consolidated in #speed-control section */
 
 /* Fluent Buttons */
 .footer-controls button,
@@ -697,19 +690,31 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.footer-controls button.toggle-on {
+.footer-controls button.toggle-on,
+.footer-controls button.active {
     background: var(--fluent-accent);
     border-color: var(--fluent-accent);
     color: white;
 }
 
-.footer-controls button.toggle-on:hover {
+.footer-controls button.toggle-on:hover,
+.footer-controls button.active:hover {
     background: var(--fluent-accent-hover);
     border-color: var(--fluent-accent-hover);
 }
 
-.footer-controls button.toggle-on:active {
+.footer-controls button.toggle-on:active,
+.footer-controls button.active:active {
     background: var(--fluent-accent-pressed);
+}
+
+/* Sound button muted state */
+.footer-controls button.muted {
+    opacity: 0.7;
+}
+
+.footer-controls button.muted:hover {
+    opacity: 1;
 }
 
 .footer-controls select {
@@ -1188,14 +1193,14 @@ select {
 #install-prompt h3 {
     margin: 0;
     font-size: 20px;
-    color: #1a1a1a;
+    color: var(--fluent-text-primary);
     font-weight: 600;
 }
 
 #install-prompt p {
     margin: 0;
     font-size: 14px;
-    color: #666;
+    color: var(--fluent-text-secondary);
     line-height: 1.5;
 }
 
