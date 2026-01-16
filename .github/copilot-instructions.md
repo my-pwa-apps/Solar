@@ -225,6 +225,53 @@ export const CONFIG = {
 - **NASA JPL Data:** https://ssd.jpl.nasa.gov/ (orbital elements)
 - **Astronomical Coords:** https://en.wikipedia.org/wiki/Equatorial_coordinate_system
 
+## Encoding & Character Guidelines
+
+### File Encoding
+- **All files must be UTF-8 without BOM**
+- Use PowerShell to verify/fix: `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))`
+
+### i18n.js Special Characters
+The translation file (`src/i18n.js`) contains 6 languages with special characters. Watch for:
+
+**Garbled Character Patterns (encoding corruption):**
+| Corrupted | Correct | Description |
+|-----------|---------|-------------|
+| `â»×¹â´` | `⁻¹⁴` | Superscript -14 (scientific notation) |
+| `cÅ"ur` | `cœur` | French œ ligature (heart) |
+| `Å"il` | `œil` | French œ ligature (eye) |
+| `Ã©` | `é` | French/Spanish accented e |
+| `Ã¨` | `è` | French accented e |
+| `Ã¼` | `ü` | German umlaut |
+| `Ã¶` | `ö` | German umlaut |
+| `Ã¤` | `ä` | German umlaut |
+| `Ã±` | `ñ` | Spanish ñ |
+| `Ã§` | `ç` | French/Portuguese cedilla |
+
+**JavaScript String Escaping:**
+- Always escape apostrophes in single-quoted strings: `l\'envers` not `l'envers`
+- French text is especially prone to this: `n\'a`, `l\'une`, `qu\'il`
+
+**Verification Commands (PowerShell):**
+```powershell
+# Check for garbled patterns
+$content = [System.IO.File]::ReadAllText("src/i18n.js")
+$content.Contains("â»×¹â´")  # Should be False
+$content.Contains("Å""")     # Should be False
+
+# Fix garbled text (example)
+$content = $content.Replace("â»×¹â´", "⁻¹⁴")
+[System.IO.File]::WriteAllText("src/i18n.js", $content, [System.Text.UTF8Encoding]::new($false))
+```
+
+**Valid Special Characters in Project:**
+- `°` (degree symbol) - temperatures, coordinates
+- `œ` (French ligature) - cœur, œil
+- `⁻¹⁴` (superscript) - scientific notation
+- `×` (multiplication) - dimensions
+- `μ` (micro) - micrometers
+- `²` `³` (superscripts) - area, volume
+
 ## Questions to Ask Before Coding
 
 1. **Does this change require a Service Worker version bump?** (Yes if modifying cached files)
@@ -232,7 +279,8 @@ export const CONFIG = {
 3. **Will this work offline?** (Textures must be self-hosted or procedural)
 4. **Does this work on mobile?** (Test touch controls, performance)
 5. **Is there existing documentation to update?** (Check root `.md` files)
+6. **Does i18n text contain special characters?** (Verify encoding, escape apostrophes)
 
 ---
 
-**Last Updated:** October 17, 2025 | **Project Version:** 2.2.6 | **AI Agent:** GitHub Copilot
+**Last Updated:** January 16, 2026 | **Project Version:** 2.2.6 | **AI Agent:** GitHub Copilot
