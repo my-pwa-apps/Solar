@@ -13,6 +13,7 @@ import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
 import { SolarSystemModule } from './modules/SolarSystemModule.js';
 import { audioManager } from './modules/AudioManager.js';
+import { earthZoomManager } from './modules/EarthZoomManager.js';
 
 // Make audio manager globally accessible
 window.audioManager = audioManager;
@@ -141,6 +142,9 @@ class App {
  this.setupSpaceFacts();
  this.setupSoundToggle();
  this.setupButtonSounds();
+ 
+ // Initialize Earth zoom feature (OpenStreetMap integration)
+ this.setupEarthZoom();
 
  // Pre-select Earth on first load for better first impression
  this.preSelectEarth();
@@ -161,10 +165,15 @@ class App {
  this.sceneManager.updateXRMovement();
  this.sceneManager.updateLaserPointers();
  
- // Update Solar System module every frame
- if (this.solarSystemModule) {
+ // Update Solar System module every frame (pause when in Earth map view)
+ if (this.solarSystemModule && !earthZoomManager.isMapVisible) {
  this.solarSystemModule.update(deltaTime, this.timeSpeed, 
  this.sceneManager.camera, this.sceneManager.controls);
+ }
+ 
+ // Update Earth zoom manager for seamless transitions
+ if (earthZoomManager.isInitialized) {
+ earthZoomManager.update(deltaTime);
  }
  });
  }
@@ -768,10 +777,47 @@ class App {
  // Play selection sound
  audioManager.playSelect();
 
+ // Check if Earth was clicked and Earth zoom is available
+ const isEarth = target.userData?.name?.toLowerCase() === 'earth';
+ 
+ if (isEarth && earthZoomManager.isInitialized) {
+ // Get full intersection data for coordinate calculation
+ const intersection = this._getEarthIntersection(event);
+ 
+ // Handle double-click or Shift+click for Earth zoom
+ const now = Date.now();
+ const isDoubleClick = (now - (this._lastEarthClickTime || 0)) < 400;
+ this._lastEarthClickTime = now;
+ 
+ if (isDoubleClick || event.shiftKey) {
+ if (intersection) {
+ earthZoomManager.handleEarthClick(intersection);
+ return; // Don't show info panel on double-click zoom
+ }
+ }
+ }
+
  const info = this.solarSystemModule.getObjectInfo(target);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
  }
+ }
+
+ /**
+  * Get the intersection point on Earth for coordinate calculation
+  */
+ _getEarthIntersection(event) {
+ const mouse = this._getMouseCoordinates(event);
+ const mouseVec = new THREE.Vector2(mouse.x, mouse.y);
+ 
+ this.sceneManager.raycaster.setFromCamera(mouseVec, this.sceneManager.camera);
+ 
+ const earthMesh = this.solarSystemModule?.celestialObjects?.get('earth');
+ if (!earthMesh) return null;
+ 
+ // Raycast specifically against Earth
+ const intersects = this.sceneManager.raycaster.intersectObject(earthMesh, true);
+ return intersects.length > 0 ? intersects[0] : null;
  }
 
  hideHoverLabel() {
@@ -1307,6 +1353,29 @@ class App {
  document.addEventListener('keydown', () => {
  audioManager.init();
  }, { once: true });
+ }
+
+ /**
+  * Setup Earth zoom feature with OpenStreetMap/Leaflet integration
+  */
+ setupEarthZoom() {
+ // Get the Earth mesh from the solar system module
+ const earthMesh = this.solarSystemModule?.planets?.earth;
+ 
+ if (!earthMesh) {
+ console.warn('Earth mesh not found, Earth zoom feature disabled');
+ return;
+ }
+
+ // Initialize the Earth zoom manager with required references
+ earthZoomManager.init({
+ earthObject: earthMesh,
+ camera: this.sceneManager.camera,
+ controls: this.sceneManager.controls,
+ scene: this.sceneManager.scene
+ });
+
+ console.log('Earth zoom feature initialized');
  }
 }
 

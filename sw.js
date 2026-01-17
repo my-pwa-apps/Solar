@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.5.10 - Mobile UI improvements, flag emojis for languages
+// Version 2.5.11 - Earth zoom feature with OpenStreetMap/Leaflet integration
 
-const CACHE_VERSION = '2.5.10';
+const CACHE_VERSION = '2.5.11';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -27,6 +27,7 @@ const STATIC_CACHE_FILES = [
   './src/modules/ServiceWorkerManager.js',
   './src/modules/LanguageManager.js',
   './src/modules/AudioManager.js',
+  './src/modules/EarthZoomManager.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
