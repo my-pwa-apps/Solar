@@ -1648,6 +1648,25 @@ function setLanguage(lang) {
     applyTranslations();
 }
 
+// Flag emojis for languages (only shown on mobile - Windows doesn't support flag emojis)
+const languageFlags = {
+    en: '🇬🇧',
+    nl: '🇳🇱',
+    fr: '🇫🇷',
+    de: '🇩🇪',
+    es: '🇪🇸',
+    pt: '🇵🇹'
+};
+
+// Detect if we should show flag emojis (mobile/non-Windows platforms)
+function shouldShowFlagEmojis() {
+    const isWindows = navigator.platform.indexOf('Win') > -1 || 
+                      navigator.userAgent.indexOf('Windows') > -1;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Show flags on mobile OR non-Windows desktop (macOS, Linux support flags)
+    return isMobile || !isWindows;
+}
+
 // Initialize language UI on page load
 // Note: Language detection is already handled by index.html inline script
 // This function just updates the UI to match the detected language
@@ -1658,6 +1677,16 @@ function initLanguage() {
     const selector = document.getElementById('language-selector');
     if (selector) {
         selector.value = lang;
+        
+        // Add flag emojis on mobile/non-Windows platforms
+        if (shouldShowFlagEmojis()) {
+            Array.from(selector.options).forEach(option => {
+                const flag = languageFlags[option.value];
+                if (flag && !option.textContent.includes(flag)) {
+                    option.textContent = `${flag} ${option.textContent}`;
+                }
+            });
+        }
         
         // Add change event listener
         selector.addEventListener('change', (e) => {

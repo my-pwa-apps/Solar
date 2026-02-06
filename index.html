@@ -106,8 +106,18 @@
     <link rel="stylesheet" href="./src/styles/main.css?v=2.5.0">
     <link rel="stylesheet" href="./src/styles/ui.css?v=2.5.0">
     
+    <!-- Leaflet CSS for Earth zoom feature -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin="anonymous">
+    
     <!-- Load translations early -->
     <script src="./src/i18n.js"></script>
+    
+    <!-- Leaflet JS for Earth zoom feature -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin="anonymous"></script>
 </head>
 <body>
     <header id="main-header" role="banner">
@@ -248,12 +258,12 @@
                 </div>
             </nav>
             <select id="language-selector" class="language-selector" aria-label="Select language">
-                <option value="en">🇬🇧 English</option>
-                <option value="nl">🇳🇱 Nederlands</option>
-                <option value="fr">🇫🇷 Français</option>
-                <option value="de">🇩🇪 Deutsch</option>
-                <option value="es">🇪🇸 Español</option>
-                <option value="pt">🇵🇹 Português</option>
+                <option value="en">English</option>
+                <option value="nl">Nederlands</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
+                <option value="pt">Português</option>
             </select>
         </div>
     </header>

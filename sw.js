@@ -1,5 +1,5 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.5.10 - Mobile UI improvements, flag emojis for languages
+// Version 2.5.12 - Astronomical accuracy fixes, code optimization
 
 const CACHE_VERSION = '2.5.12';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
@@ -27,6 +27,7 @@ const STATIC_CACHE_FILES = [
   './src/modules/ServiceWorkerManager.js',
   './src/modules/LanguageManager.js',
   './src/modules/AudioManager.js',
+  './src/modules/EarthZoomManager.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
