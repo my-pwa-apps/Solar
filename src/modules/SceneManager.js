@@ -24,10 +24,7 @@ export class SceneManager {
  this.labelsVisible = false; // Initialize labels as hidden
  
  // Track previous button states for VR controllers to detect press (not hold)
- this.previousButtonStates = [
- {}, // Controller 0
- {} // Controller 1
- ];
+ this.previousButtonStates = [{}, {}];
  
  // Grab-to-rotate state
  this.grabRotateState = {
@@ -38,8 +35,13 @@ export class SceneManager {
  lastPosition: new THREE.Vector3()
  };
  
- // Track previous button states for detecting new presses (not holds)
- this.previousButtonStates = [{}, {}];
+ // Pre-allocate reusable objects for VR hot paths (avoid per-frame allocations)
+ this._vrRaycaster = new THREE.Raycaster();
+ this._vrTempMatrix = new THREE.Matrix4();
+ this._vrCameraForward = new THREE.Vector3();
+ this._vrCameraRight = new THREE.Vector3();
+ this._vrUpVector = new THREE.Vector3(0, 1, 0);
+ this._vrTempPosition = new THREE.Vector3();
  
  this.init();
  }
@@ -171,7 +173,7 @@ export class SceneManager {
  this.scene.add(this.camera);
  
  if (DEBUG.enabled) {
- if (DEBUG.enabled) console.log('[Lighting] Ambient lighting enhanced');
+ console.log('[Lighting] Ambient lighting enhanced');
  }
  }
 
@@ -189,9 +191,6 @@ export class SceneManager {
 
  // Controller models
  this.controllerModelFactory = new XRControllerModelFactory();
- 
- // Initialize XR controllers
- this.controllers = [];
  
  // Initialize XR controllers
  this.controllers = [];
@@ -416,7 +415,7 @@ export class SceneManager {
  this.camera.position.copy(this.dolly.position);
  }
  
- this.scene.background = new THREE.Color(0x000000);
+ this.scene.background = new THREE.Color(0x000011); // Restore original space background
  // Hide VR UI panel
  if (this.vrUIPanel) this.vrUIPanel.visible = false;
  });
@@ -905,13 +904,14 @@ export class SceneManager {
  }
  }
  
- // Setup raycaster for pointing
- const raycaster = new THREE.Raycaster();
- const tempMatrix = new THREE.Matrix4();
- tempMatrix.identity().extractRotation(controller.matrixWorld);
+ // Setup raycaster for pointing (reuse pre-allocated objects)
+ this._vrTempMatrix.identity().extractRotation(controller.matrixWorld);
  
- raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
- raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+ this._vrRaycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+ this._vrRaycaster.ray.direction.set(0, 0, -1).applyMatrix4(this._vrTempMatrix);
+ 
+ // Use local reference for readability
+ const raycaster = this._vrRaycaster;
  
  // First, check for VR UI interaction
  if (this.vrUIPanel && this.vrUIPanel.visible) {
@@ -1026,9 +1026,11 @@ export class SceneManager {
  let objectRadius = 1;
  if (object.userData && object.userData.radius) {
  objectRadius = object.userData.radius;
- } else if (object.geometry && object.geometry.boundingSphere) {
+ } else if (object.geometry) {
  object.geometry.computeBoundingSphere();
+ if (object.geometry.boundingSphere) {
  objectRadius = object.geometry.boundingSphere.radius;
+ }
  }
  
  // Distance multipliers
@@ -1258,13 +1260,14 @@ export class SceneManager {
  
  if (!laser) return;
  
- // Setup raycaster
- const raycaster = new THREE.Raycaster();
- const tempMatrix = new THREE.Matrix4();
- tempMatrix.identity().extractRotation(controller.matrixWorld);
+ // Setup raycaster (reuse pre-allocated objects)
+ this._vrTempMatrix.identity().extractRotation(controller.matrixWorld);
  
- raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
- raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
+ this._vrRaycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
+ this._vrRaycaster.ray.direction.set(0, 0, -1).applyMatrix4(this._vrTempMatrix);
+ 
+ // Use local reference for readability
+ const raycaster = this._vrRaycaster;
  
  // Check what we're pointing at
  const intersects = raycaster.intersectObjects(this.scene.children, true);
@@ -1321,8 +1324,8 @@ export class SceneManager {
  // even after grab-rotating the world
  const xrCamera = this.renderer.xr.getCamera();
  
- // Get camera's forward direction (where user is looking)
- const cameraForward = new THREE.Vector3();
+ // Get camera's forward direction (where user is looking) - reuse pre-allocated vectors
+ const cameraForward = this._vrCameraForward;
  xrCamera.getWorldDirection(cameraForward);
  cameraForward.y = 0; // Keep horizontal (no flying up/down when looking up/down)
  
@@ -1332,9 +1335,9 @@ export class SceneManager {
  }
  cameraForward.normalize();
  
- // Get camera's right direction (perpendicular to forward)
- const cameraRight = new THREE.Vector3();
- cameraRight.crossVectors(cameraForward, new THREE.Vector3(0, 1, 0));
+ // Get camera's right direction (perpendicular to forward) - reuse pre-allocated vectors
+ const cameraRight = this._vrCameraRight;
+ cameraRight.crossVectors(cameraForward, this._vrUpVector);
  
  // Safety check: if cross product is zero, use default right
  if (cameraRight.length() < 0.1) {
@@ -1549,20 +1552,32 @@ export class SceneManager {
  clear() {
  // Properly dispose of all objects to prevent memory leaks
  const objectsToRemove = [];
+ const lightObjects = new Set(Object.values(this.lights));
+ 
  this.scene.traverse((object) => {
- if (object !== this.camera && !Object.values(this.lights).includes(object)) {
- objectsToRemove.push(object);
+ // Skip scene root, camera, dolly (VR rig), and lights
+ if (object === this.scene || object === this.camera || 
+ object === this.dolly || lightObjects.has(object)) {
+ return;
  }
+ objectsToRemove.push(object);
  });
 
  objectsToRemove.forEach(object => {
  if (object.geometry) object.geometry.dispose();
  if (object.material) {
- if (Array.isArray(object.material)) {
- object.material.forEach(mat => mat.dispose());
- } else {
- object.material.dispose();
- }
+ const materials = Array.isArray(object.material) ? object.material : [object.material];
+ materials.forEach(mat => {
+ // Dispose all texture maps to free GPU memory
+ if (mat.map) mat.map.dispose();
+ if (mat.normalMap) mat.normalMap.dispose();
+ if (mat.bumpMap) mat.bumpMap.dispose();
+ if (mat.emissiveMap) mat.emissiveMap.dispose();
+ if (mat.specularMap) mat.specularMap.dispose();
+ if (mat.roughnessMap) mat.roughnessMap.dispose();
+ if (mat.metalnessMap) mat.metalnessMap.dispose();
+ mat.dispose();
+ });
  }
  this.scene.remove(object);
  });
@@ -1628,13 +1643,37 @@ export class SceneManager {
  dispose() {
  // Clean up resources
  this.clear();
+ 
+ // Clear any pending VR flash timeout
+ if (this.vrFlashTimeout) {
+ clearTimeout(this.vrFlashTimeout);
+ this.vrFlashTimeout = null;
+ }
+ 
+ // End active XR session
+ if (this.renderer?.xr?.isPresenting) {
+ this.renderer.xr.getSession()?.end().catch(() => {});
+ }
+ 
+ // Dispose label renderer
+ if (this.labelRenderer?.domElement?.parentNode) {
+ this.labelRenderer.domElement.parentNode.removeChild(this.labelRenderer.domElement);
+ }
+ 
  if (this.renderer) {
  this.renderer.dispose();
+ if (this.renderer.domElement?.parentNode) {
+ this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+ }
  }
  if (this.controls) {
  this.controls.dispose();
  }
- window.removeEventListener('resize', this.onResize);
+ 
+ // Clear resize timeout
+ if (this.resizeTimeout) {
+ clearTimeout(this.resizeTimeout);
+ }
  }
 }
 

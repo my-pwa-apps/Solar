@@ -278,18 +278,18 @@ const translations = {
         funFactVoyager2: 'Voyager 2 discovered 16 moons across the giant planets, Neptune\'s Great Dark Spot, and Triton\'s geysers!',
         descNewHorizons: 'New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
         funFactNewHorizons: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto at 58,536 km/h. It carries 1 oz of Clyde Tombaugh\'s ashes!',
-        descJuno: 'Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission until Sept 2025.',
+        descJuno: 'Juno entered Jupiter orbit July 4, 2016. Studies composition, gravity field, magnetic field, and polar auroras. Discovered Jupiter\'s core is larger and "fuzzy", massive polar cyclones, and atmospheric ammonia distribution. Extended mission ongoing since 2021.',
         funFactJuno: 'First solar-powered spacecraft at Jupiter! Three 9m solar panels generate 500W. Carries three LEGO figurines: Galileo, Jupiter, and Juno!',
         descCassini: 'Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
         funFactCassini: 'Discovered Enceladus\' subsurface ocean! Water geysers shoot 250kg/s into space. Cassini flew through plumes, detected H2, organics - ingredients for life!',
         descPioneer10: 'Pioneer 10 was the first spacecraft to travel through the asteroid belt and first to visit Jupiter (Dec 3, 1973)! Launched March 2, 1972, it carried the famous Pioneer plaque showing humans and Earth\'s location. Last contact: Jan 23, 2003 at 12.2 billion km.',
         funFactPioneer10: 'Pioneer 10 carries a gold plaque designed by Carl Sagan showing a man, woman, and Earth\'s location - a message to any aliens who might find it!',
-        descPioneer11: 'Pioneer 11 was the first spacecraft to visit Saturn (Sept 1, 1979)! Also flew by Jupiter (Dec 2, 1974). Launched April 5, 1973, it discovered Saturn\'s F ring and a new moon. Also carries the Pioneer plaque. Last contact: Nov 24, 1995 at 6.5 billion km.',
-        funFactPioneer11: 'Pioneer 11 used Jupiter\'s gravity for the first planetary gravity assist, saving years of travel time to Saturn!',
+        descPioneer11: 'Pioneer 11 was the first spacecraft to visit Saturn (Sept 1, 1979)! Also flew by Jupiter (Dec 3, 1974). Launched April 5, 1973, it discovered Saturn\'s F ring and a new moon. Also carries the Pioneer plaque. Last contact: Nov 24, 1995 at 6.5 billion km.',
+        funFactPioneer11: 'Pioneer 11 used Jupiter\'s gravity for a daring gravity assist, saving years of travel time to Saturn!',
         
         // Comet descriptions
         descHalley: 'Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!',
-        descHaleBopp: 'Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at 60 km in diameter.',
+        descHaleBopp: 'Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at about 40 km in diameter.',
         descNeowise: 'Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are "dirty snowballs" made of ice, dust, and rock from the solar system\'s formation.'
     },
     
@@ -541,18 +541,18 @@ const translations = {
         funFactVoyager2: 'Voyager 2 ontdekte 16 manen bij de reuzenplaneten, de Grote Donkere Vlek van Neptunus, en geisers op Triton!',
         descNewHorizons: 'New Horizons gaf ons de eerste close-up beelden van Pluto op 14 juli 2015! Het onthulde waterijsbergen tot 3.500m hoog, enorme stikstofgletsjers, en de beroemde hartvormige Tombaugh Regio. Nu 59 AU van de Zon, verkent de Kuipergordel.',
         funFactNewHorizons: 'New Horizons reisde 9,5 jaar en 5 miljard km om Pluto te bereiken met 58.536 km/u. Het draagt 28 gram van Clyde Tombaugh\'s as!',
-        descJuno: 'Juno kwam op 4 juli 2016 in een baan om Jupiter. Bestudeert samenstelling, zwaartekrachtveld, magnetisch veld en poolaurora\'s. Ontdekte dat Jupiter\'s kern groter en "vaag" is, massieve poolcyclonen, en atmosferische ammoniakverdeling. Verlengde missie tot sept 2025.',
+        descJuno: 'Juno kwam op 4 juli 2016 in een baan om Jupiter. Bestudeert samenstelling, zwaartekrachtveld, magnetisch veld en poolaurora\'s. Ontdekte dat Jupiter\'s kern groter en "vaag" is, massieve poolcyclonen, en atmosferische ammoniakverdeling. Verlengde missie sinds 2021.',
         funFactJuno: 'Eerste zonne-aangedreven ruimtevaartuig bij Jupiter! Drie 9m zonnepanelen genereren 500W. Draagt drie LEGO-poppetjes: Galileo, Jupiter en Juno!',
         descCassini: 'Cassini draaide om Saturnus van 30 juni 2004 - 15 sept 2017 (13 jaar). Ontdekte vloeibare methaan/ethaan meren op Titan, watergeisers op Enceladus, nieuwe ringen, 7 nieuwe manen. Huygens-sonde landde op Titan op 14 jan 2005. Eindigde met atmosferische intrede "Grand Finale".',
         funFactCassini: 'Ontdekte Enceladus\' ondergrondse oceaan! Watergeisers spuiten 250kg/s de ruimte in. Cassini vloog door pluimen, detecteerde H2, organische stoffen - ingrediënten voor leven!',
         descPioneer10: 'Pioneer 10 was het eerste ruimtevaartuig dat door de asteroïdengordel reisde en als eerste Jupiter bezocht (3 dec 1973)! Gelanceerd 2 maart 1972, droeg het de beroemde Pioneer-plaquette met mensen en de locatie van de Aarde. Laatste contact: 23 jan 2003 op 12,2 miljard km.',
         funFactPioneer10: 'Pioneer 10 draagt een gouden plaquette ontworpen door Carl Sagan met een man, vrouw en de locatie van de Aarde - een boodschap voor aliens die het zouden vinden!',
-        descPioneer11: 'Pioneer 11 was het eerste ruimtevaartuig dat Saturnus bezocht (1 sept 1979)! Vloog ook langs Jupiter (2 dec 1974). Gelanceerd 5 april 1973, ontdekte het Saturnus\' F-ring en een nieuwe maan. Draagt ook de Pioneer-plaquette. Laatste contact: 24 nov 1995 op 6,5 miljard km.',
-        funFactPioneer11: 'Pioneer 11 gebruikte Jupiter\'s zwaartekracht voor de eerste planetaire zwaartekrachtondersteuning, besparend jaren reistijd naar Saturnus!',
+        descPioneer11: 'Pioneer 11 was het eerste ruimtevaartuig dat Saturnus bezocht (1 sept 1979)! Vloog ook langs Jupiter (3 dec 1974). Gelanceerd 5 april 1973, ontdekte het Saturnus\' F-ring en een nieuwe maan. Draagt ook de Pioneer-plaquette. Laatste contact: 24 nov 1995 op 6,5 miljard km.',
+        funFactPioneer11: 'Pioneer 11 gebruikte Jupiter\'s zwaartekracht voor een gedurfde zwaartekrachtondersteuning, besparend jaren reistijd naar Saturnus!',
         
         // Komeetbeschrijvingen
         descHalley: 'De Halley-komeet is de beroemdste komeet! Hij keert elke 75-76 jaar terug naar de Aarde. Laatst gezien in 1986, keert hij terug in 2061. Als je hem ziet, bekijk je een 4,6 miljard jaar oude kosmische sneeuwbal!',
-        descHaleBopp: 'Hale-Bopp was een van de helderste kometen van de 20e eeuw, 18 maanden met het blote oog zichtbaar in 1996-1997! Zijn kern is ongewoon groot met 60 km diameter.',
+        descHaleBopp: 'Hale-Bopp was een van de helderste kometen van de 20e eeuw, 18 maanden met het blote oog zichtbaar in 1996-1997! Zijn kern is ongewoon groot met 40 km diameter.',
         descNeowise: 'Komeet NEOWISE was een spectaculair gezicht in juli 2020! Hij keert pas over ongeveer 6.800 jaar terug. Kometen zijn "vuile sneeuwballen" van ijs, stof en rots uit de vorming van het zonnestelsel.'
     },
     
@@ -790,18 +790,18 @@ const translations = {
         funFactVoyager2: 'Voyager 2 a découvert 16 lunes parmi les planètes géantes, la Grande Tache Sombre de Neptune et les geysers de Triton!',
         descNewHorizons: 'New Horizons nous a donné les premières images rapprochées de Pluton le 14 juillet 2015! Il a révélé des montagnes de glace d\'eau jusqu\'à 3 500m de haut, de vastes glaciers d\'azote et la célèbre Tombaugh Regio en forme de cœur. Maintenant à 59 UA du Soleil, explorant la ceinture de Kuiper.',
         funFactNewHorizons: 'New Horizons a voyagé 9,5 ans et 5 milliards de km pour atteindre Pluton à 58 536 km/h. Il transporte 28g des cendres de Clyde Tombaugh!',
-        descJuno: 'Juno est entrée en orbite autour de Jupiter le 4 juillet 2016. Étudie la composition, le champ gravitationnel, le champ magnétique et les aurores polaires. A découvert que le noyau de Jupiter est plus grand et "flou", des cyclones polaires massifs et la distribution d\'ammoniac atmosphérique. Mission prolongée jusqu\'en sept 2025.',
+        descJuno: 'Juno est entrée en orbite autour de Jupiter le 4 juillet 2016. Étudie la composition, le champ gravitationnel, le champ magnétique et les aurores polaires. A découvert que le noyau de Jupiter est plus grand et "flou", des cyclones polaires massifs et la distribution d\'ammoniac atmosphérique. Mission prolongée depuis 2021.',
         funFactJuno: 'Premier vaisseau spatial à énergie solaire vers Jupiter! Trois panneaux solaires de 9m génèrent 500W. Transporte trois figurines LEGO: Galilée, Jupiter et Junon!',
         descCassini: 'Cassini a orbité Saturne du 30 juin 2004 au 15 sept 2017 (13 ans). A découvert des lacs de méthane/éthane liquide sur Titan, des geysers d\'eau sur Encelade, de nouveaux anneaux, 7 nouvelles lunes. La sonde Huygens a atterri sur Titan le 14 jan 2005. S\'est terminée par une entrée atmosphérique "Grand Finale".',
         funFactCassini: 'A découvert l\'océan souterrain d\'Encelade! Les geysers d\'eau projettent 250kg/s dans l\'espace. Cassini a traversé les panaches, détecté H2, composés organiques - ingrédients de la vie!',
         descPioneer10: 'Pioneer 10 fut le premier vaisseau spatial à traverser la ceinture d\'astéroïdes et à visiter Jupiter (3 déc 1973)! Lancée le 2 mars 1972, elle portait la célèbre plaque Pioneer montrant les humains et la localisation de la Terre. Dernier contact: 23 jan 2003 à 12,2 milliards de km.',
         funFactPioneer10: 'Pioneer 10 porte une plaque dorée conçue par Carl Sagan montrant un homme, une femme et la localisation de la Terre - un message pour les extraterrestres qui pourraient la trouver!',
-        descPioneer11: 'Pioneer 11 fut le premier vaisseau spatial à visiter Saturne (1er sept 1979)! A aussi survolé Jupiter (2 déc 1974). Lancée le 5 avril 1973, elle a découvert l\'anneau F de Saturne et une nouvelle lune. Porte aussi la plaque Pioneer. Dernier contact: 24 nov 1995 à 6,5 milliards de km.',
-        funFactPioneer11: 'Pioneer 11 a utilisé la gravité de Jupiter pour la première assistance gravitationnelle planétaire, économisant des années de voyage vers Saturne!',
+        descPioneer11: 'Pioneer 11 fut le premier vaisseau spatial à visiter Saturne (1er sept 1979)! A aussi survolé Jupiter (3 déc 1974). Lancée le 5 avril 1973, elle a découvert l\'anneau F de Saturne et une nouvelle lune. Porte aussi la plaque Pioneer. Dernier contact: 24 nov 1995 à 6,5 milliards de km.',
+        funFactPioneer11: 'Pioneer 11 a utilisé la gravité de Jupiter pour une audacieuse assistance gravitationnelle, économisant des années de voyage vers Saturne!',
         
         // Descriptions des comètes
         descHalley: 'La comète de Halley est la plus célèbre! Elle revient près de la Terre tous les 75-76 ans. Vue pour la dernière fois en 1986, elle reviendra en 2061. Quand vous la voyez, vous observez une boule de neige cosmique vieille de 4,6 milliards d\'années!',
-        descHaleBopp: 'Hale-Bopp fut l\'une des comètes les plus brillantes du 20e siècle, visible à l\'œil nu pendant 18 mois en 1996-1997! Son noyau est exceptionnellement grand avec 60 km de diamètre.',
+        descHaleBopp: 'Hale-Bopp fut l\'une des comètes les plus brillantes du 20e siècle, visible à l\'œil nu pendant 18 mois en 1996-1997! Son noyau est exceptionnellement grand avec 40 km de diamètre.',
         descNeowise: 'La comète NEOWISE fut un spectacle spectaculaire en juillet 2020! Elle ne reviendra pas avant environ 6 800 ans. Les comètes sont des "boules de neige sales" composées de glace, poussière et roche de la formation du système solaire.'
     },
     
@@ -1039,18 +1039,18 @@ const translations = {
         funFactVoyager2: 'Voyager 2 entdeckte 16 Monde bei den Riesenplaneten, den Großen Dunklen Fleck des Neptun und die Geysire von Triton!',
         descNewHorizons: 'New Horizons gab uns am 14. Juli 2015 die ersten Nahaufnahmen von Pluto! Enthüllte Wassereis-Berge bis 3.500m Höhe, riesige Stickstoffgletscher und die berühmte herzförmige Tombaugh Regio. Jetzt 59 AE von der Sonne entfernt, erkundet den Kuipergürtel.',
         funFactNewHorizons: 'New Horizons reiste 9,5 Jahre und 5 Milliarden km, um Pluto mit 58.536 km/h zu erreichen. Trägt 28g von Clyde Tombaughs Asche!',
-        descJuno: 'Juno trat am 4. Juli 2016 in die Jupiter-Umlaufbahn ein. Untersucht Zusammensetzung, Gravitationsfeld, Magnetfeld und polare Polarlichter. Entdeckte, dass Jupiters Kern größer und "unscharf" ist, massive polare Wirbelstürme und atmosphärische Ammoniakverteilung. Mission bis Sept 2025 verlängert.',
+        descJuno: 'Juno trat am 4. Juli 2016 in die Jupiter-Umlaufbahn ein. Untersucht Zusammensetzung, Gravitationsfeld, Magnetfeld und polare Polarlichter. Entdeckte, dass Jupiters Kern größer und "unscharf" ist, massive polare Wirbelstürme und atmosphärische Ammoniakverteilung. Mission seit 2021 verlängert.',
         funFactJuno: 'Erstes solarbetriebenes Raumfahrzeug zu Jupiter! Drei 9m Solarpanele erzeugen 500W. Trägt drei LEGO-Figuren: Galileo, Jupiter und Juno!',
         descCassini: 'Cassini umkreiste Saturn vom 30. Juni 2004 bis 15. Sept 2017 (13 Jahre). Entdeckte Methan/Ethan-Flüssigseen auf Titan, Wasserfontänen auf Enceladus, neue Ringe, 7 neue Monde. Die Huygens-Sonde landete am 14. Jan 2005 auf Titan. Endete mit "Grand Finale" Atmosphäreneintritt.',
         funFactCassini: 'Entdeckte den unterirdischen Ozean von Enceladus! Wasserfontänen sprühen 250kg/s ins All. Cassini flog durch die Fontänen, entdeckte H2, organische Verbindungen - Zutaten für Leben!',
         descPioneer10: 'Pioneer 10 war das erste Raumfahrzeug, das den Asteroidengürtel durchquerte und Jupiter besuchte (3. Dez 1973)! Gestartet am 2. März 1972, trug die berühmte Pioneer-Plakette mit Menschen und Erdposition. Letzter Kontakt: 23. Jan 2003 bei 12,2 Milliarden km.',
         funFactPioneer10: 'Pioneer 10 trägt eine goldene Plakette von Carl Sagan, die einen Mann, eine Frau und die Erdposition zeigt - eine Botschaft für Außerirdische, die sie finden könnten!',
-        descPioneer11: 'Pioneer 11 war das erste Raumfahrzeug, das Saturn besuchte (1. Sept 1979)! Flog auch an Jupiter vorbei (2. Dez 1974). Gestartet am 5. April 1973, entdeckte Saturns F-Ring und einen neuen Mond. Trägt ebenfalls die Pioneer-Plakette. Letzter Kontakt: 24. Nov 1995 bei 6,5 Milliarden km.',
-        funFactPioneer11: 'Pioneer 11 nutzte Jupiters Schwerkraft für das erste planetare Swing-by-Manöver und sparte Jahre Reisezeit zum Saturn!',
+        descPioneer11: 'Pioneer 11 war das erste Raumfahrzeug, das Saturn besuchte (1. Sept 1979)! Flog auch an Jupiter vorbei (3. Dez 1974). Gestartet am 5. April 1973, entdeckte Saturns F-Ring und einen neuen Mond. Trägt ebenfalls die Pioneer-Plakette. Letzter Kontakt: 24. Nov 1995 bei 6,5 Milliarden km.',
+        funFactPioneer11: 'Pioneer 11 nutzte Jupiters Schwerkraft für ein gewagtes Swing-by-Manöver und sparte Jahre Reisezeit zum Saturn!',
         
         // Kometenbeschreibungen
         descHalley: 'Der Halleysche Komet ist der berühmteste! Er kehrt alle 75-76 Jahre zur Erde zurück. Zuletzt 1986 gesehen, wird er 2061 wiederkommen. Wenn Sie ihn sehen, beobachten Sie einen 4,6 Milliarden Jahre alten kosmischen Schneeball!',
-        descHaleBopp: 'Hale-Bopp war einer der hellsten Kometen des 20. Jahrhunderts, 18 Monate lang 1996-1997 mit bloßem Auge sichtbar! Sein Kern ist außergewöhnlich groß mit 60 km Durchmesser.',
+        descHaleBopp: 'Hale-Bopp war einer der hellsten Kometen des 20. Jahrhunderts, 18 Monate lang 1996-1997 mit bloßem Auge sichtbar! Sein Kern ist außergewöhnlich groß mit 40 km Durchmesser.',
         descNeowise: 'Komet NEOWISE war im Juli 2020 ein spektakulärer Anblick! Er wird erst in etwa 6.800 Jahren wiederkommen. Kometen sind "schmutzige Schneebälle" aus Eis, Staub und Gestein von der Entstehung des Sonnensystems.'
     },
     
@@ -1288,18 +1288,18 @@ const translations = {
         funFactVoyager2: 'áVoyager 2 descubrió 16 lunas entre los planetas gigantes, la Gran Mancha Oscura de Neptuno y los géiseres de Tritón!',
         descNewHorizons: 'áNew Horizons nos dio las primeras imágenes cercanas de Plutón el 14 julio 2015! Reveló montañas de hielo de agua de hasta 3.500m de altura, vastos glaciares de nitrógeno y la famosa Tombaugh Regio en forma de corazón. Ahora a 59 UA del Sol, explorando el cinturón de Kuiper.',
         funFactNewHorizons: 'áNew Horizons viajó 9,5 años y 5 mil millones de km para llegar a Plutón a 58.536 km/h. Lleva 28g de las cenizas de Clyde Tombaugh!',
-        descJuno: 'Juno entró en órbita de Júpiter el 4 julio 2016. Estudia composición, campo gravitacional, campo magnético y auroras polares. Descubrió que el núcleo de Júpiter es más grande y "difuso", ciclones polares masivos y distribución de amoníaco atmosférico. Misión extendida hasta sept 2025.',
+        descJuno: 'Juno entró en órbita de Júpiter el 4 julio 2016. Estudia composición, campo gravitacional, campo magnético y auroras polares. Descubrió que el núcleo de Júpiter es más grande y "difuso", ciclones polares masivos y distribución de amoníaco atmosférico. Misión extendida desde 2021.',
         funFactJuno: 'áPrimera nave espacial solar a Júpiter! Tres paneles solares de 9m generan 500W. áLleva tres figuras LEGO: Galileo, Júpiter y Juno!',
         descCassini: 'Cassini orbitó Saturno del 30 junio 2004 al 15 sept 2017 (13 años). Descubrió lagos de metano/etano líquido en Titán, géiseres de agua en Encélado, nuevos anillos, 7 lunas nuevas. La sonda Huygens aterrizó en Titán el 14 ene 2005. Terminó con entrada atmosférica "Gran Finale".',
         funFactCassini: 'áDescubrió el océano subterráneo de Encélado! Los géiseres de agua expulsan 250kg/s al espacio. áCassini voló a través de los penachos, detectó H2, compuestos orgánicos: ingredientes para la vida!',
         descPioneer10: 'áPioneer 10 fue la primera nave espacial en cruzar el cinturón de asteroides y visitar Júpiter (3 dic 1973)! Lanzada el 2 marzo 1972, llevaba la famosa placa Pioneer mostrando humanos y la ubicación de la Tierra. Último contacto: 23 ene 2003 a 12,2 mil millones de km.',
         funFactPioneer10: 'áPioneer 10 lleva una placa dorada diseñada por Carl Sagan mostrando un hombre, una mujer y la ubicación de la Tierra: un mensaje para extraterrestres que puedan encontrarla!',
-        descPioneer11: 'áPioneer 11 fue la primera nave espacial en visitar Saturno (1 sept 1979)! También sobrevoló Júpiter (2 dic 1974). Lanzada el 5 abril 1973, descubrió el anillo F de Saturno y una nueva luna. También lleva la placa Pioneer. Último contacto: 24 nov 1995 a 6,5 mil millones de km.',
-        funFactPioneer11: 'áPioneer 11 usó la gravedad de Júpiter para la primera asistencia gravitacional planetaria, ahorrando años de viaje a Saturno!',
+        descPioneer11: 'áPioneer 11 fue la primera nave espacial en visitar Saturno (1 sept 1979)! También sobrevoló Júpiter (3 dic 1974). Lanzada el 5 abril 1973, descubrió el anillo F de Saturno y una nueva luna. También lleva la placa Pioneer. Último contacto: 24 nov 1995 a 6,5 mil millones de km.',
+        funFactPioneer11: 'áPioneer 11 usó la gravedad de Júpiter para una audaz asistencia gravitacional, ahorrando años de viaje a Saturno!',
         
         // Descripciones de cometas
         descHalley: 'áEl cometa Halley es el más famoso! Regresa a las cercanías de la Tierra cada 75-76 años. Visto por última vez en 1986, regresará en 2061. áCuando lo ves, estás observando una bola de nieve cósmica de 4,6 mil millones de años!',
-        descHaleBopp: 'áHale-Bopp fue uno de los cometas más brillantes del siglo XX, visible a simple vista durante 18 meses en 1996-1997! Su núcleo es excepcionalmente grande con 60 km de diámetro.',
+        descHaleBopp: 'áHale-Bopp fue uno de los cometas más brillantes del siglo XX, visible a simple vista durante 18 meses en 1996-1997! Su núcleo es excepcionalmente grande con 40 km de diámetro.',
         descNeowise: 'áEl cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.'
     },
     
@@ -1537,18 +1537,18 @@ const translations = {
         funFactVoyager2: 'Voyager 2 descobriu 16 luas entre os planetas gigantes, a Grande Mancha Escura de Netuno e os gêiseres de Tritão!',
         descNewHorizons: 'New Horizons nos deu as primeiras imagens próximas de Plutão em 14 julho 2015! Revelou montanhas de gelo de água de até 3.500m de altura, vastas geleiras de nitrogênio e a famosa Tombaugh Regio em forma de coração. Agora a 59 UA do Sol, explorando o cinturão de Kuiper.',
         funFactNewHorizons: 'New Horizons viajou 9,5 anos e 5 bilhões de km para chegar a Plutão a 58.536 km/h. Carrega 28g das cinzas de Clyde Tombaugh!',
-        descJuno: 'Juno entrou em órbita de Júpiter em 4 julho 2016. Estuda composição, campo gravitacional, campo magnético e auroras polares. Descobriu que o núcleo de Júpiter é maior e "difuso", ciclones polares maciços e distribuição de amÃ´nia atmosférica. Missão estendida até set 2025.',
+        descJuno: 'Juno entrou em órbita de Júpiter em 4 julho 2016. Estuda composição, campo gravitacional, campo magnético e auroras polares. Descobriu que o núcleo de Júpiter é maior e "difuso", ciclones polares maciços e distribuição de amônia atmosférica. Missão estendida desde 2021.',
         funFactJuno: 'Primeira nave espacial solar para Júpiter! Três painéis solares de 9m geram 500W. Carrega três figuras LEGO: Galileu, Júpiter e Juno!',
         descCassini: 'Cassini orbitou Saturno de 30 junho 2004 a 15 set 2017 (13 anos). Descobriu lagos de metano/etano líquido em Titã, gêiseres de água em Encélado, novos anéis, 7 novas luas. A sonda Huygens pousou em Titã em 14 jan 2005. Terminou com entrada atmosférica "Grand Finale".',
         funFactCassini: 'Descobriu o oceano subterraneo de Encélado! Os gêiseres de água expelem 250kg/s para o espaço. Cassini voou através das plumas, detectou H2, compostos organicos - ingredientes para a vida!',
         descPioneer10: 'Pioneer 10 foi a primeira nave espacial a cruzar o cinturão de asteroides e visitar Júpiter (3 dez 1973)! Lançada em 2 março 1972, carregava a famosa placa Pioneer mostrando humanos e a localização da Terra. Último contato: 23 jan 2003 a 12,2 bilhões de km.',
         funFactPioneer10: 'Pioneer 10 carrega uma placa dourada projetada por Carl Sagan mostrando um homem, uma mulher e a localização da Terra - uma mensagem para alienígenas que possam encontrá-la!',
-        descPioneer11: 'Pioneer 11 foi a primeira nave espacial a visitar Saturno (1 set 1979)! Também sobrevoou Júpiter (2 dez 1974). Lançada em 5 abril 1973, descobriu o anel F de Saturno e uma nova lua. Também carrega a placa Pioneer. Último contato: 24 nov 1995 a 6,5 bilhões de km.',
-        funFactPioneer11: 'Pioneer 11 usou a gravidade de Júpiter para a primeira assistência gravitacional planetária, economizando anos de viagem para Saturno!',
+        descPioneer11: 'Pioneer 11 foi a primeira nave espacial a visitar Saturno (1 set 1979)! Também sobrevoou Júpiter (3 dez 1974). Lançada em 5 abril 1973, descobriu o anel F de Saturno e uma nova lua. Também carrega a placa Pioneer. Último contato: 24 nov 1995 a 6,5 bilhões de km.',
+        funFactPioneer11: 'Pioneer 11 usou a gravidade de Júpiter para uma ousada assistência gravitacional, economizando anos de viagem para Saturno!',
         
         // Descrições de cometas
         descHalley: 'O cometa Halley é o mais famoso! Ele retorna à s proximidades da Terra a cada 75-76 anos. Visto pela última vez em 1986, retornará em 2061. Quando você o vê, está observando uma bola de neve cósmica de 4,6 bilhões de anos!',
-        descHaleBopp: 'Hale-Bopp foi um dos cometas mais brilhantes do século 20, visível a olho nu por 18 meses em 1996-1997! Seu núcleo é excepcionalmente grande com 60 km de diametro.',
+        descHaleBopp: 'Hale-Bopp foi um dos cometas mais brilhantes do século 20, visível a olho nu por 18 meses em 1996-1997! Seu núcleo é excepcionalmente grande com 40 km de diametro.',
         descNeowise: 'O cometa NEOWISE foi um espetáculo espetacular em julho de 2020! Ele não voltará por cerca de 6.800 anos. Cometas são "bolas de neve sujas" compostas de gelo, poeira e rocha da formação do sistema solar.'
     }
 };

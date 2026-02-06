@@ -83,7 +83,7 @@ export class TextureCache {
  resolve();
  };
  request.onerror = () => {
- console.warn('Cache write error:', error);
+ console.warn('Cache write error:', request.error);
  resolve(); // Don't reject, just continue
  };
  });
@@ -98,7 +98,11 @@ export class TextureCache {
  await this.initPromise;
  const tx = this.db.transaction([this.storeName], 'readwrite');
  const store = tx.objectStore(this.storeName);
- await store.clear();
+ await new Promise((resolve, reject) => {
+ const request = store.clear();
+ request.onsuccess = () => resolve();
+ request.onerror = () => reject(request.error);
+ });
  console.log('[Cache] Texture cache cleared');
  } catch (error) {
  console.warn('Cache clear error:', error);

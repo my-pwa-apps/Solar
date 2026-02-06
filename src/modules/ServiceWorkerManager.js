@@ -17,9 +17,14 @@ export class ServiceWorkerManager {
             return;
         }
 
-        window.addEventListener('load', async () => {
+        // Handle case where load event already fired
+        if (document.readyState === 'complete') {
             await this.register();
-        });
+        } else {
+            window.addEventListener('load', async () => {
+                await this.register();
+            });
+        }
     }
 
     /**

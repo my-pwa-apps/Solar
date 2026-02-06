@@ -92,7 +92,13 @@ export class SolarSystemModule {
  rotationPeriod: 16.11, // hours
  axialTilt: 28.32, // degrees
  retrograde: false,
- orbitalPeriod: 60190 // Earth days (~165 years)
+ orbitalPeriod: 60182 // Earth days (~164.8 years)
+ },
+ pluto: {
+ rotationPeriod: 153.293, // hours (6.387 Earth days - retrograde)
+ axialTilt: 122.53, // degrees
+ retrograde: true,
+ orbitalPeriod: 90560 // Earth days (~248 years)
  },
  moon: {
  rotationPeriod: 655.7, // hours (27.3 Earth days - tidally locked)
@@ -630,17 +636,17 @@ export class SolarSystemModule {
         // Pluto already created; add others with texture loaders where available
         // Radii calculated as: diameter_km / 12742 (Earth's diameter in km)
         const catalog = [
-            { name: 'Ceres', radius: 0.074, color: 0xC8C8B4, distance: 180, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
-            { name: 'Haumea', radius: 0.086, color: 0xE0D6C8, distance: 2200, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: 'Fast-spinning elongated dwarf planet.', funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
-            { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2300, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: 'Bright Kuiper Belt dwarf planet.', funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
-            { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2400, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: 'Massive scattered disk dwarf planet.', funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
-            { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2100, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
-            { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2150, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
-            { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 2500, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
+            { name: 'Ceres', radius: 0.074, color: 0xC8C8B4, distance: 140, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
+            { name: 'Haumea', radius: 0.086, color: 0xE0D6C8, distance: 2139, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: 'Fast-spinning elongated dwarf planet.', funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
+            { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2279, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: 'Bright Kuiper Belt dwarf planet.', funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
+            { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2483, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: 'Massive scattered disk dwarf planet.', funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
+            { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2024, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
+            { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2189, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
+            { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 3457, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
             { name: 'Sedna', radius: 0.078, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: 'Inner Oort Cloud object with extreme elliptical orbit (76-937 AU). One of the most distant known solar system bodies.', funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars.', realSize: '~995 km diameter' },
-            { name: 'Salacia', radius: 0.067, color: 0x996655, distance: 2250, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
-            { name: 'Varda', radius: 0.057, color: 0xAA8866, distance: 2350, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
-            { name: 'Varuna', radius: 0.052, color: 0xAA7755, distance: 2050, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
+            { name: 'Salacia', radius: 0.067, color: 0x996655, distance: 2234, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
+            { name: 'Varda', radius: 0.057, color: 0xAA8866, distance: 2328, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
+            { name: 'Varuna', radius: 0.052, color: 0xAA7755, distance: 2139, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
         ];
 
         catalog.forEach(cfg => {
@@ -4519,9 +4525,9 @@ export class SolarSystemModule {
  { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Lid
  { name: 'Zeta Sagittarii', ra: 285.7, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 6 - Handle
  { name: 'Tau Sagittarii', ra: 286.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 7 - Handle top
- { name: 'Sigma Sagittarii', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF } // 8 - Bow extension
+ { name: 'Lambda Sagittarii', ra: 276.9, dec: -25.4, mag: 2.8, color: 0xFFA500 } // 8 - Kaus Borealis (bow top, same as 4 for closure)
  ],
- lines: [[3,0], [0,6], [6,2], [2,1], [1,5], [5,7], [7,4], [4,3], [1,8]] // Complete teapot with spout, handle, and steam
+ lines: [[3,0], [0,6], [6,2], [2,1], [1,5], [5,7], [7,4], [4,3]] // Complete teapot with spout, handle
  },
  {
  name: 'Capricornus (The Sea-Goat)',
@@ -4616,7 +4622,7 @@ export class SolarSystemModule {
  { name: 'Gacrux', ra: 187.8, dec: -57.1, mag: 1.6, color: 0xFF6347 }, // Red giant
  { name: 'Delta Crucis', ra: 183.8, dec: -58.7, mag: 2.8, color: 0xFFFFE0 }
  ],
- lines: [[2,0], [0,1], [3,1], [3,2]] // Cross shape
+ lines: [[2,0], [3,1]] // Cross shape - two intersecting lines
  },
  {
  name: 'Cassiopeia (The Queen)',
@@ -6469,7 +6475,7 @@ createHyperrealisticHubble(satData) {
  speed: 2.0,
  size: 0.015,
  color: 0x00FF00,
- description: ' GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻⁴ seconds.',
+ description: ' GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻¹⁴ seconds.',
  funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
  realSize: 'GPS III: 2,161 kg, 7.8m solar span',
  orbitTime: '11h 58min'
@@ -6617,7 +6623,7 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'James Webb Space Telescope',
- distance: 250, // At Sun-Earth L2 Lagrange point, 1.5 million km from Earth (scaled)
+ distance: 55, // At Sun-Earth L2 Lagrange point, ~1.01 AU from Sun (1.5 million km beyond Earth at 51 units)
  angle: Math.PI * 0.15, // Positioned near Earth's L2 point
  speed: 0.0003, // Halo orbit around L2, period synced with Earth (1 year)
  size: 0.08,
@@ -6661,7 +6667,7 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'Pioneer 10',
- distance: 6820, // ~19.9 billion km from Sun (133 AU) - educational scale (133 × 51.28)
+ distance: 7127, // ~20.5 billion km from Sun (139 AU) - educational scale (139 × 51.28)
  angle: Math.PI * 0.5, // Direction: toward Aldebaran in Taurus
  speed: 0.00009, // Traveling at 12.2 km/s relative to Sun
  size: 0.07,
@@ -7760,8 +7766,8 @@ createHyperrealisticHubble(satData) {
  'Voyager 1': 4500, // 162 AU - way beyond planets
  'Voyager 2': 4200, // 135 AU
  'New Horizons': 2950, // 59 AU - beyond Neptune 
- 'James Webb Space Telescope': 225, // At Earth's L2 point (1.5 million km, ~0.01 AU)
- 'Pioneer 10': 4800, // 133 AU
+ 'James Webb Space Telescope': 155, // At Earth's L2 point (~1.01 AU from Sun)
+ 'Pioneer 10': 5000, // 139 AU
  'Pioneer 11': 4400 // 106 AU
  } : {
  // Educational scale - proportionally compressed
@@ -7769,8 +7775,8 @@ createHyperrealisticHubble(satData) {
  'Voyager 1': 8307,  // 162 AU * 51.28 (was 300)
  'Voyager 2': 6923,  // 135 AU * 51.28 (was 280)
  'New Horizons': 3025, // 59 AU * 51.28 (was 85)
- 'James Webb Space Telescope': 250, // At Earth's L2 point (scaled for visibility)
- 'Pioneer 10': 6820,  // 133 AU * 51.28 (was 320)
+ 'James Webb Space Telescope': 55, // At Earth's L2 point (~1.01 AU from Sun, just beyond Earth at 51)
+ 'Pioneer 10': 7127,  // 139 AU * 51.28
  'Pioneer 11': 5436   // 106 AU * 51.28 (was 290)
  };
  

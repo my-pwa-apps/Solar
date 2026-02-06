@@ -17,7 +17,7 @@ export class PanelManager {
      * Initialize all draggable panels
      */
     init() {
-        window.addEventListener('load', () => {
+        const initPanels = () => {
             const infoPanelElement = document.getElementById('info-panel');
             const speedControlElement = document.getElementById('speed-control');
             
@@ -30,7 +30,14 @@ export class PanelManager {
 
             // Ensure close buttons work on touch devices
             this.setupCloseButtonTouchHandlers();
-        });
+        };
+
+        // Handle case where load event already fired
+        if (document.readyState === 'complete') {
+            initPanels();
+        } else {
+            window.addEventListener('load', initPanels);
+        }
 
         // Handle window resize
         window.addEventListener('resize', () => this.handleResize());
@@ -289,16 +296,8 @@ export class PanelManager {
                 e.preventDefault(); // Prevent ghost clicks
                 e.stopPropagation(); // Stop event from reaching drag handler
                 
-                // Get the onclick function and execute it directly
-                const onclickAttr = btn.getAttribute('onclick');
-                if (onclickAttr) {
-                    // Execute the onclick function
-                    try {
-                        eval(onclickAttr);
-                    } catch (err) {
-                        console.error('Error executing close button onclick:', err);
-                    }
-                }
+                // Dispatch a click event instead of using eval
+                btn.click();
             }, { passive: false });
             
             // Also handle click event as fallback

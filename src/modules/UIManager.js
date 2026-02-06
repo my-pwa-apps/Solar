@@ -65,12 +65,10 @@ export class UIManager {
  if (this.elements.loading) {
  this.elements.loading.classList.add('hidden');
  }
- // Show controls and info panel (explorer removed - using header dropdown instead)
- ['infoPanel', 'controls'].forEach(key => {
- if (this.elements[key]) {
- this.elements[key].classList.remove('hidden');
+ // Show info panel (explorer removed - using header dropdown instead)
+ if (this.elements.infoPanel) {
+ this.elements.infoPanel.classList.remove('hidden');
  }
- });
  }
 
  updateInfoPanel(info) {
@@ -115,22 +113,6 @@ export class UIManager {
  }
  
  setupSolarSystemUI(solarSystemModule, sceneManager) {
- // Setup explorer panel with Solar System content
- const focusCallback = (obj) => {
- if (obj) {
- const info = solarSystemModule.getObjectInfo(obj);
- this.updateInfoPanel(info);
- solarSystemModule.focusOnObject(obj, sceneManager.camera, sceneManager.controls);
- }
- };
- 
- if (solarSystemModule && typeof solarSystemModule.getExplorerContent === 'function') {
- const explorerContent = solarSystemModule.getExplorerContent(focusCallback);
- if (explorerContent && Array.isArray(explorerContent)) {
- this.updateExplorer('🌌 Explore the Solar System', explorerContent);
- }
- }
- 
  // Setup time speed control
  this.setupTimeSpeedControl();
  
