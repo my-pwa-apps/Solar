@@ -2,7 +2,7 @@
 // TEXTURE CACHE SYSTEM
 // ===========================
 import * as THREE from 'three';
-import { DEBUG } from './utils.js';
+import { DEBUG, IS_LOW_POWER, IS_MOBILE } from './utils.js';
 
 export class TextureCache {
  constructor() {
@@ -118,12 +118,13 @@ export const TEXTURE_CACHE = new TextureCache();
 export async function warmupTextureCache() {
  const essentialTextures = [
  'earth_texture_4096',
- 'earth_bump_4096',      // NEW: Earth bump map
- 'earth_normal_4096',    // NEW: Earth normal map
- 'earth_specular_4096',  // NEW: Earth specular map
  'moon_texture_2048',
  'mars_texture_2048'
  ];
+
+ if (!IS_MOBILE && !IS_LOW_POWER) {
+ essentialTextures.push('earth_bump_4096', 'earth_normal_4096', 'earth_specular_4096');
+ }
  
  console.log('🔥 Warming up texture cache from IndexedDB...');
  let cached = 0;

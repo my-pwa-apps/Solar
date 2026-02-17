@@ -166,6 +166,11 @@ class App {
  }
  delete window.startupPlanet;
  }
+
+ if (window.startupVR) {
+ this.handleStartupVRShortcut();
+ delete window.startupVR;
+ }
  
  // Start animation loop
  this.sceneManager.animate(() => {
@@ -194,6 +199,34 @@ class App {
  earthZoomManager.update(deltaTime);
  }
  });
+ }
+
+ handleStartupVRShortcut() {
+ let attempts = 0;
+ const maxAttempts = 40;
+
+ const tryEnterVR = () => {
+ const vrButton = document.getElementById('VRButton');
+ if (!vrButton) return false;
+
+ try {
+ vrButton.click();
+ console.log('[Shortcut] VR entry requested');
+ return true;
+ } catch (error) {
+ console.warn('[Shortcut] VR entry failed:', error);
+ return false;
+ }
+ };
+
+ if (tryEnterVR()) return;
+
+ const poll = setInterval(() => {
+ attempts++;
+ if (tryEnterVR() || attempts >= maxAttempts) {
+ clearInterval(poll);
+ }
+ }, 250);
  }
 
  /**
