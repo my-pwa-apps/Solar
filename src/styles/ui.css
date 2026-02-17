@@ -1698,16 +1698,6 @@ select {
     margin-bottom: 16px;
 }
 
-.loading-rocket {
-    font-size: 32px;
-    animation: rocketBounce 2s ease-in-out infinite;
-}
-
-@keyframes rocketBounce {
-    0%, 100% { transform: translateY(0) rotate(-10deg); }
-    50% { transform: translateY(-8px) rotate(10deg); }
-}
-
 .loading-header h2 {
     font-size: 18px;
     font-weight: 600;

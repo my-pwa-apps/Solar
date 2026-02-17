@@ -1215,33 +1215,34 @@ class App {
  setupSpaceFacts() {
  const factText = document.getElementById('fact-text');
  if (!factText) return;
+ const t = window.t || ((key) => key);
  
- const spaceFacts = [
- "The Sun contains 99.86% of the Solar System's mass!",
- "A day on Venus is longer than its year!",
- "Jupiter's Great Red Spot is larger than Earth!",
- "Saturn would float if you could find a big enough bathtub!",
- "One million Earths could fit inside the Sun!",
- "The Moon is slowly drifting away from Earth at 3.8 cm per year!",
- "Neptune's winds can reach speeds of 2,100 km/h!",
- "Mars has the largest volcano in the Solar System - Olympus Mons!",
- "Uranus rotates on its side, making it unique among planets!",
- "Mercury has ice at its poles despite being closest to the Sun!",
- "Europa may have more water than all of Earth's oceans!",
- "Titan is the only moon with a thick atmosphere!",
- "The Voyager 1 probe is the farthest human-made object from Earth!",
- "A year on Pluto lasts 248 Earth years!",
- "The asteroid belt contains millions of rocky objects!"
+ // Use i18n funFact keys so facts display in the selected language
+ const factKeys = [
+ 'funFactSun', 'funFactMercury', 'funFactVenus', 'funFactEarth',
+ 'funFactMoon', 'funFactMars', 'funFactJupiter', 'funFactSaturn',
+ 'funFactUranus', 'funFactNeptune', 'funFactPluto',
+ 'funFactISS', 'funFactHubble', 'funFactJWST',
+ 'funFactVoyager1', 'funFactVoyager2', 'funFactNewHorizons'
  ];
  
+ // Shuffle facts using Fisher-Yates algorithm
+ const shuffled = [...factKeys];
+ for (let i = shuffled.length - 1; i > 0; i--) {
+ const j = Math.floor(Math.random() * (i + 1));
+ [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+ }
+ 
+ // Show first random fact immediately
+ factText.textContent = t(shuffled[0]);
  let factIndex = 0;
  
  // Rotate facts every 4 seconds during loading
  const factInterval = setInterval(() => {
- factIndex = (factIndex + 1) % spaceFacts.length;
+ factIndex = (factIndex + 1) % shuffled.length;
  factText.style.opacity = '0';
  setTimeout(() => {
- factText.textContent = spaceFacts[factIndex];
+ factText.textContent = t(shuffled[factIndex]);
  factText.style.opacity = '1';
  }, 200);
  }, 4000);
