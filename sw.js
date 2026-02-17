@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
 // Version 2.5.13 - Real textures for moons and dwarf planets
 
-const CACHE_VERSION = '2.5.13';
+const CACHE_VERSION = '2.5.14';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

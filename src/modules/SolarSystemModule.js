@@ -2677,13 +2677,15 @@ export class SolarSystemModule {
 
  // Planet-specific hyperrealistic materials with high-quality textures
  switch(id) {
- case 'earth':
+ case 'earth': {
  // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
+ // Use quality-aware texture size: 1024 on mobile, 4096 on desktop
+ const earthTexSize = CONFIG.QUALITY.textureSize;
  console.time('⏱️ Total Earth Material Creation');
- const earthTexture = this.createEarthTextureRealFixed(4096); // 4K resolution!
- const earthBump = this.createEarthBumpMap(4096);
- const earthSpecular = this.createEarthSpecularMap(4096);
- const earthNormal = this.createEarthNormalMap(4096);
+ const earthTexture = this.createEarthTextureRealFixed(earthTexSize);
+ const earthBump = this.createEarthBumpMap(earthTexSize);
+ const earthSpecular = this.createEarthSpecularMap(earthTexSize);
+ const earthNormal = this.createEarthNormalMap(earthTexSize);
  console.timeEnd('⏱️ Total Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
@@ -2719,7 +2721,8 @@ export class SolarSystemModule {
  });
  
  return earthMaterial;
- 
+ } // end case 'earth'
+
  case 'mars':
  // Mars: REAL NASA texture with rusty red surface with canyons, polar caps
  const marsTexture = this.createMarsTextureReal(2048);
