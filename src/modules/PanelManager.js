@@ -56,6 +56,8 @@ export class PanelManager {
         let currentY = 0;
         let initialX = 0;
         let initialY = 0;
+        let dragPanelWidth = 0;
+        let dragPanelHeight = 0;
 
         // Restore saved position from localStorage
         const panelId = panelElement.id;
@@ -93,6 +95,11 @@ export class PanelManager {
             e.preventDefault();
             isDragging = true;
             panelElement.style.transition = 'none';
+            
+            // Cache panel dimensions at drag start to avoid repeated reflows
+            const rect = panelElement.getBoundingClientRect();
+            dragPanelWidth = rect.width;
+            dragPanelHeight = rect.height;
 
             if (e.type === 'touchstart') {
                 initialX = e.touches[0].clientX - currentX;
@@ -124,8 +131,8 @@ export class PanelManager {
             currentX = clientX - initialX;
             currentY = clientY - initialY;
 
-            // Apply constraints
-            const constrained = this.applyConstraints(panelElement, currentX, currentY);
+            // Apply constraints using cached dimensions
+            const constrained = this.applyConstraints(panelElement, currentX, currentY, dragPanelWidth, dragPanelHeight);
             currentX = constrained.x;
             currentY = constrained.y;
 
@@ -214,13 +221,19 @@ export class PanelManager {
 
     /**
      * Apply viewport constraints to position
+     * @param {HTMLElement} panelElement - The panel element
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {number} [cachedWidth] - Cached panel width (avoids reflow during drag)
+     * @param {number} [cachedHeight] - Cached panel height (avoids reflow during drag)
      */
-    applyConstraints(panelElement, x, y) {
-        const rect = panelElement.getBoundingClientRect();
+    applyConstraints(panelElement, x, y, cachedWidth, cachedHeight) {
+        const width = cachedWidth ?? panelElement.getBoundingClientRect().width;
+        const height = cachedHeight ?? panelElement.getBoundingClientRect().height;
         const { edgePadding, minTop } = this.constraints;
         const minLeft = edgePadding;
-        const maxX = window.innerWidth - rect.width - edgePadding;
-        const maxY = window.innerHeight - rect.height - edgePadding;
+        const maxX = window.innerWidth - width - edgePadding;
+        const maxY = window.innerHeight - height - edgePadding;
 
         return {
             x: Math.max(minLeft, Math.min(x, maxX)),

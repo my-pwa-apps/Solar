@@ -4,11 +4,12 @@
 import * as THREE from 'three';
 
 // Debug configuration - enable with URL parameters: ?debug=true&debug-vr=true&debug-textures=true
+const _urlParams = new URLSearchParams(window.location.search);
 export const DEBUG = {
- enabled: new URLSearchParams(window.location.search).has('debug'),
- VR: new URLSearchParams(window.location.search).has('debug-vr'),
- TEXTURES: new URLSearchParams(window.location.search).has('debug-textures'),
- PERFORMANCE: new URLSearchParams(window.location.search).has('debug-performance')
+ enabled: _urlParams.has('debug'),
+ VR: _urlParams.has('debug-vr'),
+ TEXTURES: _urlParams.has('debug-textures'),
+ PERFORMANCE: _urlParams.has('debug-performance')
 };
 
 // Mobile & Performance Detection
@@ -71,14 +72,14 @@ export const CONFIG = {
 // Suppress harmless WebGL shader validation warnings
 const originalWarn = console.warn;
 console.warn = function(...args) {
- const msg = args.join(' ');
- // Filter out known harmless WebGL shader warnings
- if (msg.includes('THREE.WebGLProgram') && msg.includes('VALIDATE_STATUS')) {
- // Suppress - this is a harmless validation warning that doesn't affect functionality
+ // Fast path: skip messages that aren't strings (avoids unnecessary join)
+ const first = args[0];
+ if (typeof first !== 'string') {
+ originalWarn.apply(console, args);
  return;
  }
- if (msg.includes('Vertex shader is not compiled')) {
- // Suppress - shader compiles successfully despite warning
+ // Filter out known harmless WebGL shader warnings
+ if (first.includes('THREE.WebGLProgram') || first.includes('Vertex shader is not compiled')) {
  return;
  }
  originalWarn.apply(console, args);

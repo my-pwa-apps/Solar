@@ -58,7 +58,14 @@ class App {
  this.solarSystemModule = null;
  this.lastTime = 0;
  this.timeSpeed = 1; // Default to 1x real-time (original default)
- this.brightness = 100; // Default brightness percentage
+ 
+ // Interaction state (declared here for V8 hidden class optimization)
+ this._lastEarthClickTime = 0;
+ this._hoverLabel = null;
+ this._currentHoveredObject = null;
+ this._lastHoverCheck = 0;
+ this._voyagerIndex = 0;
+ this._probeIndex = 0;
  
  // Make this app instance globally accessible for VR and other modules
  window.app = this;
@@ -149,6 +156,16 @@ class App {
 
  // Pre-select Earth on first load for better first impression
  this.preSelectEarth();
+ 
+ // Handle URL shortcut parameters (e.g., ?planet=mars&vr=true)
+ if (window.startupPlanet) {
+ const target = this.findObjectByNavigationValue(window.startupPlanet.toLowerCase());
+ if (target) {
+ this.sceneManager.focusOnObject(target);
+ console.log(`[Shortcut] Navigated to ${window.startupPlanet}`);
+ }
+ delete window.startupPlanet;
+ }
  
  // Start animation loop
  this.sceneManager.animate(() => {
@@ -517,8 +534,8 @@ class App {
  'neptune': () => this.solarSystemModule.planets.neptune,
  'pluto': () => this.solarSystemModule.planets.pluto,
  
- // Earth's Moon (special case - translated name)
- 'moon': () => this.solarSystemModule.moons[t('moon').toLowerCase()],
+ // Earth's Moon (use id-based lookup since moons are now stored by id)
+ 'moon': () => this.solarSystemModule.moons.moon || this.solarSystemModule.moons[(window.t || t)('moon').toLowerCase()],
  
  // Moons (direct moon registry access)
  'phobos': () => this.solarSystemModule.moons.phobos,
@@ -609,12 +626,12 @@ class App {
  'sombrero-galaxy': ['Sombrero'],
  }},
  { prefix: '', array: 'objects', patterns: {
- 'alpha-centauri': [' Alpha Centauri A'],
- 'proxima-centauri': [' Proxima Centauri'],
- 'proxima-b': [' Proxima Centauri b'],
- 'kepler-452b': [' Kepler-452b'],
- 'trappist-1e': [' TRAPPIST-1e'],
- 'kepler-186f': [' Kepler-186f'],
+ 'alpha-centauri': ['Alpha Centauri A'],
+ 'proxima-centauri': ['Proxima Centauri'],
+ 'proxima-b': ['Proxima Centauri b'],
+ 'kepler-452b': ['Kepler-452b'],
+ 'trappist-1e': ['TRAPPIST-1e'],
+ 'kepler-186f': ['Kepler-186f'],
  }},
  { prefix: '', array: 'comets', patterns: {
  'halley': ["Halley's Comet"],
@@ -692,9 +709,6 @@ class App {
  const mouseVec = new THREE.Vector2(mouse.x, mouse.y);
  
  this.sceneManager.raycaster.setFromCamera(mouseVec, this.sceneManager.camera);
- 
- // Ensure world matrices are up-to-date for child objects (moons are children of planets)
- this.sceneManager.scene.updateMatrixWorld(true);
  
  let intersects;
  if (recursiveFirst) {
@@ -1144,8 +1158,7 @@ class App {
  
  if (!searchInput || !dropdown) return;
  
- // Store original options
- const allOptions = Array.from(dropdown.querySelectorAll('option, optgroup'));
+ // Store original dropdown HTML for restoration
  const originalHTML = dropdown.innerHTML;
  
  searchInput.addEventListener('input', (e) => {

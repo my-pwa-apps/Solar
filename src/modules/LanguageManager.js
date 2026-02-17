@@ -35,12 +35,12 @@ class LanguageManager {
         const userLang = navigator.language || navigator.userLanguage;
         
         let langCode;
-        if (storedLang) {
+        if (urlLang) {
+            // URL parameter takes highest priority (for sharing links like ?lang=fr)
+            langCode = urlLang;
+        } else if (storedLang) {
             // Use stored preference (from installation or user choice)
             langCode = storedLang;
-        } else if (urlLang) {
-            // Use URL parameter
-            langCode = urlLang;
         } else {
             // Use browser/OS language
             langCode = userLang.toLowerCase().split('-')[0];
@@ -63,7 +63,7 @@ class LanguageManager {
         this.setManifest(langCode);
         
         // Log detection
-        const source = storedLang ? 'Stored' : urlLang ? 'URL' : 'OS/Browser';
+        const source = urlLang ? 'URL' : storedLang ? 'Stored' : 'OS/Browser';
         console.log('[Language] Detected:', this.languageNames[langCode] || langCode, '| Source:', source);
         
         return langCode;
@@ -76,7 +76,7 @@ class LanguageManager {
         const manifestLink = document.getElementById('pwa-manifest');
         if (manifestLink) {
             const manifestFile = this.manifestFiles[langCode] || './manifest.json';
-            manifestLink.href = manifestFile + '?v=2.2.4';
+            manifestLink.href = manifestFile + '?v=2.5.14';
         }
     }
 

@@ -47,7 +47,10 @@ class AudioManager {
      * Ensure audio context is running (browsers suspend it until user interaction)
      */
     async ensureResumed() {
-        if (!this.initialized) this.init();
+        if (!this.initialized) {
+            if (!this.enabled) return false; // Don't retry after failure
+            this.init();
+        }
         if (!this.audioContext) return false;
         
         if (this.audioContext.state === 'suspended') {

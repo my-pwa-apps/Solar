@@ -71,18 +71,7 @@
     letter-spacing: 0.02em;
 }
 
-.nav-select {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(20, 20, 40, 0.6);
-    border: 1px solid rgba(102, 126, 234, 0.35);
-    padding: 6px 10px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
-}
+
 
 .nav-dropdown,
 .language-selector {
@@ -96,8 +85,6 @@
     font-family: 'Segoe UI', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', system-ui, sans-serif;
     line-height: 1.4;
     height: 44px;
-    min-height: 44px;
-    max-height: 44px;
     box-sizing: border-box;
     cursor: pointer;
     -webkit-appearance: none;
@@ -244,10 +231,6 @@
     transform: rotate(180deg);
 }
 
-#speed-control.collapsed {
-    min-width: auto;
-}
-
 /* Fluent Info Panel - Floating Card */
 #info-panel {
     bottom: 70px; /* Just above bottom bar (~48px footer + 22px margin) */
@@ -272,7 +255,6 @@
     font-size: 16px; /* Reduced from 20px - matches panel header size */
     font-weight: 600;
     letter-spacing: 0.02em;
-    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
@@ -280,7 +262,6 @@
     margin: 6px 0;
     font-size: 13px;
     line-height: 1.5;
-    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
@@ -291,7 +272,6 @@
 
 .info-content span {
     color: var(--fluent-text-secondary);
-    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
@@ -304,7 +284,6 @@
     font-style: normal;
     font-size: 13px;
     line-height: 1.6;
-    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
@@ -390,53 +369,6 @@
     padding: 0 16px;
     opacity: 0;
     pointer-events: none;
-}
-
-.panel-content {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: center;
-}
-
-/* Sound toggle button */
-.sound-toggle-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--fluent-border);
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    margin-top: 4px;
-}
-
-.sound-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
-}
-
-.sound-toggle-btn:focus-visible {
-    outline: 2px solid var(--fluent-accent);
-    outline-offset: 2px;
-}
-
-.sound-toggle-btn.muted .sound-icon::after {
-    content: '';
-    position: absolute;
-    width: 2px;
-    height: 20px;
-    background: #ff4444;
-    transform: rotate(45deg);
-}
-
-.sound-icon {
-    font-size: 14px;
-    position: relative;
 }
 
 /* Vertical Range Slider - Modern approach without deprecated slider-vertical */
@@ -584,59 +516,11 @@
     gap: 10px;
 }
 
-.control-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.control-group label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #4FC3F7;
-    white-space: nowrap;
-}
-
-.control-group input[type="range"] {
-    width: 100px;
-    height: 6px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    outline: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-}
-
-.control-group input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4a90e2, #9b59b6);
-    cursor: pointer;
-    box-shadow: 0 0 8px rgba(74, 144, 226, 0.7);
-}
-
-.control-group input[type="range"]::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4a90e2, #9b59b6);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 0 8px rgba(74, 144, 226, 0.7);
-}
-
 /* time-speed-label styles consolidated in #speed-control section */
 
 /* Fluent Buttons */
 .footer-controls button,
-.footer-controls select,
-#speed-value,
-#brightness-value {
+.footer-controls select {
     background: var(--fluent-bg-secondary);
     color: var(--fluent-text-primary);
     border: 1px solid var(--fluent-border);
@@ -726,16 +610,6 @@
     background-position: calc(100% - 12px) center;
 }
 
-#speed-value,
-#brightness-value {
-    background: rgba(255, 215, 0, 0.2);
-    color: #FFD700;
-    min-width: 50px;
-    text-align: center;
-    font-weight: 700;
-    padding: 8px 12px;
-}
-
 /* Fluent Floating XR Buttons */
 .footer-xr-controls > div {
     display: inline-block;
@@ -799,10 +673,7 @@
     box-shadow: 0 6px 16px rgba(0, 120, 212, 0.4);
 }
 
-/* Legacy container support */
-#vr-ar-container {
-    display: none; /* Moved to footer */
-}
+
 
 /* Fluent Tooltip */
 [data-tooltip] {
@@ -1028,8 +899,8 @@ select {
     #main-header {
         padding: 6px 8px;
         gap: 6px;
-        flex-wrap: nowrap; /* Single line */
-        overflow-x: auto;
+        flex-wrap: nowrap;
+        overflow: hidden;
     }
 
     /* Hide logo and title on mobile to make room for navigation */
@@ -1044,6 +915,7 @@ select {
         justify-content: space-between;
         align-items: center;
         width: 100%;
+        min-width: 0;
     }
     
     /* Put search and dropdown on one line */
@@ -1051,61 +923,69 @@ select {
         flex-direction: row !important;
         gap: 6px;
         flex: 1;
+        min-width: 0;
         width: 100%;
     }
     
     .nav-search {
         flex: 1;
-        min-width: 100px;
-        max-width: none !important;
-        width: auto !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
+        min-width: 0;
+        max-width: none;
+        width: auto;
+        height: 36px;
+        font-size: 12px;
+        padding: 6px 8px;
     }
 
-    .nav-dropdown,
+    .nav-dropdown {
+        padding: 6px 24px 6px 8px;
+        font-size: 12px;
+        min-width: 0;
+        max-width: 120px;
+        width: auto;
+        flex: 0 1 auto;
+        height: 36px;
+    }
+
     .language-selector {
         padding: 6px 24px 6px 8px;
         font-size: 12px;
-        min-width: 80px;
-        max-width: 140px;
+        min-width: 0;
+        max-width: 100px;
+        width: auto;
         flex: 0 0 auto;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
+        height: 36px;
     }
 
     #main-footer {
         padding: 6px 8px;
         flex-direction: row;
-        gap: 6px;
-        flex-wrap: nowrap; /* Single line */
-        overflow-x: auto;
+        gap: 4px;
+        flex-wrap: nowrap;
+        overflow: hidden;
         align-items: center;
         justify-content: center;
     }
     
     .footer-controls {
-        gap: 4px;
+        gap: 2px;
         flex-wrap: nowrap;
         justify-content: center;
         flex: 1 1 auto;
         width: 100%;
+        min-width: 0;
     }
     
     .footer-controls button {
-        padding: 6px 8px;
+        padding: 6px;
         font-size: 11px;
-        flex: 1 1 auto;
-        min-width: 40px;
+        flex: 0 1 auto;
+        min-width: 36px;
+        max-width: 44px;
         white-space: nowrap;
+        overflow: hidden;
     }
 
-    .control-group {
-        display: none; /* Hidden - moved to floating panel */
-    }
-    
     .footer-xr-controls {
         gap: 6px;
         justify-content: flex-end;
@@ -1251,18 +1131,18 @@ select {
 }
 
 .btn-primary:hover {
-    background: #106ebe;
+    background: var(--fluent-accent-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4);
 }
 
 .btn-secondary {
-    background: rgba(0, 0, 0, 0.05);
-    color: #666;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--fluent-text-secondary);
 }
 
 .btn-secondary:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 @keyframes slideUpFade {
@@ -1302,7 +1182,7 @@ select {
     display: none;
     align-items: center;
     gap: 8px;
-    animation: slideDown 0.3s ease-out;
+    animation: slideDownCentered 0.3s ease-out;
 }
 
 #offline-indicator:not(.hidden) {
@@ -1319,7 +1199,7 @@ select {
     font-size: 14px;
 }
 
-@keyframes slideDown {
+@keyframes slideDownCentered {
     from {
         opacity: 0;
         transform: translateX(-50%) translateY(-20px);
@@ -1463,7 +1343,7 @@ select {
         font-size: 13px;
     }
     
-    #install-prompt .install-actions {
+    #install-prompt .install-buttons {
         flex-direction: column;
         gap: 8px;
     }
@@ -1494,19 +1374,12 @@ select {
         margin-top: 8px;
     }
     
-    #tracking-indicator {
-        top: auto;
-        bottom: 10px;
-        right: 10px;
-        font-size: 12px;
-        padding: 6px 12px;
-    }
 }
 
 /* Extra small mobile devices */
 @media (max-width: 480px) {
     #main-header {
-        padding: 6px 8px;
+        padding: 4px 6px;
     }
     
     .logo-icon {
@@ -1518,23 +1391,39 @@ select {
         font-size: 12px;
     }
     
-    .nav-dropdown,
-    .language-selector {
-        font-size: 12px;
-        padding: 6px 8px;
-    }
-    
-    .footer-controls button,
-    .footer-controls select {
+    .nav-dropdown {
         font-size: 11px;
-        padding: 6px 10px;
+        padding: 4px 20px 4px 6px;
+        max-width: 100px;
     }
     
+    .language-selector {
+        font-size: 11px;
+        padding: 4px 20px 4px 6px;
+        max-width: 80px;
+    }
+    
+    .nav-search {
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+    
+    .footer-controls button {
+        font-size: 10px;
+        padding: 4px;
+        min-width: 32px;
+        max-width: 40px;
+    }
+    
+    .footer-controls button .btn-icon {
+        font-size: 16px;
+    }
+
     #vr-button button,
     #ar-button button {
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
     }
 }
 
@@ -1547,15 +1436,6 @@ select {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
-    }
-    
-    #tracking-indicator {
-        animation: none;
-    }
-    
-    #tracking-indicator .tracking-icon {
-        animation: none;
-        border-top-color: white;
     }
 }
 
@@ -1621,15 +1501,6 @@ select {
     .footer-controls button .btn-text {
         display: none;
     }
-    
-    .footer-controls button .btn-icon {
-        font-size: 18px;
-    }
-    
-    .footer-controls button {
-        min-width: 44px;
-        padding: 8px 10px;
-    }
 }
 
 /* Navigation Search Wrapper */
@@ -1652,8 +1523,6 @@ select {
     font-family: 'Segoe UI', system-ui, sans-serif;
     line-height: 1.4;
     height: 44px;
-    min-height: 44px;
-    max-height: 44px;
     box-sizing: border-box;
     width: 180px;
     transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
@@ -1673,13 +1542,13 @@ select {
 
 @media (max-width: 768px) {
     .nav-search-wrapper {
-        flex-direction: column;
+        flex-direction: row;
         gap: 4px;
     }
     
     .nav-search {
-        width: 100%;
-        max-width: 150px;
+        width: auto;
+        max-width: none;
         font-size: 12px;
         padding: 6px 8px;
     }

@@ -98,6 +98,11 @@ class EarthZoomManager {
             <div class="zoom-progress-label" id="zoom-progress-label">Approaching Earth...</div>
         `;
         document.body.appendChild(this.zoomIndicator);
+        
+        // Create transition overlay for smooth show/hide
+        this.transitionOverlay = document.createElement('div');
+        this.transitionOverlay.className = 'earth-transition-overlay hidden';
+        document.body.appendChild(this.transitionOverlay);
     }
     
     /**
@@ -168,11 +173,12 @@ class EarthZoomManager {
         });
         
         // Keyboard shortcut (Escape to close)
-        document.addEventListener('keydown', (e) => {
+        this._escapeHandler = (e) => {
             if (e.key === 'Escape' && this.isMapVisible) {
                 this.zoomOutFromMap();
             }
-        });
+        };
+        document.addEventListener('keydown', this._escapeHandler);
         
         // Listen for mouse wheel to detect zoom out while in map
         this.mapContainer.addEventListener('wheel', (e) => {
@@ -391,10 +397,6 @@ class EarthZoomManager {
      * @param {number} deltaTime - Time since last frame
      */
     update(deltaTime) {
-        // TEMPORARY DEBUG: Completely disable to test if this is breaking controls
-        // Remove return below to re-enable
-        return;
-        
         if (!this.isInitialized || !this.earthObject || !this.camera) {
             // Safety: always ensure controls are enabled if we can't run
             if (this.controls) this.controls.enabled = true;
@@ -710,6 +712,10 @@ class EarthZoomManager {
      * Dispose resources
      */
     dispose() {
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler);
+        }
+        
         if (this.map) {
             this.map.remove();
             this.map = null;
@@ -717,6 +723,7 @@ class EarthZoomManager {
         
         this.mapContainer?.remove();
         this.zoomIndicator?.remove();
+        this.transitionOverlay?.remove();
     }
 }
 
