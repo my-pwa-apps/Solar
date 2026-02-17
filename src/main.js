@@ -515,8 +515,8 @@ class App {
  'neptune': () => this.solarSystemModule.planets.neptune,
  'pluto': () => this.solarSystemModule.planets.pluto,
  
- // Earth's Moon (special case - translated name)
- 'moon': () => this.solarSystemModule.moons[t('moon').toLowerCase()],
+ // Earth's Moon - always stored under fixed key 'moon' regardless of language
+ 'moon': () => this.solarSystemModule.moons['moon'],
  
  // Moons (direct moon registry access)
  'phobos': () => this.solarSystemModule.moons.phobos,
@@ -1150,8 +1150,9 @@ class App {
  const query = e.target.value.toLowerCase().trim();
  
  if (!query) {
- // Restore original dropdown
+ // Restore original dropdown and re-apply current language
  dropdown.innerHTML = originalHTML;
+ if (window.applyTranslations) window.applyTranslations();
  return;
  }
  
@@ -1180,6 +1181,7 @@ class App {
  if (dropdown.value) {
  searchInput.value = '';
  dropdown.innerHTML = originalHTML;
+ if (window.applyTranslations) window.applyTranslations();
  }
  });
  }
