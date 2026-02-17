@@ -130,6 +130,9 @@ class App {
  });
  }
  
+ // Setup space facts before hiding loading so they're visible
+ this.setupSpaceFacts();
+ 
  // Hide loading screen
  this.uiManager.hideLoading();
  
@@ -138,7 +141,6 @@ class App {
  this.setupRandomDiscovery();
  this.setupNavigationSearch();
  this.setupMobileGestureHints();
- this.setupSpaceFacts();
  this.setupSoundToggle();
  this.setupButtonSounds();
  
@@ -1215,7 +1217,6 @@ class App {
  setupSpaceFacts() {
  const factText = document.getElementById('fact-text');
  if (!factText) return;
- const t = window.t || ((key) => key);
  
  // Use i18n funFact keys so facts display in the selected language
  const factKeys = [
@@ -1233,8 +1234,11 @@ class App {
  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
  }
  
+ // Translate a key using current language (always call window.t fresh)
+ const translate = (key) => (window.t || ((k) => k))(key);
+ 
  // Show first random fact immediately
- factText.textContent = t(shuffled[0]);
+ factText.textContent = translate(shuffled[0]);
  let factIndex = 0;
  
  // Rotate facts every 4 seconds during loading
@@ -1242,7 +1246,7 @@ class App {
  factIndex = (factIndex + 1) % shuffled.length;
  factText.style.opacity = '0';
  setTimeout(() => {
- factText.textContent = t(shuffled[factIndex]);
+ factText.textContent = translate(shuffled[factIndex]);
  factText.style.opacity = '1';
  }, 200);
  }, 4000);

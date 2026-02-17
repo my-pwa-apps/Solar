@@ -9,6 +9,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        searchPlaceholder: "🔍 Search objects...",
         
         // Object categories
         ourStar: "Our Star",
@@ -300,6 +301,7 @@ const translations = {
         
         // Navigatie
         quickNavigation: "Navigatie",
+        searchPlaceholder: "🔍 Zoek objecten...",
         
         // Object categorieën
         ourStar: "Onze Ster",
@@ -555,7 +557,6 @@ const translations = {
         descHaleBopp: 'Hale-Bopp was een van de helderste kometen van de 20e eeuw, 18 maanden met het blote oog zichtbaar in 1996-1997! Zijn kern is ongewoon groot met 40 km diameter.',
         descNeowise: 'Komeet NEOWISE was een spectaculair gezicht in juli 2020! Hij keert pas over ongeveer 6.800 jaar terug. Kometen zijn "vuile sneeuwballen" van ijs, stof en rots uit de vorming van het zonnestelsel.'
     },
-    
     fr: {
         // Titre et en-tête de l'application
         appTitle: "Voyage Spatial",
@@ -563,6 +564,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        searchPlaceholder: "🔍 Rechercher des objets...",
         
         // Catégories d'objets
         ourStar: "Notre Étoile",
@@ -804,7 +806,6 @@ const translations = {
         descHaleBopp: 'Hale-Bopp fut l\'une des comètes les plus brillantes du 20e siècle, visible à l\'œil nu pendant 18 mois en 1996-1997! Son noyau est exceptionnellement grand avec 40 km de diamètre.',
         descNeowise: 'La comète NEOWISE fut un spectacle spectaculaire en juillet 2020! Elle ne reviendra pas avant environ 6 800 ans. Les comètes sont des "boules de neige sales" composées de glace, poussière et roche de la formation du système solaire.'
     },
-    
     de: {
         // App-Titel und Kopfzeile
         appTitle: "Weltraumreise",
@@ -812,6 +813,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        searchPlaceholder: "🔍 Objekte suchen...",
         
         // Objektkategorien
         ourStar: "Unser Stern",
@@ -1061,6 +1063,7 @@ const translations = {
         
         // Navegación
         quickNavigation: "Navegación",
+        searchPlaceholder: "🔍 Buscar objetos...",
         
         // Categorías de objetos
         ourStar: "Nuestra Estrella",
@@ -1310,6 +1313,7 @@ const translations = {
         
         // Navegação
         quickNavigation: "Navegação",
+        searchPlaceholder: "🔍 Pesquisar objetos...",
         
         // Categorias de objetos
         ourStar: "Nossa Estrela",
@@ -1590,6 +1594,12 @@ function applyTranslations() {
                 element.textContent = translation;
             }
         }
+    });
+    
+    // Update placeholder attributes via data-i18n-placeholder
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-i18n-placeholder');
+        element.placeholder = t(key);
     });
     
     // Update document title
