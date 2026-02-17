@@ -1,7 +1,7 @@
 ﻿// Space Voyage - Service Worker
-// Version 2.5.12 - Astronomical accuracy fixes, code optimization
+// Version 2.5.13 - Real textures for moons and dwarf planets
 
-const CACHE_VERSION = '2.5.12';
+const CACHE_VERSION = '2.5.13';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -66,9 +66,23 @@ const STATIC_CACHE_FILES = [
   // Moon textures
   './textures/moons/moon_1k.jpg',
   './textures/moons/moon_threejs_1k.jpg',
+  './textures/moons/io_2k.jpg',
+  './textures/moons/europa_2k.jpg',
+  './textures/moons/ganymede_2k.jpg',
+  './textures/moons/callisto_2k.jpg',
+  './textures/moons/titan_2k.jpg',
+  './textures/moons/enceladus_2k.jpg',
+  './textures/moons/rhea_2k.jpg',
+  './textures/moons/triton_2k.jpg',
+  './textures/moons/titania_2k.jpg',
+  './textures/moons/miranda_2k.jpg',
+  './textures/moons/charon_2k.jpg',
   // Dwarf planet textures
-  './textures/dwarf-planets/pluto_1k.jpg',
-  './textures/dwarf-planets/ceres_1k.jpg'
+  './textures/dwarf-planets/pluto_2k.jpg',
+  './textures/dwarf-planets/ceres_2k.jpg',
+  './textures/dwarf-planets/haumea_2k.jpg',
+  './textures/dwarf-planets/makemake_2k.jpg',
+  './textures/dwarf-planets/eris_2k.jpg'
 ];
 
 // CDN files to cache (Three.js and dependencies)
@@ -342,8 +356,8 @@ self.addEventListener('message', (event) => {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New update available!',
-    icon: './icons/icon-192x192.png',
-    badge: './icons/icon-96x96.png',
+    icon: './icons/manifest-icon-192.maskable.png',
+    badge: './icons/windows11/Square44x44Logo.targetsize-48.png',
     vibrate: [200, 100, 200],
     tag: 'space-voyage-notification',
     requireInteraction: false

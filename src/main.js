@@ -80,7 +80,6 @@ class App {
  this.sceneManager = new SceneManager();
  this.uiManager = new UIManager();
  
- const t = window.t || ((key) => key);
  this.uiManager.showLoading(t('initializing'));
  this.uiManager.updateLoadingProgress(0, t('settingUpScene'));
  
@@ -306,8 +305,13 @@ class App {
  <p>⌨️ <span class="keyboard-shortcut">H</span> Show this help</p>
  <p>⌨️ <span class="keyboard-shortcut">R</span> Reset camera view</p>
  <p>⌨️ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
+ <p>⌨️ <span class="keyboard-shortcut">C</span> Toggle constellations & stars</p>
  <p>⌨️ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
  <p>⌨️ <span class="keyboard-shortcut">S</span> Toggle scale (compact/expanded)</p>
+ <p>⌨️ <span class="keyboard-shortcut">Space</span> Pause / resume animation</p>
+ <p>⌨️ <span class="keyboard-shortcut">I</span> Jump to ISS</p>
+ <p>⌨️ <span class="keyboard-shortcut">V</span> Cycle Voyager probes</p>
+ <p>⌨️ <span class="keyboard-shortcut">P</span> Cycle deep space probes</p>
  <p>⌨️ <span class="keyboard-shortcut">L</span> Toggle VR laser pointers (in VR)</p>
  <p>⌨️ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
  <p>⌨️ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
@@ -321,8 +325,7 @@ class App {
  <p>• Camera stays focused as object moves in orbit</p>
  
  <h3>⚙️ Settings</h3>
- <p>🕐 <strong>Speed Slider:</strong> 0x to 10x animation speed</p>
- <p>☀️ <strong>Brightness Slider:</strong> Adjust lighting for dark objects</p>
+ <p>🕐 <strong>Speed Slider:</strong> Paused to 100x animation speed</p>
  <p>🔄 <strong>Reset Button:</strong> Return camera to starting position</p>
  
  <h3>🥽 VR Mode</h3>
@@ -337,7 +340,6 @@ class App {
  <p>• L key or VR menu: Toggle laser pointers for better immersion</p>
  
  <h3>💡 Tips</h3>
- <p>☀️ Increase brightness to see dark sides of planets</p>
  <p>⏩ Use speed slider to watch orbits in fast-forward</p>
  <p>👆 Click objects directly or use the explorer panel</p>
  <p>🔍 Zoom in close to see surface details and textures</p>
@@ -367,27 +369,6 @@ class App {
  setupControls() {
  // Time speed control is handled by UIManager
  // App.timeSpeed is updated by UIManager's updateSpeed function via window.app
- 
- // Speed control collapse button
- const speedCollapseBtn = document.getElementById('speed-collapse-btn');
- const speedControl = document.getElementById('speed-control');
- if (speedCollapseBtn && speedControl) {
- // Restore collapsed state from localStorage
- const isCollapsed = localStorage.getItem('speedControlCollapsed') === 'true';
- if (isCollapsed) {
- speedControl.classList.add('collapsed');
- speedCollapseBtn.setAttribute('aria-expanded', 'false');
- speedCollapseBtn.setAttribute('title', 'Expand');
- }
- 
- speedCollapseBtn.addEventListener('click', (e) => {
- e.stopPropagation();
- const collapsed = speedControl.classList.toggle('collapsed');
- speedCollapseBtn.setAttribute('aria-expanded', (!collapsed).toString());
- speedCollapseBtn.setAttribute('title', collapsed ? 'Expand' : 'Collapse');
- localStorage.setItem('speedControlCollapsed', collapsed.toString());
- });
- }
  
  // Orbit toggle button
  // Note: Initial state is restored in restoreSavedToggleStates() after solar system is ready
@@ -886,6 +867,9 @@ class App {
  case 'o':
  document.getElementById(UI_ELEMENTS.ORBITS_BUTTON)?.click();
  break;
+ case 'c':
+ document.getElementById(UI_ELEMENTS.CONSTELLATIONS_BUTTON)?.click();
+ break;
  case 'd':
  document.getElementById(UI_ELEMENTS.LABELS_BUTTON)?.click();
  break;
@@ -987,7 +971,7 @@ class App {
  }
  break;
  }
- }, { passive: true });
+ });
  }
  
  setupFPSCounter() {

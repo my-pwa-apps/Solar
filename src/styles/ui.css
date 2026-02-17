@@ -1246,7 +1246,7 @@ select {
 }
 
 .btn-primary {
-    background: #0078D4;
+    background: var(--fluent-accent);
     color: white;
 }
 
@@ -1874,24 +1874,6 @@ select {
     background: rgba(255, 255, 255, 0.5);
 }
 
-.btn-primary {
-    background: var(--fluent-accent);
-    color: white;
-    border: none;
-    padding: 14px 32px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.btn-primary:hover {
-    background: var(--fluent-accent-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 120, 212, 0.4);
-}
-
 /* Mobile Gesture Hints */
 #gesture-hints {
     position: fixed;
@@ -1936,43 +1918,6 @@ select {
     font-size: 12px;
     color: var(--fluent-text-secondary);
     white-space: nowrap;
-}
-
-/* Improved Focus Indicators */
-button:focus-visible,
-select:focus-visible,
-input:focus-visible {
-    outline: 2px solid var(--fluent-accent);
-    outline-offset: 2px;
-}
-
-.close-btn:focus-visible {
-    outline: 2px solid white;
-    outline-offset: 2px;
-}
-
-/* Tooltip Visibility Enhancement */
-[data-tooltip]:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--fluent-bg-primary);
-    color: var(--fluent-text-primary);
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    margin-bottom: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--fluent-border);
-    pointer-events: none;
-}
-
-[data-tooltip] {
-    position: relative;
 }
 
 /* Hide tooltips on touch devices */

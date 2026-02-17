@@ -56,7 +56,7 @@ export class SolarSystemModule {
  rotationPeriod: 5832.5, // hours (243 Earth days)
  axialTilt: 177.4, // degrees (almost upside down)
  retrograde: true, // rotates backwards!
- orbitalPeriod: 225 // Earth days
+ orbitalPeriod: 224.7 // Earth days
  },
  earth: {
  rotationPeriod: 23.93, // hours
@@ -92,7 +92,7 @@ export class SolarSystemModule {
  rotationPeriod: 16.11, // hours
  axialTilt: 28.32, // degrees
  retrograde: false,
- orbitalPeriod: 60182 // Earth days (~164.8 years)
+ orbitalPeriod: 60190 // Earth days (~164.8 years)
  },
  pluto: {
  rotationPeriod: 153.293, // hours (6.387 Earth days - retrograde)
@@ -352,7 +352,7 @@ export class SolarSystemModule {
             distance: 37, // Educational scale (1.85x Mercury)
             speed: 0.015,
             rotationSpeed: -0.001,
-            tilt: 2.64,
+            tilt: 177.4, // ASTRONOMICAL_DATA.venus.axialTilt (retrograde, nearly inverted)
             description: t('descVenus'),
             funFact: t('funFactVenus'),
             realSize: '12,104 km diameter',
@@ -1073,7 +1073,7 @@ export class SolarSystemModule {
                 );
                 return;
             }
-            // All remote attempts failed � generate procedural now
+            // All remote attempts failed ° generate procedural now
             phase = 'procedural';
         }
         if (phase === 'procedural') {
@@ -1086,7 +1086,7 @@ export class SolarSystemModule {
                 const maybePromise = proceduralFunction.call(this, size);
                 if (maybePromise && typeof maybePromise.then === 'function') {
                     maybePromise.then((tex) => {
-                        console.log(`? ${planetName} procedural texture generated successfully`);
+                        if (DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
                         this._applyProceduralPlanetTexture(planetName, tex);
                     }).catch((err) => {
                         console.error(`? ${planetName} procedural texture generation failed:`, err);
@@ -1094,7 +1094,7 @@ export class SolarSystemModule {
                         // Keep placeholder texture as last resort
                     });
                 } else {
-                    console.log(`? ${planetName} procedural texture generated successfully`);
+                    if (DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
                     this._applyProceduralPlanetTexture(planetName, maybePromise);
                 }
             } catch (err) {
@@ -1308,7 +1308,7 @@ export class SolarSystemModule {
  // Pluto texture loader - self-hosted texture
  createPlutoTextureReal(size) {
     const primary = [
-        './textures/dwarf-planets/pluto_1k.jpg'
+        './textures/dwarf-planets/pluto_2k.jpg'
     ];
     return this.loadPlanetTextureReal('Pluto', primary, this.createPlutoTexture, size, []);
  }
@@ -1316,54 +1316,124 @@ export class SolarSystemModule {
  // Ceres texture loader - self-hosted texture (Dawn mission style cratered surface)
  createCeresTextureReal(size) {
     const primary = [
-        './textures/dwarf-planets/ceres_1k.jpg'
+        './textures/dwarf-planets/ceres_2k.jpg'
     ];
     // Use Mercury-style cratered texture as fallback since Ceres is rocky and heavily cratered
     return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, []);
  }
 
- // Io texture loader - Volcanic surface with sulfur deposits
+ // Io texture loader - Volcanic surface with sulfur deposits (NASA Voyager/Galileo)
  createIoTextureReal(size) {
-    // No reliable external sources - use procedural generation
-    const primary = [];
+    const primary = [
+        './textures/moons/io_2k.jpg'
+    ];
     return this.loadPlanetTextureReal('Io', primary, this.createIoTexture, size, []);
  }
 
- // Europa texture loader - NASA Galileo icy surface with reddish cracks
+ // Europa texture loader - NASA Galileo/Juno icy surface with reddish cracks
  createEuropaTextureReal(size) {
-    // No reliable external sources - use procedural generation
-    const primary = [];
+    const primary = [
+        './textures/moons/europa_2k.jpg'
+    ];
     return this.loadPlanetTextureReal('Europa', primary, this.createEuropaTexture, size, []);
  }
 
- // Ganymede texture loader - Largest moon in solar system
+ // Ganymede texture loader - Largest moon in solar system (NASA Voyager/Galileo)
  createGanymedeTextureReal(size) {
-    // No reliable external sources - use procedural generation
-    const primary = [];
+    const primary = [
+        './textures/moons/ganymede_2k.jpg'
+    ];
     return this.loadPlanetTextureReal('Ganymede', primary, this.createMoonTexture, size, []);
  }
 
- // Callisto texture loader - Ancient cratered surface
+ // Callisto texture loader - Ancient cratered surface (NASA Voyager/Galileo)
  createCallistoTextureReal(size) {
-    // No reliable external sources - use procedural generation
-    const primary = [];
+    const primary = [
+        './textures/moons/callisto_2k.jpg'
+    ];
     return this.loadPlanetTextureReal('Callisto', primary, this.createMoonTexture, size, []);
  }
 
- // Titan texture loader - Saturn's largest moon with thick orange atmosphere
+ // Titan texture loader - Saturn's largest moon with thick orange atmosphere (NASA Cassini)
  createTitanTextureReal(size) {
-    // No reliable external sources - use procedural generation
-    const primary = [];
+    const primary = [
+        './textures/moons/titan_2k.jpg'
+    ];
     return this.loadPlanetTextureReal('Titan', primary, this.createTitanTexture, size, []);
  }
 
- // Enceladus texture loader - Saturn's icy geologically active moon
+ // Enceladus texture loader - Saturn's icy geologically active moon (NASA Cassini)
  createEnceladusTextureReal(size) {
-    // No reliable external sources - use procedural generation
-    const primary = [];
+    const primary = [
+        './textures/moons/enceladus_2k.jpg'
+    ];
     return this.loadPlanetTextureReal('Enceladus', primary, this.createMoonTexture, size, []);
  }
- 
+
+ // Rhea texture loader - Saturn's second-largest moon (NASA Cassini)
+ createRheaTextureReal(size) {
+    const primary = [
+        './textures/moons/rhea_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Rhea', primary, this.createMoonTexture, size, []);
+ }
+
+ // Triton texture loader - Neptune's largest moon, retrograde orbit (NASA Voyager)
+ createTritonTextureReal(size) {
+    const primary = [
+        './textures/moons/triton_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Triton', primary, this.createMoonTexture, size, []);
+ }
+
+ // Titania texture loader - Uranus's largest moon (NASA Voyager)
+ createTitaniaTextureReal(size) {
+    const primary = [
+        './textures/moons/titania_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Titania', primary, this.createMoonTexture, size, []);
+ }
+
+ // Miranda texture loader - Uranus's smallest major moon with dramatic terrain (NASA Voyager)
+ createMirandaTextureReal(size) {
+    const primary = [
+        './textures/moons/miranda_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Miranda', primary, this.createMoonTexture, size, []);
+ }
+
+ // Charon texture loader - Pluto's largest moon (NASA New Horizons)
+ createCharonTextureReal(size) {
+    const primary = [
+        './textures/moons/charon_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Charon', primary, this.createMoonTexture, size, []);
+ }
+
+ // Haumea texture loader - Fast-spinning elongated dwarf planet (CC BY 4.0 Solar System Scope)
+ createHaumeaTextureReal(size) {
+    const primary = [
+        './textures/dwarf-planets/haumea_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Haumea', primary, this.createMoonTexture, size, []);
+ }
+
+ // Makemake texture loader - Bright Kuiper Belt dwarf planet (CC BY 4.0 Solar System Scope)
+ createMakemakeTextureReal(size) {
+    const primary = [
+        './textures/dwarf-planets/makemake_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Makemake', primary, this.createMoonTexture, size, []);
+ }
+
+ // Eris texture loader - Massive scattered disk dwarf planet (CC BY 4.0 Solar System Scope)
+ createErisTextureReal(size) {
+    const primary = [
+        './textures/dwarf-planets/eris_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Eris', primary, this.createMoonTexture, size, []);
+ }
+
  async createEarthTexture(size) {
  const cacheKey = `earth_texture_${size}`;
  
@@ -1467,17 +1537,19 @@ export class SolarSystemModule {
  const elevation = continents * 0.8 + mountains + terrain + details - 0.2;
  
  // DEBUG: Log elevation range and raw values
- if (x === 512 && y % 200 === 0) {
+ if (DEBUG.TEXTURES && x === 512 && y % 200 === 0) {
  console.log(`?? Elevation: ${elevation.toFixed(4)} (continents:${continents.toFixed(3)}, details:${details.toFixed(3)}) at lat ${(lat * 180/Math.PI).toFixed(1)} lon ${(lon * 180/Math.PI).toFixed(1)}`);
  }
  
  // EXTRA DEBUG: Track min/max elevation
+ if (DEBUG.TEXTURES) {
  if (!window._earthElevationStats) {
  window._earthElevationStats = { min: Infinity, max: -Infinity, samples: 0 };
  }
  window._earthElevationStats.min = Math.min(window._earthElevationStats.min, elevation);
  window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
  window._earthElevationStats.samples++;
+ }
  
  // Polar ice caps - Arctic and Antarctic
  if (latNorm > 0.92 || latNorm01 < 0.08) {
@@ -1610,12 +1682,12 @@ export class SolarSystemModule {
  const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
  const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
- console.log(`✅ Earth bump map loaded from memory cache`);
+ if (DEBUG.TEXTURES) console.log(`✅ Earth bump map loaded from memory cache`);
  return texture;
  }
  
  // Generate texture (no cache hit)
- console.log(`🎨 Generating Earth bump map (${size}x${size})...`);
+ if (DEBUG.TEXTURES) console.log(`🎨 Generating Earth bump map (${size}x${size})...`);
  const startTime = performance.now();
  const canvas = document.createElement('canvas');
  canvas.width = size;
@@ -1679,7 +1751,7 @@ export class SolarSystemModule {
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- console.log(`⏱️ Earth bump map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
+ if (DEBUG.TEXTURES) console.log(`⏱️ Earth bump map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
  
@@ -1692,12 +1764,12 @@ export class SolarSystemModule {
  const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
  const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
- console.log(`✅ Earth normal map loaded from memory cache`);
+ if (DEBUG.TEXTURES) console.log(`✅ Earth normal map loaded from memory cache`);
  return texture;
  }
  
  // Generate texture (no cache hit)
- console.log(`🎨 Generating Earth normal map (${size}x${size})...`);
+ if (DEBUG.TEXTURES) console.log(`🎨 Generating Earth normal map (${size}x${size})...`);
  const startTime = performance.now();
  // Normal map for mountain ranges and ocean trenches
  const canvas = document.createElement('canvas');
@@ -1758,7 +1830,7 @@ export class SolarSystemModule {
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- console.log(`⏱️ Earth normal map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
+ if (DEBUG.TEXTURES) console.log(`⏱️ Earth normal map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
  
@@ -1771,12 +1843,12 @@ export class SolarSystemModule {
  const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
  const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
- console.log(`✅ Earth specular map loaded from memory cache`);
+ if (DEBUG.TEXTURES) console.log(`✅ Earth specular map loaded from memory cache`);
  return texture;
  }
  
  // Generate texture (no cache hit)
- console.log(`🎨 Generating Earth specular map (${size}x${size})...`);
+ if (DEBUG.TEXTURES) console.log(`🎨 Generating Earth specular map (${size}x${size})...`);
  const startTime = performance.now();
  // Oceans are shiny, land is rough
  const canvas = document.createElement('canvas');
@@ -1824,10 +1896,10 @@ export class SolarSystemModule {
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- console.log(`⏱️ Earth specular map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
+ if (DEBUG.TEXTURES) console.log(`⏱️ Earth specular map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
- 
+
  createMoonTexture(size) {
  const canvas = document.createElement('canvas');
  canvas.width = size;
@@ -2593,8 +2665,8 @@ export class SolarSystemModule {
  // Create HYPERREALISTIC materials with advanced texturing
  // Use config.id (language-independent) instead of config.name (translated)
  const id = (config.id || config.name).toLowerCase();
- console.log(`?? Creating material for: "${id}" (name: "${config.name}")`);
- 
+ if (DEBUG.TEXTURES) console.log(`?? Creating material for: "${id}" (name: "${config.name}")`);
+
  // Base material properties
  let materialProps = {
  roughness: 0.9,
@@ -2757,12 +2829,45 @@ export class SolarSystemModule {
  });
 
  case 'ceres':
- // Ceres: Dawn mission texture or procedural fallback
- const ceresTexture = this.createCeresTextureReal(1024);
+ // Ceres: Dawn mission texture (NASA)
+ const ceresTexture = this.createCeresTextureReal(2048);
  return new THREE.MeshStandardMaterial({
  map: ceresTexture,
  roughness: 0.9,
  metalness: 0.05,
+ emissive: 0x000000,
+ emissiveIntensity: 0
+ });
+
+ case 'haumea':
+ // Haumea: Fast-spinning elongated dwarf planet (CC BY 4.0 Solar System Scope)
+ const haumeaTexture = this.createHaumeaTextureReal(2048);
+ return new THREE.MeshStandardMaterial({
+ map: haumeaTexture,
+ roughness: 0.85,
+ metalness: 0.05,
+ emissive: 0x000000,
+ emissiveIntensity: 0
+ });
+
+ case 'makemake':
+ // Makemake: Bright Kuiper Belt dwarf planet (CC BY 4.0 Solar System Scope)
+ const makemakeTexture = this.createMakemakeTextureReal(2048);
+ return new THREE.MeshStandardMaterial({
+ map: makemakeTexture,
+ roughness: 0.85,
+ metalness: 0.05,
+ emissive: 0x000000,
+ emissiveIntensity: 0
+ });
+
+ case 'eris':
+ // Eris: Massive scattered disk dwarf planet (CC BY 4.0 Solar System Scope)
+ const erisTexture = this.createErisTextureReal(2048);
+ return new THREE.MeshStandardMaterial({
+ map: erisTexture,
+ roughness: 0.8,
+ metalness: 0.1,
  emissive: 0x000000,
  emissiveIntensity: 0
  });
@@ -2921,6 +3026,7 @@ export class SolarSystemModule {
     // Verification utility: logs which solar system objects ended up with remote textures
     verifyTextureLoads(delayMs = 4000) {
         setTimeout(() => {
+         if (DEBUG.TEXTURES) {
             console.group('?? Texture Load Verification');
             const summary = { remoteSuccess: 0, remoteFailed: 0, proceduralOnly: 0 };
             Object.entries(this.planets).forEach(([key, planet]) => {
@@ -2952,6 +3058,7 @@ export class SolarSystemModule {
             });
             console.log(`Summary: ${summary.remoteSuccess} remote loaded, ${summary.remoteFailed} remote failed, ${summary.proceduralOnly} procedural-only planets.`);
             console.groupEnd();
+         }
         }, delayMs);
     }
 
@@ -3064,12 +3171,55 @@ export class SolarSystemModule {
  emissiveIntensity: 0.05 // Bright reflective ice
  });
  if (DEBUG.enabled) console.log(`[Moon Texture] Loading Enceladus photorealistic texture (2048)`);
- } else if (moonId.includes('triton')) {
- // Triton: Pinkish nitrogen ice
- moonMaterial = MaterialFactory.createColoredMaterial(0xffcccc, {
- roughness: 0.4,
- metalness: 0.1
+ } else if (moonId.includes('rhea')) {
+ // Rhea: Saturn's second-largest moon - heavily cratered icy surface (NASA Cassini)
+ const rheaTexture = this.createRheaTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: rheaTexture,
+ roughness: 0.85,
+ metalness: 0.05,
+ emissive: 0xddddee,
+ emissiveIntensity: 0.02
  });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Rhea photorealistic texture (2048)`);
+ } else if (moonId.includes('triton')) {
+ // Triton: Neptune's captured moon - pinkish nitrogen ice, cryovolcanism (NASA Voyager)
+ const tritonTexture = this.createTritonTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: tritonTexture,
+ roughness: 0.35,
+ metalness: 0.1,
+ emissive: 0xffdddd,
+ emissiveIntensity: 0.02
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Triton photorealistic texture (2048)`);
+ } else if (moonId.includes('titania')) {
+ // Titania: Uranus's largest moon - cratered surface with canyons (NASA Voyager)
+ const titaniaTexture = this.createTitaniaTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: titaniaTexture,
+ roughness: 0.88,
+ metalness: 0.05
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Titania photorealistic texture (2048)`);
+ } else if (moonId.includes('miranda')) {
+ // Miranda: Uranus's smallest major moon - dramatic geological features (NASA Voyager)
+ const mirandaTexture = this.createMirandaTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: mirandaTexture,
+ roughness: 0.9,
+ metalness: 0.05
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Miranda photorealistic texture (2048)`);
+ } else if (moonId.includes('charon')) {
+ // Charon: Pluto's largest moon - dark reddish north pole (NASA New Horizons)
+ const charonTexture = this.createCharonTextureReal(2048);
+ moonMaterial = MaterialFactory.createStandardMaterial({
+ map: charonTexture,
+ roughness: 0.9,
+ metalness: 0.02
+ });
+ if (DEBUG.enabled) console.log(`[Moon Texture] Loading Charon photorealistic texture (2048)`);
  } else {
  // Default moon material
  moonMaterial = MaterialFactory.createColoredMaterial(config.color, {
@@ -3122,7 +3272,7 @@ export class SolarSystemModule {
  
  planet.add(moon);
  
- console.log(`[Moon] Created "${config.name}" for ${planet.userData.name} at distance ${config.distance}, initial position (${moon.position.x.toFixed(2)}, ${moon.position.y.toFixed(2)}, ${moon.position.z.toFixed(2)})`);
+ if (DEBUG.enabled) console.log(`[Moon] Created "${config.name}" for ${planet.userData.name} at distance ${config.distance}, initial position (${moon.position.x.toFixed(2)}, ${moon.position.y.toFixed(2)}, ${moon.position.z.toFixed(2)})`);
  }
 
  createAsteroidBelt(scene) {
@@ -3680,10 +3830,10 @@ export class SolarSystemModule {
         // Moon orbital paths around their planets
         Object.values(this.planets).forEach(planet => {
             if (planet.userData.moons && planet.userData.moons.length > 0) {
-                console.log(`Creating orbital paths for ${planet.userData.moons.length} moon(s) of ${planet.userData.name}`);
+                if (DEBUG.enabled) console.log(`Creating orbital paths for ${planet.userData.moons.length} moon(s) of ${planet.userData.name}`);
                 planet.userData.moons.forEach(moon => {
                     const moonDistance = moon.userData.distance;
-                    console.log(`  - Creating orbit for ${moon.userData.name} at distance ${moonDistance}`);
+                    if (DEBUG.enabled) console.log(`  - Creating orbit for ${moon.userData.name} at distance ${moonDistance}`);
                     
                     const curve = new THREE.EllipseCurve(
                         0, 0,
@@ -3841,12 +3991,12 @@ export class SolarSystemModule {
  loader.load(
  url,
  (texture) => {
- console.log(` Loaded texture: ${url}`);
+ if (DEBUG.TEXTURES) console.log(` Loaded texture: ${url}`);
  resolve(texture);
  },
  undefined,
  (error) => {
- console.warn(` Failed to load ${url}, using fallback color`);
+ if (DEBUG.TEXTURES) console.warn(` Failed to load ${url}, using fallback color`);
  // Create circular gradient texture as fallback (no visible edges)
  const canvas = document.createElement('canvas');
  canvas.width = 128;
@@ -3945,7 +4095,7 @@ export class SolarSystemModule {
  { 
  name: 'Orion Nebula', 
  ra: 83.8, // 5h 35m - Located in Orion's sword
- dec: -5.4, // -5� 23' - Below Orion's belt
+ dec: -5.4, // -5° 23' - Below Orion's belt
  size: 400, 
  type: 'emission', // Star-forming region
  // Spectral emission colors (astronomically accurate)
@@ -3964,7 +4114,7 @@ export class SolarSystemModule {
  { 
  name: 'Crab Nebula', 
  ra: 83.6, // 5h 34m - In Taurus constellation
- dec: 22.0, // +22� 01' - Near Taurus's northern horn
+ dec: 22.0, // +22° 01' - Near Taurus's northern horn
  size: 300, 
  type: 'supernova', // Supernova remnant with filaments
  colors: {
@@ -3984,7 +4134,7 @@ export class SolarSystemModule {
  { 
  name: 'Ring Nebula', 
  ra: 283.4, // 18h 53m - In Lyra constellation, near Vega
- dec: 33.0, // +33� 02' - Between Sheliak and Sulafat
+ dec: 33.0, // +33° 02' - Between Sheliak and Sulafat
  size: 250, 
  type: 'planetary', // Planetary nebula (ring shape)
  colors: {
@@ -4741,7 +4891,7 @@ export class SolarSystemModule {
  this.constellations.push(group);
  });
  
- console.log(`✓ Created ${this.constellations.length} constellations with star patterns!`);
+ if (DEBUG.enabled) console.log(`✓ Created ${this.constellations.length} constellations with star patterns!`);
  }
  
  highlightConstellation(focusedConstellation) {
@@ -4795,7 +4945,7 @@ export class SolarSystemModule {
  { 
  name: 'Andromeda Galaxy', 
  ra: 10.7,    // 0h 42m 44s - In Andromeda constellation, near Mirach
- dec: 41.3,   // +41� 16' 09" - Northern hemisphere autumn sky
+ dec: 41.3,   // +41° 16' 09" - Northern hemisphere autumn sky
  size: 600, 
  type: 'spiral', 
  angularSize: 178, // 178 arcminutes - appears 6x larger than full moon!
@@ -4804,7 +4954,7 @@ export class SolarSystemModule {
  { 
  name: 'Whirlpool Galaxy', 
  ra: 202.5,   // 13h 29m 53s - In Canes Venatici, below Big Dipper's handle
- dec: 47.2,   // +47� 11' 43" - Northern spring sky
+ dec: 47.2,   // +47° 11' 43" - Northern spring sky
  size: 400, 
  type: 'spiral',
  angularSize: 11, // 11 arcminutes
@@ -4813,7 +4963,7 @@ export class SolarSystemModule {
  { 
  name: 'Sombrero Galaxy', 
  ra: 189.5,   // 12h 39m 59s - In Virgo constellation, western edge
- dec: -11.6,  // -11� 37' 23" - Southern declination, visible from both hemispheres
+ dec: -11.6,  // -11° 37' 23" - Southern declination, visible from both hemispheres
  size: 350, 
  type: 'elliptical',
  angularSize: 9, // 9 arcminutes
@@ -5116,7 +5266,7 @@ export class SolarSystemModule {
  this.objects.push(kepler186);
  this.nearbyStars.push(kepler186);
  
- console.log(` Created ${this.nearbyStars.length} nearby stars and exoplanet host stars`);
+ if (DEBUG.enabled) console.log(` Created ${this.nearbyStars.length} nearby stars and exoplanet host stars`);
  }
 
  createExoplanets(scene) {
@@ -5232,7 +5382,7 @@ export class SolarSystemModule {
  this.exoplanets.push(planet);
  });
  
- console.log(` Created ${this.exoplanets.length} famous exoplanets!`);
+ if (DEBUG.enabled) console.log(` Created ${this.exoplanets.length} famous exoplanets!`);
  }
 
  createComets(scene) {
@@ -6433,8 +6583,10 @@ createHyperrealisticHubble(satData) {
  }
  });
  
+ if (DEBUG.enabled) {
  console.log(` ISS created with ${moduleCount} mesh components (scale: ${scale})`);
  console.log(' - 17 pressurized modules, 8 solar arrays, 6 radiators, 3 robotic arms');
+ }
  
  return iss;
  }
@@ -6911,13 +7063,13 @@ createHyperrealisticHubble(satData) {
  this.spacecraft.push(spacecraftGroup);
  });
  
- console.log(` Created ${this.spacecraft.length} spacecraft and probes!`);
+ if (DEBUG.enabled) console.log(` Created ${this.spacecraft.length} spacecraft and probes!`);
  }
 
  update(deltaTime, timeSpeed, camera, controls) {
  // Safety check for deltaTime
  if (!deltaTime || isNaN(deltaTime) || deltaTime <= 0 || deltaTime > 1) {
- console.warn(' Invalid deltaTime:', deltaTime, '- skipping frame');
+ if (DEBUG.enabled) console.warn(' Invalid deltaTime:', deltaTime, '- skipping frame');
  return;
  }
  
@@ -6947,6 +7099,10 @@ createHyperrealisticHubble(satData) {
  }
  // else 'none' - everything moves normally
  
+ // Pre-calculate elapsed time for rotation (shared by all planets and moons)
+ const elapsedMs = Date.now() - this.realTimeStart;
+ const elapsedHours = (elapsedMs / 1000 / 3600) * this.timeAcceleration;
+ 
  // Update all planets
  Object.values(this.planets).forEach(planet => {
  if (planet && planet.userData) {
@@ -6973,11 +7129,7 @@ createHyperrealisticHubble(satData) {
  
  // REALISTIC PLANET ROTATION based on real astronomical data
  if (planet.userData.realRotationPeriod && rotationSpeed > 0) {
- // Calculate elapsed real time in hours
- const elapsedMs = Date.now() - this.realTimeStart;
- const elapsedHours = (elapsedMs / 1000 / 3600) * this.timeAcceleration;
- 
- // Calculate rotation angle based on real rotation period
+ // Calculate elapsed real time in hours (use shared value from outer scope)
  const rotationsComplete = elapsedHours / planet.userData.realRotationPeriod;
  let rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
  
@@ -7017,11 +7169,7 @@ createHyperrealisticHubble(satData) {
  
  // REALISTIC MOON ROTATION based on real astronomical data
  if (moon.userData.realRotationPeriod && rotationSpeed > 0) {
- // Calculate elapsed real time in hours
- const elapsedMs = Date.now() - this.realTimeStart;
- const elapsedHours = (elapsedMs / 1000 / 3600) * this.timeAcceleration;
- 
- // Calculate rotation angle based on real rotation period
+ // Calculate rotation angle based on real rotation period (use shared value from outer scope)
  const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
  let rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
  
@@ -7276,7 +7424,7 @@ createHyperrealisticHubble(satData) {
  userData.orbitalVelocity.set(velocityX, velocityY, velocityZ).normalize();
  
  // Debug: Log satellite positions (especially ISS)
- if (Math.random() < 0.001) {
+ if (DEBUG.enabled && Math.random() < 0.001) {
  if (userData.name.includes('ISS')) {
  console.log(` ISS: Earth at (${earthPosition.x.toFixed(1)}, ${earthPosition.y.toFixed(1)}, ${earthPosition.z.toFixed(1)}), ISS at (${satellite.position.x.toFixed(1)}, ${satellite.position.y.toFixed(1)}, ${satellite.position.z.toFixed(1)}), distance=${userData.distance}, visible=${satellite.visible}, children=${satellite.children.length}`);
  }
@@ -7422,7 +7570,7 @@ createHyperrealisticHubble(satData) {
  this.orbits.forEach(orbit => {
  orbit.visible = visible;
  });
- console.log(` Orbit paths ${visible ? 'shown' : 'hidden'}`);
+ if (DEBUG.enabled) console.log(` Orbit paths ${visible ? 'shown' : 'hidden'}`);
  }
  
  toggleConstellations(visible) {
@@ -7430,7 +7578,7 @@ createHyperrealisticHubble(satData) {
  this.constellations.forEach(constellation => {
  constellation.visible = visible;
  });
- console.log(` Constellations ${visible ? 'shown' : 'hidden'}`);
+ if (DEBUG.enabled) console.log(` Constellations ${visible ? 'shown' : 'hidden'}`);
  }
  
  updateScale() {
@@ -7599,7 +7747,7 @@ createHyperrealisticHubble(satData) {
  // Recreate moon orbital paths
  Object.values(this.planets).forEach(planet => {
  if (planet.userData.moons && planet.userData.moons.length > 0) {
- console.log(`[Orbits] Recreating ${planet.userData.moons.length} moon orbit(s) for ${planet.userData.name}`);
+ if (DEBUG.enabled) console.log(`[Orbits] Recreating ${planet.userData.moons.length} moon orbit(s) for ${planet.userData.name}`);
  planet.userData.moons.forEach(moon => {
  const moonDistance = moon.userData.distance;
  
@@ -7656,7 +7804,6 @@ createHyperrealisticHubble(satData) {
  for (let i = 0; i < particleCount; i++) {
  const angle = Math.atan2(positions[i * 3 + 2], positions[i * 3]);
  const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
- const height = positions[i * 3 + 1];
  
  // Normalize from current scale to 0-1 range
  const normalizedDist = Math.max(0, Math.min(1, (currentDist - oldParams.base) / oldParams.spread));
@@ -7692,7 +7839,6 @@ createHyperrealisticHubble(satData) {
  for (let i = 0; i < particleCount; i++) {
  const angle = Math.atan2(positions[i * 3 + 2], positions[i * 3]);
  const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
- const height = positions[i * 3 + 1];
  
  // Normalize from current scale to 0-1 range
  const normalizedDist = Math.max(0, Math.min(1, (currentDist - oldParams.base) / oldParams.spread));
@@ -7970,7 +8116,7 @@ createHyperrealisticHubble(satData) {
  this.focusedComet.scale.set(1, 1, 1); // Reset scale
  this.focusedComet.rotation.y = 0; // Reset rotation
  this.focusedComet = null;
- console.log(' [Detail View] Disabled - focusing on non-comet object');
+ if (DEBUG.enabled) console.log(' [Detail View] Disabled - focusing on non-comet object');
  }
  let actualRadius;
  
@@ -8006,11 +8152,11 @@ createHyperrealisticHubble(satData) {
  // ISS and orbital satellites: Close enough to see details but not too close
  // For tiny objects like ISS (size ~0.03), position camera at reasonable distance (1.0 units minimum)
  distance = Math.max(actualRadius * 15, 1.0);
- console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 15, min 1.0) for ISS viewing`);
+ if (DEBUG.enabled) console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 15, min 1.0) for ISS viewing`);
  } else if (userData.type === 'Moon' && userData.parentPlanet) {
  // Moons: Close chase-cam to see moon details and parent planet surface
  distance = Math.max(actualRadius * 4, 2);
- console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for "${userData.name}" around ${userData.parentPlanet}`);
+ if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for "${userData.name}" around ${userData.parentPlanet}`);
  } else if (userData.isSpacecraft) {
  // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);
@@ -8019,7 +8165,7 @@ createHyperrealisticHubble(satData) {
  // Comets have tiny nucleus (0.0008-0.005) but tails extend 30-100+ units
  // Position camera far enough back to see the full spectacle
  distance = 80; // Fixed distance to capture nucleus + coma + full tails
- console.log(` [Comet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (nucleus size: ${actualRadius.toFixed(4)})`);
+ if (DEBUG.enabled) console.log(` [Comet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (nucleus size: ${actualRadius.toFixed(4)})`);
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
@@ -8037,7 +8183,7 @@ createHyperrealisticHubble(satData) {
  this.focusedComet = object;
  object.userData.detailView = true;
  
- console.log(` [Comet Detail View] Enabling for ${userData.name} - bringing to viewable distance`);
+ if (DEBUG.enabled) console.log(` [Comet Detail View] Enabling for ${userData.name} - bringing to viewable distance`);
  
  // IMMEDIATELY move comet to detail view position
  const detailDistance = 200;
@@ -8061,10 +8207,12 @@ createHyperrealisticHubble(satData) {
  const detailViewScale = 15.0; // Sweet spot: visible but not overwhelming
  object.scale.set(detailViewScale, detailViewScale, detailViewScale);
  
+ if (DEBUG.enabled) {
  console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
  console.log(`   New position: (${object.position.x.toFixed(1)}, ${object.position.y.toFixed(1)}, ${object.position.z.toFixed(1)})`);
- console.log(`   Tail rotation: ${(object.rotation.y * 180 / Math.PI).toFixed(1)}� (pointing away from sun)`);
+ console.log(`   Tail rotation: ${(object.rotation.y * 180 / Math.PI).toFixed(1)}° (pointing away from sun)`);
  console.log(`   Scale: ${detailViewScale}x for visibility`);
+ }
  }
  
  // Special handling for constellations - use center of star pattern
@@ -8124,13 +8272,13 @@ createHyperrealisticHubble(satData) {
      // Orbital spacecraft (ISS, satellites): slow to 0.1x for detailed observation
      if (window.app && window.app.timeSpeed !== 0) {
          window.app.timeSpeed = 0.1;
-         console.log(` [Time Speed] Reduced to 0.1x for orbital spacecraft observation`);
+         if (DEBUG.enabled) console.log(` [Time Speed] Reduced to 0.1x for orbital spacecraft observation`);
      }
  } else if (userData.type === 'planet' || userData.isPlanet) {
      // Planets: return to normal 1x speed
      if (window.app && window.app.timeSpeed !== 0 && window.app.timeSpeed !== 1) {
          window.app.timeSpeed = 1;
-         console.log(` [Time Speed] Restored to 1x for planet observation`);
+         if (DEBUG.enabled) console.log(` [Time Speed] Restored to 1x for planet observation`);
      }
  }
  
@@ -8145,7 +8293,7 @@ createHyperrealisticHubble(satData) {
  // ISS and orbital satellites: allow close inspection and wide zoom range
  minDist = 0.2; // Get close to see module details
  maxDist = 100; // Zoom out to see Earth + satellite in context
- console.log(` [ISS/Satellite Zoom] min: ${minDist}, max: ${maxDist}`);
+ if (DEBUG.enabled) console.log(` [ISS/Satellite Zoom] min: ${minDist}, max: ${maxDist}`);
  } else {
  minDist = Math.max(actualRadius * 0.5, 0.5); // Allow zooming to half the radius
  maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
@@ -8162,7 +8310,7 @@ createHyperrealisticHubble(satData) {
  controls.autoRotate = false;
  
  if (userData.isSpacecraft && userData.orbitPlanet) {
- console.log(` [ISS Controls] Panning disabled to keep ISS centered and Earth in view`);
+ if (DEBUG.enabled) console.log(` [ISS Controls] Panning disabled to keep ISS centered and Earth in view`);
  }
  
  // Smooth camera transition
@@ -8216,13 +8364,13 @@ createHyperrealisticHubble(satData) {
      if (distanceFromOrigin < 500) {
          // If too close to origin, push camera further out in perpendicular direction
          endPos.add(perpendicularVector.clone().multiplyScalar(500));
-         console.log(` [${userData.type}] Camera repositioned further from solar system`);
+         if (DEBUG.enabled) console.log(` [${userData.type}] Camera repositioned further from solar system`);
      }
      
      // Set controls target to constellation center - camera will look directly at it
      controls.target.copy(targetPosition);
      
-     console.log(` [${userData.type}] Camera at ${distanceFromOrigin.toFixed(0)} units from origin, looking at constellation at ${targetPosition.length().toFixed(0)} units`);
+     if (DEBUG.enabled) console.log(` [${userData.type}] Camera at ${distanceFromOrigin.toFixed(0)} units from origin, looking at constellation at ${targetPosition.length().toFixed(0)} units`);
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
      // For ISS and other spacecraft: position camera to see BOTH ISS and Earth
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
@@ -8276,7 +8424,7 @@ createHyperrealisticHubble(satData) {
          );
          
          controls.target.copy(targetPosition); // Look at moon
-         console.log(` [Moon Chase-Cam] Camera positioned behind ${userData.name} for parent planet flyover`);
+         if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Camera positioned behind ${userData.name} for parent planet flyover`);
      } else {
          // Fallback: static angle
          const angle = Math.random() * Math.PI * 2;
@@ -8301,32 +8449,32 @@ createHyperrealisticHubble(satData) {
          elevationFactor = 0.25; // Lower angle to see rings better
          angleOffset = Math.PI * 0.3; // 54 degrees for ring visibility
          distanceMultiplier = 1.2; // Pull back a bit to see full ring system
-         console.log(` [Saturn] Ring showcase view`);
+         if (DEBUG.enabled) console.log(` [Saturn] Ring showcase view`);
      } else if (planetName === 'jupiter') {
          // Jupiter: Slight elevation to show bands and Great Red Spot
          elevationFactor = 0.35;
          angleOffset = Math.PI * 0.15; // 27 degrees
-         console.log(` [Jupiter] Band showcase view`);
+         if (DEBUG.enabled) console.log(` [Jupiter] Band showcase view`);
      } else if (planetName === 'mars') {
          // Mars: Medium elevation to show polar caps
          elevationFactor = 0.45;
          angleOffset = Math.PI * 0.25; // 45 degrees
-         console.log(` [Mars] Polar cap view`);
+         if (DEBUG.enabled) console.log(` [Mars] Polar cap view`);
      } else if (planetName === 'earth') {
          // Earth: Beautiful oblique angle
          elevationFactor = 0.5;
          angleOffset = Math.PI * 0.2; // 36 degrees
-         console.log(` [Earth] Oblique orbital view`);
+         if (DEBUG.enabled) console.log(` [Earth] Oblique orbital view`);
      } else if (planetName === 'venus' || planetName === 'mercury') {
          // Inner planets: Higher elevation
          elevationFactor = 0.55;
          angleOffset = Math.PI * 0.3;
-         console.log(` [${planetName}] High angle view`);
+         if (DEBUG.enabled) console.log(` [${planetName}] High angle view`);
      } else if (planetName === 'uranus' || planetName === 'neptune') {
          // Ice giants: Moderate angle with slight randomness
          elevationFactor = 0.4 + Math.random() * 0.2;
          angleOffset = Math.PI * 0.25;
-         console.log(` [${planetName}] Ice giant showcase`);
+         if (DEBUG.enabled) console.log(` [${planetName}] Ice giant showcase`);
      } else {
          // Default planet view
          elevationFactor = 0.4;
@@ -8347,7 +8495,7 @@ createHyperrealisticHubble(satData) {
      const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
      const cometToSunDir = sunPosition.clone().sub(targetPosition).normalize();
      
-     // Position camera at 45� angle from sun-comet line, elevated for cinematic view
+     // Position camera at 45° angle from sun-comet line, elevated for cinematic view
      // This shows: nucleus (center), coma (glow), and tails streaming AWAY from camera toward us
      const rightVector = new THREE.Vector3(-cometToSunDir.z, 0, cometToSunDir.x).normalize();
      
@@ -8384,7 +8532,7 @@ createHyperrealisticHubble(satData) {
          targetPosition.z + Math.sin(angle) * distance * 0.8
      );
      controls.target.copy(targetPosition);
-     console.log(` [Asteroid] Close dramatic angle for irregular shape showcase`);
+     if (DEBUG.enabled) console.log(` [Asteroid] Close dramatic angle for irregular shape showcase`);
  } else {
      // Other objects: Dynamic positioning with slight variation
      const variation = Math.random() * 0.2 - 0.1; // -0.1 to +0.1 variation
@@ -8400,7 +8548,7 @@ createHyperrealisticHubble(satData) {
  if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
      camera.lookAt(targetPosition); // Immediately orient camera toward target
      controls.update(); // Apply the change
-     console.log(` [${userData.type}] Pre-animation: Camera oriented to look at target`);
+     if (DEBUG.enabled) console.log(` [${userData.type}] Pre-animation: Camera oriented to look at target`);
  }
  
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
@@ -8620,11 +8768,11 @@ createHyperrealisticHubble(satData) {
  }
 
  toggleLabels(visible) {
- console.log(` toggleLabels called with visible=${visible}, labels.length=${this.labels?.length || 0}`);
+ if (DEBUG.enabled) console.log(` toggleLabels called with visible=${visible}, labels.length=${this.labels?.length || 0}`);
  
  if (!this.labels || this.labels.length === 0) {
  console.warn(' No labels to toggle - labels array is empty or undefined');
- console.log(' this.labels:', this.labels);
+ if (DEBUG.enabled) console.log(' this.labels:', this.labels);
  return;
  }
  
@@ -8638,7 +8786,7 @@ createHyperrealisticHubble(satData) {
  }
  });
  
- console.log(` Labels now: ${newVisibility ? 'VISIBLE ' : 'HIDDEN '} (${this.labels.length} labels toggled)`);
+ if (DEBUG.enabled) console.log(` Labels now: ${newVisibility ? 'VISIBLE ' : 'HIDDEN '} (${this.labels.length} labels toggled)`);
  }
 
  getQuickNavTargets() {

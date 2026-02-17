@@ -88,6 +88,7 @@ export class UIManager {
 
  if (this.elements.infoPanel) {
  this.elements.infoPanel.classList.remove('hidden');
+ this.elements.infoPanel.setAttribute('aria-hidden', 'false');
  }
  }
 
@@ -97,18 +98,21 @@ export class UIManager {
  }
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.remove('hidden');
+ this.elements.helpModal.setAttribute('aria-hidden', 'false');
  }
  }
 
  closeInfoPanel() {
  if (this.elements.infoPanel) {
  this.elements.infoPanel.classList.add('hidden');
+ this.elements.infoPanel.setAttribute('aria-hidden', 'true');
  }
  }
 
  closeHelpModal() {
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.add('hidden');
+ this.elements.helpModal.setAttribute('aria-hidden', 'true');
  }
  }
  

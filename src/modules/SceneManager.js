@@ -94,10 +94,12 @@ export class SceneManager {
  this.renderer.domElement.style.height = '100%';
  
  container.appendChild(this.renderer.domElement);
+ if (DEBUG.enabled) {
  console.log('✅ Canvas added to DOM');
  console.log('📐 Canvas size:', this.renderer.domElement.width, 'x', this.renderer.domElement.height);
  console.log('📦 Container:', container.id);
  console.log('🎨 Renderer output:', this.renderer.outputColorSpace);
+ }
  } else {
  throw new Error('Canvas container not found');
  }
