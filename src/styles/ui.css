@@ -1047,18 +1047,24 @@ select {
         min-width: 0;
     }
     
-    /* Hide text search on mobile — dropdown alone is sufficient */
-    #nav-search {
-        display: none;
-    }
-    
-    /* Nav wrapper: just the dropdown */
+    /* Nav wrapper: search + dropdown on one row */
     .nav-search-wrapper {
         flex-direction: row !important;
         gap: 6px;
         flex: 1;
         width: 100%;
         min-width: 0;
+    }
+
+    #nav-search {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto !important;
+        max-width: none;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 6px 8px;
+        font-size: 12px;
     }
 
     .nav-dropdown {
