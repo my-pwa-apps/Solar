@@ -9,6 +9,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        searchObjects: "🔍 Search objects...",
         
         // Object categories
         ourStar: "Our Star",
@@ -300,6 +301,7 @@ const translations = {
         
         // Navigatie
         quickNavigation: "Navigatie",
+        searchObjects: "🔍 Objecten zoeken...",
         
         // Object categorieën
         ourStar: "Onze Ster",
@@ -563,6 +565,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        searchObjects: "🔍 Rechercher des objets...",
         
         // Catégories d'objets
         ourStar: "Notre Étoile",
@@ -812,6 +815,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        searchObjects: "🔍 Objekte suchen...",
         
         // Objektkategorien
         ourStar: "Unser Stern",
@@ -1061,6 +1065,7 @@ const translations = {
         
         // Navegación
         quickNavigation: "Navegación",
+        searchObjects: "🔍 Buscar objetos...",
         
         // Categorías de objetos
         ourStar: "Nuestra Estrella",
@@ -1310,6 +1315,7 @@ const translations = {
         
         // Navegação
         quickNavigation: "Navegação",
+        searchObjects: "🔍 Pesquisar objetos...",
         
         // Categorias de objetos
         ourStar: "Nossa Estrela",
