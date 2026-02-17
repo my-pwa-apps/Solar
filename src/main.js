@@ -63,6 +63,9 @@ class App {
  // Make this app instance globally accessible for VR and other modules
  window.app = this;
  
+ // Setup space facts immediately so they show during loading
+ this.setupSpaceFacts();
+ 
  this.init();
  }
 
@@ -129,9 +132,6 @@ class App {
  this.hideHoverLabel();
  });
  }
- 
- // Setup space facts before hiding loading so they're visible
- this.setupSpaceFacts();
  
  // Hide loading screen
  this.uiManager.hideLoading();

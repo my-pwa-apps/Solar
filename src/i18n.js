@@ -382,6 +382,7 @@ const translations = {
         description: "Beschrijving",
         
         // Laadscherm
+        preparingJourney: "Je ruimtereis voorbereiden...",
         loading: "Laden...",
         initializing: "Initialiseren...",
         settingUpScene: "Scène opzetten...",
@@ -639,6 +640,7 @@ const translations = {
         description: "Description",
         
         // Écran de chargement
+        preparingJourney: "Préparation de votre voyage spatial...",
         loading: "Chargement...",
         initializing: "Initialisation...",
         settingUpScene: "Configuration de la scène...",
@@ -888,6 +890,7 @@ const translations = {
         description: "Beschreibung",
         
         // Ladebildschirm
+        preparingJourney: "Deine Weltraumreise wird vorbereitet...",
         loading: "Lädt...",
         initializing: "Initialisierung...",
         settingUpScene: "Szene wird eingerichtet...",
@@ -1138,6 +1141,7 @@ const translations = {
         description: "Descripción",
         
         // Pantalla de carga
+        preparingJourney: "Preparando tu viaje espacial...",
         loading: "Cargando...",
         initializing: "Inicializando...",
         settingUpScene: "Configurando escena...",
@@ -1388,6 +1392,7 @@ const translations = {
         description: "Descrição",
         
         // Tela de carregamento
+        preparingJourney: "Preparando sua viagem espacial...",
         loading: "Carregando...",
         initializing: "Inicializando...",
         settingUpScene: "Configurando cena...",
