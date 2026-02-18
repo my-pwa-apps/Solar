@@ -9,7 +9,6 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
-        searchObjects: "🔍 Search objects...",
         
         // Object categories
         ourStar: "Our Star",
@@ -45,6 +44,10 @@ const translations = {
         triton: "Triton",
         
         // Navigation menu sections
+        jupiterSystem: "Jupiter System",
+        saturnSystem: "Saturn System",
+        uranusSystem: "Uranus System",
+        neptuneSystem: "Neptune System",
         plutoSystem: "Pluto System",
         nearbyStars: "Nearby Stars",
         exoplanets: "Exoplanets",
@@ -2127,168 +2130,3 @@ const translations = {
         descAsteroidBelt: ' O cinturão de asteroides contém milhões de objetos rochosos entre Marte e Júpiter. Ceres, o maior objeto aqui, é um planeta anão! A maioria dos asteroides são materiais residuais da formação do sistema solar há 4,6 bilhões de anos.',
         descKuiperBelt: ' O Cinturão de Kuiper é uma região além de Netuno repleta de corpos gelados e planetas anões, incluindo Plutão! É como uma enorme rosca de objetos congelados restantes da formação do sistema solar. Cometas de período curto vêm daqui!',
         descOortCloud: ' A Nuvem de Oort é uma vasta concha esférica de objetos gelados que envolve todo o nosso sistema solar! Ela se estende de aproximadamente 50.000 a 200.000 UA do Sol. Cometas de longo período como Hale-Bopp se originam neste reino distante.'
-    }
-};
-
-// Get current language from HTML lang attribute
-function getCurrentLanguage() {
-    return document.documentElement.lang || 'en';
-}
-
-// Get translation for current language
-function t(key) {
-    const lang = getCurrentLanguage();
-    return translations[lang]?.[key] || translations.en[key] || key;
-}
-
-// Apply translations to the page
-function applyTranslations() {
-    const lang = getCurrentLanguage();
-    
-    // Update all elements with data-i18n attribute
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        const translation = t(key);
-        
-        // Update text content, placeholder, or label
-        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            element.placeholder = translation;
-        } else if (element.tagName === 'OPTGROUP') {
-            // For optgroups, update the label attribute
-            element.setAttribute('label', translation);
-        } else {
-            // Check if element has a .btn-text child (icon + text buttons)
-            const btnText = element.querySelector('.btn-text');
-            if (btnText) {
-                // Only update the text span, preserve the icon
-                btnText.textContent = translation;
-            } else {
-                // For all other elements, update text content
-                element.textContent = translation;
-            }
-        }
-    });
-    
-    // Update document title
-    document.title = t('appTitle') + ' - ' + t('subtitle');
-    
-    // Update meta tags
-    const metaTags = {
-        'description': t('subtitle'),
-        'og:title': t('appTitle') + ' - ' + t('subtitle'),
-        'twitter:title': t('appTitle') + ' - ' + t('subtitle')
-    };
-    
-    Object.entries(metaTags).forEach(([name, content]) => {
-        const meta = document.querySelector(`meta[name="${name}"], meta[property="${name}"]`);
-        if (meta) {
-            meta.setAttribute('content', content);
-        }
-    });
-}
-
-// Export for use in modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { t, applyTranslations, getCurrentLanguage, translations };
-}
-
-// Function to change language
-function setLanguage(lang) {
-    const supportedLanguages = ['en', 'nl', 'fr', 'de', 'es', 'pt'];
-    // Validate and default to English if unsupported
-    if (!supportedLanguages.includes(lang)) {
-        lang = 'en';
-    }
-    
-    // Update HTML lang attribute
-    document.documentElement.lang = lang;
-    
-    // Store preference
-    localStorage.setItem('appLanguage', lang);
-    
-    // Update manifest link
-    const manifestFiles = {
-        'en': './manifest.json',
-        'nl': './manifest.nl.json',
-        'fr': './manifest.fr.json',
-        'de': './manifest.de.json',
-        'es': './manifest.es.json',
-        'pt': './manifest.pt.json'
-    };
-    
-    const manifestLink = document.querySelector('link[rel="manifest"]');
-    if (manifestLink) {
-        manifestLink.href = manifestFiles[lang] || './manifest.json';
-    }
-    
-    // Re-apply translations
-    applyTranslations();
-}
-
-// Flag emojis for languages (only shown on mobile - Windows doesn't support flag emojis)
-const languageFlags = {
-    en: '🇬🇧',
-    nl: '🇳🇱',
-    fr: '🇫🇷',
-    de: '🇩🇪',
-    es: '🇪🇸',
-    pt: '🇵🇹'
-};
-
-// Detect if we should show flag emojis (mobile/non-Windows platforms)
-function shouldShowFlagEmojis() {
-    const isWindows = navigator.platform.indexOf('Win') > -1 || 
-                      navigator.userAgent.indexOf('Windows') > -1;
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    // Show flags on mobile OR non-Windows desktop (macOS, Linux support flags)
-    return isMobile || !isWindows;
-}
-
-// Initialize language UI on page load
-// Note: Language detection is already handled by index.html inline script
-// This function just updates the UI to match the detected language
-function initLanguage() {
-    const lang = getCurrentLanguage();
-    
-    // Update language selector to match current language
-    const selector = document.getElementById('language-selector');
-    if (selector) {
-        selector.value = lang;
-        
-        // Add flag emojis on mobile/non-Windows platforms
-        if (shouldShowFlagEmojis()) {
-            Array.from(selector.options).forEach(option => {
-                const flag = languageFlags[option.value];
-                if (flag && !option.textContent.includes(flag)) {
-                    option.textContent = `${flag} ${option.textContent}`;
-                }
-            });
-        }
-        
-        // Add change event listener
-        selector.addEventListener('change', (e) => {
-            setLanguage(e.target.value);
-        });
-    }
-    
-    // Apply translations
-    applyTranslations();
-}
-
-// Make translation function globally available
-window.t = t;
-window.applyTranslations = applyTranslations;
-window.getCurrentLanguage = getCurrentLanguage;
-window.setLanguage = setLanguage;
-
-// Auto-apply translations when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLanguage);
-} else {
-    initLanguage();
-}
-
-// Note: Functions are available globally via window.t, window.applyTranslations, etc.
-// ES6 imports in modules will use: import { t } from './i18n.js'
-// The functions are also attached to window for backwards compatibility
-

@@ -43,7 +43,7 @@ class EarthZoomManager {
             console.warn('[EarthZoomManager] No Earth object provided');
             return;
         }
-
+        
         
         this.isInitialized = true;
     }
@@ -137,6 +137,22 @@ class EarthZoomManager {
         this.map.on('zoomend', () => this.updateZoomDisplay());
     }
 
+ribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            })
+        };
+        
+        // Set default layer
+        this.currentTileLayer = 'satellite';
+        this.tileLayers.satellite.addTo(this.map);
+        
+        // Update coordinates display on map move
+        this.map.on('move', () => this.updateCoordsDisplay());
+        this.map.on('zoomend', () => this.updateZoomDisplay());
+        
+        console.log('[EarthZoomManager] Leaflet map initialized');
+    }
+    
     /**
      * Setup event listeners
      */
@@ -702,6 +718,12 @@ class EarthZoomManager {
     dispose() {
         if (this.map) {
             this.map.remove();
+            this.map = null;
+        }
+        
+        this.mapContainer?.remove();
+        this.zoomIndicator?.remove();
+         this.map.remove();
             this.map = null;
         }
         

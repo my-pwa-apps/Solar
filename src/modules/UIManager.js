@@ -63,7 +63,6 @@ export class UIManager {
 
  hideLoading() {
  if (this.elements.loading) {
- if (window.stopLoadingFacts) window.stopLoadingFacts();
  this.elements.loading.classList.add('hidden');
  }
  // Show info panel (explorer removed - using header dropdown instead)
