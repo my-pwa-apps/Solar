@@ -1148,19 +1148,20 @@ class App {
  
  searchInput.addEventListener('input', (e) => {
  const query = e.target.value.toLowerCase().trim();
- 
+
  if (!query) {
  // Restore original dropdown and re-apply current language
  dropdown.innerHTML = originalHTML;
  if (window.applyTranslations) window.applyTranslations();
  return;
  }
- 
- // Filter options
+
+ // Filter from the original in-memory list, not the live (already filtered) DOM
  const matchingOptions = [];
- dropdown.querySelectorAll('option').forEach(option => {
- if (option.value && option.textContent.toLowerCase().includes(query)) {
- matchingOptions.push(option.cloneNode(true));
+ allOptions.forEach(node => {
+ if (node.tagName === 'OPTION' && node.value &&
+ node.textContent.toLowerCase().includes(query)) {
+ matchingOptions.push(node.cloneNode(true));
  }
  });
  
