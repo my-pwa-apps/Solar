@@ -4960,10 +4960,9 @@ export class SolarSystemModule {
  ];
 
  // Real image texture paths for galaxies
- // Note: Andromeda is rendered procedurally because any wide-field photo
- // contains hundreds of foreground Milky Way stars that look like a
- // cut-out image pasted over the scene.
+ // Real image texture paths for galaxies
  const galaxyTextures = {
+ 'Andromeda Galaxy': './textures/galaxies/andromeda_galaxy.jpg',
  'Whirlpool Galaxy': './textures/galaxies/whirlpool_galaxy.jpg',
  'Sombrero Galaxy':  './textures/galaxies/sombrero_galaxy.jpg'
  };
