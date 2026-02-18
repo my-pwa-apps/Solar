@@ -4133,7 +4133,8 @@ export class SolarSystemModule {
  map: processedTex,
  transparent: true,
  opacity: 0.95,
- depthWrite: false
+ depthWrite: false,
+ blending: THREE.AdditiveBlending
  });
  const sprite = new THREE.Sprite(spriteMat);
  sprite.scale.set(nebData.size * 2, nebData.size * 2, 1);
@@ -4978,7 +4979,8 @@ export class SolarSystemModule {
  map: processedTex,
  transparent: true,
  opacity: 0.95,
- depthWrite: false
+ depthWrite: false,
+ blending: THREE.AdditiveBlending
  });
  const sprite = new THREE.Sprite(gMat);
  sprite.scale.set(galData.size * 2.5, galData.size * 2.5, 1);
