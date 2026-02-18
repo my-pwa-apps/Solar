@@ -4558,7 +4558,7 @@ export class SolarSystemModule {
  { name: 'Sheratan', ra: 28.7, dec: 20.8, mag: 2.6, color: 0xFFFFE0 }, // 1 - First horn
  { name: 'Mesarthim', ra: 28.4, dec: 19.3, mag: 3.9, color: 0xFFFFF0 }, // 2 - Second horn
  { name: '41 Arietis', ra: 44.8, dec: 27.7, mag: 3.6, color: 0xFFFFE0 }, // 3 - Body
- { name: 'Bharani', ra: 27.1, dec: 27.3, mag: 3.6, color: 0xFFFFF0 } // 4 - Top of head
+ { name: 'Bharani', ra: 40.2, dec: 27.6, mag: 4.7, color: 0xFFFFF0 } // 4 - Top of head (35 Ari)
  ],
  lines: [[4,0], [0,1], [1,2], [0,3]] // Ram's head with horns and body
  },
@@ -4582,7 +4582,7 @@ export class SolarSystemModule {
  { name: 'Pollux', ra: 116.3, dec: 28.0, mag: 1.2, color: 0xFFA500 },
  { name: 'Castor', ra: 113.6, dec: 31.9, mag: 1.6, color: 0xFFFFF0 },
  { name: 'Alhena', ra: 99.4, dec: 16.4, mag: 1.9, color: 0xFFFFF0 },
- { name: 'Mebsuta', ra: 100.0, dec: 25.1, mag: 3.0, color: 0xFFFFE0 }
+ { name: 'Mebsuta', ra: 101.0, dec: 25.1, mag: 3.0, color: 0xFFFFE0 }
  ],
  lines: [[1,0], [0,2], [2,3], [3,1]] // Rectangle pattern showing the twin figures
  },
@@ -4595,7 +4595,7 @@ export class SolarSystemModule {
  { name: 'Asellus Australis', ra: 130.1, dec: 18.2, mag: 3.9, color: 0xFFA500 }, // 2 - Southern donkey
  { name: 'Asellus Borealis', ra: 131.2, dec: 21.5, mag: 4.7, color: 0xFFFFF0 }, // 3 - Northern donkey
  { name: 'Iota Cancri', ra: 131.2, dec: 28.8, mag: 4.0, color: 0xFFFFE0 }, // 4 - Shell
- { name: 'Lambda Cancri', ra: 122.8, dec: 24.0, mag: 5.9, color: 0xFFFFF0 } // 5 - Body center
+ { name: 'Lambda Cancri', ra: 131.6, dec: 24.0, mag: 5.9, color: 0xFFFFF0 } // 5 - Body center
  ],
  lines: [[0,5], [5,1], [5,2], [2,3], [3,4], [4,5]] // Crab body with claws and legs
  },
@@ -4608,7 +4608,7 @@ export class SolarSystemModule {
  { name: 'Algieba', ra: 154.9, dec: 19.8, mag: 2.0, color: 0xFFA500 }, // 2 - Mane
  { name: 'Zosma', ra: 168.5, dec: 20.5, mag: 2.6, color: 0xFFFFF0 }, // 3 - Back
  { name: 'Eta Leonis', ra: 149.2, dec: 16.8, mag: 3.5, color: 0xFFFFE0 }, // 4 - Sickle
- { name: 'Chertan', ra: 168.6, dec: 14.6, mag: 3.3, color: 0xFFFFF0 } // 5 - Rear haunch
+ { name: 'Chertan', ra: 168.6, dec: 15.4, mag: 3.3, color: 0xFFFFF0 } // 5 - Rear haunch
  ],
  lines: [[4,2], [2,0], [0,5], [5,1], [1,3], [3,2]] // Sickle head + triangle body
  },
@@ -4621,7 +4621,7 @@ export class SolarSystemModule {
  { name: 'Porrima', ra: 190.4, dec: -1.4, mag: 2.7, color: 0xFFFFF0 }, // 2 - Body center
  { name: 'Zavijava', ra: 177.7, dec: 1.8, mag: 3.6, color: 0xFFFFF0 }, // 3 - Corner
  { name: 'Heze', ra: 211.7, dec: -0.7, mag: 3.4, color: 0xFFFFF0 }, // 4 - Arm
- { name: 'Minelauva', ra: 184.9, dec: 3.4, mag: 3.4, color: 0xFFFFE0 } // 5 - Robe
+ { name: 'Minelauva', ra: 193.9, dec: 3.4, mag: 3.4, color: 0xFFFFE0 } // 5 - Robe
  ],
  lines: [[3,5], [5,1], [1,2], [2,4], [4,0]] // Y-shaped maiden figure with wheat
  },
@@ -4655,17 +4655,16 @@ export class SolarSystemModule {
  name: 'Sagittarius (The Archer)',
  description: ' Sagittarius aims his arrow at the heart of Scorpius! The "Teapot" asterism is easy to spot. Points toward the center of our Milky Way galaxy!',
  stars: [
- { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot base
- { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Spout
- { name: 'Ascella', ra: 290.7, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 2 - Spout tip
- { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 }, // 3 - Bottom
- { name: 'Kaus Borealis', ra: 276.9, dec: -25.4, mag: 2.8, color: 0xFFA500 }, // 4 - Top
- { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Lid
- { name: 'Zeta Sagittarii', ra: 285.7, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 6 - Handle
- { name: 'Tau Sagittarii', ra: 286.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 7 - Handle top
- { name: 'Lambda Sagittarii', ra: 276.9, dec: -25.4, mag: 2.8, color: 0xFFA500 } // 8 - Kaus Borealis (bow top, same as 4 for closure)
+ { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot base (spout bottom)
+ { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Spout top
+ { name: 'Ascella', ra: 291.0, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 2 - Spout tip (ζ Sgr)
+ { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 }, // 3 - Bottom left
+ { name: 'Kaus Borealis', ra: 277.0, dec: -25.4, mag: 2.8, color: 0xFFA500 }, // 4 - Top left (lid)
+ { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Top right (lid)
+ { name: 'Tau Sagittarii', ra: 290.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 6 - Handle top
+ { name: 'Eta Sagittarii', ra: 274.8, dec: -36.8, mag: 3.1, color: 0xFFA500 } // 7 - Handle base (η Sgr)
  ],
- lines: [[3,0], [0,6], [6,2], [2,1], [1,5], [5,7], [7,4], [4,3]] // Complete teapot with spout, handle
+ lines: [[7,3], [3,0], [0,2], [2,6], [6,5], [5,4], [4,3]] // Teapot: base-spout-handle-lid
  },
  {
  name: 'Capricornus (The Sea-Goat)',
@@ -4697,11 +4696,11 @@ export class SolarSystemModule {
  name: 'Pisces (The Fish)',
  description: ' Pisces shows two fish tied together! Represents Aphrodite and Eros who transformed into fish to escape the monster Typhon. Contains the vernal equinox point!',
  stars: [
- { name: 'Alpherg', ra: 2.0, dec: 2.8, mag: 3.8, color: 0xFFFFE0 }, // 0 - Eastern fish
- { name: 'Alrescha', ra: 8.0, dec: 2.8, mag: 3.8, color: 0xFFFFF0 }, // 1 - Knot (tie point)
- { name: 'Fumalsamakah', ra: 351.0, dec: 6.9, mag: 4.5, color: 0xFFFFF0 }, // 2 - Western fish
+ { name: 'Alpherg', ra: 25.7, dec: 15.3, mag: 3.6, color: 0xFFFFE0 }, // 0 - Eastern fish (η Psc)
+ { name: 'Alrescha', ra: 30.9, dec: 2.8, mag: 3.8, color: 0xFFFFF0 }, // 1 - Knot (tie point, α Psc)
+ { name: 'Fumalsamakah', ra: 351.1, dec: 3.8, mag: 4.5, color: 0xFFFFF0 }, // 2 - Western fish (β Psc)
  { name: 'Delta Piscium', ra: 357.5, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }, // 3 - Fish body
- { name: 'Eta Piscium', ra: 21.5, dec: 15.3, mag: 3.6, color: 0xFFA500 }, // 4 - Eastern fish tail
+ { name: 'Omega Piscium', ra: 359.3, dec: 6.9, mag: 4.0, color: 0xFFFFF0 }, // 4 - Eastern fish body (ω Psc)
  { name: 'Gamma Piscium', ra: 352.5, dec: 3.2, mag: 3.7, color: 0xFFFFE0 }, // 5 - Western fish body
  { name: 'Kappa Piscium', ra: 347.5, dec: 1.2, mag: 4.9, color: 0xFFFFF0 } // 6 - Western fish tail
  ],
@@ -4770,7 +4769,7 @@ export class SolarSystemModule {
  { name: 'Caph', ra: 2.3, dec: 59.1, mag: 2.3, color: 0xFFFFF0 },
  { name: 'Gamma Cas', ra: 14.2, dec: 60.7, mag: 2.5, color: 0xE0FFFF },
  { name: 'Ruchbah', ra: 21.5, dec: 60.2, mag: 2.7, color: 0xFFFFF0 },
- { name: 'Segin', ra: 25.6, dec: 63.7, mag: 3.4, color: 0xFFFFE0 }
+ { name: 'Segin', ra: 28.6, dec: 63.7, mag: 3.4, color: 0xFFFFE0 }
  ],
  lines: [[1,0], [0,2], [2,3], [3,4]] // W/M shape (Caph-Schedar-Gamma-Ruchbah-Segin)
  },
@@ -4781,11 +4780,11 @@ export class SolarSystemModule {
  { name: 'Deneb', ra: 310.4, dec: 45.3, mag: 1.3, color: 0xE0FFFF }, // 0 - Tail (supergiant)
  { name: 'Albireo', ra: 292.7, dec: 27.9, mag: 3.1, color: 0xFFA500 }, // 1 - Head (beautiful double star)
  { name: 'Sadr', ra: 305.6, dec: 40.3, mag: 2.2, color: 0xFFFFE0 }, // 2 - Center/breast
- { name: 'Gienah', ra: 312.3, dec: 33.9, mag: 2.5, color: 0xFFFFF0 }, // 3 - Right wing
+ { name: 'Aljanah', ra: 311.6, dec: 33.97, mag: 2.5, color: 0xFFA500 }, // 3 - Right wing (ε Cyg)
  { name: 'Delta Cygni', ra: 296.2, dec: 45.1, mag: 2.9, color: 0xE0FFFF }, // 4 - Left wing
- { name: 'Epsilon Cygni', ra: 310.9, dec: 33.9, mag: 2.5, color: 0xFFA500 } // 5 - Wing tip
+ { name: 'Zeta Cygni', ra: 311.5, dec: 30.2, mag: 3.2, color: 0xFFFFE0 } // 5 - Right wing tip (ζ Cyg)
  ],
- lines: [[0,2], [2,1], [2,4], [2,3], [3,5]] // Cross/Swan with extended wing
+ lines: [[0,2], [2,1], [4,2], [2,3], [3,5]] // Cross/Swan: tail-body-head, two wings
  },
  {
  name: 'Lyra (The Lyre)',
@@ -4817,7 +4816,7 @@ export class SolarSystemModule {
  stars: [
  { name: 'Mirfak', ra: 51.1, dec: 49.9, mag: 1.8, color: 0xFFFFE0 }, // 0 - Shoulder
  { name: 'Algol', ra: 47.0, dec: 40.9, mag: 2.1, color: 0xE0FFFF }, // 1 - Medusa's head
- { name: 'Atik', ra: 54.1, dec: 32.3, mag: 2.9, color: 0xE0FFFF }, // 2 - Knee
+ { name: 'Atik', ra: 59.5, dec: 31.9, mag: 2.9, color: 0xE0FFFF }, // 2 - Knee (ζ Per)
  { name: 'Gamma Persei', ra: 48.0, dec: 53.5, mag: 2.9, color: 0xFFFFE0 }, // 3 - Head
  { name: 'Delta Persei', ra: 57.3, dec: 47.8, mag: 3.0, color: 0xE0FFFF }, // 4 - Arm
  { name: 'Epsilon Persei', ra: 59.0, dec: 40.0, mag: 2.9, color: 0xE0FFFF } // 5 - Sword tip
