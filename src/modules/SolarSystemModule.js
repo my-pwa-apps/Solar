@@ -558,7 +558,7 @@ export class SolarSystemModule {
             name: t('titania'),
             radius: 0.124,
             color: 0xAAAAAA,
-            distance: 5,
+            distance: 8, // Increased from 5: Uranus radius is 3.98, need clear visual separation
             speed: 1.410, // 3526x Uranus's speed (0.0004 * 3526)
             description: t('descTitania')
         });
@@ -568,7 +568,7 @@ export class SolarSystemModule {
             name: t('miranda'),
             radius: 0.037,
             color: 0x999999,
-            distance: 3.5,
+            distance: 6, // Fixed from 3.5: was INSIDE Uranus (radius 3.98)! Now clearly outside.
             speed: 2.0, // Reduced from 8.689 for visual stability
             description: t('descMiranda')
         }); // Neptune: 49,244 km / 12,742 km = 3.86
