@@ -5047,13 +5047,13 @@ export class SolarSystemModule {
  const d = imageData.data;
  const cx = w / 2, cy = h / 2;
  const maxR = Math.sqrt(cx * cx + cy * cy);
- // Black-point threshold: long-exposure astrophotos contain many faint
- // foreground stars (lum ≈ 0.10–0.22) that are not the target object.
- // Setting blackPoint = 0.20 cuts them out while keeping the brighter
- // galaxy/nebula structure. The higher stretch multiplier (4 vs 3) keeps
- // outer spiral arms and faint haze visible after the floor is removed.
- const blackPoint = 0.20; // anything dimmer (incl. foreground stars) → alpha 0
- const whiteStretch = 1 / (1 - blackPoint); // rescale 0.20–1.0 → 0–1
+ // Black-point: with AdditiveBlending the dark background adds nothing to
+ // the scene, so we only need a low floor (0.08) to suppress pure-black
+ // compression artefacts while keeping faint outer spiral arms and halos.
+ // The radial fade now starts at 70% so the full extent of large galaxies
+ // like Andromeda stays visible.
+ const blackPoint = 0.08; // very low floor – additive blending handles the rest
+ const whiteStretch = 1 / (1 - blackPoint);
  for (let py = 0; py < h; py++) {
  const dy = py - cy;
  const rowOff = py * w;
@@ -5063,11 +5063,11 @@ export class SolarSystemModule {
  // Luminance with black-point removal
  const lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
  const lumAdj = Math.max(0, lum - blackPoint) * whiteStretch;
- const lumAlpha = Math.pow(Math.min(1, lumAdj * 4), 1.6);
- // Radial fade: full inside 50% radius, smooth rolloff to 0 at corner
+ const lumAlpha = Math.pow(Math.min(1, lumAdj * 3.5), 1.4);
+ // Radial fade: full inside 70% radius, smooth rolloff to 0 at corner
  const dist = Math.sqrt(dx * dx + dy * dy) / maxR;
- const radial = dist < 0.5 ? 1.0
- : Math.max(0, 1 - ((dist - 0.5) / 0.5) ** 1.4);
+ const radial = dist < 0.7 ? 1.0
+ : Math.max(0, 1 - ((dist - 0.7) / 0.3) ** 1.6);
  d[i + 3] = Math.round(255 * lumAlpha * radial);
  }
  }
