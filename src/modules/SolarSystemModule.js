@@ -2920,11 +2920,22 @@ export class SolarSystemModule {
  
  // Add rings for gas giants with realistic appearance
  if (config.rings) {
- const ringGeometry = new THREE.RingGeometry(
- config.radius * 1.3,
- config.radius * 2.2,
- 128
- );
+ const innerR = config.radius * 1.3;
+ const outerR = config.radius * 2.2;
+ const ringGeometry = new THREE.RingGeometry(innerR, outerR, 128);
+
+ // Three.js RingGeometry UVs are wrong for radial ring textures — remap them.
+ // The ring texture (saturn_ring_alpha.png) is a horizontal 1-D strip where
+ // left edge = inner ring, right edge = outer ring. We need U to represent how
+ // far a vertex is between inner and outer radius, and V to be the angle.
+ const pos = ringGeometry.attributes.position;
+ const uv = ringGeometry.attributes.uv;
+ for (let i = 0; i < pos.count; i++) {
+ const x = pos.getX(i), y = pos.getY(i);
+ const r = Math.sqrt(x * x + y * y);
+ uv.setXY(i, (r - innerR) / (outerR - innerR), 0.5);
+ }
+ uv.needsUpdate = true;
  
  // Create realistic ring material with color variation
  let ringColor = 0x888888;
@@ -2956,10 +2967,9 @@ export class SolarSystemModule {
  const ringMaterial = ringMap
  ? new THREE.MeshBasicMaterial({
  map: ringMap,
- alphaMap: ringMap,
  side: THREE.DoubleSide,
  transparent: true,
- opacity: 1.0,
+ opacity: 0.9,
  depthWrite: false
  })
  : new THREE.MeshStandardMaterial({
