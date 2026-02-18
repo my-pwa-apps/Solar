@@ -95,10 +95,7 @@ export class SceneManager {
  
  container.appendChild(this.renderer.domElement);
  if (DEBUG.enabled) {
- console.log('✅ Canvas added to DOM');
- console.log('📐 Canvas size:', this.renderer.domElement.width, 'x', this.renderer.domElement.height);
- console.log('📦 Container:', container.id);
- console.log('🎨 Renderer output:', this.renderer.outputColorSpace);
+ console.log(`[Scene] Canvas ${this.renderer.domElement.width}×${this.renderer.domElement.height} → #${container.id}, colorSpace=${this.renderer.outputColorSpace}`);
  }
  } else {
  throw new Error('Canvas container not found');
@@ -387,17 +384,7 @@ export class SceneManager {
  this.scene.background = new THREE.Color(0x000011);
  }
  
- // Show welcome message and instructions
- if (DEBUG.enabled || DEBUG.VR) {
- console.log('[VR Controls]');
- console.log('  Left Stick: Move forward/back/strafe');
- console.log('  Right Stick: Turn left/right, move up/down');
- console.log('  Left Trigger: Sprint mode');
- console.log('  Left Grip: Grab & move to rotate view');
- console.log('  Left X Button: Toggle VR menu');
- console.log('  Point + Trigger: Select objects');
- console.log('  TIP: Press X BUTTON to open VR menu!');
- }
+ if (DEBUG.VR) console.log('[VR] Controls: LStick=move, RStick=turn/up-down, LTrigger=sprint, LGrip=rotate, X=menu, Trigger=select');
  
  // Hide VR UI panel initially - let user toggle with X button
  if (this.vrUIPanel) {

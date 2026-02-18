@@ -2888,31 +2888,8 @@ export class SolarSystemModule {
  rotationPhase: Math.random() * Math.PI * 2 // starting rotation angle
  };
 
- // Add atmosphere for Earth with clouds
- if (config.atmosphere) {
- // TEMPORARILY DISABLED FOR DEBUGGING - Testing if clouds are causing blue sphere
- if (DEBUG.enabled) console.log('?? ATMOSPHERE DISABLED FOR DEBUGGING - If Earth shows continents now, clouds were the issue!');
- 
- /* DISABLED CLOUD LAYER - TESTING
- // Cloud layer with procedural patterns - VERY subtle
- const cloudGeometry = new THREE.SphereGeometry(config.radius * 1.015, 32, 32);
- const cloudTexture = this.createCloudTexture(512);
- const cloudMaterial = new THREE.MeshStandardMaterial({
- map: cloudTexture,
- transparent: true,
- opacity: 0.15, // Very subtle - was 0.25
- roughness: 0.9,
- metalness: 0.0,
- side: THREE.FrontSide,
- alphaMap: cloudTexture,
- depthWrite: false // Don't block view of surface
- });
- const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
- clouds.userData.isCloud = true;
- planet.add(clouds);
- planet.userData.clouds = clouds;
- */
- }
+ // Cloud layer disabled — real NASA Earth texture already includes visible
+ // cloud patterns; a separate cloud mesh caused a blue-tint artefact.
 
  // NOTE: Great Red Spot removed - now included in Jupiter's NASA texture!
  // The procedurally generated 3D spot was redundant and looked odd

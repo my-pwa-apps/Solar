@@ -1332,14 +1332,9 @@ class App {
  });
  }
 
- // Initialize audio context on first user interaction
- document.addEventListener('click', () => {
- audioManager.init();
- }, { once: true });
-
- document.addEventListener('keydown', () => {
- audioManager.init();
- }, { once: true });
+ // Initialize audio context on first user interaction (covers mouse, touch and keyboard)
+ document.addEventListener('pointerdown', () => audioManager.init(), { once: true });
+ document.addEventListener('keydown', () => audioManager.init(), { once: true });
  }
 
  /**
@@ -1349,20 +1344,14 @@ class App {
  // Get the Earth mesh from the solar system module
  const earthMesh = this.solarSystemModule?.planets?.earth;
  
- if (!earthMesh) {
- console.warn('Earth mesh not found, Earth zoom feature disabled');
- return;
- }
+ if (!earthMesh) return; // Earth zoom requires the Earth mesh
 
- // Initialize the Earth zoom manager with required references
  earthZoomManager.init({
  earthObject: earthMesh,
  camera: this.sceneManager.camera,
  controls: this.sceneManager.controls,
  scene: this.sceneManager.scene
  });
-
- console.log('Earth zoom feature initialized');
  }
 }
 
