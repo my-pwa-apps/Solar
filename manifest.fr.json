@@ -1,5 +1,5 @@
 {
-  "id": "/solar/",
+  "id": "/Solar/",
   "name": "Voyage Spatial - Système Solaire 3D Interactif",
   "short_name": "Voyage Spatial",
   "description": "Explorez notre système solaire en 3D époustouflant avec support VR. Naviguez à travers les planètes, lunes, vaisseaux spatiaux, nébuleuses et galaxies dans cette expérience éducative interactive.",
@@ -551,3 +551,4 @@
     "fullscreen"
   ]
 }
+

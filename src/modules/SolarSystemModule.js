@@ -405,6 +405,7 @@ export class SolarSystemModule {
         });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny in reality, scaled up for visibility)
         // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
         this.createMoon(this.planets.mars, {
+            id: 'phobos',
             name: t('phobos'),
             radius: 0.08, // Scaled up for visibility (was 0.002)
             color: 0x666666,
@@ -415,6 +416,7 @@ export class SolarSystemModule {
         // Deimos: ~12 km / 12,742 km = 0.0009 (tiny in reality, scaled up for visibility)
         // Orbital period: 1.263 days (30.3 hours) vs Mars's 687 days = 544x faster
         this.createMoon(this.planets.mars, {
+            id: 'deimos',
             name: t('deimos'),
             radius: 0.06, // Scaled up for visibility (was 0.0015)
             color: 0x888888,
@@ -445,6 +447,7 @@ export class SolarSystemModule {
         // Io: 3,643 km / 12,742 km = 0.286
         // Orbital period: 1.769 days vs Jupiter's 4333 days = 2449x faster
         this.createMoon(this.planets.jupiter, {
+            id: 'io',
             name: t('io'),
             radius: 0.286,
             color: 0xFFFF00,
@@ -455,6 +458,7 @@ export class SolarSystemModule {
         // Europa: 3,122 km / 12,742 km = 0.245
         // Orbital period: 3.551 days vs Jupiter's 4333 days = 1220x faster
         this.createMoon(this.planets.jupiter, {
+            id: 'europa',
             name: t('europa'),
             radius: 0.245,
             color: 0xCCBB99,
@@ -465,6 +469,7 @@ export class SolarSystemModule {
         // Ganymede: 5,268 km / 12,742 km = 0.413 (larger than Mercury!)
         // Orbital period: 7.155 days vs Jupiter's 4333 days = 606x faster
         this.createMoon(this.planets.jupiter, {
+            id: 'ganymede',
             name: t('ganymede'),
             radius: 0.413,
             color: 0x996633,
@@ -475,6 +480,7 @@ export class SolarSystemModule {
         // Callisto: 4,821 km / 12,742 km = 0.378
         // Orbital period: 16.689 days vs Jupiter's 4333 days = 260x faster
         this.createMoon(this.planets.jupiter, {
+            id: 'callisto',
             name: t('callisto'),
             radius: 0.378,
             color: 0x777777,
@@ -507,6 +513,7 @@ export class SolarSystemModule {
         // Real orbit: 238,020 km = 3.95x Saturn's radius (60,268 km) = 36.1 scene units
         // Rings end at outerR = radius * 2.2 = 20.11 scene units — Enceladus orbits OUTSIDE rings
         this.createMoon(this.planets.saturn, {
+            id: 'enceladus',
             name: t('enceladus'),
             radius: 0.040,
             color: 0xFFFFFF,
@@ -518,6 +525,7 @@ export class SolarSystemModule {
         // Orbital period: 4.518 days vs Saturn's 10759 days = 2382x faster
         // Real orbit: 527,108 km = 8.75x Saturn's radius = 79.9 scene units
         this.createMoon(this.planets.saturn, {
+            id: 'rhea',
             name: t('rhea'),
             radius: 0.120,
             color: 0xCCCCCC,
@@ -529,6 +537,7 @@ export class SolarSystemModule {
         // Orbital period: 15.945 days vs Saturn's 10759 days = 675x faster
         // Real orbit: 1,221,870 km = 20.3x Saturn's radius = 185 scene units
         this.createMoon(this.planets.saturn, {
+            id: 'titan',
             name: t('titan'),
             radius: 0.404,
             color: 0xFFAA33,
@@ -556,6 +565,7 @@ export class SolarSystemModule {
         });        // Titania: 1,578 km / 12,742 km = 0.124
         // Orbital period: 8.706 days vs Uranus's 30687 days = 3526x faster
         this.createMoon(this.planets.uranus, {
+            id: 'titania',
             name: t('titania'),
             radius: 0.124,
             color: 0xAAAAAA,
@@ -566,6 +576,7 @@ export class SolarSystemModule {
         // Miranda: 472 km / 12,742 km = 0.037
         // Orbital period: 1.413 days vs Uranus's 30687 days = 21722x faster
         this.createMoon(this.planets.uranus, {
+            id: 'miranda',
             name: t('miranda'),
             radius: 0.037,
             color: 0x999999,
@@ -593,6 +604,7 @@ export class SolarSystemModule {
         });        // Triton: 2,707 km / 12,742 km = 0.212
         // Orbital period: 5.877 days (retrograde) vs Neptune's 60190 days = 10242x faster
         this.createMoon(this.planets.neptune, {
+            id: 'triton',
             name: t('triton'),
             radius: 0.212,
             color: 0xFFCCCC,
@@ -619,6 +631,7 @@ export class SolarSystemModule {
         // Charon: 1,212 km / 12,742 km = 0.095 (half the size of Pluto!)
         // Orbital period: 6.387 days vs Pluto's 90560 days = 14178x faster
         this.createMoon(this.planets.pluto, {
+            id: 'charon',
             name: t('charon'),
             radius: 0.095,
             color: 0xAAAAAA,
