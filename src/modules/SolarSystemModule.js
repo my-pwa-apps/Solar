@@ -5080,68 +5080,200 @@ export class SolarSystemModule {
  img.src = imagePath;
  }
 
- // Procedural galaxy fallback (spiral or elliptical point cloud)
+ // Procedurally generates a canvas texture of the Andromeda Galaxy (M31)
+ // based on real photographic reference:
+ // • Warm white-yellow central bulge (de Vaucouleurs r^1/4 profile)
+ // • Beige/brown exponential disk with dark dust-lane bands
+ // • Blue-purple outer stellar halo
+ // • Blue star-forming knots along the spiral arms
+ // • M32 companion handled separately as an overlay
+ // Alpha channel = luminance, so pure-black pixels are transparent.
+ _buildAndromedaCanvasTexture() {
+ const W = 1024, H = 512;
+ const canvas = document.createElement('canvas');
+ canvas.width = W; canvas.height = H;
+ const ctx = canvas.getContext('2d');
+ const pix = new Float32Array(W * H * 4);
+ const cx = W / 2, cy = H / 2;
+ // Major/minor half-axes in pixels (galaxy fills ~90 % of canvas width)
+ const a = W * 0.44; // major axis (left-right in canvas)
+ const b = H * 0.28; // minor axis (top-bottom) — ~4:1 ratio
+ // Position angle: Andromeda tilts NE-SW in the sky, ~37° from horizontal
+ const tilt = -0.38; // radians (positive = clockwise)
+ const cosT = Math.cos(tilt), sinT = Math.sin(tilt);
+ const gauss = (x, y, sx, sy) => Math.exp(-(x * x) / (2 * sx * sx) - (y * y) / (2 * sy * sy));
+ for (let py = 0; py < H; py++) {
+ for (let px = 0; px < W; px++) {
+ // Rotate into galaxy frame
+ const dx = px - cx, dy = py - cy;
+ const rx = dx * cosT + dy * sinT; // along major axis
+ const ry = -dx * sinT + dy * cosT; // along minor axis
+ // ── Layer 1: Outer stellar halo (large, blue-purple, very faint) ──
+ const halo = gauss(rx, ry, a * 0.72, b * 1.05) * 0.28;
+ // ── Layer 2: Exponential disk ──
+ const dR = Math.sqrt((rx / (a * 0.52)) ** 2 + (ry / (b * 0.42)) ** 2);
+ const disk = Math.exp(-dR * 2.2) * 0.78;
+ // ── Layer 3: Bulge (de Vaucouleurs r^1/4 profile) ──
+ const bR = Math.sqrt((rx / (a * 0.13)) ** 2 + (ry / (b * 0.32)) ** 2);
+ const bulge = bR < 0.01 ? 1.0 : Math.exp(-7.67 * (Math.pow(Math.max(0.001, bR), 0.25) - 1));
+ // ── Dust lanes: two dark bands parallel to major axis ──
+ const dustOff = b * 0.13;
+ const dustW = b * 0.07;
+ const dust1 = Math.exp(-(ry - dustOff) ** 2 / (2 * dustW ** 2)) * (1 - Math.exp(-dR * 1.5));
+ const dust2 = Math.exp(-(ry + dustOff) ** 2 / (2 * dustW ** 2)) * (1 - Math.exp(-dR * 1.5));
+ const dustMask = 1.0 - Math.min(1, (dust1 + dust2) * 0.65) * Math.max(0, 1 - bR * 0.6);
+ // ── Combine luminosity ──
+ const lum = Math.min(1, halo + disk * dustMask + Math.min(1, bulge * 0.95));
+ // ── Colour model ──
+ // Bulge proximity drives warm white-yellow, halo drives blue-purple
+ const bFrac = Math.min(1, bulge * 0.6);
+ const hFrac = Math.min(1, halo / 0.28);
+ // Disk base: warm beige
+ let R = 0.88 + bFrac * 0.12;
+ let G = 0.76 + bFrac * 0.18;
+ let B = 0.55 + bFrac * 0.15;
+ // Add blue-purple halo tint
+ R = R * (1 - hFrac * 0.45) + 0.52 * hFrac * 0.45;
+ G = G * (1 - hFrac * 0.45) + 0.56 * hFrac * 0.45;
+ B = B * (1 - hFrac * 0.45) + 0.95 * hFrac * 0.45;
+ // Dust lanes pull toward reddish-brown
+ const dustFade = (dust1 + dust2) * 0.4;
+ R = R * (1 - dustFade) + 0.55 * dustFade;
+ G = G * (1 - dustFade) + 0.38 * dustFade;
+ B = B * (1 - dustFade) + 0.28 * dustFade;
+ const idx = (py * W + px) * 4;
+ pix[idx] = R * lum;
+ pix[idx + 1] = G * lum;
+ pix[idx + 2] = B * lum;
+ pix[idx + 3] = lum; // alpha = luminosity → black is fully transparent
+ }
+ }
+ // ── Blue star-forming knots along the spiral arms ──
+ // Positions are in (rx, ry) galaxy frame, based on the reference photo
+ const knots = [
+ { rx: a * 0.32, ry: b * 0.18, r: a * 0.022, str: 0.65 },
+ { rx: -a * 0.28, ry: -b * 0.17, r: a * 0.019, str: 0.58 },
+ { rx: a * 0.52, ry: b * 0.20, r: a * 0.016, str: 0.48 },
+ { rx: -a * 0.46, ry: -b * 0.20, r: a * 0.015, str: 0.45 },
+ { rx: a * 0.22, ry: -b * 0.14, r: a * 0.014, str: 0.38 },
+ { rx: -a * 0.18, ry: b * 0.13, r: a * 0.014, str: 0.35 },
+ { rx: a * 0.68, ry: b * 0.22, r: a * 0.012, str: 0.32 },
+ { rx: -a * 0.62, ry: -b * 0.22, r: a * 0.012, str: 0.30 },
+ ];
+ for (let py = 0; py < H; py++) {
+ for (let px = 0; px < W; px++) {
+ const dx = px - cx, dy = py - cy;
+ const rx = dx * cosT + dy * sinT;
+ const ry = -dx * sinT + dy * cosT;
+ let kR = 0, kG = 0, kB = 0;
+ for (const k of knots) {
+ const d2 = (rx - k.rx) ** 2 + (ry - k.ry) ** 2;
+ const g = Math.exp(-d2 / (2 * k.r * k.r)) * k.str;
+ kR += g * 0.25; kG += g * 0.48; kB += g * 1.0;
+ }
+ if (kR + kG + kB < 0.001) continue;
+ const idx = (py * W + px) * 4;
+ pix[idx] = Math.min(1, pix[idx] + kR);
+ pix[idx + 1] = Math.min(1, pix[idx + 1] + kG);
+ pix[idx + 2] = Math.min(1, pix[idx + 2] + kB);
+ const newLum = pix[idx] * 0.299 + pix[idx + 1] * 0.587 + pix[idx + 2] * 0.114;
+ pix[idx + 3] = Math.max(pix[idx + 3], newLum);
+ }
+ }
+ // Write float pixels → canvas ImageData
+ const imgData = ctx.createImageData(W, H);
+ const d = imgData.data;
+ for (let i = 0; i < W * H; i++) {
+ d[i * 4] = Math.round(Math.min(1, pix[i * 4]) * 255);
+ d[i * 4 + 1] = Math.round(Math.min(1, pix[i * 4 + 1]) * 255);
+ d[i * 4 + 2] = Math.round(Math.min(1, pix[i * 4 + 2]) * 255);
+ d[i * 4 + 3] = Math.round(Math.min(1, pix[i * 4 + 3]) * 255);
+ }
+ ctx.putImageData(imgData, 0, 0);
+ return new THREE.CanvasTexture(canvas);
+ }
+
+ // Generates a simple small elliptical galaxy canvas (for M32 companion etc.)
+ _buildEllipticalGalaxyCanvas(size, color = 0xFFEECC) {
+ const W = size * 2, H = size;
+ const canvas = document.createElement('canvas');
+ canvas.width = W; canvas.height = H;
+ const ctx = canvas.getContext('2d');
+ const imgData = ctx.createImageData(W, H);
+ const d = imgData.data;
+ const rr = ((color >> 16) & 0xff) / 255;
+ const gg = ((color >> 8) & 0xff) / 255;
+ const bb = (color & 0xff) / 255;
+ const cx = W / 2, cy = H / 2;
+ for (let py = 0; py < H; py++) {
+ for (let px = 0; px < W; px++) {
+ const dx = (px - cx) / (W * 0.4);
+ const dy = (py - cy) / (H * 0.35);
+ const r = Math.sqrt(dx * dx + dy * dy);
+ const lum = r < 0.01 ? 1.0 : Math.min(1, Math.exp(-7.67 * (Math.pow(r, 0.25) - 1)) * 0.9);
+ const idx = (py * W + px) * 4;
+ d[idx] = Math.round(rr * lum * 255);
+ d[idx + 1] = Math.round(gg * lum * 255);
+ d[idx + 2] = Math.round(bb * lum * 255);
+ d[idx + 3] = Math.round(lum * 255);
+ }
+ }
+ ctx.putImageData(imgData, 0, 0);
+ return new THREE.CanvasTexture(canvas);
+ }
+
+ // Procedural galaxy renderer (spiral particle cloud or elliptical point cloud)
  _buildProceduralGalaxy(group, galData) {
  if (galData.type === 'spiral') {
- // Andromeda (M31) is a large spiral seen at ~77° inclination → elongated oval.
- // We render it as a tilted disk: two spiral arms + a diffuse outer halo +
- // a dense bright core, all with additive blending so it dissolves naturally.
  const isAndromeda = galData.name === 'Andromeda Galaxy';
- const spiralCount = isAndromeda ? 20000 : 8000;
+ if (isAndromeda) {
+ // Render Andromeda as a procedurally-generated canvas sprite so the
+ // background is guaranteed transparent (alpha = luminance, black = 0).
+ // This reproduces the key features from real photos:
+ // bright white-yellow core, warm beige/brown disk, dust lanes,
+ // blue star-forming knots, and a diffuse blue-purple outer halo.
+ const tex = this._buildAndromedaCanvasTexture();
+ const mat = new THREE.SpriteMaterial({
+ map: tex,
+ transparent: true,
+ depthWrite: false,
+ blending: THREE.AdditiveBlending,
+ opacity: 0.92
+ });
+ const sprite = new THREE.Sprite(mat);
+ // Canvas is 2:1 (W×H), galaxy fills width → scale height by 0.5
+ sprite.scale.set(galData.size * 2.2, galData.size * 1.1, 1);
+ group.add(sprite);
+ // Small companion galaxy M32 (bright elliptical, lower-left offset)
+ const m32Tex = this._buildEllipticalGalaxyCanvas(64, 0xFFEECC);
+ const m32Mat = new THREE.SpriteMaterial({
+ map: m32Tex, transparent: true, depthWrite: false,
+ blending: THREE.AdditiveBlending, opacity: 0.75
+ });
+ const m32 = new THREE.Sprite(m32Mat);
+ m32.scale.set(galData.size * 0.18, galData.size * 0.13, 1);
+ // Offset below and left of Andromeda centre (matches photo)
+ m32.position.set(-galData.size * 0.35, -galData.size * 0.28, 0);
+ group.add(m32);
+ return; // no particle core needed
+ }
+ // ── Non-Andromeda spirals: particle cloud ──
+ const spiralCount = 8000;
  const geometry = new THREE.BufferGeometry();
  const positions = new Float32Array(spiralCount * 3);
  const colors = new Float32Array(spiralCount * 3);
- // Inclination tilt: Andromeda disk is nearly edge-on (77°) 
- const inclination = isAndromeda ? Math.PI * 0.43 : 0; // ~77° tilt
- const cosI = Math.cos(inclination), sinI = Math.sin(inclination);
  for (let i = 0; i < spiralCount; i++) {
- const t = i / spiralCount;
- const arms = 2;
- const armIndex = i % arms;
- const armAngle = (armIndex / arms) * Math.PI * 2;
- const angle = armAngle + t * Math.PI * 5;
- const distance = t * galData.size;
- // Spiral arm with scatter
- const scatter = isAndromeda ? galData.size * 0.12 : 30;
- const xFlat = distance * Math.cos(angle) + (Math.random() - 0.5) * scatter;
- const zFlat = distance * Math.sin(angle) + (Math.random() - 0.5) * scatter;
- const yFlat = (Math.random() - 0.5) * galData.size * (isAndromeda ? 0.05 : 0.1);
- // Apply inclination tilt around X axis
- positions[i * 3]     = xFlat;
- positions[i * 3 + 1] = yFlat * cosI - zFlat * sinI;
- positions[i * 3 + 2] = yFlat * sinI + zFlat * cosI;
- // Colour: warm white-blue core, cooler outer arms
- const coreProx = Math.max(0, 1 - distance / galData.size);
- const r = 0.75 + coreProx * 0.25;
- const g = 0.80 + coreProx * 0.15;
- const b = 0.90 + coreProx * 0.10;
- colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b;
+ const angle = (i / spiralCount) * Math.PI * 6;
+ const distance = (i / spiralCount) * galData.size;
+ positions[i * 3] = distance * Math.cos(angle) + (Math.random() - 0.5) * 30;
+ positions[i * 3 + 1] = (Math.random() - 0.5) * galData.size * 0.1;
+ positions[i * 3 + 2] = distance * Math.sin(angle) * 0.3 + (Math.random() - 0.5) * 30;
+ const b = 0.7 + Math.random() * 0.3;
+ colors[i * 3] = b; colors[i * 3 + 1] = b * 0.9; colors[i * 3 + 2] = b * 1.1;
  }
  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
- const starSize = isAndromeda ? 2 : 3;
- group.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: starSize, vertexColors: true, transparent: true, opacity: isAndromeda ? 0.7 : 0.8, blending: THREE.AdditiveBlending })));
- // Extra diffuse halo for Andromeda
- if (isAndromeda) {
- const haloCount = 8000;
- const hGeo = new THREE.BufferGeometry();
- const hPos = new Float32Array(haloCount * 3);
- const hCol = new Float32Array(haloCount * 3);
- for (let i = 0; i < haloCount; i++) {
- const r2 = Math.pow(Math.random(), 0.5) * galData.size * 1.1;
- const ang = Math.random() * Math.PI * 2;
- const xH = r2 * Math.cos(ang);
- const zH = r2 * Math.sin(ang) * 0.35; // squish to ellipse
- const yH = (Math.random() - 0.5) * galData.size * 0.04;
- hPos[i * 3]     = xH;
- hPos[i * 3 + 1] = yH * cosI - zH * sinI;
- hPos[i * 3 + 2] = yH * sinI + zH * cosI;
- hCol[i * 3] = 0.7; hCol[i * 3 + 1] = 0.72; hCol[i * 3 + 2] = 0.85;
- }
- hGeo.setAttribute('position', new THREE.BufferAttribute(hPos, 3));
- hGeo.setAttribute('color', new THREE.BufferAttribute(hCol, 3));
- group.add(new THREE.Points(hGeo, new THREE.PointsMaterial({ size: 1.5, vertexColors: true, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending })));
- }
+ group.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: 3, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending })));
  } else {
  const ellipCount = 5000;
  const geometry = new THREE.BufferGeometry();
