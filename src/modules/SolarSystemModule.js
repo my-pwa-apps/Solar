@@ -504,34 +504,35 @@ export class SolarSystemModule {
         // Enceladus: 504 km / 12,742 km = 0.040
         // Orbital period: 1.370 days vs Saturn's 10759 days = 7854x faster
         // Note: Reduced speed for visual stability (was 7.07, too fast causing visual artifacts)
-        // Orbits inside rings (rings: 11.88-20.11)
+        // Real orbit: 238,020 km = 3.95x Saturn's radius (60,268 km) = 36.1 scene units
+        // Rings end at outerR = radius * 2.2 = 20.11 scene units — Enceladus orbits OUTSIDE rings
         this.createMoon(this.planets.saturn, {
             name: t('enceladus'),
             radius: 0.040,
             color: 0xFFFFFF,
-            distance: 15, // Inside rings - between Saturn (9.14) and ring edge (20.11)
+            distance: 22, // Just outside rings (rings end at 20.11); real ratio: 3.95x Saturn radius
             speed: 1.5, // Reduced from 7.07 for smoother visual orbit
             description: t('descEnceladus')
         });
         // Rhea: 1,527 km / 12,742 km = 0.120
         // Orbital period: 4.518 days vs Saturn's 10759 days = 2382x faster
-        // Orbits outside rings
+        // Real orbit: 527,108 km = 8.75x Saturn's radius = 79.9 scene units
         this.createMoon(this.planets.saturn, {
             name: t('rhea'),
             radius: 0.120,
             color: 0xCCCCCC,
-            distance: 23, // Outside rings (rings end at 20.11)
+            distance: 28, // Outside rings with clear separation from Enceladus
             speed: 2.144, // 2382x Saturn's speed (0.0009 * 2382)
             description: t('descRhea')
         });
         // Titan: 5,150 km / 12,742 km = 0.404 (bigger than Mercury!)
         // Orbital period: 15.945 days vs Saturn's 10759 days = 675x faster
-        // Orbits well outside rings
+        // Real orbit: 1,221,870 km = 20.3x Saturn's radius = 185 scene units
         this.createMoon(this.planets.saturn, {
             name: t('titan'),
             radius: 0.404,
             color: 0xFFAA33,
-            distance: 28, // Well outside rings for clear separation
+            distance: 38, // Well outside rings; scaled for visual clarity
             speed: 0.608, // 675x Saturn's speed (0.0009 * 675)
             description: t('descTitan')
         }); // Uranus: 50,724 km / 12,742 km = 3.98
@@ -5327,7 +5328,7 @@ export class SolarSystemModule {
  alphaA.userData = {
  name: ' Alpha Centauri A',
  type: 'Star',
- description: t('descAlphaCentauriA'),,
+ description: t('descAlphaCentauriA'),
  distance: '4.37 light-years',
  realSize: '1.22 times the Sun\'s diameter',
  funFact: 'Alpha Centauri is visible from the Southern Hemisphere and is the third brightest star in our night sky!'

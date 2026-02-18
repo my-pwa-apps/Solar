@@ -469,9 +469,23 @@ class App {
  this.hideHoverLabel();
  });
 
- // Hide tooltip on interactions (click, drag start)
- this.sceneManager.renderer.domElement.addEventListener('mousedown', () => {
+ // Track drag vs click — hide tooltip only on confirmed drag
+ this.sceneManager.renderer.domElement.addEventListener('mousedown', (e) => {
+ this._mouseDownPos = { x: e.clientX, y: e.clientY };
+ this._isDragging = false;
+ });
+ this.sceneManager.renderer.domElement.addEventListener('mousemove', (e) => {
+ if (this._mouseDownPos) {
+ const dx = e.clientX - this._mouseDownPos.x;
+ const dy = e.clientY - this._mouseDownPos.y;
+ if (Math.sqrt(dx * dx + dy * dy) > 4) {
+ this._isDragging = true;
  this.hideHoverLabel();
+ }
+ }
+ }, { capture: true, passive: true });
+ this.sceneManager.renderer.domElement.addEventListener('mouseup', () => {
+ this._mouseDownPos = null;
  });
  
  // Navigation dropdown
@@ -725,26 +739,65 @@ class App {
  
  if (namedObjects.length === 0) return null;
  if (namedObjects.length === 1) return namedObjects[0].object;
- 
- // PRIORITY: Always prefer moons over planets when both are hit
- // This handles cases where orbit lines (children of planets) are hit first
- 
- // First, check if there's a moon in the hit list
- const moonHit = namedObjects.find(n => n.object.userData?.type === 'Moon');
- if (moonHit) {
- // Check if the moon's parent planet was also hit - prefer moon over parent
- const parentName = moonHit.object.userData?.parentPlanet;
- const parentHit = namedObjects.find(n => n.object.userData?.name === parentName);
- if (parentHit || !parentName) {
- // Moon hit with parent also hit, or moon without parent tracking
- return moonHit.object;
+
+ // Sort all hits by ray-hit distance (closest first)
+ namedObjects.sort((a, b) => a.distance - b.distance);
+
+ // Build a deduplicated list of candidates, preferring objects whose bounding
+ // sphere centre is angularly closest to the ray (avoids orbit-ring / glow
+ // sphere stealing the hit from the actual body).
+ const ray = this.sceneManager.raycaster.ray;
+ const scored = namedObjects.map(({ object, distance }) => {
+ // Angular distance from ray to object world-space centre
+ const centre = new THREE.Vector3();
+ object.getWorldPosition(centre);
+ const toObj = centre.clone().sub(ray.origin);
+ const cross = new THREE.Vector3().crossVectors(ray.direction, toObj.normalize());
+ const angularDist = cross.length(); // sin(angle) ≈ angle for small values
+
+ // Type weights — solid bodies score best; comets score above decorations but
+ // below planets/moons/stars (their large coma/tail meshes can clip the ray
+ // even when the user is pointing at a planet far from the comet nucleus).
+ const type = object.userData?.type || '';
+ const isSolidBody = ['Planet', 'Moon', 'Star', 'DwarfPlanet', 'Galaxy',
+ 'Nebula', 'Constellation', 'Spacecraft'].includes(type)
+ || object.userData?.isSpacecraft;
+ const isComet = object.userData?.isComet || type === 'Comet' || type === 'Asteroid';
+ const typeWeight = isSolidBody ? 0 : isComet ? 0.5 : 1; // decorations worst
+
+ return { object, distance, angularDist, typeWeight };
+ });
+
+ // Sort: body-type first, then closest angular distance
+ scored.sort((a, b) => {
+ if (a.typeWeight !== b.typeWeight) return a.typeWeight - b.typeWeight;
+ return a.angularDist - b.angularDist;
+ });
+
+ // Among body-type candidates that are very close angularly, prefer Moon over
+ // its own parent planet (the user deliberately hovered the small body).
+ const bodies = scored.filter(s => s.typeWeight === 0);
+ if (bodies.length >= 2) {
+ const first = bodies[0];
+ const second = bodies[1];
+ const angularDiff = second.angularDist - first.angularDist;
+ // If two bodies are within 0.05 rad (~3°) of each other and one is a moon
+ // of the other, prefer the moon.
+ if (angularDiff < 0.05) {
+ const moonCandidate = [first, second].find(
+ s => s.object.userData?.type === 'Moon'
+ );
+ const planetCandidate = [first, second].find(
+ s => s.object.userData?.type === 'Planet'
+ );
+ if (moonCandidate && planetCandidate &&
+ moonCandidate.object.userData?.parentPlanet === planetCandidate.object.userData?.name) {
+ return moonCandidate.object;
  }
- // Moon is hit but not its parent, just return the moon
- return moonHit.object;
  }
- 
- // No moon hit, return the first (closest) named object
- return namedObjects[0].object;
+ }
+
+ return scored[0].object;
  }
  
  // ===========================
@@ -752,6 +805,11 @@ class App {
  // ===========================
  
  handleCanvasClick(event) {
+ // Ignore clicks that were actually drags (orbit/pan gestures)
+ if (this._isDragging) {
+ this._isDragging = false;
+ return;
+ }
  const target = this._raycastNamedObject(event, true);
  
  if (target) {
