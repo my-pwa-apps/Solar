@@ -5069,15 +5069,21 @@ export class SolarSystemModule {
  const d = imageData.data;
  const cx = w / 2, cy = h / 2;
  const maxR = Math.sqrt(cx * cx + cy * cy);
+ // Black-point threshold: astrophotography images have dark-navy backgrounds
+ // (lum ≈ 0.05–0.10). Subtract the floor so they collapse to zero alpha,
+ // then stretch the remaining range so bright parts stay at full opacity.
+ const blackPoint = 0.10; // anything darker → fully transparent
+ const whiteStretch = 1 / (1 - blackPoint); // rescale 0.10–1.0 → 0–1
  for (let py = 0; py < h; py++) {
  const dy = py - cy;
  const rowOff = py * w;
  for (let px = 0; px < w; px++) {
- const i = (rowOff + px) << 2; // * 4
+ const i = (rowOff + px) << 2;
  const dx = px - cx;
- // Luminance → steep alpha curve (dark bg ≈ 0, bright nebula ≈ 1)
+ // Luminance with black-point removal
  const lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
- const lumAlpha = Math.pow(Math.min(1, lum * 2.5), 1.8);
+ const lumAdj = Math.max(0, lum - blackPoint) * whiteStretch;
+ const lumAlpha = Math.pow(Math.min(1, lumAdj * 3), 1.6);
  // Radial fade: full inside 50% radius, smooth rolloff to 0 at corner
  const dist = Math.sqrt(dx * dx + dy * dy) / maxR;
  const radial = dist < 0.5 ? 1.0
