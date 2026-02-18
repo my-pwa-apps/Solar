@@ -1200,8 +1200,7 @@ class App {
  
  if (!searchInput || !dropdown) return;
  
- // Store original options
- const allOptions = Array.from(dropdown.querySelectorAll('option, optgroup'));
+ // Store original options HTML for reset/filtering
  const originalHTML = dropdown.innerHTML;
  
  searchInput.addEventListener('input', (e) => {
@@ -1214,14 +1213,16 @@ class App {
  return;
  }
 
- // Filter from the original in-memory list, not the live (already filtered) DOM
- const matchingOptions = [];
- allOptions.forEach(node => {
- if (node.tagName === 'OPTION' && node.value &&
- node.textContent.toLowerCase().includes(query)) {
- matchingOptions.push(node.cloneNode(true));
- }
- });
+ // Restore full dropdown first so we can read current translated option text,
+ // then filter. This ensures translated names (e.g. "Saturnus" in NL) match.
+ dropdown.innerHTML = originalHTML;
+ if (window.applyTranslations) window.applyTranslations();
+
+ const currentOptions = Array.from(dropdown.querySelectorAll('option')).filter(o => o.value);
+ const matchingOptions = currentOptions.filter(node =>
+ node.textContent.toLowerCase().includes(query) ||
+ node.value.toLowerCase().includes(query)
+ );
  
  // Rebuild dropdown with matches
  dropdown.innerHTML = '';
