@@ -8550,7 +8550,8 @@ createHyperrealisticHubble(satData) {
  if (DEBUG.enabled) console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 15, min 1.0) for ISS viewing`);
  } else if (userData.type === 'Moon' && userData.parentPlanet) {
  // Moons: Close chase-cam to see moon details and parent planet surface
- distance = Math.max(actualRadius * 4, 2);
+ // Scale initial distance proportionally so small moons (Enceladus r=0.04, Phobos r=0.08) start close
+ distance = Math.max(actualRadius * 6, Math.min(2, actualRadius * 15));
  if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for "${userData.name}" around ${userData.parentPlanet}`);
  } else if (userData.isSpacecraft) {
  // Other spacecraft: moderate zoom
@@ -8690,7 +8691,9 @@ createHyperrealisticHubble(satData) {
  maxDist = 100; // Zoom out to see Earth + satellite in context
  if (DEBUG.enabled) console.log(` [ISS/Satellite Zoom] min: ${minDist}, max: ${maxDist}`);
  } else {
- minDist = Math.max(actualRadius * 0.5, 0.5); // Allow zooming to half the radius
+ // Scale floor proportionally so small objects (Enceladus r=0.04) are reachable
+ // Large objects keep the 0.5 floor; small moons get a floor of ~3× their radius
+ minDist = Math.max(actualRadius * 0.5, Math.min(0.5, actualRadius * 3));
  maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
  }
  
