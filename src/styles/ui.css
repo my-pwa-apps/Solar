@@ -1039,7 +1039,7 @@ select {
         gap: 6px;
     }
 
-    /* Hide logo text on mobile, keep icon */
+    /* Hide logo title on mobile, keep icon */
     .logo h1 {
         display: none;
     }
@@ -1060,8 +1060,9 @@ select {
         overflow: hidden;
     }
 
-    #nav-search {
-        width: clamp(50px, 28vw, 140px);
+    .nav-search {
+        min-width: 70px;
+        max-width: 180px;
         height: 36px !important;
         min-height: 36px !important;
         max-height: 36px !important;
@@ -1537,8 +1538,9 @@ select {
         display: none;
     }
 
-    #nav-search {
-        width: clamp(44px, 24vw, 110px);
+    .nav-search {
+        min-width: 60px;
+        max-width: 130px;
         font-size: 11px;
     }
 
@@ -1687,12 +1689,17 @@ select {
     min-height: 44px;
     max-height: 44px;
     box-sizing: border-box;
-    /* fluid width: grows to fill available space, collapses on small screens */
-    width: clamp(80px, 14vw, 180px);
-    flex-shrink: 1;
-    min-width: 0;
-        padding: 6px 8px;
-    }
+    /* grows to fill available space, bounded by min/max */
+    flex: 1 1 auto;
+    min-width: 100px;
+    max-width: 260px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.nav-search:focus {
+    outline: none;
+    border-color: var(--fluent-accent);
+    box-shadow: 0 0 0 2px rgba(0,120,212,0.25);
 }
 
 /* Enhanced Loading Screen */

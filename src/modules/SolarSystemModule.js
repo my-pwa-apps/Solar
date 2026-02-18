@@ -17,6 +17,7 @@ export class SolarSystemModule {
  this.moons = {};
  this.sun = null;
  this.starfield = null;
+ this.milkyWay = null;
  this.asteroidBelt = null;
  this.kuiperBelt = null;
  this.orbits = [];
@@ -142,6 +143,7 @@ export class SolarSystemModule {
  { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
  { progress: 67, message: t('creatingOortCloud'), task: () => this.createOortCloud(scene) },
  { progress: 69, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
+ { progress: 70, message: t('creatingMilkyWay'), task: () => this.createMilkyWay(scene) },
  { progress: 71, message: t('creatingOrbitalPaths'), task: () => this.createOrbitalPaths(scene) },
  { progress: 74, message: t('creatingConstellations'), task: () => this.createConstellations(scene) },
  { progress: 77, message: t('creatingDistantStars'), task: () => this.createDistantStars(scene) },
@@ -3956,6 +3958,102 @@ export class SolarSystemModule {
  }
  }
 
+ createMilkyWay(scene) {
+ // The Milky Way band as seen from Earth — a dense river of stars across the sky.
+ // Oriented using real astronomical coordinates (J2000 equatorial):
+ //   Galactic north pole: RA 192.85°, Dec +27.13°
+ //   Galactic centre:     RA 266.40°, Dec −29.00°
+
+ const particleCount = IS_MOBILE ? 7000 : 14000;
+ const positions = new Float32Array(particleCount * 3);
+ const colors = new Float32Array(particleCount * 3);
+
+ // Equatorial → Three.js Cartesian: x=cos(dec)cos(ra), y=sin(dec), z=−cos(dec)sin(ra)
+ const toCart = (raDeg, decDeg) => {
+ const ra = raDeg * Math.PI / 180;
+ const dec = decDeg * Math.PI / 180;
+ return new THREE.Vector3(
+ Math.cos(dec) * Math.cos(ra),
+ Math.sin(dec),
+ -Math.cos(dec) * Math.sin(ra)
+ ).normalize();
+ };
+
+ const galNormal = toCart(192.85, 27.13); // galactic north pole
+ const galCenter = toCart(266.40, -29.00); // direction to galactic core (Sagittarius)
+ // Build orthonormal basis in the galactic plane
+ const galRight = new THREE.Vector3().crossVectors(galNormal, galCenter).normalize();
+ const galForward = new THREE.Vector3().crossVectors(galRight, galNormal).normalize();
+
+ // Box-Muller gaussian for band latitude spread
+ const gaussian = () => {
+ const u1 = Math.max(1e-10, Math.random());
+ const u2 = Math.random();
+ return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+ };
+
+ for (let i = 0; i < particleCount; i++) {
+ // Galactic longitude: uniform around the full circle
+ const lon = Math.random() * 2 * Math.PI;
+ // Galactic latitude: gaussian ±10° — the band is ~5–20° wide
+ const lat = gaussian() * (10 * Math.PI / 180);
+
+ // Orthonormal direction in galactic coordinates
+ const inPlane = new THREE.Vector3(
+ Math.cos(lon) * galForward.x + Math.sin(lon) * galRight.x,
+ Math.cos(lon) * galForward.y + Math.sin(lon) * galRight.y,
+ Math.cos(lon) * galForward.z + Math.sin(lon) * galRight.z
+ );
+ const dir = new THREE.Vector3(
+ Math.cos(lat) * inPlane.x + Math.sin(lat) * galNormal.x,
+ Math.cos(lat) * inPlane.y + Math.sin(lat) * galNormal.y,
+ Math.cos(lat) * inPlane.z + Math.sin(lat) * galNormal.z
+ ).normalize();
+
+ // Place on far sphere (beyond the regular starfield at ~15k–25k)
+ const radius = 17000 + (Math.random() - 0.5) * 2000;
+ positions[i * 3] = dir.x * radius;
+ positions[i * 3 + 1] = dir.y * radius;
+ positions[i * 3 + 2] = dir.z * radius;
+
+ // Density/colour boost toward galactic centre
+ const coreAlign = Math.max(0, dir.dot(galCenter)); // 0 → 1
+ const coreGlow = coreAlign * coreAlign;
+
+ // Warm-white band: yellower near core, blue-white toward anti-centre
+ const r = 0.65 + 0.35 * coreGlow;
+ const g = 0.65 + 0.20 * coreGlow;
+ const b = 0.55 - 0.15 * coreGlow;
+ const brightness = 0.20 + 0.70 * coreGlow + Math.random() * 0.25;
+ colors[i * 3] = Math.min(1, r * brightness);
+ colors[i * 3 + 1] = Math.min(1, g * brightness);
+ colors[i * 3 + 2] = Math.min(1, b * brightness);
+ }
+
+ const geometry = new THREE.BufferGeometry();
+ geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+ const material = new THREE.PointsMaterial({
+ size: 1.6,
+ vertexColors: true,
+ transparent: true,
+ opacity: 0, // starts invisible — fades in as camera zooms out
+ sizeAttenuation: false,
+ blending: THREE.AdditiveBlending,
+ depthWrite: false
+ });
+
+ this.milkyWay = new THREE.Points(geometry, material);
+ this.milkyWay.name = 'milkyWay';
+ this.milkyWay.frustumCulled = false;
+ scene.add(this.milkyWay);
+
+ if (DEBUG.enabled) {
+ console.log(` Milky Way created with ${particleCount} particles (galactic-plane orientation)`);
+ }
+ }
+
  async loadTextureWithFallback(url, fallbackColor) {
  // Try to load real imagery, fallback to color if it fails
  return new Promise((resolve) => {
@@ -7525,6 +7623,20 @@ createHyperrealisticHubble(satData) {
  this.starfield.geometry.attributes.size.needsUpdate = true;
  }
  this._starTwinkleFrame = (this._starTwinkleFrame || 0) + 1;
+
+ // Fade Milky Way in as camera zooms out beyond the outer solar system
+ if (this.milkyWay && camera) {
+ const camDist = camera.position.length();
+ // Educational scale: Neptune ~2024 units; fade in from 800 → 3000
+ const fadeStart = 800;
+ const fadeEnd = 3000;
+ const maxOpacity = 0.65;
+ const targetOpacity = camDist <= fadeStart ? 0
+ : camDist >= fadeEnd ? maxOpacity
+ : maxOpacity * (camDist - fadeStart) / (fadeEnd - fadeStart);
+ // Smooth lerp toward target
+ this.milkyWay.material.opacity += (targetOpacity - this.milkyWay.material.opacity) * 0.06;
+ }
  
  // Update comets with elliptical orbits (optimized)
  if (this.comets) {
@@ -7811,6 +7923,13 @@ createHyperrealisticHubble(satData) {
  scene.remove(this.starfield);
  }
 
+ // Clean up Milky Way
+ if (this.milkyWay) {
+ if (this.milkyWay.geometry) this.milkyWay.geometry.dispose();
+ if (this.milkyWay.material) this.milkyWay.material.dispose();
+ scene.remove(this.milkyWay);
+ }
+
  // Clean up orbital paths
  this.orbits.forEach(orbit => {
  if (orbit.geometry) orbit.geometry.dispose();
@@ -7831,6 +7950,7 @@ createHyperrealisticHubble(satData) {
  this.moons = {};
  this.sun = null;
  this.starfield = null;
+ this.milkyWay = null;
  this.asteroidBelt = null;
  this.kuiperBelt = null;
  this.orbits = [];
