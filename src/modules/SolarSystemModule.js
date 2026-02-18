@@ -5069,11 +5069,13 @@ export class SolarSystemModule {
  const d = imageData.data;
  const cx = w / 2, cy = h / 2;
  const maxR = Math.sqrt(cx * cx + cy * cy);
- // Black-point threshold: astrophotography images have dark-navy backgrounds
- // (lum ≈ 0.05–0.10). Subtract the floor so they collapse to zero alpha,
- // then stretch the remaining range so bright parts stay at full opacity.
- const blackPoint = 0.10; // anything darker → fully transparent
- const whiteStretch = 1 / (1 - blackPoint); // rescale 0.10–1.0 → 0–1
+ // Black-point threshold: long-exposure astrophotos contain many faint
+ // foreground stars (lum ≈ 0.10–0.22) that are not the target object.
+ // Setting blackPoint = 0.20 cuts them out while keeping the brighter
+ // galaxy/nebula structure. The higher stretch multiplier (4 vs 3) keeps
+ // outer spiral arms and faint haze visible after the floor is removed.
+ const blackPoint = 0.20; // anything dimmer (incl. foreground stars) → alpha 0
+ const whiteStretch = 1 / (1 - blackPoint); // rescale 0.20–1.0 → 0–1
  for (let py = 0; py < h; py++) {
  const dy = py - cy;
  const rowOff = py * w;
@@ -5083,7 +5085,7 @@ export class SolarSystemModule {
  // Luminance with black-point removal
  const lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
  const lumAdj = Math.max(0, lum - blackPoint) * whiteStretch;
- const lumAlpha = Math.pow(Math.min(1, lumAdj * 3), 1.6);
+ const lumAlpha = Math.pow(Math.min(1, lumAdj * 4), 1.6);
  // Radial fade: full inside 50% radius, smooth rolloff to 0 at corner
  const dist = Math.sqrt(dx * dx + dy * dy) / maxR;
  const radial = dist < 0.5 ? 1.0
