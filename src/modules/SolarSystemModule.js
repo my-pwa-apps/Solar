@@ -5297,13 +5297,20 @@ export class SolarSystemModule {
  }
 
  createExoplanets(scene) {
- // Create famous discovered exoplanets
+ // Create famous discovered exoplanets with orbital motion around their host stars
  this.exoplanets = [];
- 
+
+ // Earth's orbital speed reference: ~0.0005 rad/frame at timeSpeed=1
+ // Speed = EARTH_SPEED * (365.25 / orbitalPeriodDays)
+ const EARTH_SPEED = 0.0005;
+
  const exoplanetsData = [
  {
  name: ' Proxima Centauri b',
- position: { x: 8520, y: 800, z: -6200 },
+ hostStarPosition: { x: 8500, y: 800, z: -6200 }, // Proxima Centauri
+ orbitRadius: 28, // Visible orbit distance around host star
+ orbitPeriodDays: 11.2, // 11.2-day year
+ orbitTilt: 0.08, // Slight tilt for visual interest
  radius: 1.1,
  color: 0x4A7BA7,
  description: ' Proxima Centauri b is the closest known exoplanet to Earth! It orbits in the habitable zone of Proxima Centauri, meaning liquid water could exist on its surface. Discovered in 2016, it\'s only 4.24 light-years away.',
@@ -5313,7 +5320,10 @@ export class SolarSystemModule {
  },
  {
  name: ' Kepler-452b',
- position: { x: -9000, y: 2500, z: 8500 },
+ hostStarPosition: { x: -9000, y: 2500, z: 8450 }, // Kepler-452
+ orbitRadius: 45,
+ orbitPeriodDays: 385, // 385-day year
+ orbitTilt: 0.12,
  radius: 1.6,
  color: 0x5D8AA8,
  description: ' Kepler-452b is called "Earth\'s cousin"! It\'s about 60% larger than Earth and orbits a Sun-like star in the habitable zone. Its year is 385 days long. Could it have life? We don\'t know yet!',
@@ -5323,7 +5333,10 @@ export class SolarSystemModule {
  },
  {
  name: ' TRAPPIST-1e',
- position: { x: 7000, y: -3000, z: -9000 },
+ hostStarPosition: { x: 7000, y: -3000, z: -8950 }, // TRAPPIST-1
+ orbitRadius: 35,
+ orbitPeriodDays: 6.1, // 6.1-day year — very fast!
+ orbitTilt: 0.05,
  radius: 0.92,
  color: 0x3A7CA5,
  description: ' TRAPPIST-1e is part of an amazing system with 7 Earth-sized planets! It orbits a cool red dwarf star and is in the habitable zone. The system is so compact that all 7 planets would fit inside Mercury\'s orbit!',
@@ -5333,7 +5346,10 @@ export class SolarSystemModule {
  },
  {
  name: ' Kepler-186f',
- position: { x: -8000, y: -2000, z: 9500 },
+ hostStarPosition: { x: -8000, y: -2000, z: 9450 }, // Kepler-186
+ orbitRadius: 40,
+ orbitPeriodDays: 130, // 130-day year
+ orbitTilt: 0.1,
  radius: 1.1,
  color: 0x2E5F6F,
  description: ' Kepler-186f was the first Earth-sized planet discovered in another star\'s habitable zone! It receives about one-third the light Earth gets from the Sun, so plants there (if any!) might appear black or red instead of green.',
@@ -5342,36 +5358,54 @@ export class SolarSystemModule {
  funFact: 'Kepler-186f orbits a red dwarf, so its sky would glow orange-red!'
  }
  ];
- 
+
  exoplanetsData.forEach(exoData => {
+ const orbitSpeed = EARTH_SPEED * (365.25 / exoData.orbitPeriodDays);
+ const initialAngle = Math.random() * Math.PI * 2;
+ const { x: sx, y: sy, z: sz } = exoData.hostStarPosition;
+
+ // --- Orbit ring ---
+ const ringGeo = new THREE.RingGeometry(exoData.orbitRadius - 0.3, exoData.orbitRadius + 0.3, 96);
+ const ringMat = new THREE.MeshBasicMaterial({
+ color: 0x445566,
+ side: THREE.DoubleSide,
+ transparent: true,
+ opacity: 0.35,
+ depthWrite: false
+ });
+ const orbitRing = new THREE.Mesh(ringGeo, ringMat);
+ orbitRing.position.set(sx, sy, sz);
+ orbitRing.rotation.x = Math.PI / 2 + exoData.orbitTilt;
+ scene.add(orbitRing);
+
+ // --- Planet mesh ---
  const geometry = new THREE.SphereGeometry(exoData.radius, 32, 32);
- 
- // Create Earth-like texture for exoplanets
+
+ // Seeded canvas texture so it's consistent per planet
  const canvas = document.createElement('canvas');
  canvas.width = 512;
  canvas.height = 256;
  const ctx = canvas.getContext('2d');
- 
- // Base ocean color
+
  ctx.fillStyle = `rgb(${(exoData.color >> 16) & 255}, ${(exoData.color >> 8) & 255}, ${exoData.color & 255})`;
  ctx.fillRect(0, 0, 512, 256);
- 
- // Add some land masses
+
+ // Land masses
  ctx.fillStyle = 'rgba(100, 140, 80, 0.7)';
  for (let i = 0; i < 8; i++) {
  ctx.beginPath();
- ctx.arc(Math.random() * 512, Math.random() * 256, 20 + Math.random() * 40, 0, Math.PI * 2);
+ ctx.arc(64 + i * 55, 30 + (i % 3) * 80, 20 + (i % 4) * 10, 0, Math.PI * 2);
  ctx.fill();
  }
- 
- // Add clouds
+
+ // Clouds
  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
  for (let i = 0; i < 15; i++) {
  ctx.beginPath();
- ctx.arc(Math.random() * 512, Math.random() * 256, 10 + Math.random() * 20, 0, Math.PI * 2);
+ ctx.arc(30 + i * 32, 10 + (i % 5) * 44, 10 + (i % 3) * 7, 0, Math.PI * 2);
  ctx.fill();
  }
- 
+
  const texture = new THREE.CanvasTexture(canvas);
  const material = new THREE.MeshStandardMaterial({
  map: texture,
@@ -5380,11 +5414,17 @@ export class SolarSystemModule {
  emissive: exoData.color,
  emissiveIntensity: 0.1
  });
- 
+
  const planet = new THREE.Mesh(geometry, material);
- planet.position.set(exoData.position.x, exoData.position.y, exoData.position.z);
- 
- // Add subtle glow
+
+ // Set initial orbital position
+ planet.position.set(
+ sx + exoData.orbitRadius * Math.cos(initialAngle),
+ sy,
+ sz + exoData.orbitRadius * Math.sin(initialAngle)
+ );
+
+ // Glow
  const glowGeo = new THREE.SphereGeometry(exoData.radius * 1.2, 32, 32);
  const glowMat = new THREE.MeshBasicMaterial({
  color: 0x88AAFF,
@@ -5392,24 +5432,28 @@ export class SolarSystemModule {
  opacity: 0.15,
  blending: THREE.AdditiveBlending
  });
- const glow = new THREE.Mesh(glowGeo, glowMat);
- planet.add(glow);
- 
+ planet.add(new THREE.Mesh(glowGeo, glowMat));
+
  planet.userData = {
  name: exoData.name,
  type: 'Exoplanet',
  description: exoData.description,
  distance: exoData.distance,
  realSize: exoData.realSize,
- funFact: exoData.funFact
+ funFact: exoData.funFact,
+ // Orbit data
+ angle: initialAngle,
+ orbitSpeed,
+ orbitRadius: exoData.orbitRadius,
+ hostStarPos: new THREE.Vector3(sx, sy, sz)
  };
- 
+
  scene.add(planet);
  this.objects.push(planet);
  this.exoplanets.push(planet);
  });
- 
- if (DEBUG.enabled) console.log(` Created ${this.exoplanets.length} famous exoplanets!`);
+
+ if (DEBUG.enabled) console.log(` Created ${this.exoplanets.length} exoplanets with orbital motion`);
  }
 
  createComets(scene) {
@@ -7529,6 +7573,18 @@ createHyperrealisticHubble(satData) {
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  galaxy.rotation.y += rotationIncrement;
  }
+ });
+ }
+
+ // Orbit exoplanets around their host stars
+ if (this.exoplanets) {
+ this.exoplanets.forEach(planet => {
+ const ud = planet.userData;
+ if (!ud.orbitSpeed || !ud.hostStarPos) return;
+ ud.angle += ud.orbitSpeed * orbitalSpeed * deltaTime;
+ planet.position.x = ud.hostStarPos.x + ud.orbitRadius * Math.cos(ud.angle);
+ planet.position.z = ud.hostStarPos.z + ud.orbitRadius * Math.sin(ud.angle);
+ planet.rotation.y += 0.005 * rotationSpeed * deltaTime; // slow self-rotation
  });
  }
  
