@@ -1278,22 +1278,23 @@ class App {
  const factText = document.getElementById('fact-text');
  if (!factText) return;
  
+ // Use translated fun-fact keys so facts match the selected language
  const spaceFacts = [
- "The Sun contains 99.86% of the Solar System's mass!",
- "A day on Venus is longer than its year!",
- "Jupiter's Great Red Spot is larger than Earth!",
- "Saturn would float if you could find a big enough bathtub!",
- "One million Earths could fit inside the Sun!",
- "The Moon is slowly drifting away from Earth at 3.8 cm per year!",
- "Neptune's winds can reach speeds of 2,100 km/h!",
- "Mars has the largest volcano in the Solar System - Olympus Mons!",
- "Uranus rotates on its side, making it unique among planets!",
- "Mercury has ice at its poles despite being closest to the Sun!",
- "Europa may have more water than all of Earth's oceans!",
- "Titan is the only moon with a thick atmosphere!",
- "The Voyager 1 probe is the farthest human-made object from Earth!",
- "A year on Pluto lasts 248 Earth years!",
- "The asteroid belt contains millions of rocky objects!"
+ t('funFactSun'),
+ t('funFactMercury'),
+ t('funFactVenus'),
+ t('funFactEarth'),
+ t('funFactMoon'),
+ t('funFactMars'),
+ t('funFactJupiter'),
+ t('funFactSaturn'),
+ t('funFactUranus'),
+ t('funFactNeptune'),
+ t('funFactPluto'),
+ t('funFactVoyager1'),
+ t('funFactCassini'),
+ t('funFactJWST'),
+ t('funFactISS')
  ];
  
  let factIndex = 0;

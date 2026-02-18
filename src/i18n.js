@@ -470,6 +470,7 @@ const translations = {
         
         // Laden
         preparingJourney: "Uw ruimtereis voorbereiden...",
+        defaultFact: "De Zon bevat 99,86% van de massa van het Zonnestelsel!",
         
         // Snelheidsregeling
         speedLabel: "Snelheid:",
@@ -830,6 +831,7 @@ const translations = {
         
         // Chargement
         preparingJourney: "Préparation de votre voyage spatial...",
+        defaultFact: "Le Soleil contient 99,86% de la masse du Système Solaire !",
         
         // Contrôle de vitesse
         speedLabel: "Vitesse:",
@@ -1182,6 +1184,7 @@ const translations = {
         
         // Laden
         preparingJourney: "Ihre Weltraumreise wird vorbereitet...",
+        defaultFact: "Die Sonne enthält 99,86% der Masse des Sonnensystems!",
         
         // Geschwindigkeitssteuerung
         speedLabel: "Geschwindigkeit:",
@@ -1534,6 +1537,7 @@ const translations = {
         
         // Carga
         preparingJourney: "Preparando tu viaje espacial...",
+        defaultFact: "¡El Sol contiene el 99,86% de la masa del Sistema Solar!",
         
         // Control de velocidad
         speedLabel: "Velocidad:",
@@ -1886,6 +1890,7 @@ const translations = {
         
         // Carregamento
         preparingJourney: "Preparando sua viagem espacial...",
+        defaultFact: "O Sol contém 99,86% da massa do Sistema Solar!",
         
         // Controle de velocidade
         speedLabel: "Velocidade:",
