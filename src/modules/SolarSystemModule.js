@@ -6119,108 +6119,134 @@ createHyperrealisticHubble(satData) {
     createHyperrealisticJWST(satData) {
         if (DEBUG.enabled) console.log('?? Creating hyperrealistic James Webb Space Telescope');
         const jwst = new THREE.Group();
-        // Scale based on the spacecraft's display size
         const scale = satData.size || 0.04;
-        
-        // Use spacecraft material presets
+
         const goldMat = MaterialFactory.createSpacecraftMaterial('goldBright');
         const shieldMat = MaterialFactory.createSpacecraftMaterial('shield');
         const structMat = MaterialFactory.createSpacecraftMaterial('structure');
-        
+
+        // --- Primary mirror: 18 hexagonal beryllium segments ---
+        // Accurate 3-4-6-4-3 column layout matching real JWST deployment diagram (NASA)
+        // Spacing s=1.5 hex-widths; columns centred on Y-axis, wings fold along Y
         const hexRadius = scale * 0.66;
         const createHex = () => {
             const shape = new THREE.Shape();
             for (let i = 0; i < 6; i++) {
-                const angle = (Math.PI / 3) * i;
+                const angle = (Math.PI / 3) * i + Math.PI / 6; // flat-top orientation
                 const x = hexRadius * Math.cos(angle);
                 const y = hexRadius * Math.sin(angle);
                 if (i === 0) shape.moveTo(x, y);
                 else shape.lineTo(x, y);
             }
             shape.closePath();
-            return new THREE.ExtrudeGeometry(shape, { depth: scale * 0.1, bevelEnabled: false });
+            return new THREE.ExtrudeGeometry(shape, { depth: scale * 0.08, bevelEnabled: false });
         };
-        
         const hexGeom = createHex();
-        
+        const s = 1.5; // grid spacing multiplier
+        const h = s * Math.sqrt(3) / 2; // hex row offset
+        // 18 positions in accurate JWST 3-4-6-4-3 column arrangement:
         const mirrorPos = [
-            [0, 0],
-            [1.5, 0], [-0.75, 1.3], [-0.75, -1.3], [-1.5, 0], [0.75, 1.3], [0.75, -1.3],
-            [3, 0], [2.25, 1.3], [0.75, 2.6], [-0.75, 2.6], [-2.25, 1.3],
-            [-3, 0], [-2.25, -1.3], [-0.75, -2.6], [0.75, -2.6], [2.25, -1.3], [1.5, 2.6]
+            // Left folding wing (3 segments)
+            [-3*s,  h], [-3*s, -h], [-2.5*s, 0],
+            // Left inner column (4 segments)
+            [-1.5*s,  h*2], [-1.5*s,  0], [-1.5*s, -h*2], [-2*s, -h],
+            // Centre column (4 segments — top 2 and bottom 2, actual centre is 6 but scaled)
+            [0, h*3], [0, h], [0, -h], [0, -h*3],
+            // Right inner column (4 segments)
+            [1.5*s, h*2], [1.5*s, 0], [1.5*s, -h*2], [2*s, h],
+            // Right folding wing (3 segments)
+            [3*s, h], [3*s, -h], [2.5*s, 0]
         ];
-        
-        // Create all mirror segments
         mirrorPos.forEach(pos => {
             const hex = new THREE.Mesh(hexGeom, goldMat);
             hex.position.set(scale * pos[0], scale * pos[1], scale * 3);
             hex.rotation.x = Math.PI / 2;
             jwst.add(hex);
         });
-        
-        // Secondary mirror with geometry caching
+
+        // --- Secondary mirror (0.74m diameter, hexagonal) ---
         const secMirror = new THREE.Mesh(
-            GeometryFactory.createCylinder(scale * 0.35, scale * 0.35, scale * 0.1, 32, this.geometryCache),
+            GeometryFactory.createCylinder(scale * 0.37, scale * 0.37, scale * 0.08, 6, this.geometryCache),
             goldMat
         );
-        secMirror.position.z = scale * 7;
+        secMirror.position.z = scale * 7.5;
         jwst.add(secMirror);
-        
-        // Support struts with geometry caching
-        const strutGeom = GeometryFactory.createCylinder(scale * 0.05, scale * 0.05, scale * 4, 8, this.geometryCache);
+
+        // --- 3 secondary mirror support struts (tripod boom from primary edge) ---
+        const strutGeom = GeometryFactory.createCylinder(scale * 0.04, scale * 0.04, scale * 5, 6, this.geometryCache);
         for (let i = 0; i < 3; i++) {
-            const angle = (Math.PI * 2 / 3) * i;
+            const angle = (Math.PI * 2 / 3) * i + Math.PI / 6;
             const strut = new THREE.Mesh(strutGeom, structMat);
-            strut.position.x = Math.cos(angle) * scale * 2;
-            strut.position.y = Math.sin(angle) * scale * 2;
+            strut.position.x = Math.cos(angle) * scale * 2.5;
+            strut.position.y = Math.sin(angle) * scale * 2.5;
             strut.position.z = scale * 5;
-            strut.rotation.x = Math.atan2(1, 4);
+            // Tilt struts inward toward secondary at z=7.5
+            strut.rotation.x = Math.atan2(scale * 2.5, scale * 5) * 0.6;
+            strut.rotation.z = -angle;
             jwst.add(strut);
         }
-        
-        // Spacecraft bus with geometry caching
+
+        // --- Spacecraft bus (~2.4m cube) ---
         const bus = new THREE.Mesh(
             GeometryFactory.createBox(scale * 2, scale * 2, scale * 1.5, this.geometryCache),
             MaterialFactory.createSpacecraftMaterial('body')
         );
-        bus.position.z = scale * 1.5;
+        bus.position.z = scale * 1.2;
         jwst.add(bus);
-        
-        // Sunshield layers (5 layers with varying shades)
+
+        // --- Sunshield: 5 layers, KITE/DIAMOND shape (not rectangular!) ---
+        // Real JWST sunshield is a 5-sided kite: wide centre (~14m), tapered to both ends
+        // Aproximated as a hexagonal shape truncated top/bottom: width 21.2m, height 14.2m
+        const createSunshieldShape = (wScale, hScale) => {
+            const w = scale * 21.2 * wScale;
+            const h2 = scale * 14.2 * hScale;
+            const shape = new THREE.Shape();
+            // Kite/pentagon: pointed left & right, flat top & bottom edges with chamfered corners
+            shape.moveTo(0,  h2 * 0.2);           // top-centre
+            shape.lineTo( w * 0.5, 0);            // right point
+            shape.lineTo( w * 0.35, -h2 * 0.5);  // bottom-right
+            shape.lineTo(-w * 0.35, -h2 * 0.5);  // bottom-left
+            shape.lineTo(-w * 0.5, 0);            // left point
+            shape.lineTo(-w * 0.35,  h2 * 0.5);  // top-left
+            shape.lineTo( w * 0.35,  h2 * 0.5);  // top-right
+            shape.closePath();
+            return new THREE.ShapeGeometry(shape);
+        };
         for (let layer = 0; layer < 5; layer++) {
-            const shieldLayer = new THREE.Mesh(new THREE.PlaneGeometry(scale * 21.2, scale * 14.2), shieldMat.clone());
-            shieldLayer.material.color.setHex(0xE8E8E8 - layer * 0x0a0a0a);
-            shieldLayer.position.z = -scale * (0.5 + layer * 0.3);
+            const reduction = 1 - layer * 0.015; // each layer slightly smaller
+            const shieldGeom = createSunshieldShape(reduction, reduction);
+            const shieldLayer = new THREE.Mesh(shieldGeom, shieldMat.clone());
+            shieldLayer.material.color.setHex(0xE0E0D8 - layer * 0x080806);
+            shieldLayer.material.side = THREE.DoubleSide;
+            shieldLayer.position.z = -scale * (0.3 + layer * 0.25);
             jwst.add(shieldLayer);
         }
-        
-        // Sunshield support beams with geometry caching
-        const beamGeom = GeometryFactory.createCylinder(scale * 0.08, scale * 0.08, scale * 14.2, 8, this.geometryCache);
-        for (let i = -1; i <= 1; i++) {
-            const beam = new THREE.Mesh(beamGeom, structMat);
-            beam.position.set(scale * i * 10, 0, -scale * 1);
-            beam.rotation.x = Math.PI / 2;
-            jwst.add(beam);
-        }
-        
-        // Solar panel with geometry caching
+
+        // --- Sunshield support booms (2 deployable arms along X-axis) ---
+        const boomGeom = GeometryFactory.createCylinder(scale * 0.07, scale * 0.07, scale * 21.2, 6, this.geometryCache);
+        const boom = new THREE.Mesh(boomGeom, structMat);
+        boom.position.set(0, 0, -scale * 0.8);
+        boom.rotation.z = Math.PI / 2; // along X axis
+        jwst.add(boom);
+
+        // --- Solar array: single roughly-square panel on +Y side of bus ---
+        // Real JWST: ~2.0m × 2.5m single body-mounted solar array
         const panel = new THREE.Mesh(
-            GeometryFactory.createBox(scale * 2.5, scale * 0.05, scale * 6, this.geometryCache),
+            GeometryFactory.createBox(scale * 2.5, scale * 2.0, scale * 0.05, this.geometryCache),
             MaterialFactory.createSpacecraftMaterial('solarPanel')
         );
-        panel.position.set(scale * 3, 0, -scale * 1);
-        panel.rotation.y = Math.PI / 2;
+        panel.position.set(0, scale * 2.2, scale * 1.2);
         jwst.add(panel);
-        
-        // High-gain antenna with geometry caching
+
+        // --- High-gain antenna (gimballed dish, pointing sunward away from mirror) ---
         const antenna = new THREE.Mesh(
-            GeometryFactory.createCone(scale * 1, scale * 0.5, 32, this.geometryCache),
+            GeometryFactory.createCone(scale * 0.8, scale * 0.4, 16, this.geometryCache),
             MaterialFactory.createSpacecraftMaterial('white')
         );
-        antenna.position.z = -scale * 2;
-        antenna.rotation.x = Math.PI;
+        antenna.position.set(scale * 1.2, -scale * 0.8, -scale * 1.8);
+        antenna.rotation.x = Math.PI * 0.85;
         jwst.add(antenna);
-        
+
         return jwst;
     }
 
@@ -7142,7 +7168,7 @@ createHyperrealisticHubble(satData) {
  size: 0.08,
  color: 0xFFD700,
  type: 'observatory',
- description: '🔭 James Webb Space Telescope (JWST) is the most powerful space telescope ever built! Launched Dec 25, 2021, it orbits the Sun-Earth L2 point (1.5 million km from Earth). Observes infrared (0.6-28.5 μm) with a 6.5m segmented beryllium mirror - 6× larger than Hubble!',
+ description: '🔭 James Webb Space Telescope (JWST) is the most powerful space telescope ever built! Launched Dec 25, 2021, it orbits the Sun-Earth L2 point (1.5 million km from Earth). Observes infrared (0.6-28.5 μm) with a 6.5m segmented beryllium mirror — 6.25× the light-collecting area of Hubble (2.4m mirror)!',
  funFact: 'JWST operates at -233°C (-388°F) behind a tennis court-sized sunshield! It can see the first galaxies formed just 280 million years after the Big Bang.',
  realSize: '6.5m mirror, 21.2m × 14.2m sunshield, 6,161 kg',
  launched: 'December 25, 2021',
