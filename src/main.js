@@ -1297,11 +1297,16 @@ class App {
  t('funFactISS')
  ];
  
- let factIndex = 0;
- 
- // Rotate facts every 4 seconds during loading
+ let factIndex = Math.floor(Math.random() * spaceFacts.length);
+ // Set first fact immediately (don't wait 4s for first cycle)
+ factText.textContent = spaceFacts[factIndex];
+
+ // Rotate facts every 4 seconds during loading, picking randomly
  const factInterval = setInterval(() => {
- factIndex = (factIndex + 1) % spaceFacts.length;
+ let nextIndex;
+ do { nextIndex = Math.floor(Math.random() * spaceFacts.length); }
+ while (nextIndex === factIndex && spaceFacts.length > 1);
+ factIndex = nextIndex;
  factText.style.opacity = '0';
  setTimeout(() => {
  factText.textContent = spaceFacts[factIndex];
