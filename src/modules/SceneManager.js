@@ -913,21 +913,21 @@ export class SceneManager {
  const canvasHeight = this.vrUICanvas?.height || 640;
  const x = uv.x * canvasWidth;
  const y = (1 - uv.y) * canvasHeight;
- console.log(`[VR] UI clicked at (${Math.round(x)}, ${Math.round(y)})`);
+ if (DEBUG.VR) console.log(`[VR] UI clicked at (${Math.round(x)}, ${Math.round(y)})`);
  
  // Check which button was clicked
  let buttonFound = false;
  this.vrButtons.forEach(btn => {
  if (x >= btn.x && x <= btn.x + btn.w && 
  y >= btn.y && y <= btn.y + btn.h) {
- console.log(`[VR] Button clicked: "${btn.label}" - Action: ${btn.action}`);
+ if (DEBUG.VR) console.log(`[VR] Button clicked: "${btn.label}" - Action: ${btn.action}`);
  this.handleVRAction(btn.action);
  this.flashVRButton(btn);
  buttonFound = true;
  }
  });
  
- if (!buttonFound) {
+ if (DEBUG.VR && !buttonFound) {
  console.log(`[VR] No button at (${Math.round(x)}, ${Math.round(y)})`);
  }
  return; // Don't check for object selection if we clicked UI
@@ -1051,12 +1051,11 @@ export class SceneManager {
  
  // Smoothly move dolly
  this.dolly.position.copy(newPosition);
- 
- console.log(`?? VR Zoomed to ${object.userData?.name || 'object'} at distance ${distance.toFixed(2)}`);
+ if (DEBUG.VR) console.log(`[VR] Zoomed to ${object.userData?.name || 'object'} at distance ${distance.toFixed(2)}`);
  }
  
  handleVRAction(action) {
- console.log(` Executing VR Action: "${action}"`);
+ if (DEBUG.VR) console.log(`[VR] Executing action: "${action}"`);
 
  const app = window.app || this;
  if (!app) {
