@@ -251,14 +251,9 @@ export class SolarSystemModule {
  const ambientLight = new THREE.AmbientLight(0x404050, 0.4); // Subtle starlight ambient
  ambientLight.name = 'ambientLight';
  scene.add(ambientLight);
- 
+
  if (DEBUG.enabled) {
- console.log(' Lighting: Sun intensity 9 (warm white), Ambient 0.4 (subtle), Tone mapping 1.2');
- console.log(' - Subtle ambient simulates starlight reflection');
- console.log(' - Realistic moon phases with proper shadow terminator');
- console.log(' - Dramatic day/night contrast on planets');
- console.log(' - Sun light reaches all planets without decay');
- console.log(' - Eclipses will cast 4K shadows');
+ console.log(' Lighting: Sun 9 (warm white), Ambient 0.4, Tone mapping 1.2');
  }
  
  // Multi-layer corona for realistic glow
@@ -1552,21 +1547,6 @@ export class SolarSystemModule {
  // Range: approximately -0.2 to +1.5
  const elevation = continents * 0.8 + mountains + terrain + details - 0.2;
  
- // DEBUG: Log elevation range and raw values
- if (DEBUG.TEXTURES && x === 512 && y % 200 === 0) {
- console.log(`?? Elevation: ${elevation.toFixed(4)} (continents:${continents.toFixed(3)}, details:${details.toFixed(3)}) at lat ${(lat * 180/Math.PI).toFixed(1)} lon ${(lon * 180/Math.PI).toFixed(1)}`);
- }
- 
- // EXTRA DEBUG: Track min/max elevation
- if (DEBUG.TEXTURES) {
- if (!window._earthElevationStats) {
- window._earthElevationStats = { min: Infinity, max: -Infinity, samples: 0 };
- }
- window._earthElevationStats.min = Math.min(window._earthElevationStats.min, elevation);
- window._earthElevationStats.max = Math.max(window._earthElevationStats.max, elevation);
- window._earthElevationStats.samples++;
- }
- 
  // Polar ice caps - Arctic and Antarctic
  if (latNorm > 0.92 || latNorm01 < 0.08) {
  const iceVariation = noise(nx * 30, ny * 30, 1) * 20;
@@ -1630,61 +1610,16 @@ export class SolarSystemModule {
  }
  
  ctx.putImageData(imageData, 0, 0);
- 
- // DEBUG: Count land vs ocean pixels
- let landPixels = 0, oceanPixels = 0, icePixels = 0, forcedLandPixels = 0;
- let greenestPixel = { r: 0, g: 0, b: 0, idx: 0 };
- for (let i = 0; i < data.length; i += 4) {
- const r = data[i], g = data[i+1], b = data[i+2];
- if (r > 200 && g > 200 && b > 200) {
- icePixels++;
- } else if (g > b && g > 100) {
- landPixels++;
- // Track greenest pixel (should be forest)
- if (g > greenestPixel.g) {
- greenestPixel = { r, g, b, idx: i/4 };
- }
- } else {
- oceanPixels++;
- }
- }
- const totalPixels = size * size;
- if (DEBUG.TEXTURES) {
- console.log(` Earth texture: ${(landPixels/totalPixels*100).toFixed(1)}% land, ${(oceanPixels/totalPixels*100).toFixed(1)}% ocean, ${(icePixels/totalPixels*100).toFixed(1)}% ice`);
- }
- 
+
  // Cache the texture for future use
  const dataURL = canvas.toDataURL('image/png');
  TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
  // Cache write failed - will regenerate next time
  });
- 
+
  // Create texture BEFORE adding clouds
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- 
- // DEBUG: Log elevation statistics (only if debug enabled)
- if (DEBUG.TEXTURES && window._earthElevationStats) {
- const stats = window._earthElevationStats;
- console.log(` Elevation: min=${stats.min.toFixed(4)}, max=${stats.max.toFixed(4)}`);
- console.log(` Continents: Americas, Eurasia, Africa, Australia, Antarctica`);
- }
- 
- // ULTIMATE TEST: Create a downloadable preview
- if (DEBUG.TEXTURES) {
- try {
- console.log('??? TEXTURE PREVIEW: Right-click and "Open in new tab" to see the actual texture:');
- console.log(dataURL.substring(0, 100) + '...');
- console.log(' Copy this and paste in browser to view Earth texture:');
- console.log(' %c[VIEW EARTH TEXTURE]', 'color: #00ff00; font-size: 16px; font-weight: bold; background: #000; padding: 5px;');
- console.log(' Length:', dataURL.length, 'bytes');
- // Store for inspection
- window._earthTextureDataURL = dataURL;
- console.log(' Stored in: window._earthTextureDataURL');
- } catch (e) {
- console.error('? Failed to create texture preview:', e);
- }
- }
  
  return texture;
  }
@@ -4202,26 +4137,25 @@ export class SolarSystemModule {
  const realTexturePath = nebulaeTextures[nebData.name];
  
  if (realTexturePath) {
- // Use a flat sprite with the real Hubble image (AdditiveBlending makes black transparent)
- const spriteMap = new THREE.TextureLoader().load(
+ // Load and pixel-process: alpha = luminance_curve * radial_fade
+ // Makes dark background fully transparent, bright nebula stays visible
+ this._loadDeepSkySprite(
  realTexturePath,
- undefined,
- undefined,
- () => { // onError: fall back to procedural
- group.clear();
- this.createHyperrealisticNebula(group, nebData);
- }
- );
+ (processedTex) => {
  const spriteMat = new THREE.SpriteMaterial({
- map: spriteMap,
- blending: THREE.AdditiveBlending,
+ map: processedTex,
  transparent: true,
- opacity: 0.85,
+ opacity: 0.95,
  depthWrite: false
  });
  const sprite = new THREE.Sprite(spriteMat);
  sprite.scale.set(nebData.size * 2, nebData.size * 2, 1);
  group.add(sprite);
+ },
+ () => { // onError: fall back to procedural
+ this.createHyperrealisticNebula(group, nebData);
+ }
+ );
  } else {
  // Create hyperrealistic multi-layer nebula (procedural)
  this.createHyperrealisticNebula(group, nebData);
@@ -5050,26 +4984,24 @@ export class SolarSystemModule {
  const realTexturePath = galaxyTextures[galData.name];
 
  if (realTexturePath) {
- // Flat sprite with real Hubble image — AdditiveBlending makes black transparent
- const gMap = new THREE.TextureLoader().load(
+ // Load and pixel-process: alpha = luminance_curve * radial_fade
+ this._loadDeepSkySprite(
  realTexturePath,
- undefined,
- undefined,
- () => { // onError: fall back to procedural
- group.clear();
- this._buildProceduralGalaxy(group, galData);
- }
- );
+ (processedTex) => {
  const gMat = new THREE.SpriteMaterial({
- map: gMap,
- blending: THREE.AdditiveBlending,
+ map: processedTex,
  transparent: true,
- opacity: 0.9,
+ opacity: 0.95,
  depthWrite: false
  });
  const sprite = new THREE.Sprite(gMat);
  sprite.scale.set(galData.size * 2.5, galData.size * 2.5, 1);
  group.add(sprite);
+ },
+ () => { // onError: fall back to procedural
+ this._buildProceduralGalaxy(group, galData);
+ }
+ );
  } else {
  this._buildProceduralGalaxy(group, galData);
  }
@@ -5107,6 +5039,47 @@ export class SolarSystemModule {
  this.objects.push(group);
  this.galaxies.push(group);
  }
+ }
+
+ // Loads a deep-sky image (nebula/galaxy) and post-processes it on a canvas:
+ //   alpha = luminanceCurve(pixel) × radialFade(position)
+ // Near-black backgrounds become fully transparent; bright nebula/galaxy
+ // pixels stay visible; edges dissolve naturally into the starfield.
+ // Uses a nested row/column loop to avoid per-pixel division and Math.floor.
+ _loadDeepSkySprite(imagePath, onSuccess, onError) {
+ const img = new window.Image();
+ img.crossOrigin = 'anonymous';
+ img.onload = () => {
+ const w = img.naturalWidth, h = img.naturalHeight;
+ const canvas = document.createElement('canvas');
+ canvas.width = w; canvas.height = h;
+ const ctx = canvas.getContext('2d');
+ ctx.drawImage(img, 0, 0, w, h);
+ const imageData = ctx.getImageData(0, 0, w, h);
+ const d = imageData.data;
+ const cx = w / 2, cy = h / 2;
+ const maxR = Math.sqrt(cx * cx + cy * cy);
+ for (let py = 0; py < h; py++) {
+ const dy = py - cy;
+ const rowOff = py * w;
+ for (let px = 0; px < w; px++) {
+ const i = (rowOff + px) << 2; // * 4
+ const dx = px - cx;
+ // Luminance → steep alpha curve (dark bg ≈ 0, bright nebula ≈ 1)
+ const lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
+ const lumAlpha = Math.pow(Math.min(1, lum * 2.5), 1.8);
+ // Radial fade: full inside 50% radius, smooth rolloff to 0 at corner
+ const dist = Math.sqrt(dx * dx + dy * dy) / maxR;
+ const radial = dist < 0.5 ? 1.0
+ : Math.max(0, 1 - ((dist - 0.5) / 0.5) ** 1.4);
+ d[i + 3] = Math.round(255 * lumAlpha * radial);
+ }
+ }
+ ctx.putImageData(imageData, 0, 0);
+ onSuccess(new THREE.CanvasTexture(canvas));
+ };
+ img.onerror = onError;
+ img.src = imagePath;
  }
 
  // Procedural galaxy fallback (spiral or elliptical point cloud)
