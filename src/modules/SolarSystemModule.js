@@ -4960,8 +4960,10 @@ export class SolarSystemModule {
  ];
 
  // Real image texture paths for galaxies
+ // Note: Andromeda is rendered procedurally because any wide-field photo
+ // contains hundreds of foreground Milky Way stars that look like a
+ // cut-out image pasted over the scene.
  const galaxyTextures = {
- 'Andromeda Galaxy': './textures/galaxies/andromeda_galaxy.jpg',
  'Whirlpool Galaxy': './textures/galaxies/whirlpool_galaxy.jpg',
  'Sombrero Galaxy':  './textures/galaxies/sombrero_galaxy.jpg'
  };
@@ -5081,22 +5083,65 @@ export class SolarSystemModule {
  // Procedural galaxy fallback (spiral or elliptical point cloud)
  _buildProceduralGalaxy(group, galData) {
  if (galData.type === 'spiral') {
- const spiralCount = 8000;
+ // Andromeda (M31) is a large spiral seen at ~77° inclination → elongated oval.
+ // We render it as a tilted disk: two spiral arms + a diffuse outer halo +
+ // a dense bright core, all with additive blending so it dissolves naturally.
+ const isAndromeda = galData.name === 'Andromeda Galaxy';
+ const spiralCount = isAndromeda ? 20000 : 8000;
  const geometry = new THREE.BufferGeometry();
  const positions = new Float32Array(spiralCount * 3);
  const colors = new Float32Array(spiralCount * 3);
+ // Inclination tilt: Andromeda disk is nearly edge-on (77°) 
+ const inclination = isAndromeda ? Math.PI * 0.43 : 0; // ~77° tilt
+ const cosI = Math.cos(inclination), sinI = Math.sin(inclination);
  for (let i = 0; i < spiralCount; i++) {
- const angle = (i / spiralCount) * Math.PI * 6;
- const distance = (i / spiralCount) * galData.size;
- positions[i * 3]     = distance * Math.cos(angle) + (Math.random() - 0.5) * 30;
- positions[i * 3 + 1] = (Math.random() - 0.5) * galData.size * 0.1;
- positions[i * 3 + 2] = distance * Math.sin(angle) * 0.3 + (Math.random() - 0.5) * 30;
- const b = 0.7 + Math.random() * 0.3;
- colors[i * 3] = b; colors[i * 3 + 1] = b * 0.9; colors[i * 3 + 2] = b * 1.1;
+ const t = i / spiralCount;
+ const arms = 2;
+ const armIndex = i % arms;
+ const armAngle = (armIndex / arms) * Math.PI * 2;
+ const angle = armAngle + t * Math.PI * 5;
+ const distance = t * galData.size;
+ // Spiral arm with scatter
+ const scatter = isAndromeda ? galData.size * 0.12 : 30;
+ const xFlat = distance * Math.cos(angle) + (Math.random() - 0.5) * scatter;
+ const zFlat = distance * Math.sin(angle) + (Math.random() - 0.5) * scatter;
+ const yFlat = (Math.random() - 0.5) * galData.size * (isAndromeda ? 0.05 : 0.1);
+ // Apply inclination tilt around X axis
+ positions[i * 3]     = xFlat;
+ positions[i * 3 + 1] = yFlat * cosI - zFlat * sinI;
+ positions[i * 3 + 2] = yFlat * sinI + zFlat * cosI;
+ // Colour: warm white-blue core, cooler outer arms
+ const coreProx = Math.max(0, 1 - distance / galData.size);
+ const r = 0.75 + coreProx * 0.25;
+ const g = 0.80 + coreProx * 0.15;
+ const b = 0.90 + coreProx * 0.10;
+ colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b;
  }
  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
- group.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: 3, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending })));
+ const starSize = isAndromeda ? 2 : 3;
+ group.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: starSize, vertexColors: true, transparent: true, opacity: isAndromeda ? 0.7 : 0.8, blending: THREE.AdditiveBlending })));
+ // Extra diffuse halo for Andromeda
+ if (isAndromeda) {
+ const haloCount = 8000;
+ const hGeo = new THREE.BufferGeometry();
+ const hPos = new Float32Array(haloCount * 3);
+ const hCol = new Float32Array(haloCount * 3);
+ for (let i = 0; i < haloCount; i++) {
+ const r2 = Math.pow(Math.random(), 0.5) * galData.size * 1.1;
+ const ang = Math.random() * Math.PI * 2;
+ const xH = r2 * Math.cos(ang);
+ const zH = r2 * Math.sin(ang) * 0.35; // squish to ellipse
+ const yH = (Math.random() - 0.5) * galData.size * 0.04;
+ hPos[i * 3]     = xH;
+ hPos[i * 3 + 1] = yH * cosI - zH * sinI;
+ hPos[i * 3 + 2] = yH * sinI + zH * cosI;
+ hCol[i * 3] = 0.7; hCol[i * 3 + 1] = 0.72; hCol[i * 3 + 2] = 0.85;
+ }
+ hGeo.setAttribute('position', new THREE.BufferAttribute(hPos, 3));
+ hGeo.setAttribute('color', new THREE.BufferAttribute(hCol, 3));
+ group.add(new THREE.Points(hGeo, new THREE.PointsMaterial({ size: 1.5, vertexColors: true, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending })));
+ }
  } else {
  const ellipCount = 5000;
  const geometry = new THREE.BufferGeometry();
