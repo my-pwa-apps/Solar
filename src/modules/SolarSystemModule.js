@@ -5119,8 +5119,8 @@ export class SolarSystemModule {
  // ── Dust lanes: two dark bands parallel to major axis ──
  const dustOff = b * 0.13;
  const dustW = b * 0.07;
- const dust1 = Math.exp(-(ry - dustOff) ** 2 / (2 * dustW ** 2)) * (1 - Math.exp(-dR * 1.5));
- const dust2 = Math.exp(-(ry + dustOff) ** 2 / (2 * dustW ** 2)) * (1 - Math.exp(-dR * 1.5));
+ const dust1 = Math.exp(-((ry - dustOff) ** 2) / (2 * dustW ** 2)) * (1 - Math.exp(-dR * 1.5));
+ const dust2 = Math.exp(-((ry + dustOff) ** 2) / (2 * dustW ** 2)) * (1 - Math.exp(-dR * 1.5));
  const dustMask = 1.0 - Math.min(1, (dust1 + dust2) * 0.65) * Math.max(0, 1 - bR * 0.6);
  // ── Combine luminosity ──
  const lum = Math.min(1, halo + disk * dustMask + Math.min(1, bulge * 0.95));
