@@ -1378,6 +1378,22 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Rhea', primary, this.createMoonTexture, size, []);
  }
 
+ // Phobos texture loader - Mars moon (Wikimedia/NASA)
+ createPhobosTextureReal(size) {
+    const primary = [
+        './textures/moons/phobos_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Phobos', primary, this.createPhobosTexture, size, []);
+ }
+
+ // Deimos texture loader - Mars moon (Wikimedia/NASA)
+ createDeimosTextureReal(size) {
+    const primary = [
+        './textures/moons/deimos_2k.jpg'
+    ];
+    return this.loadPlanetTextureReal('Deimos', primary, this.createDeimosTexture, size, []);
+ }
+
  // Triton texture loader - Neptune's largest moon, retrograde orbit (NASA Voyager)
  createTritonTextureReal(size) {
     const primary = [
@@ -2980,7 +2996,7 @@ export class SolarSystemModule {
  let ringOpacity = 0.3;
  
  if (config.prominentRings) {
- // Saturn's rings: ice and rock particles (tan/beige)
+ // Saturn's rings: use real texture if available, otherwise procedural
  ringColor = 0xd4c5b0;
  ringOpacity = 0.85;
  } else if (config.name === 'Jupiter') {
@@ -2994,14 +3010,31 @@ export class SolarSystemModule {
  ringOpacity = 0.25;
  }
  
- const ringMaterial = new THREE.MeshStandardMaterial({
+ // For Saturn, try to load a real ring texture with transparency
+ let ringMap = null;
+ if (config.prominentRings) {
+ const ringLoader = new THREE.TextureLoader();
+ try {
+ ringMap = ringLoader.load('./textures/rings/saturn_ring_alpha.png');
+ } catch(e) { ringMap = null; }
+ }
+ const ringMaterial = ringMap
+ ? new THREE.MeshBasicMaterial({
+ map: ringMap,
+ alphaMap: ringMap,
+ side: THREE.DoubleSide,
+ transparent: true,
+ opacity: 1.0,
+ depthWrite: false
+ })
+ : new THREE.MeshStandardMaterial({
  color: ringColor,
  side: THREE.DoubleSide,
  transparent: true,
  opacity: ringOpacity,
  roughness: 0.8,
  metalness: 0.1,
- depthWrite: false // Don't block moons passing through rings
+ depthWrite: false
  });
  const rings = new THREE.Mesh(ringGeometry, ringMaterial);
  rings.rotation.x = Math.PI / 2;
@@ -3096,7 +3129,7 @@ export class SolarSystemModule {
  });
  } else if (moonId.includes('phobos')) {
  // Phobos: Dark reddish-gray with Stickney crater
- const phobosTexture = this.createPhobosTexture(1024);
+ const phobosTexture = this.createPhobosTextureReal(1024);
  moonMaterial = new THREE.MeshStandardMaterial({
  map: phobosTexture,
  roughness: 0.95,
@@ -3105,7 +3138,7 @@ export class SolarSystemModule {
  if (DEBUG.enabled) console.log(`[Moon Texture] Created Phobos texture (1024x1024)`);
  } else if (moonId.includes('deimos')) {
  // Deimos: Lighter gray, smoother surface
- const deimosTexture = this.createDeimosTexture(1024);
+ const deimosTexture = this.createDeimosTextureReal(1024);
  moonMaterial = new THREE.MeshStandardMaterial({
  map: deimosTexture,
  roughness: 0.92,
@@ -4157,11 +4190,42 @@ export class SolarSystemModule {
  }
  ];
 
+ // Real image texture paths for nebulae (fall back to procedural if missing)
+ const nebulaeTextures = {
+ 'Orion Nebula': './textures/nebulae/orion_nebula.jpg',
+ 'Crab Nebula':  './textures/nebulae/crab_nebula.jpg',
+ 'Ring Nebula':  './textures/nebulae/ring_nebula.jpg'
+ };
+
  for (const nebData of nebulaeData) {
  const group = new THREE.Group();
+ const realTexturePath = nebulaeTextures[nebData.name];
  
- // Create hyperrealistic multi-layer nebula
+ if (realTexturePath) {
+ // Use a flat sprite with the real Hubble image (AdditiveBlending makes black transparent)
+ const spriteMap = new THREE.TextureLoader().load(
+ realTexturePath,
+ undefined,
+ undefined,
+ () => { // onError: fall back to procedural
+ group.clear();
  this.createHyperrealisticNebula(group, nebData);
+ }
+ );
+ const spriteMat = new THREE.SpriteMaterial({
+ map: spriteMap,
+ blending: THREE.AdditiveBlending,
+ transparent: true,
+ opacity: 0.85,
+ depthWrite: false
+ });
+ const sprite = new THREE.Sprite(spriteMat);
+ sprite.scale.set(nebData.size * 2, nebData.size * 2, 1);
+ group.add(sprite);
+ } else {
+ // Create hyperrealistic multi-layer nebula (procedural)
+ this.createHyperrealisticNebula(group, nebData);
+ }
  
  // Convert RA/Dec to 3D Cartesian coordinates (like constellations)
  // Nebulae should be positioned farther out than constellations
@@ -4974,92 +5038,42 @@ export class SolarSystemModule {
  }
  ];
 
+ // Real image texture paths for galaxies
+ const galaxyTextures = {
+ 'Andromeda Galaxy':  './textures/galaxies/andromeda_galaxy.jpg',
+ 'Whirlpool Galaxy':  './textures/galaxies/whirlpool_galaxy.jpg',
+ 'Sombrero Galaxy':   './textures/galaxies/sombrero_galaxy.jpg'
+ };
+
  for (const galData of galaxiesData) {
  const group = new THREE.Group();
- 
- // Create procedural spiral or elliptical structure
- if (galData.type === 'spiral') {
- // Spiral arms
- const spiralCount = 8000;
- const geometry = new THREE.BufferGeometry();
- const positions = new Float32Array(spiralCount * 3);
- const colors = new Float32Array(spiralCount * 3);
- 
- for (let i = 0; i < spiralCount; i++) {
- const angle = (i / spiralCount) * Math.PI * 6; // Multiple spirals
- const distance = (i / spiralCount) * galData.size;
- const spiral = 0.3;
- 
- positions[i * 3] = distance * Math.cos(angle) + (Math.random() - 0.5) * 30;
- positions[i * 3 + 1] = (Math.random() - 0.5) * galData.size * 0.1;
- positions[i * 3 + 2] = distance * Math.sin(angle) * spiral + (Math.random() - 0.5) * 30;
- 
- const brightness = 0.7 + Math.random() * 0.3;
- colors[i * 3] = brightness;
- colors[i * 3 + 1] = brightness * 0.9;
- colors[i * 3 + 2] = brightness * 1.1;
+ const realTexturePath = galaxyTextures[galData.name];
+
+ if (realTexturePath) {
+ // Flat sprite with real Hubble image — AdditiveBlending makes black transparent
+ const gMap = new THREE.TextureLoader().load(
+ realTexturePath,
+ undefined,
+ undefined,
+ () => { // onError: fall back to procedural
+ group.clear();
+ this._buildProceduralGalaxy(group, galData);
  }
- 
- geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
- geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
- 
- const material = new THREE.PointsMaterial({
- size: 3,
- vertexColors: true,
+ );
+ const gMat = new THREE.SpriteMaterial({
+ map: gMap,
+ blending: THREE.AdditiveBlending,
  transparent: true,
- opacity: 0.8,
- blending: THREE.AdditiveBlending
+ opacity: 0.9,
+ depthWrite: false
  });
- 
- const spiral = new THREE.Points(geometry, material);
- group.add(spiral);
+ const sprite = new THREE.Sprite(gMat);
+ sprite.scale.set(galData.size * 2.5, galData.size * 2.5, 1);
+ group.add(sprite);
  } else {
- // Elliptical galaxy
- const ellipCount = 5000;
- const geometry = new THREE.BufferGeometry();
- const positions = new Float32Array(ellipCount * 3);
- const colors = new Float32Array(ellipCount * 3);
- 
- for (let i = 0; i < ellipCount; i++) {
- const theta = Math.random() * Math.PI * 2;
- const phi = Math.acos(2 * Math.random() - 1);
- const radius = Math.pow(Math.random(), 0.7) * galData.size;
- 
- positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
- positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.6;
- positions[i * 3 + 2] = radius * Math.cos(phi);
- 
- const brightness = 0.8 + Math.random() * 0.2;
- colors[i * 3] = brightness * 1.0;
- colors[i * 3 + 1] = brightness * 0.9;
- colors[i * 3 + 2] = brightness * 0.7;
+ this._buildProceduralGalaxy(group, galData);
  }
- 
- geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
- geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
- 
- const material = new THREE.PointsMaterial({
- size: 3,
- vertexColors: true,
- transparent: true,
- opacity: 0.7,
- blending: THREE.AdditiveBlending
- });
- 
- const elliptical = new THREE.Points(geometry, material);
- group.add(elliptical);
- }
- 
- // Core
- const coreGeo = new THREE.SphereGeometry(galData.size * 0.1, 32, 32);
- const coreMat = new THREE.MeshBasicMaterial({
- color: 0xFFFFDD,
- transparent: true,
- opacity: 0.9
- });
- const core = new THREE.Mesh(coreGeo, coreMat);
- group.add(core);
- 
+
  // Convert RA/Dec to 3D Cartesian coordinates (same as nebulae and constellations)
  // Galaxies should be positioned even farther out than nebulae
  const galaxyDistance = CONFIG.CONSTELLATION.DISTANCE * 2.0; // 2x constellation distance, 1.33x nebula distance
@@ -5093,6 +5107,49 @@ export class SolarSystemModule {
  this.objects.push(group);
  this.galaxies.push(group);
  }
+ }
+
+ // Procedural galaxy fallback (spiral or elliptical point cloud)
+ _buildProceduralGalaxy(group, galData) {
+ if (galData.type === 'spiral') {
+ const spiralCount = 8000;
+ const geometry = new THREE.BufferGeometry();
+ const positions = new Float32Array(spiralCount * 3);
+ const colors = new Float32Array(spiralCount * 3);
+ for (let i = 0; i < spiralCount; i++) {
+ const angle = (i / spiralCount) * Math.PI * 6;
+ const distance = (i / spiralCount) * galData.size;
+ positions[i * 3]     = distance * Math.cos(angle) + (Math.random() - 0.5) * 30;
+ positions[i * 3 + 1] = (Math.random() - 0.5) * galData.size * 0.1;
+ positions[i * 3 + 2] = distance * Math.sin(angle) * 0.3 + (Math.random() - 0.5) * 30;
+ const b = 0.7 + Math.random() * 0.3;
+ colors[i * 3] = b; colors[i * 3 + 1] = b * 0.9; colors[i * 3 + 2] = b * 1.1;
+ }
+ geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+ group.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: 3, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending })));
+ } else {
+ const ellipCount = 5000;
+ const geometry = new THREE.BufferGeometry();
+ const positions = new Float32Array(ellipCount * 3);
+ const colors = new Float32Array(ellipCount * 3);
+ for (let i = 0; i < ellipCount; i++) {
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.acos(2 * Math.random() - 1);
+ const radius = Math.pow(Math.random(), 0.7) * galData.size;
+ positions[i * 3]     = radius * Math.sin(phi) * Math.cos(theta);
+ positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.6;
+ positions[i * 3 + 2] = radius * Math.cos(phi);
+ const b = 0.8 + Math.random() * 0.2;
+ colors[i * 3] = b; colors[i * 3 + 1] = b * 0.9; colors[i * 3 + 2] = b * 0.7;
+ }
+ geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+ group.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: 3, vertexColors: true, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending })));
+ }
+ // Bright core
+ const coreGeo = new THREE.SphereGeometry(galData.size * 0.1, 32, 32);
+ group.add(new THREE.Mesh(coreGeo, new THREE.MeshBasicMaterial({ color: 0xFFFFDD, transparent: true, opacity: 0.9 })));
  }
 
  createNearbyStars(scene) {
