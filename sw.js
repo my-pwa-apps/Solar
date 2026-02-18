@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
 // Version 2.5.17 - Fix missing texture cache entries, luminance-based deep-sky blending
 
-const CACHE_VERSION = '2.5.17';
+const CACHE_VERSION = '2.5.18';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -78,14 +78,18 @@ const STATIC_CACHE_FILES = [
   './textures/moons/miranda_2k.jpg',
   './textures/moons/charon_2k.jpg',
   // Mars moons - real textures
+  './textures/moons/phobos_2k.jpg',
   './textures/moons/deimos_2k.jpg',
   // Saturn ring texture
   './textures/rings/saturn_ring_alpha.png',
-  // Nebulae - real Hubble imagery (only files confirmed to exist)
+  // Nebulae - real Hubble imagery
   './textures/nebulae/orion_nebula.jpg',
   './textures/nebulae/crab_nebula.jpg',
-  // Galaxies - real Hubble imagery (only files confirmed to exist)
+  './textures/nebulae/ring_nebula.jpg',
+  // Galaxies - real Hubble imagery
   './textures/galaxies/andromeda_galaxy.jpg',
+  './textures/galaxies/whirlpool_galaxy.jpg',
+  './textures/galaxies/sombrero_galaxy.jpg',
   // Dwarf planet textures
   './textures/dwarf-planets/pluto_2k.jpg',
   './textures/dwarf-planets/ceres_2k.jpg',

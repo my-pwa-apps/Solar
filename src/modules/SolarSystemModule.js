@@ -1373,9 +1373,12 @@ export class SolarSystemModule {
     return this.loadPlanetTextureReal('Rhea', primary, this.createMoonTexture, size, []);
  }
 
-// Phobos texture loader - file not yet downloaded, falls through to procedural
+// Phobos texture loader - Mars moon (NASA JPL PIA10368)
  createPhobosTextureReal(size) {
- return this.loadPlanetTextureReal('Phobos', [], this.createPhobosTexture, size, []);
+ const primary = [
+ './textures/moons/phobos_2k.jpg'
+ ];
+ return this.loadPlanetTextureReal('Phobos', primary, this.createPhobosTexture, size, []);
  }
 
  // Deimos texture loader - Mars moon (Wikimedia/NASA)
@@ -4112,8 +4115,8 @@ export class SolarSystemModule {
  // Real image texture paths for nebulae (fall back to procedural if missing)
  const nebulaeTextures = {
  'Orion Nebula': './textures/nebulae/orion_nebula.jpg',
- 'Crab Nebula':  './textures/nebulae/crab_nebula.jpg'
- // 'Ring Nebula': texture not yet available — uses procedural fallback
+ 'Crab Nebula':  './textures/nebulae/crab_nebula.jpg',
+ 'Ring Nebula':  './textures/nebulae/ring_nebula.jpg'
  };
 
  for (const nebData of nebulaeData) {
@@ -4958,8 +4961,9 @@ export class SolarSystemModule {
 
  // Real image texture paths for galaxies
  const galaxyTextures = {
- 'Andromeda Galaxy': './textures/galaxies/andromeda_galaxy.jpg'
- // 'Whirlpool Galaxy' and 'Sombrero Galaxy' textures not yet available — use procedural
+ 'Andromeda Galaxy': './textures/galaxies/andromeda_galaxy.jpg',
+ 'Whirlpool Galaxy': './textures/galaxies/whirlpool_galaxy.jpg',
+ 'Sombrero Galaxy':  './textures/galaxies/sombrero_galaxy.jpg'
  };
 
  for (const galData of galaxiesData) {
