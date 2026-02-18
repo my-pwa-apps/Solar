@@ -631,14 +631,14 @@ export class SolarSystemModule {
         // Pluto already created; add others with texture loaders where available
         // Radii calculated as: diameter_km / 12742 (Earth's diameter in km)
         const catalog = [
-            { name: 'Ceres', radius: 0.074, color: 0xC8C8B4, distance: 140, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: 'Largest object in asteroid belt; classified as dwarf planet.', funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
-            { name: 'Haumea', radius: 0.086, color: 0xE0D6C8, distance: 2139, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: 'Fast-spinning elongated dwarf planet.', funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
-            { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2279, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: 'Bright Kuiper Belt dwarf planet.', funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
-            { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2483, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: 'Massive scattered disk dwarf planet.', funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
+            { name: 'Ceres', radius: 0.074, color: 0xC8C8B4, distance: 140, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: t('descCeres'), funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
+            { name: 'Haumea', radius: 0.086, color: 0xE0D6C8, distance: 2139, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: t('descHaumea'), funFact: 'Rotation period ~4 hours gives ellipsoid shape.', realSize: '~1632 x 996 x 760 km' },
+            { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2279, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: t('descMakemake'), funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
+            { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2483, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: t('descEris'), funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
             { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2024, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
             { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2189, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
             { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 3457, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
-            { name: 'Sedna', radius: 0.078, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: 'Inner Oort Cloud object with extreme elliptical orbit (76-937 AU). One of the most distant known solar system bodies.', funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars.', realSize: '~995 km diameter' },
+            { name: 'Sedna', radius: 0.078, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: t('descSedna'), funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars.', realSize: '~995 km diameter' },
             { name: 'Salacia', radius: 0.067, color: 0x996655, distance: 2234, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
             { name: 'Varda', radius: 0.057, color: 0xAA8866, distance: 2328, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
             { name: 'Varuna', radius: 0.052, color: 0xAA7755, distance: 2139, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
@@ -3380,7 +3380,7 @@ export class SolarSystemModule {
  asteroidBeltGroup.userData = {
  name: 'Asteroid Belt',
  type: 'Asteroid Belt',
- description: ' The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
+ description: t('descAsteroidBelt'),
  funFact: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
  count: largeCount + mediumCount + dustCount,
  radius: 40
@@ -3582,7 +3582,7 @@ export class SolarSystemModule {
  kuiperBeltGroup.userData = {
  name: 'Kuiper Belt',
  type: 'Kuiper Belt',
- description: ' The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
+ description: t('descKuiperBelt'),
  funFact: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
  count: largeKBOCount + mediumKBOCount + smallKBOCount + scatteredCount,
  radius: 60
@@ -3734,7 +3734,7 @@ export class SolarSystemModule {
  oortCloudGroup.userData = {
  name: 'Oort Cloud',
  type: 'Oort Cloud',
- description: '??? The Oort Cloud is a vast spherical shell of icy objects surrounding our entire solar system! It extends from about 50,000 to 200,000 AU from the Sun. Long-period comets like Hale-Bopp originate from this distant realm. The Oort Cloud contains trillions of icy bodies and marks the gravitational boundary of our solar system!',
+ description: t('descOortCloud'),
  funFact: 'The Oort Cloud is so far away that light from the Sun takes over 1.5 years to reach its outer edge! It would take Voyager 1 about 300 years to reach the inner edge.',
  count: innerOortCount + outerOortCount + cometaryCount,
  radius: this.realisticScale ? 10256000 : 15000
@@ -3982,11 +3982,11 @@ export class SolarSystemModule {
  this.distantStars = [];
  
  const brightStars = [
- { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: ' Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.' },
- { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: ' Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!' },
- { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: ' Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.' },
- { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: ' Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.' },
- { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: ' Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.' }
+ { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: t('descSirius') },
+ { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: t('descBetelgeuse') },
+ { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: t('descRigel') },
+ { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: t('descVega') },
+ { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: t('descPolaris') }
  ];
 
  brightStars.forEach(async (starData) => {
@@ -4067,7 +4067,7 @@ export class SolarSystemModule {
  density: 0.7,           // High density gas cloud
  turbulence: 0.4,        // Moderate turbulence
  centralStars: 4,        // Trapezium cluster
- description: ' The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!'
+ description: t('descOrionNebula')
  },
  { 
  name: 'Crab Nebula', 
@@ -4087,7 +4087,7 @@ export class SolarSystemModule {
  filaments: true,        // Distinct filamentary structure
  pulsar: true,           // Central pulsar (animated)
  expansionRate: 0.002,   // Expanding at 1,500 km/s
- description: ' The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!'
+ description: t('descCrabNebula')
  },
  { 
  name: 'Ring Nebula', 
@@ -4108,7 +4108,7 @@ export class SolarSystemModule {
  centralStar: true,      // White dwarf at center
  innerRadius: 0.4,       // Ring proportions
  outerRadius: 0.7,
- description: ' The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.'
+ description: t('descRingNebula')
  }
  ];
 
@@ -4553,7 +4553,7 @@ export class SolarSystemModule {
  // === ZODIAC CONSTELLATIONS (12 Signs) ===
  {
  name: 'Aries (The Ram)',
- description: ' Aries is the first sign of the zodiac! Look for the bright stars Hamal and Sheratan. In Greek mythology, Aries represents the golden ram that saved Phrixus and Helle.',
+ description: t('descAries'),
  stars: [
  { name: 'Hamal', ra: 31.8, dec: 23.5, mag: 2.0, color: 0xFFA500 }, // 0 - The head
  { name: 'Sheratan', ra: 28.7, dec: 20.8, mag: 2.6, color: 0xFFFFE0 }, // 1 - First horn
@@ -4565,7 +4565,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Taurus (The Bull)',
- description: ' Taurus contains the bright red star Aldebaran, the bull\'s eye! Also home to the Pleiades star cluster. In mythology, Zeus transformed into a bull to win Europa.',
+ description: t('descTaurus'),
  stars: [
  { name: 'Aldebaran', ra: 68.9, dec: 16.5, mag: 0.9, color: 0xFF6347 }, // 0 - Red giant (bull's eye)
  { name: 'Elnath', ra: 81.6, dec: 28.6, mag: 1.7, color: 0xE0FFFF }, // 1 - Northern horn tip
@@ -4578,7 +4578,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Gemini (The Twins)',
- description: ' Gemini features the bright twins Castor and Pollux! In mythology, they were inseparable brothers, the Dioscuri, known for their bond and bravery.',
+ description: t('descGemini'),
  stars: [
  { name: 'Pollux', ra: 116.3, dec: 28.0, mag: 1.2, color: 0xFFA500 },
  { name: 'Castor', ra: 113.6, dec: 31.9, mag: 1.6, color: 0xFFFFF0 },
@@ -4589,7 +4589,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Cancer (The Crab)',
- description: ' Cancer is faint but contains the beautiful Beehive Cluster (M44)! In mythology, Cancer was the crab sent by Hera to distract Hercules during his battle.',
+ description: t('descCancer'),
  stars: [
  { name: 'Altarf', ra: 124.1, dec: 9.2, mag: 3.5, color: 0xFFA500 }, // 0 - Southern claw
  { name: 'Acubens', ra: 134.6, dec: 11.9, mag: 4.3, color: 0xFFFFF0 }, // 1 - Northern claw
@@ -4602,7 +4602,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Leo (The Lion)',
- description: ' Leo is home to the bright star Regulus! The "Sickle" asterism forms the lion\'s head. In mythology, Leo represents the Nemean Lion slain by Hercules.',
+ description: t('descLeo'),
  stars: [
  { name: 'Regulus', ra: 152.1, dec: 11.9, mag: 1.4, color: 0xE0FFFF }, // 0 - Heart of the lion
  { name: 'Denebola', ra: 177.4, dec: 14.6, mag: 2.1, color: 0xFFFFF0 }, // 1 - Tail
@@ -4615,7 +4615,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Virgo (The Maiden)',
- description: ' Virgo is the second largest constellation! The bright star Spica represents wheat in the maiden\'s hand. Home to thousands of galaxies in the Virgo Cluster.',
+ description: t('descVirgo'),
  stars: [
  { name: 'Spica', ra: 201.3, dec: -11.2, mag: 1.0, color: 0xE0FFFF }, // 0 - Wheat/hand (brightest)
  { name: 'Vindemiatrix', ra: 195.5, dec: 10.9, mag: 2.8, color: 0xFFFFE0 }, // 1 - Grape gatherer
@@ -4628,7 +4628,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Libra (The Scales)',
- description: ' Libra represents the scales of justice! Its brightest stars are Zubenelgenubi and Zubeneschamali, meaning "southern claw" and "northern claw" in Arabic.',
+ description: t('descLibra'),
  stars: [
  { name: 'Zubeneschamali', ra: 229.3, dec: -9.4, mag: 2.6, color: 0xE0FFFF }, // 0 - Northern scale
  { name: 'Zubenelgenubi', ra: 222.7, dec: -16.0, mag: 2.8, color: 0xFFFFE0 }, // 1 - Southern scale
@@ -4640,7 +4640,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Scorpius (The Scorpion)',
- description: ' Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
+ description: t('descScorpius'),
  stars: [
  { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 }, // 0 - Red supergiant (heart)
  { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF }, // 1 - Stinger
@@ -4654,7 +4654,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Sagittarius (The Archer)',
- description: ' Sagittarius aims his arrow at the heart of Scorpius! The "Teapot" asterism is easy to spot. Points toward the center of our Milky Way galaxy!',
+ description: t('descSagittarius'),
  stars: [
  { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot base (spout bottom)
  { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Spout top
@@ -4669,7 +4669,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Capricornus (The Sea-Goat)',
- description: ' Capricornus is one of the oldest constellations! Represents a creature with the head of a goat and tail of a fish. Associated with the god Pan in Greek mythology.',
+ description: t('descCapricornus'),
  stars: [
  { name: 'Deneb Algedi', ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 }, // 0 - Tail tip
  { name: 'Dabih', ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 }, // 1 - Goat head
@@ -4682,7 +4682,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Aquarius (The Water-Bearer)',
- description: ' Aquarius represents the water-bearer pouring from his urn! Home to several famous deep-sky objects including the Helix Nebula. One of the oldest named constellations.',
+ description: t('descAquarius'),
  stars: [
  { name: 'Sadalsuud', ra: 322.9, dec: -5.6, mag: 2.9, color: 0xFFFFE0 }, // 0 - Lucky star of luckiest
  { name: 'Sadalmelik', ra: 331.4, dec: -0.3, mag: 3.0, color: 0xFFFFE0 }, // 1 - Lucky star of the king
@@ -4695,7 +4695,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Pisces (The Fish)',
- description: ' Pisces shows two fish tied together! Represents Aphrodite and Eros who transformed into fish to escape the monster Typhon. Contains the vernal equinox point!',
+ description: t('descPisces'),
  stars: [
  { name: 'Alpherg', ra: 25.7, dec: 15.3, mag: 3.6, color: 0xFFFFE0 }, // 0 - Eastern fish (η Psc)
  { name: 'Alrescha', ra: 30.9, dec: 2.8, mag: 3.8, color: 0xFFFFF0 }, // 1 - Knot (tie point, α Psc)
@@ -4711,7 +4711,7 @@ export class SolarSystemModule {
  // === FAMOUS NON-ZODIAC CONSTELLATIONS ===
  {
  name: 'Orion (The Hunter)',
- description: '? Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
+ description: t('descOrionConst'),
  stars: [
  { name: 'Betelgeuse', ra: 88.8, dec: 7.4, mag: 0.5, color: 0xFF4500 }, // Red supergiant
  { name: 'Rigel', ra: 78.6, dec: -8.2, mag: 0.1, color: 0x87CEEB }, // Blue supergiant
@@ -4725,7 +4725,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Big Dipper (Ursa Major)',
- description: ' The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+ description: t('descUrsaMajor'),
  stars: [
  { name: 'Dubhe', ra: 165.9, dec: 61.8, mag: 1.8, color: 0xFFFFE0 },
  { name: 'Merak', ra: 165.5, dec: 56.4, mag: 2.4, color: 0xFFFFF0 },
@@ -4739,7 +4739,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Little Dipper (Ursa Minor)',
- description: ' The Little Dipper contains Polaris, the North Star! Polaris marks the end of the Little Dipper\'s handle and stays nearly fixed in the northern sky. Essential for celestial navigation!',
+ description: t('descUrsaMinor'),
  stars: [
  { name: 'Polaris', ra: 37.95, dec: 89.26, mag: 2.0, color: 0xFFFACD }, // North Star!
  { name: 'Yildun', ra: 263.05, dec: 86.58, mag: 4.4, color: 0xFFFFF0 },
@@ -4753,7 +4753,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Southern Cross (Crux)',
- description: ' The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
+ description: t('descCrux'),
  stars: [
  { name: 'Acrux', ra: 186.6, dec: -63.1, mag: 0.8, color: 0xE0FFFF },
  { name: 'Mimosa', ra: 191.9, dec: -59.7, mag: 1.3, color: 0xE0FFFF },
@@ -4764,7 +4764,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Cassiopeia (The Queen)',
- description: ' Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
+ description: t('descCassiopeia'),
  stars: [
  { name: 'Schedar', ra: 10.1, dec: 56.5, mag: 2.2, color: 0xFFA500 },
  { name: 'Caph', ra: 2.3, dec: 59.1, mag: 2.3, color: 0xFFFFF0 },
@@ -4776,7 +4776,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Cygnus (The Swan)',
- description: ' Cygnus the Swan flies along the Milky Way! Also called the Northern Cross. In mythology, Zeus disguised himself as a swan. Home to many deep-sky objects!',
+ description: t('descCygnus'),
  stars: [
  { name: 'Deneb', ra: 310.4, dec: 45.3, mag: 1.3, color: 0xE0FFFF }, // 0 - Tail (supergiant)
  { name: 'Albireo', ra: 292.7, dec: 27.9, mag: 3.1, color: 0xFFA500 }, // 1 - Head (beautiful double star)
@@ -4789,7 +4789,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Lyra (The Lyre)',
- description: ' Lyra represents the lyre of Orpheus! Contains Vega, the 5th brightest star in the night sky. Also home to the Ring Nebula, a famous planetary nebula!',
+ description: t('descLyra'),
  stars: [
  { name: 'Vega', ra: 279.2, dec: 38.8, mag: 0.0, color: 0xE0FFFF }, // Very bright!
  { name: 'Sheliak', ra: 282.5, dec: 33.4, mag: 3.5, color: 0xE0FFFF },
@@ -4800,7 +4800,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Andromeda (The Princess)',
- description: ' Andromeda was the princess chained to a rock and rescued by Perseus! This constellation contains the Andromeda Galaxy (M31), our nearest large galaxy neighbor!',
+ description: t('descAndromedaConst'),
  stars: [
  { name: 'Alpheratz', ra: 2.1, dec: 29.1, mag: 2.1, color: 0xE0FFFF }, // 0 - Head (shared with Pegasus)
  { name: 'Mirach', ra: 17.4, dec: 35.6, mag: 2.1, color: 0xFF6347 }, // 1 - Hip (red giant)
@@ -4813,7 +4813,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Perseus (The Hero)',
- description: ' Perseus the hero who slayed Medusa! Home to the bright star Mirfak and the famous variable star Algol ("Demon Star"). Contains the Double Cluster!',
+ description: t('descPerseus'),
  stars: [
  { name: 'Mirfak', ra: 51.1, dec: 49.9, mag: 1.8, color: 0xFFFFE0 }, // 0 - Shoulder
  { name: 'Algol', ra: 47.0, dec: 40.9, mag: 2.1, color: 0xE0FFFF }, // 1 - Medusa's head
@@ -4937,7 +4937,7 @@ export class SolarSystemModule {
  size: 600, 
  type: 'spiral', 
  angularSize: 178, // 178 arcminutes - appears 6x larger than full moon!
- description: ' The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).'
+ description: t('descAndromeda')
  },
  { 
  name: 'Whirlpool Galaxy', 
@@ -4946,7 +4946,7 @@ export class SolarSystemModule {
  size: 400, 
  type: 'spiral',
  angularSize: 11, // 11 arcminutes
- description: ' The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.'
+ description: t('descWhirlpool')
  },
  { 
  name: 'Sombrero Galaxy', 
@@ -4955,7 +4955,7 @@ export class SolarSystemModule {
  size: 350, 
  type: 'elliptical',
  angularSize: 9, // 9 arcminutes
- description: ' The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!'
+ description: t('descSombrero')
  }
  ];
 
@@ -5327,7 +5327,7 @@ export class SolarSystemModule {
  alphaA.userData = {
  name: ' Alpha Centauri A',
  type: 'Star',
- description: ' Alpha Centauri A is very similar to our Sun! It\'s part of a triple star system that is our closest stellar neighbor at 4.37 light-years away. With its companion Alpha Centauri B, they orbit each other every 80 years.',
+ description: t('descAlphaCentauriA'),,
  distance: '4.37 light-years',
  realSize: '1.22 times the Sun\'s diameter',
  funFact: 'Alpha Centauri is visible from the Southern Hemisphere and is the third brightest star in our night sky!'
@@ -5358,7 +5358,7 @@ export class SolarSystemModule {
  proxima.userData = {
  name: ' Proxima Centauri',
  type: 'Red Dwarf Star',
- description: ' Proxima Centauri is a small red dwarf star and the closest star to our Solar System at just 4.24 light-years! It\'s much cooler and dimmer than our Sun, but it has at least two planets, including potentially habitable Proxima Centauri b.',
+ description: t('descProximaCentauri'),
  distance: '4.24 light-years (40 trillion km!)',
  realSize: '0.14 times the Sun\'s diameter',
  funFact: 'Despite being our closest star, Proxima is too dim to see with the naked eye!'
@@ -5395,7 +5395,7 @@ export class SolarSystemModule {
  kepler452.userData = {
  name: ' Kepler-452 (Sun-like Star)',
  type: 'G-type Star',
- description: ' Kepler-452 is a Sun-like star that hosts Earth\'s "cousin" planet Kepler-452b! It\'s 1.5 billion years older than our Sun and 20% brighter. The star is 1,400 light-years away in the constellation Cygnus.',
+ description: t('descKepler452Star'),
  distance: '1,400 light-years',
  realSize: '1.11 times the Sun\'s diameter',
  funFact: 'Kepler-452 is 6 billion years old - it shows us what our Sun might be like in 1.5 billion years!'
@@ -5428,7 +5428,7 @@ export class SolarSystemModule {
  trappist1.userData = {
  name: ' TRAPPIST-1 (Red Dwarf)',
  type: 'Ultra-cool Red Dwarf',
- description: ' TRAPPIST-1 is an ultra-cool red dwarf with 7 Earth-sized planets! Three of them are in the habitable zone. The entire system is so compact that all 7 planets orbit closer to their star than Mercury does to our Sun.',
+ description: t('descTrappist1Star'),
  distance: '40 light-years',
  realSize: '0.12 times the Sun\'s diameter (barely larger than Jupiter!)',
  funFact: 'TRAPPIST-1 is named after the telescope that discovered it - The TRAnsiting Planets and PlanetesImals Small Telescope!'
@@ -5461,7 +5461,7 @@ export class SolarSystemModule {
  kepler186.userData = {
  name: ' Kepler-186 (Red Dwarf)',
  type: 'M-type Red Dwarf',
- description: ' Kepler-186 is a red dwarf star with 5 known planets! Kepler-186f was the first Earth-sized planet discovered in the habitable zone of another star. The star is cooler than our Sun, giving it an orange-red glow.',
+ description: t('descKepler186Star'),
  distance: '500 light-years',
  realSize: '0.54 times the Sun\'s diameter',
  funFact: 'Plants on Kepler-186f would likely photosynthesize using infrared light and appear dark red or black!'
@@ -5491,7 +5491,7 @@ export class SolarSystemModule {
  orbitTilt: 0.08, // Slight tilt for visual interest
  radius: 1.1,
  color: 0x4A7BA7,
- description: ' Proxima Centauri b is the closest known exoplanet to Earth! It orbits in the habitable zone of Proxima Centauri, meaning liquid water could exist on its surface. Discovered in 2016, it\'s only 4.24 light-years away.',
+ description: t('descProximaCentauriB'),
  distance: '4.24 light-years',
  realSize: '~1.17 Earth masses',
  funFact: 'With current technology, it would take 6,300 years to reach Proxima b!'
@@ -5504,7 +5504,7 @@ export class SolarSystemModule {
  orbitTilt: 0.12,
  radius: 1.6,
  color: 0x5D8AA8,
- description: ' Kepler-452b is called "Earth\'s cousin"! It\'s about 60% larger than Earth and orbits a Sun-like star in the habitable zone. Its year is 385 days long. Could it have life? We don\'t know yet!',
+ description: t('descKepler452b'),
  distance: '1,400 light-years',
  realSize: '1.6 times Earth\'s radius',
  funFact: 'Kepler-452b is 6 billion years old - 1.5 billion years older than Earth!'
@@ -5517,7 +5517,7 @@ export class SolarSystemModule {
  orbitTilt: 0.05,
  radius: 0.92,
  color: 0x3A7CA5,
- description: ' TRAPPIST-1e is part of an amazing system with 7 Earth-sized planets! It orbits a cool red dwarf star and is in the habitable zone. The system is so compact that all 7 planets would fit inside Mercury\'s orbit!',
+ description: t('descTrappist1e'),
  distance: '40 light-years',
  realSize: '0.92 times Earth\'s radius',
  funFact: 'From TRAPPIST-1e, you could see the other planets as large as our Moon in the sky!'
@@ -5530,7 +5530,7 @@ export class SolarSystemModule {
  orbitTilt: 0.1,
  radius: 1.1,
  color: 0x2E5F6F,
- description: ' Kepler-186f was the first Earth-sized planet discovered in another star\'s habitable zone! It receives about one-third the light Earth gets from the Sun, so plants there (if any!) might appear black or red instead of green.',
+ description: t('descKepler186f'),
  distance: '500 light-years',
  realSize: '1.1 times Earth\'s radius',
  funFact: 'Kepler-186f orbits a red dwarf, so its sky would glow orange-red!'
@@ -5645,13 +5645,13 @@ export class SolarSystemModule {
  // Hale-Bopp: 60 km nucleus (massive!), ~250 AU orbit
  { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: t('descHaleBopp') },
  // Hyakutake: 4 km nucleus, spectacular in 1996
- { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, speed: 0.0011, size: 0.0015, description: 'Comet Hyakutake passed extremely close to Earth in 1996, becoming one of the brightest comets in decades with a tail stretching across half the sky!' },
+ { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, speed: 0.0011, size: 0.0015, description: t('descHyakutake') },
  // Lovejoy: ~500m nucleus, Kreutz sungrazer
- { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, speed: 0.0015, size: 0.0008, description: 'Comet Lovejoy (C/2011 W3) survived a close pass through the Sun\'s corona! It\'s part of the Kreutz sungrazers - fragments of a giant comet that broke up centuries ago.' },
+ { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, speed: 0.0015, size: 0.0008, description: t('descLovejoy') },
  // Encke: 4.8 km nucleus, shortest period (3.3 years)
- { name: 'Comet Encke', distance: 385, eccentricity: 0.847, speed: 0.002, size: 0.0018, description: 'Comet Encke has the shortest orbital period of any known comet - only 3.3 years! It\'s named after Johann Franz Encke who calculated its orbit in 1819.' },
+ { name: 'Comet Encke', distance: 385, eccentricity: 0.847, speed: 0.002, size: 0.0018, description: t('descEncke') },
  // Swift-Tuttle: 26 km nucleus, source of Perseid meteor shower
- { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, speed: 0.0009, size: 0.003, description: 'Comet Swift-Tuttle is the parent body of the spectacular Perseid meteor shower! With a 26 km nucleus, it\'s the largest object that regularly passes near Earth.' }
+ { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, speed: 0.0009, size: 0.003, description: t('descSwiftTuttle') }
  ];
 
  cometsData.forEach((cometData, index) => {

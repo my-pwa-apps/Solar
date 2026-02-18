@@ -291,7 +291,78 @@ const translations = {
         // Comet descriptions
         descHalley: 'Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!',
         descHaleBopp: 'Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at about 40 km in diameter.',
-        descNeowise: 'Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are "dirty snowballs" made of ice, dust, and rock from the solar system\'s formation.'
+        descNeowise: 'Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are "dirty snowballs" made of ice, dust, and rock from the solar system\'s formation.',
+
+        // Galaxy descriptions
+        descAndromeda: ' The Andromeda Galaxy is our nearest large galactic neighbor, 2.5 million light-years away! It contains 1 trillion stars and is on a collision course with the Milky Way (don\'t worry, collision in 4.5 billion years).',
+        descWhirlpool: ' The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.',
+        descSombrero: ' The Sombrero Galaxy looks like a Mexican hat! It has a bright nucleus, an unusually large central bulge, and a prominent dust lane. Contains 2,000 globular clusters!',
+
+        // Nebula descriptions
+        descOrionNebula: ' The Orion Nebula is a stellar nursery where new stars are being born! It\'s 1,344 light-years away and is visible to the naked eye as a fuzzy patch in Orion\'s sword. Contains over 3,000 stars!',
+        descCrabNebula: ' The Crab Nebula is the remnant of a supernova explosion observed by Chinese astronomers in 1054 AD! At its center is a pulsar spinning 30 times per second!',
+        descRingNebula: ' The Ring Nebula is a planetary nebula - the glowing remains of a dying Sun-like star! The star at its center has blown off its outer layers, creating this beautiful ring.',
+
+        // Constellation descriptions
+        descAries: ' Aries is the first sign of the zodiac! Look for the bright stars Hamal and Sheratan. In Greek mythology, Aries represents the golden ram that saved Phrixus and Helle.',
+        descTaurus: ' Taurus contains the bright red star Aldebaran, the bull\'s eye! Also home to the Pleiades star cluster. In mythology, Zeus transformed into a bull to win Europa.',
+        descGemini: ' Gemini features the bright twins Castor and Pollux! In mythology, they were inseparable brothers, the Dioscuri, known for their bond and bravery.',
+        descCancer: ' Cancer is faint but contains the beautiful Beehive Cluster (M44)! In mythology, Cancer was the crab sent by Hera to distract Hercules during his battle.',
+        descLeo: ' Leo is home to the bright star Regulus! The "Sickle" asterism forms the lion\'s head. In mythology, Leo represents the Nemean Lion slain by Hercules.',
+        descVirgo: ' Virgo is the second largest constellation! The bright star Spica represents wheat in the maiden\'s hand. Home to thousands of galaxies in the Virgo Cluster.',
+        descLibra: ' Libra represents the scales of justice! Its brightest stars are Zubenelgenubi and Zubeneschamali, meaning "southern claw" and "northern claw" in Arabic.',
+        descScorpius: ' Scorpius represents the scorpion that killed Orion in Greek mythology! The bright red star Antares marks the scorpion\'s heart. Look for the curved tail with the stinger!',
+        descSagittarius: ' Sagittarius aims his arrow at the heart of Scorpius! The "Teapot" asterism is easy to spot. Points toward the center of our Milky Way galaxy!',
+        descCapricornus: ' Capricornus is one of the oldest constellations! Represents a creature with the head of a goat and tail of a fish. Associated with the god Pan in Greek mythology.',
+        descAquarius: ' Aquarius represents the water-bearer pouring from his urn! Home to several famous deep-sky objects including the Helix Nebula. One of the oldest named constellations.',
+        descPisces: ' Pisces shows two fish tied together! Represents Aphrodite and Eros who transformed into fish to escape the monster Typhon. Contains the vernal equinox point!',
+        descOrionConst: ' Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
+        descUrsaMajor: ' The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+        descUrsaMinor: ' The Little Dipper contains Polaris, the North Star! Polaris marks the end of the Little Dipper\'s handle and stays nearly fixed in the northern sky. Essential for celestial navigation!',
+        descCrux: ' The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
+        descCassiopeia: ' Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
+        descCygnus: ' Cygnus the Swan flies along the Milky Way! Also called the Northern Cross. In mythology, Zeus disguised himself as a swan. Home to many deep-sky objects!',
+        descLyra: ' Lyra represents the lyre of Orpheus! Contains Vega, the 5th brightest star in the night sky. Also home to the Ring Nebula, a famous planetary nebula!',
+        descAndromedaConst: ' Andromeda was the princess chained to a rock and rescued by Perseus! This constellation contains the Andromeda Galaxy (M31), our nearest large galaxy neighbor!',
+        descPerseus: ' Perseus the hero who slayed Medusa! Home to the bright star Mirfak and the famous variable star Algol ("Demon Star"). Contains the Double Cluster!',
+
+        // Nearby star descriptions
+        descSirius: ' Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.',
+        descBetelgeuse: ' Betelgeuse is a red supergiant star nearing the end of its life! It\'s so big that if placed at our Sun\'s position, it would extend past Mars. Will explode as a supernova someday!',
+        descRigel: ' Rigel is a blue supergiant, one of the most luminous stars visible to the naked eye! It\'s 40,000 times more luminous than our Sun and located 860 light-years away.',
+        descVega: ' Vega is one of the brightest stars in the northern sky! It was the North Star 12,000 years ago and will be again in 13,000 years due to Earth\'s axial precession.',
+        descPolaris: ' Polaris, the North Star, has guided travelers for centuries! It\'s actually a triple star system and is currently very close to true north due to Earth\'s rotation axis.',
+        descAlphaCentauriA: ' Alpha Centauri A is very similar to our Sun! It\'s part of a triple star system that is our closest stellar neighbor at 4.37 light-years away. With its companion Alpha Centauri B, they orbit each other every 80 years.',
+        descProximaCentauri: ' Proxima Centauri is a small red dwarf star and the closest star to our Solar System at just 4.24 light-years! It\'s much cooler and dimmer than our Sun, but it has at least two planets, including potentially habitable Proxima Centauri b.',
+
+        // Exoplanet host star descriptions
+        descKepler452Star: ' Kepler-452 is a Sun-like star that hosts Earth\'s "cousin" planet Kepler-452b! It\'s 1.5 billion years older than our Sun and 20% brighter. The star is 1,400 light-years away in the constellation Cygnus.',
+        descTrappist1Star: ' TRAPPIST-1 is an ultra-cool red dwarf with 7 Earth-sized planets! Three of them are in the habitable zone. The entire system is so compact that all 7 planets orbit closer to their star than Mercury does to our Sun.',
+        descKepler186Star: ' Kepler-186 is a red dwarf star with 5 known planets! Kepler-186f was the first Earth-sized planet discovered in the habitable zone of another star. The star is cooler than our Sun, giving it an orange-red glow.',
+
+        // Exoplanet descriptions
+        descProximaCentauriB: ' Proxima Centauri b is the closest known exoplanet to Earth! It orbits in the habitable zone of Proxima Centauri, meaning liquid water could exist on its surface. Discovered in 2016, it\'s only 4.24 light-years away.',
+        descKepler452b: ' Kepler-452b is called "Earth\'s cousin"! It\'s about 60% larger than Earth and orbits a Sun-like star in the habitable zone. Its year is 385 days long. Could it have life? We don\'t know yet!',
+        descTrappist1e: ' TRAPPIST-1e is part of an amazing system with 7 Earth-sized planets! It orbits a cool red dwarf star and is in the habitable zone. The system is so compact that all 7 planets would fit inside Mercury\'s orbit!',
+        descKepler186f: ' Kepler-186f was the first Earth-sized planet discovered in another star\'s habitable zone! It receives about one-third the light Earth gets from the Sun, so plants there (if any!) might appear black or red instead of green.',
+
+        // Dwarf planet descriptions
+        descCeres: ' Ceres is the largest object in the asteroid belt and a dwarf planet! NASA\'s Dawn spacecraft revealed mysterious bright spots in Occator Crater - they turned out to be salt deposits from ancient brines.',
+        descHaumea: ' Haumea spins so fast (once every 4 hours) that it has been squashed into an egg shape! It also has two moons and a ring system, making it very unusual among dwarf planets.',
+        descMakemake: ' Makemake is a bright, reddish world in the Kuiper Belt discovered near Easter 2005, named after the creator god of the Rapa Nui people of Easter Island.',
+        descEris: ' Eris is slightly smaller than Pluto but more massive! Its discovery in 2005 directly led to Pluto being reclassified as a dwarf planet. It has one moon, Dysnomia.',
+        descSedna: ' Sedna has one of the most extreme elliptical orbits in the solar system, ranging from 76 to 937 AU. It takes about 11,400 years to complete one orbit and is so red it rivals Mars in color!',
+
+        // Extra comet descriptions
+        descHyakutake: ' Comet Hyakutake passed extremely close to Earth in 1996, becoming one of the brightest comets in decades with a tail stretching across half the sky!',
+        descLovejoy: ' Comet Lovejoy (C/2011 W3) survived a close pass through the Sun\'s corona! It\'s part of the Kreutz sungrazers - fragments of a giant comet that broke up centuries ago.',
+        descEncke: ' Comet Encke has the shortest orbital period of any known comet - only 3.3 years! It\'s named after Johann Franz Encke who calculated its orbit in 1819.',
+        descSwiftTuttle: ' Comet Swift-Tuttle is the parent body of the spectacular Perseid meteor shower! With a 26 km nucleus, it\'s the largest object that regularly passes near Earth.',
+
+        // Asteroid belt / Kuiper belt / Oort cloud
+        descAsteroidBelt: ' The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
+        descKuiperBelt: ' The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
+        descOortCloud: ' The Oort Cloud is a vast spherical shell of icy objects surrounding our entire solar system! It extends from about 50,000 to 200,000 AU from the Sun. Long-period comets like Hale-Bopp originate from this distant realm.'
     },
     
     nl: {
@@ -555,7 +626,78 @@ const translations = {
         // Komeetbeschrijvingen
         descHalley: 'De Halley-komeet is de beroemdste komeet! Hij keert elke 75-76 jaar terug naar de Aarde. Laatst gezien in 1986, keert hij terug in 2061. Als je hem ziet, bekijk je een 4,6 miljard jaar oude kosmische sneeuwbal!',
         descHaleBopp: 'Hale-Bopp was een van de helderste kometen van de 20e eeuw, 18 maanden met het blote oog zichtbaar in 1996-1997! Zijn kern is ongewoon groot met 40 km diameter.',
-        descNeowise: 'Komeet NEOWISE was een spectaculair gezicht in juli 2020! Hij keert pas over ongeveer 6.800 jaar terug. Kometen zijn "vuile sneeuwballen" van ijs, stof en rots uit de vorming van het zonnestelsel.'
+        descNeowise: 'Komeet NEOWISE was een spectaculair gezicht in juli 2020! Hij keert pas over ongeveer 6.800 jaar terug. Kometen zijn "vuile sneeuwballen" van ijs, stof en rots uit de vorming van het zonnestelsel.',
+
+        // Sterrenstelsels
+        descAndromeda: ' Het Andromedastelsel is ons dichtstbijzijnde grote buursterrenstelsel op 2,5 miljoen lichtjaar! Het bevat 1 biljoen sterren en is op ramkoers met de Melkweg (maak je geen zorgen, botsing over 4,5 miljard jaar).',
+        descWhirlpool: ' Het Wervelwindsterrenstelsel (M51) is beroemd om zijn prachtige spiraalarms! Het is in wisselwerking met een kleiner begeleidend sterrenstelsel, wat voor verbluffende getijdenkrachten en nieuwe stervorming zorgt.',
+        descSombrero: ' Het Sombrerostelsel ziet eruit als een Mexicaanse hoed! Het heeft een heldere kern, een uitzonderlijk grote centrale bol en een prominente stofbaan. Bevat 2.000 bolvormige sterrenhopen!',
+
+        // Nevels
+        descOrionNebula: ' De Orionnevel is een sterrencrèche waar nieuwe sterren geboren worden! Hij staat op 1.344 lichtjaar en is met het blote oog zichtbaar als een vaag vlekje in het zwaard van Orion. Bevat meer dan 3.000 sterren!',
+        descCrabNebula: ' De Krabnevel is het overblijfsel van een supernova-explosie die Chinese astronomen in 1054 n.Chr. waarnamen! In het midden zit een pulsar die 30 keer per seconde roteert!',
+        descRingNebula: ' De Ringnevel is een planetaire nevel — de gloeiende overblijfselen van een stervende zonachtige ster! De ster in het centrum heeft zijn buitenste lagen weggeblazen en zo deze prachtige ring gecreëerd.',
+
+        // Sterrenbeelden
+        descAries: ' Ram is het eerste teken van de dierenriem! Zoek naar de heldere sterren Hamal en Sheratan. In de Griekse mythologie vertegenwoordigt Ram de gouden ram die Phrixus en Helle redde.',
+        descTaurus: ' Stier bevat de heldere rode ster Aldebaran, het oog van de stier! Ook de thuisbasis van de Pleiaden-sterrenhoop. In de mythologie veranderde Zeus in een stier om Europa te verleiden.',
+        descGemini: ' Tweelingen heeft de heldere tweelingen Castor en Pollux! In de mythologie waren zij onafscheidelijke broers, de Dioscuren, bekend om hun band en dapperheid.',
+        descCancer: ' Kreeft is zwak maar bevat de prachtige Bijenkorfcluster (M44)! In de mythologie was Kreeft de krab die Hera stuurde om Hercules af te leiden tijdens zijn gevecht.',
+        descLeo: ' Leeuw heeft de heldere ster Regulus! De "Sikkel"-asterisme vormt het hoofd van de leeuw. In de mythologie vertegenwoordigt Leeuw de Nemeïsche Leeuw die door Hercules werd gedood.',
+        descVirgo: ' Maagd is het op één na grootste sterrenbeeld! De heldere ster Spica stelt tarwe voor in de hand van de maagd. Thuisbasis van duizenden sterrenstelsels in de Virgo-cluster.',
+        descLibra: ' Weegschaal stelt de weegschaal van de rechtvaardigheid voor! De helderste sterren zijn Zubenelgenubi en Zubeneschamali, wat "zuidelijke klauw" en "noordelijke klauw" betekent in het Arabisch.',
+        descScorpius: ' Schorpioen stelt de schorpioen voor die Orion doodde in de Griekse mythologie! De heldere rode ster Antares markeert het hart van de schorpioen. Zoek de gebogen staart met angel!',
+        descSagittarius: ' Schutter richt zijn pijl op het hart van Schorpioen! Het "Theepot"-asterisme is gemakkelijk te herkennen. Wijst naar het midden van onze Melkweg!',
+        descCapricornus: ' Steenbok is een van de oudste sterrenbeelden! Stelt een wezen voor met het hoofd van een geit en de staart van een vis. In de Griekse mythologie geassocieerd met de god Pan.',
+        descAquarius: ' Waterman stelt de waterdrager voor die uit zijn kan giet! Thuisbasis van verschillende beroemde deep-sky objecten waaronder de Helixnevel. Een van de oudst benoemde sterrenbeelden.',
+        descPisces: ' Vissen toont twee vissen die aan elkaar vastgebonden zijn! Stelt Aphrodite en Eros voor die zich in vissen veranderden om het monster Typhon te ontvluchten. Bevat het lentepunt!',
+        descOrionConst: ' Orion is een van de meest herkenbare sterrenbeelden! Zoek naar de drie sterren op een rij die de Gordel van Orion vormen. De heldere rode ster Betelgeuze markeert zijn schouder en blauwe Rigel zijn voet.',
+        descUrsaMajor: ' De Grote Beer (Grote Steelpan) is een van de bekendste sterrenbeelden! De twee sterren aan het einde van de "bak" wijzen naar Polaris, de Poolster. Duizenden jaren gebruikt voor navigatie!',
+        descUrsaMinor: ' De Kleine Beer bevat Polaris, de Poolster! Polaris markeert het uiteinde van de steel van de Kleine Beer en staat bijna vast aan de noordelijke hemel. Essentieel voor hemelnavigatie!',
+        descCrux: ' Het Zuiderkruis is het kleinste sterrenbeeld maar een van de bekendste op het zuidelijk halfrond! Gebruikt voor navigatie, wijst het naar de Zuidelijke Hemelpool.',
+        descCassiopeia: ' Cassiopeia lijkt op een W of M afhankelijk van het seizoen! In de Griekse mythologie was Cassiopeia een ijdele koningin. Het sterrenbeeld is circumpolair op noordelijke breedtegraden.',
+        descCygnus: ' Cygnus de Zwaan vliegt langs de Melkweg! Ook wel het Noordelijk Kruis genoemd. In de mythologie verkleedde Zeus zich als zwaan. Thuisbasis van veel deep-sky objecten!',
+        descLyra: ' Lyra stelt de lier van Orpheus voor! Bevat Vega, de 5e helderste ster aan de nachtelijke hemel. Ook de thuisbasis van de Ringnevel, een beroemde planetaire nevel!',
+        descAndromedaConst: ' Andromeda was de prinses die aan een rots werd geketend en door Perseus werd gered! Dit sterrenbeeld bevat het Andromedastelsel (M31), ons dichtstbijzijnde grote buursterrenstelsel!',
+        descPerseus: ' Perseus de held die Medusa versloeg! Thuisbasis van de heldere ster Mirfak en de beroemde veranderlijke ster Algol ("Duivelster"). Bevat de Dubbelcluster!',
+
+        // Nabije sterren
+        descSirius: ' Sirius is de helderste ster aan de aardenachtelijke hemel! Het is eigenlijk een dubbelster. Op 8,6 lichtjaar in het sterrenbeeld Grote Hond.',
+        descBetelgeuse: ' Betelgeuze is een rode superreus die het einde van zijn leven nadert! Hij is zo groot dat het Mars zou voorbijsteken op de plek van onze Zon. Ooit zal hij als supernova exploderen!',
+        descRigel: ' Rigel is een blauwe superreus, een van de meest lichtgevende sterren zichtbaar met het blote oog! Hij is 40.000 keer helderder dan onze Zon en staat op 860 lichtjaar.',
+        descVega: ' Vega is een van de helderste sterren aan de noordelijke hemel! Het was 12.000 jaar geleden de Poolster en zal dat over 13.000 jaar opnieuw zijn door de precessie van de Aardas.',
+        descPolaris: ' Polaris, de Poolster, heeft reizigers eeuwenlang geleid! Het is eigenlijk een driedubbel stersysteem en staat momenteel zeer dicht bij het ware noorden door de rotatie-as van de Aarde.',
+        descAlphaCentauriA: ' Alpha Centauri A lijkt sterk op onze Zon! Het maakt deel uit van een driedubbel stersysteem dat ons dichtstbijzijnde sterrenbuur is op 4,37 lichtjaar. Met begeleider Alpha Centauri B draaien ze elke 80 jaar om elkaar.',
+        descProximaCentauri: ' Proxima Centauri is een kleine rode dwergster en de dichtstbijzijnde ster bij ons zonnestelsel op slechts 4,24 lichtjaar! Hij is minder warm en minder helder dan onze Zon, maar heeft minstens twee planeten waaronder mogelijk bewoonbare Proxima Centauri b.',
+
+        // Sterren met exoplaneten
+        descKepler452Star: ' Kepler-452 is een zonachtige ster die het planeet "neefje van de Aarde", Kepler-452b, herbergt! Hij is 1,5 miljard jaar ouder dan onze Zon en 20% helderder. De ster staat op 1.400 lichtjaar in Cygnus.',
+        descTrappist1Star: ' TRAPPIST-1 is een ultrakoele rode dwerg met 7 aardgrootte planeten! Drie ervan bevinden zich in de bewoonbare zone. Het hele systeem is zo compact dat alle 7 planeten dichter bij hun ster draaien dan Mercurius bij onze Zon.',
+        descKepler186Star: ' Kepler-186 is een rode dwergster met 5 bekende planeten! Kepler-186f was de eerste aardgrote planeet ontdekt in de bewoonbare zone van een andere ster. De ster is koeler dan onze Zon, waardoor hij een oranje-rode gloed heeft.',
+
+        // Exoplaneten
+        descProximaCentauriB: ' Proxima Centauri b is de dichtstbijzijnde bekende exoplaneet bij de Aarde! Hij cirkelt in de bewoonbare zone van Proxima Centauri, wat betekent dat vloeibaar water op het oppervlak kan bestaan. Ontdekt in 2016, slechts 4,24 lichtjaar verwijderd.',
+        descKepler452b: ' Kepler-452b wordt "het neefje van de Aarde" genoemd! Hij is ongeveer 60% groter dan de Aarde en cirkelt in de bewoonbare zone van een zonachtige ster. Zijn jaar duurt 385 dagen.',
+        descTrappist1e: ' TRAPPIST-1e maakt deel uit van een verbazingwekkend stelsel met 7 aardgrootte planeten! Het cirkelt om een koele rode dwergster en ligt in de bewoonbare zone.',
+        descKepler186f: ' Kepler-186f was de eerste aardgrootte planeet ontdekt in de bewoonbare zone van een andere ster! Het ontvangt ongeveer een derde van het licht dat de Aarde van de Zon krijgt.',
+
+        // Dwergplaneten
+        descCeres: ' Ceres is het grootste object in de asteroïdengordel en een dwergplaneet! De Dawn-ruimtesonde van NASA onthulde mysterieuze heldere vlekken in de Occatorkrater — het bleken zoutafzettingen van oud zout water te zijn.',
+        descHaumea: ' Haumea draait zo snel (eens per 4 uur) dat hij is platgedrukt tot een eivorm! Hij heeft ook twee manen en een ringssysteem, waardoor hij uniek is onder de dwergplaneten.',
+        descMakemake: ' Makemake is een heldere, roodachtige wereld in de Kuipergordel, ontdekt rond Pasen 2005, vernoemd naar de scheppingsgod van het Rapa Nui-volk van Paaseiland.',
+        descEris: ' Eris is iets kleiner dan Pluto maar zwaarder! De ontdekking in 2005 leidde direct tot de herclassificatie van Pluto als dwergplaneet. Hij heeft één maan, Dysnomia.',
+        descSedna: ' Sedna heeft een van de meest extreme elliptische banen in het zonnestelsel, van 76 tot 937 AE. Een omloop duurt ongeveer 11.400 jaar en hij is zo rood dat hij concurreert met Mars!',
+
+        // Extra kometen
+        descHyakutake: ' Komeet Hyakutake passeerde in 1996 extreem dichtbij de Aarde en was een van de helderste kometen in decennia met een staart die de halve hemel besloeg!',
+        descLovejoy: ' Komeet Lovejoy (C/2011 W3) overleefde een nauwe passage door de corona van de Zon! Hij maakt deel uit van de Kreutz-zongrazer — fragmenten van een reuzenkomeet die eeuwen geleden uiteen is gevallen.',
+        descEncke: ' Komeet Encke heeft de kortste omlooptijd van alle bekende kometen — slechts 3,3 jaar! Hij is vernoemd naar Johann Franz Encke die zijn baan in 1819 berekende.',
+        descSwiftTuttle: ' Komeet Swift-Tuttle is het moederlichaam van de spectaculaire Perseïden-meteorenregen! Met een kern van 26 km is het het grootste object dat regelmatig in de buurt van de Aarde passeert.',
+
+        // Asteroïdengordel / Kuipergordel / Oortwolk
+        descAsteroidBelt: ' De asteroïdengordel bevat miljoenen rotsachtige objecten tussen Mars en Jupiter. Ceres, het grootste object hier, is een dwergplaneet! De meeste asteroïden zijn overgebleven materiaal van de vorming van het zonnestelsel 4,6 miljard jaar geleden.',
+        descKuiperBelt: ' De Kuipergordel is een gebied voorbij Neptunus vol ijzige lichamen en dwergplaneten waaronder Pluto! Het is als een gigantische donut van bevroren objecten overgebleven van de vorming van het zonnestelsel. Kortperiodieke kometen komen hiervandaan!',
+        descOortCloud: ' De Oortwolk is een uitgestrekte bolvormige schil van ijzige objecten die ons hele zonnestelsel omgeeft! Hij strekt zich uit van ongeveer 50.000 tot 200.000 AE van de Zon. Langperiodieke kometen zoals Hale-Bopp komen uit dit verre gebied.'
     },
     
     fr: {
@@ -805,7 +947,78 @@ const translations = {
         // Descriptions des comètes
         descHalley: 'La comète de Halley est la plus célèbre! Elle revient près de la Terre tous les 75-76 ans. Vue pour la dernière fois en 1986, elle reviendra en 2061. Quand vous la voyez, vous observez une boule de neige cosmique vieille de 4,6 milliards d\'années!',
         descHaleBopp: 'Hale-Bopp fut l\'une des comètes les plus brillantes du 20e siècle, visible à l\'œil nu pendant 18 mois en 1996-1997! Son noyau est exceptionnellement grand avec 40 km de diamètre.',
-        descNeowise: 'La comète NEOWISE fut un spectacle spectaculaire en juillet 2020! Elle ne reviendra pas avant environ 6 800 ans. Les comètes sont des "boules de neige sales" composées de glace, poussière et roche de la formation du système solaire.'
+        descNeowise: 'La comète NEOWISE fut un spectacle spectaculaire en juillet 2020! Elle ne reviendra pas avant environ 6 800 ans. Les comètes sont des "boules de neige sales" composées de glace, poussière et roche de la formation du système solaire.',
+
+        // Galaxies
+        descAndromeda: ' La galaxie d\'Andromède est notre plus proche grande voisine galactique, à 2,5 millions d\'années-lumière! Elle contient 1 billion d\'étoiles et est en route de collision avec la Voie lactée (pas d\'inquiétude, collision dans 4,5 milliards d\'années).',
+        descWhirlpool: ' La galaxie du Tourbillon (M51) est célèbre pour ses beaux bras spiraux! Elle interagit avec une galaxie compagne plus petite, créant de magnifiques forces de marée et une nouvelle formation d\'étoiles.',
+        descSombrero: ' La galaxie du Sombrero ressemble à un chapeau mexicain! Elle a un noyau lumineux, un renflement central exceptionnellement grand et une lane de poussière proéminente. Contient 2 000 amas globulaires!',
+
+        // Nébuleuses
+        descOrionNebula: ' La nébuleuse d\'Orion est une pépinière stellaire où de nouvelles étoiles naissent! Elle est à 1 344 années-lumière et est visible à l\'œil nu comme une tache floue dans l\'épée d\'Orion. Contient plus de 3 000 étoiles!',
+        descCrabNebula: ' La nébuleuse du Crabe est le vestige d\'une explosion de supernova observée par des astronomes chinois en 1054 après J.-C.! En son centre se trouve un pulsar tournant 30 fois par seconde!',
+        descRingNebula: ' La nébuleuse de l\'Anneau est une nébuleuse planétaire — les restes lumineux d\'une étoile mourante semblable au Soleil! L\'étoile en son centre a soufflé ses couches externes, créant ce magnifique anneau.',
+
+        // Constellations
+        descAries: ' Le Bélier est le premier signe du zodiaque! Repérez les étoiles brillantes Hamal et Sheratan. Dans la mythologie grecque, le Bélier représente le bélier d\'or qui sauva Phrixus et Hellé.',
+        descTaurus: ' Le Taureau contient la brillante étoile rouge Aldébaran, l\'œil du taureau! Aussi demeure des Pléiades. Dans la mythologie, Zeus se transforma en taureau pour séduire Europe.',
+        descGemini: ' Les Gémeaux ont les brillants jumeaux Castor et Pollux! Dans la mythologie, ils étaient des frères inséparables, les Dioscures, connus pour leur lien et leur bravoure.',
+        descCancer: ' Le Cancer est faible mais contient le beau Cluster de la Ruche (M44)! Dans la mythologie, le Cancer était le crabe envoyé par Héra pour distraire Hercule pendant son combat.',
+        descLeo: ' Le Lion a l\'étoile brillante Régulus! L\'astérisme de la "Faucille" forme la tête du lion. Dans la mythologie, le Lion représente le lion de Némée tué par Hercule.',
+        descVirgo: ' La Vierge est la deuxième plus grande constellation! L\'étoile brillante Spica représente du blé dans la main de la vierge. Demeure de milliers de galaxies dans l\'amas de la Vierge.',
+        descLibra: ' La Balance représente les balances de la justice! Ses étoiles les plus brillantes sont Zubenelgenubi et Zubeneschamali, signifiant "griffe du sud" et "griffe du nord" en arabe.',
+        descScorpius: ' Le Scorpion représente le scorpion qui tua Orion dans la mythologie grecque! L\'étoile rouge brillante Antarès marque le cœur du scorpion. Cherchez la queue courbée avec le dard!',
+        descSagittarius: ' Le Sagittaire pointe sa flèche vers le cœur du Scorpion! L\'astérisme de la "Théière" est facile à repérer. Pointe vers le centre de notre galaxie Voie lactée!',
+        descCapricornus: ' Le Capricorne est l\'une des plus anciennes constellations! Représente une créature avec la tête d\'une chèvre et la queue d\'un poisson. Associé au dieu Pan dans la mythologie grecque.',
+        descAquarius: ' Le Verseau représente le porteur d\'eau versant de son urne! Demeure de plusieurs objets du ciel profond célèbres dont la nébuleuse Hélix. L\'une des constellations nommées les plus anciennes.',
+        descPisces: ' Les Poissons montrent deux poissons attachés ensemble! Représente Aphrodite et Éros qui se transformèrent en poissons pour échapper au monstre Typhon. Contient le point équinoxial vernal!',
+        descOrionConst: ' Orion est l\'une des constellations les plus reconnaissables! Cherchez les trois étoiles en ligne formant la Ceinture d\'Orion. La brillante étoile rouge Bételgeuse marque son épaule, et le bleu Rigel marque son pied.',
+        descUrsaMajor: ' La Grande Ourse (Grande Casserole) est l\'une des constellations les plus connues! Les deux étoiles au bout de la "tasse" pointent vers Polaris, l\'Étoile Polaire. Utilisée pour la navigation depuis des millénaires!',
+        descUrsaMinor: ' La Petite Ourse contient Polaris, l\'Étoile Polaire! Polaris marque l\'extrémité du manche de la Petite Ourse et reste presque fixe dans le ciel du nord. Essentielle pour la navigation céleste!',
+        descCrux: ' La Croix du Sud est la plus petite constellation mais l\'une des plus célèbres dans l\'hémisphère sud! Utilisée pour la navigation, elle pointe vers le pôle céleste sud.',
+        descCassiopeia: ' Cassiopée ressemble à un W ou M selon la saison! Dans la mythologie grecque, Cassiopée était une reine vaniteuse. La constellation est circumpolaire aux latitudes nord.',
+        descCygnus: ' Cygnus le Cygne vole le long de la Voie lactée! Aussi appelé la Croix du Nord. Dans la mythologie, Zeus se déguisa en cygne. Demeure de nombreux objets du ciel profond!',
+        descLyra: ' La Lyre représente la lyre d\'Orphée! Contient Véga, la 5e étoile la plus brillante dans le ciel nocturne. Aussi demeure de la nébuleuse de l\'Anneau, une célèbre nébuleuse planétaire!',
+        descAndromedaConst: ' Andromède était la princesse enchaînée à un rocher et sauvée par Persée! Cette constellation contient la galaxie d\'Andromède (M31), notre plus proche grande galaxie voisine!',
+        descPerseus: ' Persée le héros qui tua Méduse! Demeure de l\'étoile brillante Mirfak et de la célèbre étoile variable Algol ("Étoile Démon"). Contient le Double Amas!',
+
+        // Étoiles proches
+        descSirius: ' Sirius est l\'étoile la plus brillante du ciel nocturne terrestre! C\'est en fait un système binaire. Situé à 8,6 années-lumière dans la constellation du Grand Chien.',
+        descBetelgeuse: ' Bételgeuse est une supergéante rouge en fin de vie! Elle est si grande que si elle était placée à la position de notre Soleil, elle s\'étendrait au-delà de Mars. Elle explosera un jour en supernova!',
+        descRigel: ' Rigel est une supergéante bleue, l\'une des étoiles les plus lumineuses visibles à l\'œil nu! Elle est 40 000 fois plus lumineuse que notre Soleil et est à 860 années-lumière.',
+        descVega: ' Véga est l\'une des étoiles les plus brillantes du ciel du nord! Elle était l\'Étoile Polaire il y a 12 000 ans et le sera à nouveau dans 13 000 ans en raison de la précession axiale de la Terre.',
+        descPolaris: ' Polaris, l\'Étoile Polaire, a guidé les voyageurs pendant des siècles! C\'est en fait un système triple d\'étoiles et est actuellement très proche du vrai nord.',
+        descAlphaCentauriA: ' Alpha Centauri A est très similaire à notre Soleil! Elle fait partie d\'un système triple d\'étoiles qui est notre voisin stellaire le plus proche à 4,37 années-lumière. Avec son compagnon Alpha Centauri B, ils s\'orbitent mutuellement toutes les 80 ans.',
+        descProximaCentauri: ' Proxima du Centaure est une petite étoile naine rouge et l\'étoile la plus proche de notre Système solaire à seulement 4,24 années-lumière! Elle est bien plus froide et moins brillante que notre Soleil, mais elle a au moins deux planètes, dont potentiellement habitable Proxima Centauri b.',
+
+        // Étoiles avec exoplanètes
+        descKepler452Star: ' Kepler-452 est une étoile semblable au Soleil qui héberge la planète "cousine de la Terre" Kepler-452b! Elle est 1,5 milliard d\'années plus âgée que notre Soleil et 20% plus brillante.',
+        descTrappist1Star: ' TRAPPIST-1 est une naine rouge ultra-froide avec 7 planètes de la taille de la Terre! Trois d\'entre elles sont dans la zone habitable. Tout le système est si compact que les 7 planètes orbitent plus près de leur étoile que Mercure de notre Soleil.',
+        descKepler186Star: ' Kepler-186 est une étoile naine rouge avec 5 planètes connues! Kepler-186f fue la primera planète de la taille de la Terre découverte dans la zone habitable d\'une autre étoile.',
+
+        // Exoplanètes
+        descProximaCentauriB: ' Proxima Centauri b est l\'exoplanète connue la plus proche de la Terre! Elle orbite dans la zone habitable de Proxima du Centaure, ce qui signifie que l\'eau liquide pourrait exister à sa surface.',
+        descKepler452b: ' Kepler-452b est appelée "la cousine de la Terre"! Elle est environ 60% plus grande que la Terre et orbite une étoile semblable au Soleil dans la zone habitable. Son année dure 385 jours.',
+        descTrappist1e: ' TRAPPIST-1e fait partie d\'un système incroyable avec 7 planètes de la taille de la Terre! Elle orbite une naine rouge froide et est dans la zone habitable.',
+        descKepler186f: ' Kepler-186f était la première planète de la taille de la Terre découverte dans la zone habitable d\'une autre étoile! Elle reçoit environ un tiers de la lumière que la Terre reçoit du Soleil.',
+
+        // Planètes naines
+        descCeres: ' Cérès est le plus grand objet de la ceinture d\'astéroïdes et une planète naine! La sonde Dawn de la NASA a révélé de mystérieuses taches brillantes dans le cratère Occator — il s\'est avéré que c\'était des dépôts de sel d\'anciennes saumures.',
+        descHaumea: ' Hauméa tourne si vite (une fois toutes les 4 heures) qu\'elle a été aplatie en forme d\'œuf! Elle possède également deux lunes et un système d\'anneaux, la rendant très inhabituelle parmi les planètes naines.',
+        descMakemake: ' Makemake est un monde brillant et rougeâtre dans la Ceinture de Kuiper découvert près de Pâques 2005, nommé d\'après le dieu créateur du peuple Rapa Nui de l\'île de Pâques.',
+        descEris: ' Éris est légèrement plus petite que Pluton mais plus massive! Sa découverte en 2005 a directement conduit à la reclassification de Pluton en planète naine. Elle a une lune, Dysnomia.',
+        descSedna: ' Sedna a l\'une des orbites elliptiques les plus extrêmes du système solaire, allant de 76 à 937 UA. Elle met environ 11 400 ans à compléter une orbite et est si rouge qu\'elle rivalise avec Mars en couleur!',
+
+        // Comètes supplémentaires
+        descHyakutake: ' La comète Hyakutake est passée extrêmement près de la Terre en 1996, devenant l\'une des comètes les plus brillantes des dernières décennies avec une queue traversant la moitié du ciel!',
+        descLovejoy: ' La comète Lovejoy (C/2011 W3) a survécu à un passage proche à travers la couronne du Soleil! Elle fait partie des raseurs de Soleil Kreutz — fragments d\'une géante comète qui s\'est fragmentée il y a des siècles.',
+        descEncke: ' La comète Encke a la période orbitale la plus courte de toutes les comètes connues — seulement 3,3 ans! Elle est nommée d\'après Johann Franz Encke qui a calculé son orbite en 1819.',
+        descSwiftTuttle: ' La comète Swift-Tuttle est le corps parent du spectaculaire essaim de météores des Perséides! Avec un noyau de 26 km, c\'est le plus grand objet qui passe régulièrement près de la Terre.',
+
+        // Ceinture d\'astéroïdes / Ceinture de Kuiper / Nuage de Oort
+        descAsteroidBelt: ' La ceinture d\'astéroïdes contient des millions d\'objets rocheux entre Mars et Jupiter. Cérès, le plus grand objet ici, est une planète naine! La plupart des astéroïdes sont des matériaux résiduels de la formation du système solaire il y a 4,6 milliards d\'années.',
+        descKuiperBelt: ' La Ceinture de Kuiper est une région au-delà de Neptune remplie de corps glacés et de planètes naines dont Pluton! C\'est comme un gigantesque beignet d\'objets gelés restants de la formation du système solaire. Les comètes à courte période viennent d\'ici!',
+        descOortCloud: ' Le nuage de Oort est une vaste enveloppe sphérique d\'objets glacés entourant tout notre système solaire! Il s\'étend d\'environ 50 000 à 200 000 UA du Soleil. Les comètes à longue période comme Hale-Bopp proviennent de ce domaine lointain.'
     },
     
     de: {
@@ -1055,7 +1268,78 @@ const translations = {
         // Kometenbeschreibungen
         descHalley: 'Der Halleysche Komet ist der berühmteste! Er kehrt alle 75-76 Jahre zur Erde zurück. Zuletzt 1986 gesehen, wird er 2061 wiederkommen. Wenn Sie ihn sehen, beobachten Sie einen 4,6 Milliarden Jahre alten kosmischen Schneeball!',
         descHaleBopp: 'Hale-Bopp war einer der hellsten Kometen des 20. Jahrhunderts, 18 Monate lang 1996-1997 mit bloßem Auge sichtbar! Sein Kern ist außergewöhnlich groß mit 40 km Durchmesser.',
-        descNeowise: 'Komet NEOWISE war im Juli 2020 ein spektakulärer Anblick! Er wird erst in etwa 6.800 Jahren wiederkommen. Kometen sind "schmutzige Schneebälle" aus Eis, Staub und Gestein von der Entstehung des Sonnensystems.'
+        descNeowise: 'Komet NEOWISE war im Juli 2020 ein spektakulärer Anblick! Er wird erst in etwa 6.800 Jahren wiederkommen. Kometen sind "schmutzige Schneebälle" aus Eis, Staub und Gestein von der Entstehung des Sonnensystems.',
+
+        // Galaxien
+        descAndromeda: ' Die Andromeda-Galaxie ist unsere nächste große galaktische Nachbarin, 2,5 Millionen Lichtjahre entfernt! Sie enthält 1 Billion Sterne und ist auf Kollisionskurs mit der Milchstraße (keine Sorge, Kollision in 4,5 Milliarden Jahren).',
+        descWhirlpool: ' Die Whirlpool-Galaxie (M51) ist berühmt für ihre wunderschönen Spiralarme! Sie interagiert mit einer kleineren Begleitgalaxie und erzeugt atemberaubende Gezeitenkräfte und neue Sternentstehung.',
+        descSombrero: ' Die Sombrero-Galaxie sieht aus wie ein mexikanischer Hut! Sie hat einen hellen Kern, einen ungewöhnlich großen zentralen Bulge und eine prominente Staubbahn. Enthält 2.000 Kugelsternhaufen!',
+
+        // Nebel
+        descOrionNebula: ' Der Orionnebel ist eine Sternenkinderstube, in der neue Sterne entstehen! Er ist 1.344 Lichtjahre entfernt und mit bloßem Auge als verschwommener Fleck in Orions Schwert sichtbar. Enthält über 3.000 Sterne!',
+        descCrabNebula: ' Der Krebsnebel ist das Überbleibsel einer Supernova-Explosion, die chinesische Astronomen 1054 n. Chr. beobachteten! In seinem Zentrum befindet sich ein Pulsar, der 30 Mal pro Sekunde rotiert!',
+        descRingNebula: ' Der Ringnebel ist ein planetarischer Nebel — die leuchtenden Überreste eines sterbenden sonnenähnlichen Sterns! Der Stern in seinem Zentrum hat seine äußeren Schichten weggeblasen und diesen schönen Ring geschaffen.',
+
+        // Sternbilder
+        descAries: ' Widder ist das erste Zeichen des Tierkreises! Achten Sie auf die hellen Sterne Hamal und Sheratan. In der griechischen Mythologie repräsentiert Widder den goldenen Widder, der Phrixus und Helle rettete.',
+        descTaurus: ' Stier enthält den hellen roten Stern Aldebaran, das Auge des Stiers! Auch Heimat des Plejaden-Sternhaufens. In der Mythologie verwandelte sich Zeus in einen Stier, um Europa zu gewinnen.',
+        descGemini: ' Zwillinge haben die hellen Zwillinge Kastor und Pollux! In der Mythologie waren sie untrennbare Brüder, die Dioskuren, bekannt für ihre Bindung und Tapferkeit.',
+        descCancer: ' Krebs ist schwach, enthält aber den wunderschönen Bienenkorb-Cluster (M44)! In der Mythologie war Krebs die Krabbe, die Hera schickte, um Herkules während seines Kampfes abzulenken.',
+        descLeo: ' Löwe hat den hellen Stern Regulus! Das "Sichel"-Asterismus bildet den Kopf des Löwen. In der Mythologie repräsentiert Löwe den Nemeischen Löwen, der von Herkules getötet wurde.',
+        descVirgo: ' Jungfrau ist das zweitgrößte Sternbild! Der helle Stern Spika stellt Weizen in der Hand der Jungfrau dar. Heimat von Tausenden von Galaxien im Jungfrau-Cluster.',
+        descLibra: ' Waage repräsentiert die Gerechtigkeitswaage! Ihre hellsten Sterne sind Zubenelgenubi und Zubeneschamali, was auf Arabisch "südliche Klaue" und "nördliche Klaue" bedeutet.',
+        descScorpius: ' Skorpion repräsentiert den Skorpion, der Orion in der griechischen Mythologie tötete! Der helle rote Stern Antares markiert das Herz des Skorpions. Suchen Sie den gebogenen Schwanz mit dem Stachel!',
+        descSagittarius: ' Schütze richtet seinen Pfeil auf das Herz des Skorpions! Das "Teekanne"-Asterismus ist leicht zu erkennen. Zeigt auf das Zentrum unserer Milchstraße!',
+        descCapricornus: ' Steinbock ist eines der ältesten Sternbilder! Stellt ein Wesen mit dem Kopf einer Ziege und dem Schwanz eines Fisches dar. In der griechischen Mythologie mit dem Gott Pan assoziiert.',
+        descAquarius: ' Wassermann stellt den Wasserträger dar, der aus seinem Krug gießt! Heimat mehrerer berühmter Tiefenhimmelobjekte einschließlich des Helixnebels. Eines der ältesten benannten Sternbilder.',
+        descPisces: ' Fische zeigt zwei zusammengebundene Fische! Stellt Aphrodite und Eros dar, die sich in Fische verwandelten, um dem Monster Typhon zu entkommen. Enthält den Frühlingspunkt!',
+        descOrionConst: ' Orion ist eines der bekanntesten Sternbilder! Achten Sie auf die drei in einer Reihe stehenden Sterne, die Orions Gürtel bilden. Der helle rote Stern Beteigeuze markiert seine Schulter und das blaue Rigel seinen Fuß.',
+        descUrsaMajor: ' Der Große Bär (Großer Wagen) ist eines der bekanntesten Sternbilder! Die zwei Sterne am Ende der "Tasse" zeigen auf Polaris, den Nordstern. Jahrtausende lang zur Navigation verwendet!',
+        descUrsaMinor: ' Der Kleine Bär enthält Polaris, den Nordstern! Polaris markiert das Ende des Stiels des Kleinen Bären und bleibt am nördlichen Himmel nahezu fest. Unverzichtbar für die Himmelsnavigation!',
+        descCrux: ' Das Kreuz des Südens ist das kleinste Sternbild, aber eines der bekanntesten auf der Südhalbkugel! Es wird zur Navigation verwendet und zeigt zum Südlichen Himmelspol.',
+        descCassiopeia: ' Kassiopeia sieht je nach Jahreszeit wie ein W oder M aus! In der griechischen Mythologie war Kassiopeia eine eitle Königin. Das Sternbild ist in nördlichen Breiten zirkumpolar.',
+        descCygnus: ' Schwan fliegt entlang der Milchstraße! Auch Nordliches Kreuz genannt. In der Mythologie verkleidete sich Zeus als Schwan. Heimat vieler Tiefenhimmelobjekte!',
+        descLyra: ' Leier stellt die Leier des Orpheus dar! Enthält Wega, den 5. hellsten Stern am Nachthimmel. Auch Heimat des Ringnebels, eines berühmten planetarischen Nebels!',
+        descAndromedaConst: ' Andromeda war die Prinzessin, die an einen Felsen gekettet und von Perseus gerettet wurde! Dieses Sternbild enthält die Andromeda-Galaxie (M31), unsere nächste große Nachbargalaxie!',
+        descPerseus: ' Perseus der Held, der Medusa erschlug! Heimat des hellen Sterns Mirfak und des berühmten veränderlichen Sterns Algol ("Dämonenstern"). Enthält den Doppelcluster!',
+
+        // Nahe Sterne
+        descSirius: ' Sirius ist der hellste Stern am Erden-Nachthimmel! Es ist tatsächlich ein Doppelsternsystem. Befindet sich 8,6 Lichtjahre entfernt im Sternbild Großer Hund.',
+        descBetelgeuse: ' Beteigeuze ist ein roter Überriese, der sich dem Ende seines Lebens nähert! Er ist so groß, dass er, wenn er an der Position unserer Sonne platziert würde, über den Mars hinausgehen würde. Wird eines Tages als Supernova explodieren!',
+        descRigel: ' Rigel ist ein blauer Überriese, einer der leuchtstärksten Sterne, die mit bloßem Auge sichtbar sind! Er ist 40.000 Mal leuchtstärker als unsere Sonne und 860 Lichtjahre entfernt.',
+        descVega: ' Wega ist einer der hellsten Sterne am Nordhimmel! Sie war vor 12.000 Jahren der Nordstern und wird es aufgrund der Erdachsenneigung in 13.000 Jahren wieder sein.',
+        descPolaris: ' Polaris, der Nordstern, hat Reisende seit Jahrhunderten geleitet! Es ist tatsächlich ein Dreifach-Sternsystem und ist derzeit aufgrund der Rotationsachse der Erde sehr nah am wahren Norden.',
+        descAlphaCentauriA: ' Alpha Centauri A ähnelt sehr unserer Sonne! Sie ist Teil eines Dreifach-Sternsystems, das mit 4,37 Lichtjahren unser nächster Sternnachbar ist. Mit ihrem Begleiter Alpha Centauri B umkreisen sie sich gegenseitig alle 80 Jahre.',
+        descProximaCentauri: ' Proxima Centauri ist ein kleiner roter Zwerg und der nächstgelegene Stern zu unserem Sonnensystem mit nur 4,24 Lichtjahren! Er ist viel kühler und dunkler als unsere Sonne, hat aber mindestens zwei Planeten, darunter möglicherweise bewohnbares Proxima Centauri b.',
+
+        // Sterne mit Exoplaneten
+        descKepler452Star: ' Kepler-452 ist ein sonnenähnlicher Stern, der den "Cousin der Erde" Kepler-452b beherbergt! Er ist 1,5 Milliarden Jahre älter als unsere Sonne und 20% heller.',
+        descTrappist1Star: ' TRAPPIST-1 ist ein ultrakalter roter Zwerg mit 7 erdgroßen Planeten! Drei davon befinden sich in der bewohnbaren Zone. Das gesamte System ist so kompakt, dass alle 7 Planeten näher an ihrem Stern kreisen als Merkur an unserer Sonne.',
+        descKepler186Star: ' Kepler-186 ist ein roter Zwerg mit 5 bekannten Planeten! Kepler-186f war der erste erdgroße Planet, der in der bewohnbaren Zone eines anderen Sterns entdeckt wurde.',
+
+        // Exoplaneten
+        descProximaCentauriB: ' Proxima Centauri b ist der nächstgelegene bekannte Exoplanet zur Erde! Er umkreist die bewohnbare Zone von Proxima Centauri, was bedeutet, dass flüssiges Wasser auf seiner Oberfläche existieren könnte.',
+        descKepler452b: ' Kepler-452b wird "Cousin der Erde" genannt! Er ist etwa 60% größer als die Erde und umkreist einen sonnenähnlichen Stern in der bewohnbaren Zone. Sein Jahr dauert 385 Tage.',
+        descTrappist1e: ' TRAPPIST-1e ist Teil eines erstaunlichen Systems mit 7 erdgroßen Planeten! Er umkreist einen kühlen roten Zwerg und befindet sich in der bewohnbaren Zone.',
+        descKepler186f: ' Kepler-186f war der erste erdgroße Planet, der in der bewohnbaren Zone eines anderen Sterns entdeckt wurde! Er empfängt etwa ein Drittel des Lichts, das die Erde von der Sonne bekommt.',
+
+        // Zwergplaneten
+        descCeres: ' Ceres ist das größte Objekt im Asteroidengürtel und ein Zwergplanet! Die Dawn-Raumsonde der NASA enthüllte mysteriöse helle Flecken im Occator-Krater — sie erwiesen sich als Salzablagerungen aus alten Solen.',
+        descHaumea: ' Haumea dreht sich so schnell (einmal alle 4 Stunden), dass sie zu einer Eiform abgeflacht wurde! Sie hat auch zwei Monde und ein Ringsystem, was sie unter den Zwergplaneten sehr ungewöhnlich macht.',
+        descMakemake: ' Makemake ist eine helle, rötliche Welt im Kuiper-Gürtel, entdeckt nahe Ostern 2005, nach dem Schöpfergott des Rapa-Nui-Volkes von der Osterinsel benannt.',
+        descEris: ' Eris ist etwas kleiner als Pluto, aber massereicher! Ihre Entdeckung im Jahr 2005 führte direkt zur Neueinstufung von Pluto als Zwergplanet. Sie hat einen Mond, Dysnomia.',
+        descSedna: ' Sedna hat eine der extremsten elliptischen Umlaufbahnen im Sonnensystem, von 76 bis 937 AE. Eine Umlaufbahn dauert etwa 11.400 Jahre und sie ist so rot, dass sie mit Mars in der Farbe konkurriert!',
+
+        // Weitere Kometen
+        descHyakutake: ' Komet Hyakutake passierte 1996 extrem nah an der Erde und wurde einer der hellsten Kometen seit Jahrzehnten mit einem Schweif, der sich über die halbe Himmelskugel erstreckte!',
+        descLovejoy: ' Komet Lovejoy (C/2011 W3) überlebte einen nahen Durchgang durch die Korona der Sonne! Er ist Teil der Kreutz-Sonnenstreifer — Fragmente eines Riesenkometen, der vor Jahrhunderten zerbrach.',
+        descEncke: ' Komet Encke hat die kürzeste Umlaufzeit aller bekannten Kometen — nur 3,3 Jahre! Er ist nach Johann Franz Encke benannt, der seine Umlaufbahn 1819 berechnete.',
+        descSwiftTuttle: ' Komet Swift-Tuttle ist der Mutterkörper des spektakulären Perseiden-Meteorstroms! Mit einem 26 km großen Kern ist es das größte Objekt, das regelmäßig in Erdnähe gerät.',
+
+        // Asteroidengürtel / Kuiper-Gürtel / Oort-Wolke
+        descAsteroidBelt: ' Der Asteroidengürtel enthält Millionen felsiger Objekte zwischen Mars und Jupiter. Ceres, das größte Objekt hier, ist ein Zwergplanet! Die meisten Asteroiden sind übrig gebliebenes Material aus der Entstehung des Sonnensystems vor 4,6 Milliarden Jahren.',
+        descKuiperBelt: ' Der Kuiper-Gürtel ist eine Region jenseits von Neptun, gefüllt mit eisigen Körpern und Zwergplaneten, einschließlich Pluto! Es ist wie ein riesiger Donut gefrorener Objekte aus der Entstehung des Sonnensystems. Kurzperiodische Kometen kommen von hier!',
+        descOortCloud: ' Die Oort-Wolke ist eine riesige kugelförmige Hülle aus eisigen Objekten, die unser gesamtes Sonnensystem umgibt! Sie erstreckt sich von etwa 50.000 bis 200.000 AE von der Sonne. Langperiodische Kometen wie Hale-Bopp stammen aus diesem fernen Reich.'
     },
     
     es: {
@@ -1305,7 +1589,78 @@ const translations = {
         // Descripciones de cometas
         descHalley: 'áEl cometa Halley es el más famoso! Regresa a las cercanías de la Tierra cada 75-76 años. Visto por última vez en 1986, regresará en 2061. áCuando lo ves, estás observando una bola de nieve cósmica de 4,6 mil millones de años!',
         descHaleBopp: 'áHale-Bopp fue uno de los cometas más brillantes del siglo XX, visible a simple vista durante 18 meses en 1996-1997! Su núcleo es excepcionalmente grande con 40 km de diámetro.',
-        descNeowise: 'áEl cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.'
+        descNeowise: 'áEl cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.',
+
+        // Galaxias
+        descAndromeda: ' áLa galaxia de Andrómeda es nuestra gran vecina galáctica más cercana, a 2,5 millones de años luz! Contiene 1 billón de estrellas y está en curso de colisión con la Vía Láctea (no te preocupes, colisión en 4,5 mil millones de años).',
+        descWhirlpool: ' áLa galaxia del Remolino (M51) es famosa por sus hermosos brazos espirales! Está interactuando con una galaxia compañera más pequeña, creando impresionantes fuerzas de marea y nueva formación de estrellas.',
+        descSombrero: ' áLa galaxia del Sombrero parece un sombrero mexicano! Tiene un núcleo brillante, un bulbo central inusualmente grande y una banda de polvo prominente. áContiene 2.000 cúmulos globulares!',
+
+        // Nebulosas
+        descOrionNebula: ' áLa nebulosa de Orión es una guardería estelar donde nacen nuevas estrellas! Está a 1.344 años luz y es visible a simple vista como una mancha borrosa en la espada de Orión. áContiene más de 3.000 estrellas!',
+        descCrabNebula: ' áLa nebulosa del Cangrejo es el remanente de una explosión de supernova observada por astrónomos chinos en 1054 d.C.! En su centro hay un pulsar que gira 30 veces por segundo!',
+        descRingNebula: ' áLa nebulosa del Anillo es una nebulosa planetaria — los restos luminosos de una estrella moribunda similar al Sol! La estrella en su centro ha soplado sus capas externas, creando este hermoso anillo.',
+
+        // Constelaciones
+        descAries: ' áAries es el primer signo del zodiaco! Busca las estrellas brillantes Hamal y Sheratan. En la mitología griega, Aries representa el carnero dorado que salvó a Frixo y Hele.',
+        descTaurus: ' áTauro contiene la brillante estrella roja Aldebarán, el ojo del toro! También hogar del cúmulo de las Pléyades. En la mitología, Zeus se transformó en toro para conquistar a Europa.',
+        descGemini: ' áGéminis tiene los brillantes gemelos Cástor y Pólux! En la mitología, eran hermanos inseparables, los Dióscuros, conocidos por su vínculo y valentía.',
+        descCancer: ' áCáncer es débil pero contiene el hermoso Cúmulo de la Colmena (M44)! En la mitología, Cáncer era el cangrejo enviado por Hera para distraer a Heracles durante su batalla.',
+        descLeo: ' áLeo tiene la brillante estrella Régulo! El asterismo de la "Hoz" forma la cabeza del león. En la mitología, Leo representa al León de Nemea matado por Heracles.',
+        descVirgo: ' áVirgo es la segunda constelación más grande! La brillante estrella Espiga representa trigo en la mano de la doncella. áHogar de miles de galaxias en el Cúmulo de Virgo!',
+        descLibra: ' áLibra representa las balanzas de la justicia! Sus estrellas más brillantes son Zubenelgenubi y Zubeneschamali, que significan "garra del sur" y "garra del norte" en árabe.',
+        descScorpius: ' áEscorpio representa el escorpión que mató a Orión en la mitología griega! La brillante estrella roja Antares marca el corazón del escorpión. áBusca la cola curvada con el aguijón!',
+        descSagittarius: ' áSagitario apunta su flecha al corazón de Escorpio! El asterismo de la "Tetera" es fácil de detectar. áApunta hacia el centro de nuestra galaxia Vía Láctea!',
+        descCapricornus: ' áCapricornio es una de las constelaciones más antiguas! Representa una criatura con cabeza de cabra y cola de pez. Asociado con el dios Pan en la mitología griega.',
+        descAquarius: ' áAcuario representa al portador de agua vertiendo de su urna! Hogar de varios famosos objetos de cielo profundo incluyendo la Nebulosa Hélice. Una de las constelaciones nombradas más antiguas.',
+        descPisces: ' áPiscis muestra dos peces atados juntos! Representa a Afrodita y Eros que se transformaron en peces para escapar del monstruo Tifón. áContiene el punto equinoccial vernal!',
+        descOrionConst: ' áOrión es una de las constelaciones más reconocibles! Busca las tres estrellas en fila formando el Cinturón de Orión. La brillante estrella roja Betelgeuse marca su hombro y el azul Rigel su pie.',
+        descUrsaMajor: ' áLa Osa Mayor (Carro Mayor) es una de las constelaciones más conocidas! Las dos estrellas al final de la "taza" apuntan a Polaris, la Estrella Polar. áUsada para navegación durante miles de años!',
+        descUrsaMinor: ' áLa Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. áEsencial para la navegación celeste!',
+        descCrux: ' áLa Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
+        descCassiopeia: ' áCasiopea parece una W o M según la estación! En la mitología griega, Casiopea era una reina vanidosa. La constelación es circumpolar en latitudes norteñas.',
+        descCygnus: ' áCisne el Cisne vuela a lo largo de la Vía Láctea! También llamado la Cruz del Norte. En la mitología, Zeus se disfrazó de cisne. áHogar de muchos objetos de cielo profundo!',
+        descLyra: ' áLira representa la lira de Orfeo! Contiene Vega, la 5ª estrella más brillante en el cielo nocturno. áTambién hogar de la Nebulosa del Anillo, una famosa nebulosa planetaria!',
+        descAndromedaConst: ' áAndrómeda era la princesa encadenada a una roca y rescatada por Perseo! Esta constelación contiene la Galaxia de Andrómeda (M31), nuestra gran galaxia vecina más cercana!',
+        descPerseus: ' áPerseo el héroe que mató a Medusa! Hogar de la brillante estrella Mirfak y la famosa estrella variable Algol ("Estrella Demonio"). áContiene el Doble Cúmulo!',
+
+        // Estrellas cercanas
+        descSirius: ' áSirio es la estrella más brillante en el cielo nocturno de la Tierra! En realidad es un sistema binario de dos estrellas. Ubicada a 8,6 años luz en la constelación del Can Mayor.',
+        descBetelgeuse: ' áBetelgeuse es una supergigante roja que se acerca al final de su vida! Es tan grande que si se colocara en la posición de nuestro Sol, se extendería más allá de Marte. áAlgún día explotará como supernova!',
+        descRigel: ' áRigel es una supergigante azul, una de las estrellas más luminosas visibles a simple vista! Es 40.000 veces más luminosa que nuestro Sol y está a 860 años luz.',
+        descVega: ' áVega es una de las estrellas más brillantes en el cielo del norte! Fue la Estrella Polar hace 12.000 años y lo será nuevamente en 13.000 años debido a la precesión axial de la Tierra.',
+        descPolaris: ' áPolaris, la Estrella Polar, ha guiado a los viajeros por siglos! En realidad es un sistema triple de estrellas y actualmente está muy cerca del norte verdadero.',
+        descAlphaCentauriA: ' áAlfa Centauri A es muy similar a nuestro Sol! Forma parte de un sistema triple de estrellas que es nuestro vecino estelar más cercano a 4,37 años luz. Con su compañera Alfa Centauri B, se orbitan mutuamente cada 80 años.',
+        descProximaCentauri: ' áPróxima Centauri es una pequeña enana roja y la estrella más cercana a nuestro Sistema Solar a solo 4,24 años luz! Es mucho más fría y tenue que nuestro Sol, pero tiene al menos dos planetas, incluyendo el potencialmente habitable Próxima Centauri b.',
+
+        // Estrellas con exoplanetas
+        descKepler452Star: ' áKepler-452 es una estrella similar al Sol que alberga el planeta "primo de la Tierra" Kepler-452b! Es 1.500 millones de años más vieja que nuestro Sol y 20% más brillante.',
+        descTrappist1Star: ' áTRAPPIST-1 es una enana roja ultrafría con 7 planetas del tamaño de la Tierra! Tres de ellos están en la zona habitable. Todo el sistema es tan compacto que los 7 planetas orbitan más cerca de su estrella que Mercurio de nuestro Sol.',
+        descKepler186Star: ' áKepler-186 es una enana roja con 5 planetas conocidos! Kepler-186f fue el primer planeta del tamaño de la Tierra descubierto en la zona habitable de otra estrella.',
+
+        // Exoplanetas
+        descProximaCentauriB: ' áPróxima Centauri b es el exoplaneta conocido más cercano a la Tierra! Orbita en la zona habitable de Próxima Centauri, lo que significa que podría existir agua líquida en su superficie.',
+        descKepler452b: ' áKepler-452b se llama "el primo de la Tierra"! Es aproximadamente un 60% más grande que la Tierra y orbita una estrella similar al Sol en la zona habitable. Su año dura 385 días.',
+        descTrappist1e: ' áTRAPPIST-1e es parte de un sistema increíble con 7 planetas del tamaño de la Tierra! Orbita una fría enana roja y está en la zona habitable.',
+        descKepler186f: ' áKepler-186f fue el primer planeta del tamaño de la Tierra descubierto en la zona habitable de otra estrella! Recibe aproximadamente un tercio de la luz que la Tierra obtiene del Sol.',
+
+        // Planetas enanos
+        descCeres: ' áCeres es el objeto más grande del cinturón de asteroides y un planeta enano! La sonda Dawn de la NASA reveló misteriosas manchas brillantes en el cráter Occator — resultaron ser depósitos de sal de antiguas salmueras.',
+        descHaumea: ' áHaumea gira tan rápido (una vez cada 4 horas) que ha sido aplastada hasta tener forma de huevo! También tiene dos lunas y un sistema de anillos, lo que la hace muy inusual entre los planetas enanos.',
+        descMakemake: ' áMakemake es un mundo brillante y rojizo en el Cinturón de Kuiper descubierto cerca de la Pascua de 2005, nombrado por el dios creador del pueblo Rapa Nui de la Isla de Pascua.',
+        descEris: ' áEris es ligeramente más pequeña que Plutón pero más masiva! Su descubrimiento en 2005 llevó directamente a la reclasificación de Plutón como planeta enano. Tiene una luna, Disnomia.',
+        descSedna: ' áSedna tiene una de las órbitas elípticas más extremas del sistema solar, que va de 76 a 937 UA. Tarda unos 11.400 años en completar una órbita y es tan roja que rivaliza con Marte en color!',
+
+        // Cometas adicionales
+        descHyakutake: ' áEl cometa Hyakutake pasó extremadamente cerca de la Tierra en 1996, convirtiéndose en uno de los cometas más brillantes en décadas con una cola que se extendía por la mitad del cielo!',
+        descLovejoy: ' áEl cometa Lovejoy (C/2011 W3) sobrevivió un paso cercano a través de la corona del Sol! Es parte de los rasadores solares de Kreutz — fragmentos de un enorme cometa que se fragmentó hace siglos.',
+        descEncke: ' áEl cometa Encke tiene el período orbital más corto de todos los cometas conocidos — solo 3,3 años! Lleva el nombre de Johann Franz Encke, quien calculó su órbita en 1819.',
+        descSwiftTuttle: ' áEl cometa Swift-Tuttle es el cuerpo padre del espectacular lluvia de meteoritos de las Perseidas! Con un núcleo de 26 km, es el objeto más grande que pasa regularmente cerca de la Tierra.',
+
+        // Cinturón de asteroides / Cinturón de Kuiper / Nube de Oort
+        descAsteroidBelt: ' áEl cinturón de asteroides contiene millones de objetos rocosos entre Marte y Júpiter. áCeres, el objeto más grande aquí, es un planeta enano! La mayoría de los asteroides son material residual de la formación del sistema solar hace 4.600 millones de años.',
+        descKuiperBelt: ' áEl Cinturón de Kuiper es una región más allá de Neptuno llena de cuerpos helados y planetas enanos incluyendo Plutón! Es como una enorme dona de objetos congelados sobrantes de la formación del sistema solar. áLos cometas de período corto vienen de aquí!',
+        descOortCloud: ' áLa Nube de Oort es una vasta envoltura esférica de objetos helados que rodea todo nuestro sistema solar! Se extiende desde aproximadamente 50.000 hasta 200.000 UA del Sol. áLos cometas de período largo como Hale-Bopp se originan en este reino distante.'
     },
     
     pt: {
@@ -1555,7 +1910,78 @@ const translations = {
         // Descrições de cometas
         descHalley: 'O cometa Halley é o mais famoso! Ele retorna à s proximidades da Terra a cada 75-76 anos. Visto pela última vez em 1986, retornará em 2061. Quando você o vê, está observando uma bola de neve cósmica de 4,6 bilhões de anos!',
         descHaleBopp: 'Hale-Bopp foi um dos cometas mais brilhantes do século 20, visível a olho nu por 18 meses em 1996-1997! Seu núcleo é excepcionalmente grande com 40 km de diametro.',
-        descNeowise: 'O cometa NEOWISE foi um espetáculo espetacular em julho de 2020! Ele não voltará por cerca de 6.800 anos. Cometas são "bolas de neve sujas" compostas de gelo, poeira e rocha da formação do sistema solar.'
+        descNeowise: 'O cometa NEOWISE foi um espetáculo espetacular em julho de 2020! Ele não voltará por cerca de 6.800 anos. Cometas são "bolas de neve sujas" compostas de gelo, poeira e rocha da formação do sistema solar.',
+
+        // Galáxias
+        descAndromeda: ' A Galáxia de Andrômeda é nossa grande vizinha galáctica mais próxima, a 2,5 milhões de anos-luz! Ela contém 1 trilhão de estrelas e está em curso de colisão com a Via Láctea (não se preocupe, colisão em 4,5 bilhões de anos).',
+        descWhirlpool: ' A Galáxia do Redemoinho (M51) é famosa por seus belos braços espirais! Está interagindo com uma galáxia companheira menor, criando forças de maré impressionantes e nova formação de estrelas.',
+        descSombrero: ' A Galáxia do Sombrero parece um chapéu mexicano! Tem um núcleo brilhante, um bulbo central invulgarmente grande e uma faixa de poeira proeminente. Contém 2.000 aglomerados globulares!',
+
+        // Nebulosas
+        descOrionNebula: ' A Nebulosa de Órion é um berçário estelar onde novas estrelas nascem! Está a 1.344 anos-luz e é visível a olho nu como uma névoa na espada de Órion. Contém mais de 3.000 estrelas!',
+        descCrabNebula: ' A Nebulosa do Caranguejo é o remanescente de uma explosão de supernova observada por astrônomos chineses em 1054 d.C.! Em seu centro há um pulsar girando 30 vezes por segundo!',
+        descRingNebula: ' A Nebulosa do Anel é uma nebulosa planetária — os restos brilhantes de uma estrela semelhante ao Sol em extinção! A estrela em seu centro soprou suas camadas externas, criando esse belo anel.',
+
+        // Constelações
+        descAries: ' Áries é o primeiro signo do zodíaco! Procure as estrelas brilhantes Hamal e Sheratan. Na mitologia grega, Áries representa o carneiro dourado que salvou Frixo e Hele.',
+        descTaurus: ' Touro contém a brilhante estrela vermelha Aldebaran, o olho do touro! Também lar das Plêiades. Na mitologia, Zeus se transformou em touro para conquistar Europa.',
+        descGemini: ' Gêmeos tem os brilhantes gêmeos Cástor e Pólux! Na mitologia, eles eram irmãos inseparáveis, os Dióscuros, conhecidos por seu vínculo e bravura.',
+        descCancer: ' Câncer é fraco mas contém o lindo Aglomerado da Colmeia (M44)! Na mitologia, Câncer era o caranguejo enviado por Hera para distrair Hércules durante sua batalha.',
+        descLeo: ' Leão tem a brilhante estrela Régulo! O asterismo da "Foice" forma a cabeça do leão. Na mitologia, Leão representa o Leão de Nemeia morto por Hércules.',
+        descVirgo: ' Virgem é a segunda maior constelação! A brilhante estrela Spica representa trigo na mão da donzela. Lar de milhares de galáxias no Aglomerado de Virgem.',
+        descLibra: ' Libra representa as balanças da justiça! Suas estrelas mais brilhantes são Zubenelgenubi e Zubeneschamali, que significam "garra do sul" e "garra do norte" em árabe.',
+        descScorpius: ' Escorpião representa o escorpião que matou Órion na mitologia grega! A estrela vermelha brilhante Antares marca o coração do escorpião. Procure a cauda curvada com o ferrão!',
+        descSagittarius: ' Sagitário aponta sua flecha para o coração de Escorpião! O asterismo da "Bule de Chá" é fácil de detectar. Aponta para o centro de nossa galáxia Via Láctea!',
+        descCapricornus: ' Capricórnio é uma das constelações mais antigas! Representa uma criatura com cabeça de cabra e cauda de peixe. Associado ao deus Pã na mitologia grega.',
+        descAquarius: ' Aquário representa o portador de água vertendo de sua urna! Lar de vários famosos objetos do céu profundo, incluindo a Nebulosa Hélice. Uma das constelações nomeadas mais antigas.',
+        descPisces: ' Peixes mostra dois peixes amarrados juntos! Representa Afrodite e Eros que se transformaram em peixes para escapar do monstro Tifão. Contém o ponto vernal equinocial!',
+        descOrionConst: ' Órion é uma das constelações mais reconhecíveis! Procure as três estrelas em fila formando o Cinturão de Órion. A brilhante estrela vermelha Betelgeuse marca seu ombro e o azul Rigel seu pé.',
+        descUrsaMajor: ' A Ursa Maior (Grande Carro) é uma das constelações mais conhecidas! As duas estrelas no final da "taça" apontam para Polaris, a Estrela do Norte. Usada para navegação por milhares de anos!',
+        descUrsaMinor: ' A Ursa Menor contém Polaris, a Estrela do Norte! Polaris marca o extremo do cabo da Ursa Menor e permanece quase fixo no céu do norte. Essencial para a navegação celeste!',
+        descCrux: ' O Cruzeiro do Sul é a menor constelação, mas uma das mais famosas no hemisfério sul! Usado para navegação, aponta para o Polo Celeste Sul.',
+        descCassiopeia: ' Cassiopeia parece um W ou M dependendo da estação! Na mitologia grega, Cassiopeia era uma rainha vaidosa. A constelação é circumpolar em latitudes do norte.',
+        descCygnus: ' Cygnus o Cisne voa ao longo da Via Láctea! Também chamada de Cruz do Norte. Na mitologia, Zeus se disfarçou de cisne. Lar de muitos objetos do céu profundo!',
+        descLyra: ' Lyra representa a lira de Orfeu! Contém Vega, a 5ª estrela mais brilhante no céu noturno. Também lar da Nebulosa do Anel, uma famosa nebulosa planetária!',
+        descAndromedaConst: ' Andrômeda era a princesa acorrentada a uma rocha e resgatada por Perseu! Esta constelação contém a Galáxia de Andrômeda (M31), nossa grande galáxia vizinha mais próxima!',
+        descPerseus: ' Perseu o herói que matou Medusa! Lar da estrela brilhante Mirfak e da famosa estrela variável Algol ("Estrela Demônio"). Contém o Aglomerado Duplo!',
+
+        // Estrelas próximas
+        descSirius: ' Sírius é a estrela mais brilhante no céu noturno da Terra! Na verdade é um sistema binário de duas estrelas. Localizado a 8,6 anos-luz na constelação do Cão Maior.',
+        descBetelgeuse: ' Betelgeuse é uma supergigante vermelha se aproximando do fim de sua vida! É tão grande que se colocada na posição do nosso Sol, se estenderia além de Marte. Um dia vai explodir como supernova!',
+        descRigel: ' Rigel é uma supergigante azul, uma das estrelas mais luminosas visíveis a olho nu! É 40.000 vezes mais luminosa que o nosso Sol e está a 860 anos-luz.',
+        descVega: ' Vega é uma das estrelas mais brilhantes no céu do norte! Era a Estrela do Norte há 12.000 anos e será novamente em 13.000 anos devido à precessão do eixo terrestre.',
+        descPolaris: ' Polaris, a Estrela do Norte, guiou viajantes por séculos! Na verdade é um sistema triplo de estrelas e atualmente está muito próximo do norte verdadeiro.',
+        descAlphaCentauriA: ' Alfa Centauri A é muito similar ao nosso Sol! Faz parte de um sistema triplo de estrelas que é nosso vizinho estelar mais próximo a 4,37 anos-luz. Com seu companheiro Alfa Centauri B, orbitam um ao outro a cada 80 anos.',
+        descProximaCentauri: ' Proxima Centauri é uma pequena anã vermelha e a estrela mais próxima do nosso Sistema Solar a apenas 4,24 anos-luz! É muito mais fria e menos brilhante que o nosso Sol, mas tem pelo menos dois planetas, incluindo o potencialmente habitável Proxima Centauri b.',
+
+        // Estrelas com exoplanetas
+        descKepler452Star: ' Kepler-452 é uma estrela semelhante ao Sol que hospeda o planeta "primo da Terra" Kepler-452b! É 1,5 bilhão de anos mais velha que o nosso Sol e 20% mais brilhante.',
+        descTrappist1Star: ' TRAPPIST-1 é uma anã vermelha ultrafria com 7 planetas do tamanho da Terra! Três deles estão na zona habitável. Todo o sistema é tão compacto que todos os 7 planetas orbitam mais perto de sua estrela do que Mercúrio do nosso Sol.',
+        descKepler186Star: ' Kepler-186 é uma anã vermelha com 5 planetas conhecidos! Kepler-186f foi o primeiro planeta do tamanho da Terra descoberto na zona habitável de outra estrela.',
+
+        // Exoplanetas
+        descProximaCentauriB: ' Proxima Centauri b é o exoplaneta conhecido mais próximo da Terra! Ele orbita na zona habitável de Proxima Centauri, o que significa que água líquida poderia existir em sua superfície.',
+        descKepler452b: ' Kepler-452b é chamado de "primo da Terra"! É aproximadamente 60% maior que a Terra e orbita uma estrela semelhante ao Sol na zona habitável. Seu ano dura 385 dias.',
+        descTrappist1e: ' TRAPPIST-1e faz parte de um sistema incrível com 7 planetas do tamanho da Terra! Orbita uma anã vermelha fria e está na zona habitável.',
+        descKepler186f: ' Kepler-186f foi o primeiro planeta do tamanho da Terra descoberto na zona habitável de outra estrela! Recebe cerca de um terço da luz que a Terra recebe do Sol.',
+
+        // Planetas anões
+        descCeres: ' Ceres é o maior objeto no cinturão de asteroides e um planeta anão! A sonda Dawn da NASA revelou misteriosas manchas brilhantes na cratera Occator — descobriu-se que eram depósitos de sal de antigas salmouras.',
+        descHaumea: ' Haumea gira tão rápido (uma vez a cada 4 horas) que foi achatada em formato de ovo! Também tem duas luas e um sistema de anéis, tornando-a muito incomum entre os planetas anões.',
+        descMakemake: ' Makemake é um mundo brilhante e avermelhado no Cinturão de Kuiper descoberto perto da Páscoa de 2005, nomeado em homenagem ao deus criador do povo Rapa Nui da Ilha de Páscoa.',
+        descEris: ' Éris é um pouco menor que Plutão, mas mais massiva! Sua descoberta em 2005 levou diretamente à reclassificação de Plutão como planeta anão. Tem uma lua, Disnômia.',
+        descSedna: ' Sedna tem uma das órbitas elípticas mais extremas do sistema solar, variando de 76 a 937 UA. Leva cerca de 11.400 anos para completar uma órbita e é tão vermelha que rivaliza com Marte em cor!',
+
+        // Cometas adicionais
+        descHyakutake: ' O cometa Hyakutake passou extremamente perto da Terra em 1996, tornando-se um dos cometas mais brilhantes em décadas com uma cauda se estendendo por metade do céu!',
+        descLovejoy: ' O cometa Lovejoy (C/2011 W3) sobreviveu a uma passagem próxima pela coroa do Sol! Faz parte dos raspadores solares de Kreutz — fragmentos de um cometa gigante que se fragmentou há séculos.',
+        descEncke: ' O cometa Encke tem o período orbital mais curto de todos os cometas conhecidos — apenas 3,3 anos! Recebeu o nome de Johann Franz Encke, que calculou sua órbita em 1819.',
+        descSwiftTuttle: ' O cometa Swift-Tuttle é o corpo-pai do espetacular enxame de meteoros das Perseidas! Com um núcleo de 26 km, é o maior objeto que passa regularmente perto da Terra.',
+
+        // Cinturão de asteroides / Cinturão de Kuiper / Nuvem de Oort
+        descAsteroidBelt: ' O cinturão de asteroides contém milhões de objetos rochosos entre Marte e Júpiter. Ceres, o maior objeto aqui, é um planeta anão! A maioria dos asteroides são materiais residuais da formação do sistema solar há 4,6 bilhões de anos.',
+        descKuiperBelt: ' O Cinturão de Kuiper é uma região além de Netuno repleta de corpos gelados e planetas anões, incluindo Plutão! É como uma enorme rosca de objetos congelados restantes da formação do sistema solar. Cometas de período curto vêm daqui!',
+        descOortCloud: ' A Nuvem de Oort é uma vasta concha esférica de objetos gelados que envolve todo o nosso sistema solar! Ela se estende de aproximadamente 50.000 a 200.000 UA do Sol. Cometas de longo período como Hale-Bopp se originam neste reino distante.'
     }
 };
 
