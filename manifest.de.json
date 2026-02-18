@@ -1,5 +1,5 @@
 {
-  "id": "/solar/",
+  "id": "/Solar/",
   "name": "Weltraumreise - Interaktives 3D-Sonnensystem",
   "short_name": "Weltraumreise",
   "description": "Erkunden Sie unser Sonnensystem in atemberaubendem 3D mit VR-Unterstützung. Navigieren Sie durch Planeten, Monde, Raumfahrzeuge, Nebel und Galaxien in diesem interaktiven Bildungserlebnis.",
@@ -37,3 +37,4 @@
     {"name": "VR Modus Starten", "short_name": "VR", "description": "Im VR-Modus starten", "url": "./?vr=true&lang=de"}
   ]
 }
+

@@ -1,5 +1,5 @@
 {
-  "id": "/solar/",
+  "id": "/Solar/",
   "name": "Viaje Espacial - Sistema Solar 3D Interactivo",
   "short_name": "Viaje Espacial",
   "description": "Explora nuestro sistema solar en impresionante 3D con soporte RV. Navega por planetas, lunas, naves espaciales, nebulosas y galaxias en esta experiencia educativa interactiva.",
@@ -37,3 +37,4 @@
     {"name": "Iniciar Modo RV", "short_name": "RV", "description": "Iniciar en modo RV", "url": "./?vr=true&lang=es"}
   ]
 }
+
