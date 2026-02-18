@@ -45,10 +45,6 @@ const translations = {
         triton: "Triton",
         
         // Navigation menu sections
-        jupiterSystem: "Jupiter System",
-        saturnSystem: "Saturn System",
-        uranusSystem: "Uranus System",
-        neptuneSystem: "Neptune System",
         plutoSystem: "Pluto System",
         nearbyStars: "Nearby Stars",
         exoplanets: "Exoplanets",
@@ -79,7 +75,6 @@ const translations = {
         resetView: "Reset",
         enterVR: "Enter VR",
         enterAR: "Enter AR",
-        help: "Help",
         randomDiscovery: "Discover",
         
         // Onboarding
@@ -162,7 +157,15 @@ const translations = {
         installTitle: "Install Space Voyage",
         installMessage: "Install Space Voyage as an app for a better experience!",
         installButton: "Install",
+        install: "Install",
         installLater: "Maybe Later",
+        notNow: "Not Now",
+        offlineMode: "You're offline",
+        update: "Update",
+        comets: "Comets",
+        dwarfPlanets: "Dwarf Planets & Candidates",
+        constellationsZodiac: "Constellations (Zodiac)",
+        constellationsOther: "Constellations (Other)",
         
         // Errors
         errorLoading: "Error loading Space Voyage",
@@ -181,7 +184,6 @@ const translations = {
         typeDwarfPlanet: 'Dwarf Planet',
         typeNebula: 'Nebula',
         typeGalaxy: 'Galaxy',
-        typeStar: 'Star',
         
         // Object Descriptions
         descSun: 'The Sun is a G-type main-sequence star (yellow dwarf) containing 99.86% of the Solar System\'s mass. Surface temperature: 5,778K. Age: 4.6 billion years. It fuses 600 million tons of hydrogen into helium every second!',
@@ -409,7 +411,6 @@ const translations = {
         triton: "Triton",
         
         // Navigatiemenu secties
-        jupiterSystem: "Jupiter Systeem",
         nearbyStars: "Nabije Sterren",
         exoplanets: "Exoplaneten",
         nebulae: "Nevels",
@@ -426,6 +427,10 @@ const translations = {
         navDistantStars: "Verre Sterren",
         kuiperBelt: "Kuipergordel",
         asteroidBelt: "Asteroïdengordel",
+        comets: "Kometen",
+        dwarfPlanets: "Dwergplaneten & Kandidaten",
+        constellationsZodiac: "Sterrenbeelden (Dierenriem)",
+        constellationsOther: "Sterrenbeelden (Overig)",
         
         // Bedieningsknoppen
         toggleOrbits: "Banen",
@@ -439,6 +444,26 @@ const translations = {
         resetView: "Reset",
         enterVR: "VR Starten",
         enterAR: "AR Starten",
+        randomDiscovery: "Ontdekken",
+        
+        // Onboarding
+        welcomeToSpace: "🚀 Welkom bij Ruimtereis!",
+        skip: "Overslaan",
+        next: "Volgende",
+        startExploring: "Begin met verkennen! 🌟",
+        onboardingNav: "Navigeer het Universum",
+        onboardingNavDesc: "Slepen om te draaien • Scrollen om in/uit te zoomen • Rechts klikken om te verschuiven",
+        onboardingExplore: "Verken Objecten",
+        onboardingExploreDesc: "Klik op een planeet, maan of ster om fascinerende feiten te leren!",
+        onboardingQuickNav: "Snelle Navigatie",
+        onboardingQuickNavDesc: "Gebruik het vervolgkeuzemenu om direct naar elk object te springen",
+        
+        // Mobiele gebaren
+        pinchToZoom: "Knijpen om te zoomen",
+        dragToRotate: "Slepen om te draaien",
+        
+        // Laden
+        preparingJourney: "Uw ruimtereis voorbereiden...",
         
         // Snelheidsregeling
         speedLabel: "Snelheid:",
@@ -500,7 +525,11 @@ const translations = {
         installTitle: "Installeer Ruimtereis",
         installMessage: "Installeer Ruimtereis als app voor een betere ervaring!",
         installButton: "Installeren",
+        install: "Installeren",
         installLater: "Misschien Later",
+        notNow: "Niet Nu",
+        offlineMode: "U bent offline",
+        update: "Bijwerken",
         
         // Fouten
         errorLoading: "Fout bij laden Ruimtereis",
@@ -755,6 +784,11 @@ const translations = {
         navDistantStars: "Étoiles Lointaines",
         kuiperBelt: "Ceinture de Kuiper",
         asteroidBelt: "Ceinture d'Astéroïdes",
+        plutoSystem: "Système Plutonien",
+        comets: "Comètes",
+        dwarfPlanets: "Planètes Naines & Candidats",
+        constellationsZodiac: "Constellations (Zodiaque)",
+        constellationsOther: "Constellations (Autres)",
         
         // Boutons de contrôle
         toggleOrbits: "Orbites",
@@ -768,6 +802,26 @@ const translations = {
         resetView: "Réinitialiser",
         enterVR: "Entrer en RV",
         enterAR: "Entrer en RA",
+        randomDiscovery: "Découvrir",
+        
+        // Embarquement
+        welcomeToSpace: "🚀 Bienvenue dans Voyage Spatial!",
+        skip: "Passer",
+        next: "Suivant",
+        startExploring: "Commencer à explorer! 🌟",
+        onboardingNav: "Naviguer dans l'Univers",
+        onboardingNavDesc: "Faire glisser pour tourner • Faire défiler pour zoomer • Clic droit pour déplacer",
+        onboardingExplore: "Explorer les Objets",
+        onboardingExploreDesc: "Cliquez sur une planète, une lune ou une étoile pour apprendre des faits fascinants!",
+        onboardingQuickNav: "Navigation Rapide",
+        onboardingQuickNavDesc: "Utilisez le menu déroulant pour accéder directement à n'importe quel objet",
+        
+        // Gestes mobiles
+        pinchToZoom: "Pincer pour zoomer",
+        dragToRotate: "Faire glisser pour tourner",
+        
+        // Chargement
+        preparingJourney: "Préparation de votre voyage spatial...",
         
         // Contrôle de vitesse
         speedLabel: "Vitesse:",
@@ -823,7 +877,11 @@ const translations = {
         installTitle: "Installer Voyage Spatial",
         installMessage: "Installez Voyage Spatial comme application pour une meilleure expérience!",
         installButton: "Installer",
+        install: "Installer",
         installLater: "Peut-être Plus Tard",
+        notNow: "Pas Maintenant",
+        offlineMode: "Vous êtes hors ligne",
+        update: "Mettre à jour",
         errorLoading: "Erreur de chargement de Voyage Spatial",
         errorMessage: "Veuillez actualiser la page pour réessayer.",
         
@@ -1076,6 +1134,11 @@ const translations = {
         navDistantStars: "Ferne Sterne",
         kuiperBelt: "Kuipergürtel",
         asteroidBelt: "Asteroidengürtel",
+        plutoSystem: "Plutosystem",
+        comets: "Kometen",
+        dwarfPlanets: "Zwergplaneten & Kandidaten",
+        constellationsZodiac: "Sternbilder (Tierkreis)",
+        constellationsOther: "Sternbilder (Sonstige)",
         
         // Steuerungstasten
         toggleOrbits: "Umlaufbahnen",
@@ -1089,6 +1152,26 @@ const translations = {
         resetView: "Zurücksetzen",
         enterVR: "VR Starten",
         enterAR: "AR Starten",
+        randomDiscovery: "Entdecken",
+        
+        // Onboarding
+        welcomeToSpace: "🚀 Willkommen bei Weltraumreise!",
+        skip: "Überspringen",
+        next: "Weiter",
+        startExploring: "Erkunden beginnen! 🌟",
+        onboardingNav: "Das Universum navigieren",
+        onboardingNavDesc: "Ziehen zum Drehen • Scrollen zum Zoomen • Rechtsklick zum Verschieben",
+        onboardingExplore: "Objekte erkunden",
+        onboardingExploreDesc: "Klicken Sie auf einen Planeten, Mond oder Stern, um faszinierende Fakten zu lernen!",
+        onboardingQuickNav: "Schnellnavigation",
+        onboardingQuickNavDesc: "Verwenden Sie das Dropdown-Menü, um direkt zu einem beliebigen Objekt zu springen",
+        
+        // Mobile Gesten
+        pinchToZoom: "Zum Zoomen zusammenkneifen",
+        dragToRotate: "Zum Drehen ziehen",
+        
+        // Laden
+        preparingJourney: "Ihre Weltraumreise wird vorbereitet...",
         
         // Geschwindigkeitssteuerung
         speedLabel: "Geschwindigkeit:",
@@ -1144,7 +1227,11 @@ const translations = {
         installTitle: "Weltraumreise Installieren",
         installMessage: "Installieren Sie Weltraumreise als App für ein besseres Erlebnis!",
         installButton: "Installieren",
+        install: "Installieren",
         installLater: "Vielleicht Später",
+        notNow: "Nicht Jetzt",
+        offlineMode: "Sie sind offline",
+        update: "Aktualisieren",
         errorLoading: "Fehler beim Laden der Weltraumreise",
         errorMessage: "Bitte aktualisieren Sie die Seite, um es erneut zu versuchen.",
         
@@ -1397,6 +1484,11 @@ const translations = {
         navDistantStars: "Estrellas Distantes",
         kuiperBelt: "Cinturón de Kuiper",
         asteroidBelt: "Cinturón de Asteroides",
+        plutoSystem: "Sistema Plutoniano",
+        comets: "Cometas",
+        dwarfPlanets: "Planetas Enanos y Candidatos",
+        constellationsZodiac: "Constelaciones (Zodíaco)",
+        constellationsOther: "Constelaciones (Otras)",
         
         // Botones de control
         toggleOrbits: "×“rbitas",
@@ -1410,6 +1502,26 @@ const translations = {
         resetView: "Restablecer",
         enterVR: "Entrar en RV",
         enterAR: "Entrar en RA",
+        randomDiscovery: "Descubrir",
+        
+        // Incorporación
+        welcomeToSpace: "🚀 ¡Bienvenido a Viaje Espacial!",
+        skip: "Omitir",
+        next: "Siguiente",
+        startExploring: "¡Comenzar a explorar! 🌟",
+        onboardingNav: "Navegar el Universo",
+        onboardingNavDesc: "Arrastrar para rotar • Desplazar para hacer zoom • Clic derecho para desplazar",
+        onboardingExplore: "Explorar Objetos",
+        onboardingExploreDesc: "¡Haz clic en cualquier planeta, luna o estrella para aprender datos fascinantes!",
+        onboardingQuickNav: "Navegación Rápida",
+        onboardingQuickNavDesc: "Usa el menú desplegable para saltar directamente a cualquier objeto",
+        
+        // Gestos móviles
+        pinchToZoom: "Pellizcar para hacer zoom",
+        dragToRotate: "Arrastrar para rotar",
+        
+        // Carga
+        preparingJourney: "Preparando tu viaje espacial...",
         
         // Control de velocidad
         speedLabel: "Velocidad:",
@@ -1457,15 +1569,19 @@ const translations = {
         
         // Notificaciones
         updateAvailable: "Actualización Disponible",
-        updateMessage: "áUna nueva versión está disponible!",
+        updateMessage: "¡Una nueva versión está disponible!",
         updateButton: "Actualizar Ahora",
-        updateLater: "Más Tarde",
+        updateLater: "más Tarde",
         offline: "Modo Sin Conexión",
         offlineMessage: "Estás sin conexión. Algunas funciones pueden estar limitadas.",
         installTitle: "Instalar Viaje Espacial",
-        installMessage: "áInstala Viaje Espacial como aplicación para una mejor experiencia!",
+        installMessage: "¡Instala Viaje Espacial como aplicación para una mejor experiencia!",
         installButton: "Instalar",
-        installLater: "Quizás Más Tarde",
+        install: "Instalar",
+        installLater: "Quizás más Tarde",
+        notNow: "Ahora No",
+        offlineMode: "Estás desconectado",
+        update: "Actualizar",
         errorLoading: "Error al cargar Viaje Espacial",
         errorMessage: "Por favor, actualiza la página para intentarlo de nuevo.",
         
@@ -1484,16 +1600,16 @@ const translations = {
         typeGalaxy: 'Galaxia',
         
         // Descripciones de objetos
-        descSun: 'El Sol es una estrella de tipo G (enana amarilla) que contiene el 99,86% de la masa del Sistema Solar. Temperatura superficial: 5.778 K. Edad: 4,6 mil millones de años. áFusiona 600 millones de toneladas de hidrógeno en helio cada segundo!',
-        descMercury: 'Mercurio es el planeta más pequeño y el más cercano al Sol. Su superficie está cubierta de cráteres como nuestra Luna. La temperatura varía de -180°C por la noche a 430°C durante el día: áel mayor rango de temperatura en el sistema solar!',
-        descVenus: 'Venus es el planeta más caliente con una temperatura superficial de 465°C debido a un efecto invernadero extremo. Su atm³sfera es 96% CO2 con nubes de ácido sulfúrico. áVenus gira hacia atrás en comparación con la mayoría de los planetas!',
-        descEarth: 'La Tierra es nuestro hogar, áel único planeta conocido con vida! El 71% está cubierto de agua, creando el color azul visible desde el espacio. La atm³sfera nos protege de la radiación dañina y los meteoros.',
-        descMoon: 'La Luna terrestre es la quinta luna más grande del sistema solar. Crea las mareas, estabiliza la inclinación de la Tierra y se form³ hace 4,5 mil millones de años cuando un objeto del tamaño de Marte impactó la Tierra!',
-        descMars: 'Marte, el Planeta Rojo, debe su color al óxido de hierro (óxido). Tiene el volcán más grande (Olympus Mons - 22 km de altura) y el cañón más largo (Valles Marineris - 4.000 km de largo) del sistema solar. áExiste hielo de agua en sus polos!',
-        descJupiter: 'Júpiter es el planeta más grande: átodos los demás planetas podrían caber dentro! La Gran Mancha Roja es una tormenta más grande que la Tierra que ha estado activa durante al menos 400 años. áJúpiter tiene 95 lunas conocidas!',
-        descSaturn: 'Saturno es famoso por su espectacular sistema de anillos compuestos de partículas de hielo y roca. áEs el planeta menos denso: flotaría en agua! Saturno tiene 146 lunas conocidas, incluida Titán, que tiene una atm³sfera densa.',
-        descUranus: 'Urano es único: ágira de lado! Esto significa que sus polos se turnan para mirar al Sol durante su órbita de 84 años. Compuesto de hielos de agua, metano y amoníaco, aparece de color azul verdoso debido al metano en su atm³sfera.',
-        descNeptune: 'Neptuno es el planeta más ventoso con tormentas que alcanzan á2.100 km/h! Es el planeta más lejano del Sol y tarda 165 años terrestres en completar una órbita. Su color azul proviene del metano en la atm³sfera.',
+        descSun: 'El Sol es una estrella de tipo G (enana amarilla) que contiene el 99,86% de la masa del Sistema Solar. Temperatura superficial: 5.778 K. Edad: 4,6 mil millones de años. ¡Fusiona 600 millones de toneladas de hidrógeno en helio cada segundo!',
+        descMercury: 'Mercurio es el planeta más pequeño y el más cercano al Sol. Su superficie está cubierta de cráteres como nuestra Luna. La temperatura varía de -180°C por la noche a 430°C durante el día: ¡el mayor rango de temperatura en el sistema solar!',
+        descVenus: 'Venus es el planeta más caliente con una temperatura superficial de 465°C debido a un efecto invernadero extremo. Su atmósfera es 96% CO2 con nubes de ácido sulfúrico. ¡Venus gira hacia atrás en comparación con la mayoría de los planetas!',
+        descEarth: 'La Tierra es nuestro hogar, áel único planeta conocido con vida! El 71% está cubierto de agua, creando el color azul visible desde el espacio. La atmósfera nos protege de la radiación dañina y los meteoros.',
+        descMoon: 'La Luna terrestre es la quinta luna más grande del sistema solar. Crea las mareas, estabiliza la inclinación de la Tierra y se formó hace 4,5 mil millones de años cuando un objeto del tamaño de Marte impactó la Tierra!',
+        descMars: 'Marte, el Planeta Rojo, debe su color al óxido de hierro (óxido). Tiene el volcán más grande (Olympus Mons - 22 km de altura) y el cañón más largo (Valles Marineris - 4.000 km de largo) del sistema solar. ¡Existe hielo de agua en sus polos!',
+        descJupiter: 'Júpiter es el planeta más grande: ¡todos los demás planetas podrían caber dentro! La Gran Mancha Roja es una tormenta más grande que la Tierra que ha estado activa durante al menos 400 años. ¡Júpiter tiene 95 lunas conocidas!',
+        descSaturn: 'Saturno es famoso por su espectacular sistema de anillos compuestos de partículas de hielo y roca. ¡Es el planeta menos denso: flotaría en agua! Saturno tiene 146 lunas conocidas, incluida Titán, que tiene una atmósfera densa.',
+        descUranus: 'Urano es único: ágira de lado! Esto significa que sus polos se turnan para mirar al Sol durante su órbita de 84 años. Compuesto de hielos de agua, metano y amoníaco, aparece de color azul verdoso debido al metano en su atmósfera.',
+        descNeptune: 'Neptuno es el planeta más ventoso con tormentas que alcanzan á2.100 km/h! Es el planeta más lejano del Sol y tarda 165 años terrestres en completar una órbita. Su color azul proviene del metano en la atmósfera.',
         
         // Mensajes de carga
         creatingMercury: 'Creando Mercurio...',
@@ -1529,138 +1645,138 @@ const translations = {
         moonCount: 'Este planeta tiene',
         majorMoon: 'luna grande',
         majorMoons: 'lunas grandes',
-        shownHere: 'mostradas aquí (áexisten muchas más pequeñas!)',
+        shownHere: 'mostradas aquí (¡existen muchas más pequeñas!)',
         
         // Datos curiosos
-        funFactSun: 'áEl Sol es tan grande que 1,3 millones de Tierras podrían caber dentro!',
-        funFactMercury: 'áUn año en Mercurio (88 días terrestres) es más corto que su día (176 días terrestres)!',
+        funFactSun: '¡El Sol es tan grande que 1,3 millones de Tierras podrían caber dentro!',
+        funFactMercury: '¡Un año en Mercurio (88 días terrestres) es más corto que su día (176 días terrestres)!',
         funFactVenus: 'Venus es el planeta más brillante en nuestro cielo y a menudo se le llama el "gemelo malvado" de la Tierra',
-        funFactEarth: 'áLa Tierra es el único planeta que no lleva el nombre de un dios. Viaja a 107.000 km/h alrededor del Sol!',
-        funFactMoon: 'áLa Luna se está alejando lentamente de la Tierra a 3,8 cm por año!',
-        funFactMars: 'áMarte tiene estaciones como la Tierra, y su día es solo 37 minutos más largo que el nuestro!',
-        funFactJupiter: 'áLa gravedad de Júpiter protege a la Tierra de muchos asteroides y cometas!',
-        funFactSaturn: 'áLos anillos de Saturno tienen solo 10 metros de espesor pero 280.000 km de ancho!',
-        funFactUranus: 'áUrano fue el primer planeta descubierto con un telescopio (1781)!',
-        funFactNeptune: 'áNeptuno fue descubierto por matemáticas antes de ser visto: su gravedad afectaba la órbita de Urano!',
-        descPluto: '🪐 Plutón es un planeta enano en el Cinturón de Kuiper. Tiene un glaciar en forma de corazón (Tombaugh Regio), montañas de hielo de agua y cinco lunas. Plutón y su luna más grande, Caronte, están bloqueados por mareas: ¡siempre se muestran la misma cara!',
-        funFactPluto: 'áUn año en Plutón dura 248 años terrestres! No ha completado una órbita desde su descubrimiento en 1930.',
+        funFactEarth: '¡La Tierra es el único planeta que no lleva el nombre de un dios. Viaja a 107.000 km/h alrededor del Sol!',
+        funFactMoon: '¡La Luna se está alejando lentamente de la Tierra a 3,8 cm por año!',
+        funFactMars: '¡Marte tiene estaciones como la Tierra, y su día es solo 37 minutos más largo que el nuestro!',
+        funFactJupiter: '¡La gravedad de Júpiter protege a la Tierra de muchos asteroides y cometas!',
+        funFactSaturn: '¡Los anillos de Saturno tienen solo 10 metros de espesor pero 280.000 km de ancho!',
+        funFactUranus: '¡Urano fue el primer planeta descubierto con un telescopio (1781)!',
+        funFactNeptune: '¡Neptuno fue descubierto por matemáticas antes de ser visto: su gravedad afectaba la órbita de Urano!',
+        descPluto: '🪐 Plutón es un planeta enano en el Cinturón de Kuiper. Tiene un glaciar en forma de corazón (Tombaugh Regio), montañas de hielo de agua y cinco lunas. Plutón y su luna más grande, Caronte, están bloqueados por mareas: ásiempre se muestran la misma cara!',
+        funFactPluto: '¡Un año en Plutón dura 248 años terrestres! No ha completado una órbita desde su descubrimiento en 1930.',
         
         // Descripciones de lunas
-        descPhobos: 'áFobos orbita Marte más rápido de lo que Marte gira! Sale por el oeste y se pone por el este.',
+        descPhobos: '¡Fobos orbita Marte más rápido de lo que Marte gira! Sale por el oeste y se pone por el este.',
         descDeimos: 'Deimos es la más pequeña de las dos lunas de Marte y tarda 30 horas en orbitar.',
         descIo: 'á×o es el cuerpo más volcánicamente activo del sistema solar!',
-        descEuropa: 'áEuropa tiene un océano global bajo su hielo: un lugar potencial para la vida!',
-        descGanymede: 'áGanímedes es la luna más grande del sistema solar, más grande que Mercurio!',
-        descCallisto: 'áCalisto es el objeto más craterizado del sistema solar!',
-        descTitan: 'áTitán tiene lagos y ríos de metano líquido: el único lugar con líquidos superficiales aparte de la Tierra!',
-        descEnceladus: 'áEncélado expulsa chorros de agua al espacio desde su océano subterráneo!',
-        descRhea: 'áRea podría tener su propio sistema de anillos!',
-        descTitania: 'áTitania es la luna más grande de Urano con cañones masivos!',
-        descMiranda: 'áMiranda tiene el terreno más dramático del sistema solar con acantilados de 20 km de altura!',
-        descTriton: 'áTritón orbita hacia atrás y tiene géiseres de nitrógeno! Probablemente es un objeto capturado del cinturón de Kuiper.',
-        descCharon: 'áCaronte es tan grande comparado con Plutón que forman un sistema binario!',
+        descEuropa: '¡Europa tiene un océano global bajo su hielo: un lugar potencial para la vida!',
+        descGanymede: '¡Ganímedes es la luna más grande del sistema solar, más grande que Mercurio!',
+        descCallisto: '¡Calisto es el objeto más craterizado del sistema solar!',
+        descTitan: '¡Titán tiene lagos y ríos de metano líquido: el único lugar con líquidos superficiales aparte de la Tierra!',
+        descEnceladus: '¡Encélado expulsa chorros de agua al espacio desde su océano subterráneo!',
+        descRhea: '¡Rea podría tener su propio sistema de anillos!',
+        descTitania: '¡Titania es la luna más grande de Urano con cañones masivos!',
+        descMiranda: '¡Miranda tiene el terreno más dramático del sistema solar con acantilados de 20 km de altura!',
+        descTriton: '¡Tritón orbita hacia atrás y tiene géiseres de nitrógeno! Probablemente es un objeto capturado del cinturón de Kuiper.',
+        descCharon: '¡Caronte es tan grande comparado con Plutón que forman un sistema binario!',
         
         // Descripciones y datos de satélites
         descISS: 'La EEI orbita a 400 km de altitud, completando una órbita cada 92,68 minutos (15,54 órbitas/día). Lanzada el 20 nov 1998 (m³dulo Zarya). Ensamblaje: 1998-2011 (42 vuelos: 36 Shuttle, 6 rusos). Masa: 419.725 kg. Volumen presurizado: 1.000 m³. Ocupación continua desde el 2 nov 2000 (24+ años, 9.000+ días). 280+ astronautas de 23 países la han visitado.',
-        funFactISS: 'áLa EEI viaja a 27.600 km/h! Los astronautas ven 16 amaneceres/atardeceres por día. áHa estado continuamente ocupada durante 24+ años, más que cualquier otra nave espacial!',
+        funFactISS: '¡La EEI viaja a 27.600 km/h! Los astronautas ven 16 amaneceres/atardeceres por día. ¡Ha estado continuamente ocupada durante 24+ años, más que cualquier otra nave espacial!',
         descHubble: 'Lanzado el 24 abril 1990 por el transbordador Discovery. Orbita a ~535 km de altitud. Ha realizado 1,6+ millones de observaciones hasta oct 2025. Espejo primario de 2,4m observa UV, visible e IR cercano. Cinco misiones de servicio (1993-2009) mejoraron los instrumentos.',
-        funFactHubble: 'áPuede resolver objetos separados por 0,05 segundos de arco: como ver dos luciérnagas a 10.000 km! La imagen más profunda (eXtreme Deep Field) muestra 5.500 galaxias, algunas a 13,2 mil millones de años luz.',
+        funFactHubble: '¡Puede resolver objetos separados por 0,05 segundos de arco: como ver dos luciérnagas a 10.000 km! La imagen más profunda (eXtreme Deep Field) muestra 5.500 galaxias, algunas a 13,2 mil millones de años luz.',
         descGPS: 'Constelación GPS (NAVSTAR): 31 satélites operativos (oct 2025) en 6 planos orbitales, inclinación 55°. Cada satélite orbita a 20.180 km de altitud. Transmite señales banda L (1,2-1,5 GHz). Relojes atómicos de rubidio/cesio precisos a 10⁻¹⁴ segundos.',
-        funFactGPS: 'áNecesita 4 satélites para posición 3D (trilateración + corrección de reloj). El sistema proporciona precisión de 5-10m. La señal militar (código P/Y) es precisa al centímetro!',
+        funFactGPS: '¡Necesita 4 satélites para posición 3D (trilateración + corrección de reloj). El sistema proporciona precisión de 5-10m. La señal militar (código P/Y) es precisa al centímetro!',
         descJWST: 'Lanzado el 25 dic 2021. Alcanzó el punto L2 el 24 ene 2022. Primeras imágenes publicadas el 12 jul 2022. Observa infrarrojo (0,6-28,5 μm). Espejo segmentado de berilio de 6,5m (18 hexágonos) con 25 m² de área colectora: á6x Hubble! Parasol: 21,2m × 14,2m, 5 capas.',
-        funFactJWST: 'áOpera a -233°C (-388°F)! Puede detectar la firma térmica de un abejorro a distancia lunar. áHa descubierto las galaxias más antiguas en z=14 (280 millones de años después del Big Bang)!',
+        funFactJWST: '¡Opera a -233°C (-388°F)! Puede detectar la firma térmica de un abejorro a distancia lunar. ¡Ha descubierto las galaxias más antiguas en z=14 (280 millones de años después del Big Bang)!',
         
         // Descripciones y datos de naves espaciales
-        descVoyager1: 'áVoyager 1 es el objeto hecho por el hombre más lejano de la Tierra! Lanzada el 5 sept 1977, entró al espacio interestelar el 25 ago 2012. Actualmente a 24,3 mil millones de km (162 UA) del Sol. Lleva el Disco de Oro con sonidos e imágenes de la Tierra.',
-        funFactVoyager1: 'áVoyager 1 viaja a 17 km/s (61.200 km/h). Sus señales de radio tardan 22,5 horas en llegar a la Tierra!',
-        descVoyager2: 'áVoyager 2 es la única nave espacial que ha visitado los cuatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (ene 1986), Neptuno (ago 1989). Entró al espacio interestelar el 5 nov 2018. Ahora a 20,3 mil millones de km (135 UA) del Sol.',
-        funFactVoyager2: 'áVoyager 2 descubrió 16 lunas entre los planetas gigantes, la Gran Mancha Oscura de Neptuno y los géiseres de Tritón!',
-        descNewHorizons: 'áNew Horizons nos dio las primeras imágenes cercanas de Plutón el 14 julio 2015! Reveló montañas de hielo de agua de hasta 3.500m de altura, vastos glaciares de nitrógeno y la famosa Tombaugh Regio en forma de corazón. Ahora a 59 UA del Sol, explorando el cinturón de Kuiper.',
-        funFactNewHorizons: 'áNew Horizons viajó 9,5 años y 5 mil millones de km para llegar a Plutón a 58.536 km/h. Lleva 28g de las cenizas de Clyde Tombaugh!',
+        descVoyager1: '¡Voyager 1 es el objeto hecho por el hombre más lejano de la Tierra! Lanzada el 5 sept 1977, entró al espacio interestelar el 25 ago 2012. Actualmente a 24,3 mil millones de km (162 UA) del Sol. Lleva el Disco de Oro con sonidos e imágenes de la Tierra.',
+        funFactVoyager1: '¡Voyager 1 viaja a 17 km/s (61.200 km/h). Sus señales de radio tardan 22,5 horas en llegar a la Tierra!',
+        descVoyager2: '¡Voyager 2 es la única nave espacial que ha visitado los cuatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (ene 1986), Neptuno (ago 1989). Entró al espacio interestelar el 5 nov 2018. Ahora a 20,3 mil millones de km (135 UA) del Sol.',
+        funFactVoyager2: '¡Voyager 2 descubrió 16 lunas entre los planetas gigantes, la Gran Mancha Oscura de Neptuno y los géiseres de Tritón!',
+        descNewHorizons: '¡New Horizons nos dio las primeras imágenes cercanas de Plutón el 14 julio 2015! Reveló montañas de hielo de agua de hasta 3.500m de altura, vastos glaciares de nitrógeno y la famosa Tombaugh Regio en forma de corazón. Ahora a 59 UA del Sol, explorando el cinturón de Kuiper.',
+        funFactNewHorizons: '¡New Horizons viajó 9,5 años y 5 mil millones de km para llegar a Plutón a 58.536 km/h. Lleva 28g de las cenizas de Clyde Tombaugh!',
         descJuno: 'Juno entró en órbita de Júpiter el 4 julio 2016. Estudia composición, campo gravitacional, campo magnético y auroras polares. Descubrió que el núcleo de Júpiter es más grande y "difuso", ciclones polares masivos y distribución de amoníaco atmosférico. Misión extendida desde 2021.',
-        funFactJuno: 'áPrimera nave espacial solar a Júpiter! Tres paneles solares de 9m generan 500W. áLleva tres figuras LEGO: Galileo, Júpiter y Juno!',
+        funFactJuno: '¡Primera nave espacial solar a Júpiter! Tres paneles solares de 9m generan 500W. ¡Lleva tres figuras LEGO: Galileo, Júpiter y Juno!',
         descCassini: 'Cassini orbitó Saturno del 30 junio 2004 al 15 sept 2017 (13 años). Descubrió lagos de metano/etano líquido en Titán, géiseres de agua en Encélado, nuevos anillos, 7 lunas nuevas. La sonda Huygens aterrizó en Titán el 14 ene 2005. Terminó con entrada atmosférica "Gran Finale".',
-        funFactCassini: 'áDescubrió el océano subterráneo de Encélado! Los géiseres de agua expulsan 250kg/s al espacio. áCassini voló a través de los penachos, detectó H2, compuestos orgánicos: ingredientes para la vida!',
-        descPioneer10: 'áPioneer 10 fue la primera nave espacial en cruzar el cinturón de asteroides y visitar Júpiter (3 dic 1973)! Lanzada el 2 marzo 1972, llevaba la famosa placa Pioneer mostrando humanos y la ubicación de la Tierra. Último contacto: 23 ene 2003 a 12,2 mil millones de km.',
-        funFactPioneer10: 'áPioneer 10 lleva una placa dorada diseñada por Carl Sagan mostrando un hombre, una mujer y la ubicación de la Tierra: un mensaje para extraterrestres que puedan encontrarla!',
-        descPioneer11: 'áPioneer 11 fue la primera nave espacial en visitar Saturno (1 sept 1979)! También sobrevoló Júpiter (3 dic 1974). Lanzada el 5 abril 1973, descubrió el anillo F de Saturno y una nueva luna. También lleva la placa Pioneer. Último contacto: 24 nov 1995 a 6,5 mil millones de km.',
-        funFactPioneer11: 'áPioneer 11 usó la gravedad de Júpiter para una audaz asistencia gravitacional, ahorrando años de viaje a Saturno!',
+        funFactCassini: '¡Descubrió el océano subterráneo de Encélado! Los géiseres de agua expulsan 250kg/s al espacio. ¡Cassini voló a través de los penachos, detectó H2, compuestos orgánicos: ingredientes para la vida!',
+        descPioneer10: '¡Pioneer 10 fue la primera nave espacial en cruzar el cinturón de asteroides y visitar Júpiter (3 dic 1973)! Lanzada el 2 marzo 1972, llevaba la famosa placa Pioneer mostrando humanos y la ubicación de la Tierra. Último contacto: 23 ene 2003 a 12,2 mil millones de km.',
+        funFactPioneer10: '¡Pioneer 10 lleva una placa dorada diseñada por Carl Sagan mostrando un hombre, una mujer y la ubicación de la Tierra: un mensaje para extraterrestres que puedan encontrarla!',
+        descPioneer11: '¡Pioneer 11 fue la primera nave espacial en visitar Saturno (1 sept 1979)! También sobrevoló Júpiter (3 dic 1974). Lanzada el 5 abril 1973, descubrió el anillo F de Saturno y una nueva luna. También lleva la placa Pioneer. Último contacto: 24 nov 1995 a 6,5 mil millones de km.',
+        funFactPioneer11: '¡Pioneer 11 usó la gravedad de Júpiter para una audaz asistencia gravitacional, ahorrando años de viaje a Saturno!',
         
         // Descripciones de cometas
-        descHalley: 'áEl cometa Halley es el más famoso! Regresa a las cercanías de la Tierra cada 75-76 años. Visto por última vez en 1986, regresará en 2061. áCuando lo ves, estás observando una bola de nieve cósmica de 4,6 mil millones de años!',
-        descHaleBopp: 'áHale-Bopp fue uno de los cometas más brillantes del siglo XX, visible a simple vista durante 18 meses en 1996-1997! Su núcleo es excepcionalmente grande con 40 km de diámetro.',
-        descNeowise: 'áEl cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.',
+        descHalley: '¡El cometa Halley es el más famoso! Regresa a las cercanías de la Tierra cada 75-76 años. Visto por última vez en 1986, regresará en 2061. ¡Cuando lo ves, estás observando una bola de nieve cósmica de 4,6 mil millones de años!',
+        descHaleBopp: '¡Hale-Bopp fue uno de los cometas más brillantes del siglo XX, visible a simple vista durante 18 meses en 1996-1997! Su núcleo es excepcionalmente grande con 40 km de diámetro.',
+        descNeowise: '¡El cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.',
 
         // Galaxias
-        descAndromeda: ' áLa galaxia de Andrómeda es nuestra gran vecina galáctica más cercana, a 2,5 millones de años luz! Contiene 1 billón de estrellas y está en curso de colisión con la Vía Láctea (no te preocupes, colisión en 4,5 mil millones de años).',
-        descWhirlpool: ' áLa galaxia del Remolino (M51) es famosa por sus hermosos brazos espirales! Está interactuando con una galaxia compañera más pequeña, creando impresionantes fuerzas de marea y nueva formación de estrellas.',
-        descSombrero: ' áLa galaxia del Sombrero parece un sombrero mexicano! Tiene un núcleo brillante, un bulbo central inusualmente grande y una banda de polvo prominente. áContiene 2.000 cúmulos globulares!',
+        descAndromeda: ' ¡La galaxia de Andrómeda es nuestra gran vecina galáctica más cercana, a 2,5 millones de años luz! Contiene 1 billón de estrellas y está en curso de colisión con la Vía L¡ctea (no te preocupes, colisión en 4,5 mil millones de años).',
+        descWhirlpool: ' ¡La galaxia del Remolino (M51) es famosa por sus hermosos brazos espirales! Está interactuando con una galaxia compañera más pequeña, creando impresionantes fuerzas de marea y nueva formación de estrellas.',
+        descSombrero: ' ¡La galaxia del Sombrero parece un sombrero mexicano! Tiene un núcleo brillante, un bulbo central inusualmente grande y una banda de polvo prominente. ¡Contiene 2.000 cúmulos globulares!',
 
         // Nebulosas
-        descOrionNebula: ' áLa nebulosa de Orión es una guardería estelar donde nacen nuevas estrellas! Está a 1.344 años luz y es visible a simple vista como una mancha borrosa en la espada de Orión. áContiene más de 3.000 estrellas!',
-        descCrabNebula: ' áLa nebulosa del Cangrejo es el remanente de una explosión de supernova observada por astrónomos chinos en 1054 d.C.! En su centro hay un pulsar que gira 30 veces por segundo!',
-        descRingNebula: ' áLa nebulosa del Anillo es una nebulosa planetaria — los restos luminosos de una estrella moribunda similar al Sol! La estrella en su centro ha soplado sus capas externas, creando este hermoso anillo.',
+        descOrionNebula: ' ¡La nebulosa de Orión es una guardería estelar donde nacen nuevas estrellas! Está a 1.344 años luz y es visible a simple vista como una mancha borrosa en la espada de Orión. ¡Contiene más de 3.000 estrellas!',
+        descCrabNebula: ' ¡La nebulosa del Cangrejo es el remanente de una explosión de supernova observada por astrónomos chinos en 1054 d.C.! En su centro hay un pulsar que gira 30 veces por segundo!',
+        descRingNebula: ' ¡La nebulosa del Anillo es una nebulosa planetaria — los restos luminosos de una estrella moribunda similar al Sol! La estrella en su centro ha soplado sus capas externas, creando este hermoso anillo.',
 
         // Constelaciones
-        descAries: ' áAries es el primer signo del zodiaco! Busca las estrellas brillantes Hamal y Sheratan. En la mitología griega, Aries representa el carnero dorado que salvó a Frixo y Hele.',
-        descTaurus: ' áTauro contiene la brillante estrella roja Aldebarán, el ojo del toro! También hogar del cúmulo de las Pléyades. En la mitología, Zeus se transformó en toro para conquistar a Europa.',
-        descGemini: ' áGéminis tiene los brillantes gemelos Cástor y Pólux! En la mitología, eran hermanos inseparables, los Dióscuros, conocidos por su vínculo y valentía.',
-        descCancer: ' áCáncer es débil pero contiene el hermoso Cúmulo de la Colmena (M44)! En la mitología, Cáncer era el cangrejo enviado por Hera para distraer a Heracles durante su batalla.',
-        descLeo: ' áLeo tiene la brillante estrella Régulo! El asterismo de la "Hoz" forma la cabeza del león. En la mitología, Leo representa al León de Nemea matado por Heracles.',
-        descVirgo: ' áVirgo es la segunda constelación más grande! La brillante estrella Espiga representa trigo en la mano de la doncella. áHogar de miles de galaxias en el Cúmulo de Virgo!',
-        descLibra: ' áLibra representa las balanzas de la justicia! Sus estrellas más brillantes son Zubenelgenubi y Zubeneschamali, que significan "garra del sur" y "garra del norte" en árabe.',
-        descScorpius: ' áEscorpio representa el escorpión que mató a Orión en la mitología griega! La brillante estrella roja Antares marca el corazón del escorpión. áBusca la cola curvada con el aguijón!',
-        descSagittarius: ' áSagitario apunta su flecha al corazón de Escorpio! El asterismo de la "Tetera" es fácil de detectar. áApunta hacia el centro de nuestra galaxia Vía Láctea!',
-        descCapricornus: ' áCapricornio es una de las constelaciones más antiguas! Representa una criatura con cabeza de cabra y cola de pez. Asociado con el dios Pan en la mitología griega.',
-        descAquarius: ' áAcuario representa al portador de agua vertiendo de su urna! Hogar de varios famosos objetos de cielo profundo incluyendo la Nebulosa Hélice. Una de las constelaciones nombradas más antiguas.',
-        descPisces: ' áPiscis muestra dos peces atados juntos! Representa a Afrodita y Eros que se transformaron en peces para escapar del monstruo Tifón. áContiene el punto equinoccial vernal!',
-        descOrionConst: ' áOrión es una de las constelaciones más reconocibles! Busca las tres estrellas en fila formando el Cinturón de Orión. La brillante estrella roja Betelgeuse marca su hombro y el azul Rigel su pie.',
-        descUrsaMajor: ' áLa Osa Mayor (Carro Mayor) es una de las constelaciones más conocidas! Las dos estrellas al final de la "taza" apuntan a Polaris, la Estrella Polar. áUsada para navegación durante miles de años!',
-        descUrsaMinor: ' áLa Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. áEsencial para la navegación celeste!',
-        descCrux: ' áLa Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
-        descCassiopeia: ' áCasiopea parece una W o M según la estación! En la mitología griega, Casiopea era una reina vanidosa. La constelación es circumpolar en latitudes norteñas.',
-        descCygnus: ' áCisne el Cisne vuela a lo largo de la Vía Láctea! También llamado la Cruz del Norte. En la mitología, Zeus se disfrazó de cisne. áHogar de muchos objetos de cielo profundo!',
-        descLyra: ' áLira representa la lira de Orfeo! Contiene Vega, la 5ª estrella más brillante en el cielo nocturno. áTambién hogar de la Nebulosa del Anillo, una famosa nebulosa planetaria!',
-        descAndromedaConst: ' áAndrómeda era la princesa encadenada a una roca y rescatada por Perseo! Esta constelación contiene la Galaxia de Andrómeda (M31), nuestra gran galaxia vecina más cercana!',
-        descPerseus: ' áPerseo el héroe que mató a Medusa! Hogar de la brillante estrella Mirfak y la famosa estrella variable Algol ("Estrella Demonio"). áContiene el Doble Cúmulo!',
+        descAries: ' ¡Aries es el primer signo del zodiaco! Busca las estrellas brillantes Hamal y Sheratan. En la mitología griega, Aries representa el carnero dorado que salvó a Frixo y Hele.',
+        descTaurus: ' ¡Tauro contiene la brillante estrella roja Aldebarán, el ojo del toro! También hogar del cúmulo de las Pléyades. En la mitología, Zeus se transformó en toro para conquistar a Europa.',
+        descGemini: ' ¡Géminis tiene los brillantes gemelos C¡stor y Pólux! En la mitología, eran hermanos inseparables, los Dióscuros, conocidos por su vínculo y valentía.',
+        descCancer: ' ¡C¡ncer es débil pero contiene el hermoso Cúmulo de la Colmena (M44)! En la mitología, C¡ncer era el cangrejo enviado por Hera para distraer a Heracles durante su batalla.',
+        descLeo: ' ¡Leo tiene la brillante estrella Régulo! El asterismo de la "Hoz" forma la cabeza del león. En la mitología, Leo representa al León de Nemea matado por Heracles.',
+        descVirgo: ' ¡Virgo es la segunda constelación más grande! La brillante estrella Espiga representa trigo en la mano de la doncella. ¡Hogar de miles de galaxias en el Cúmulo de Virgo!',
+        descLibra: ' ¡Libra representa las balanzas de la justicia! Sus estrellas más brillantes son Zubenelgenubi y Zubeneschamali, que significan "garra del sur" y "garra del norte" en árabe.',
+        descScorpius: ' ¡Escorpio representa el escorpión que mató a Orión en la mitología griega! La brillante estrella roja Antares marca el corazón del escorpión. ¡Busca la cola curvada con el aguijón!',
+        descSagittarius: ' ¡Sagitario apunta su flecha al corazón de Escorpio! El asterismo de la "Tetera" es fácil de detectar. ¡Apunta hacia el centro de nuestra galaxia Vía L¡ctea!',
+        descCapricornus: ' ¡Capricornio es una de las constelaciones más antiguas! Representa una criatura con cabeza de cabra y cola de pez. Asociado con el dios Pan en la mitología griega.',
+        descAquarius: ' ¡Acuario representa al portador de agua vertiendo de su urna! Hogar de varios famosos objetos de cielo profundo incluyendo la Nebulosa Hélice. Una de las constelaciones nombradas más antiguas.',
+        descPisces: ' ¡Piscis muestra dos peces atados juntos! Representa a Afrodita y Eros que se transformaron en peces para escapar del monstruo Tifón. ¡Contiene el punto equinoccial vernal!',
+        descOrionConst: ' ¡Orión es una de las constelaciones más reconocibles! Busca las tres estrellas en fila formando el Cinturón de Orión. La brillante estrella roja Betelgeuse marca su hombro y el azul Rigel su pie.',
+        descUrsaMajor: ' ¡La Osa Mayor (Carro Mayor) es una de las constelaciones más conocidas! Las dos estrellas al final de la "taza" apuntan a Polaris, la Estrella Polar. ¡Usada para navegación durante miles de años!',
+        descUrsaMinor: ' ¡La Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. ¡Esencial para la navegación celeste!',
+        descCrux: ' ¡La Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
+        descCassiopeia: ' ¡Casiopea parece una W o M según la estación! En la mitología griega, Casiopea era una reina vanidosa. La constelación es circumpolar en latitudes norteñas.',
+        descCygnus: ' ¡Cisne el Cisne vuela a lo largo de la Vía L¡ctea! También llamado la Cruz del Norte. En la mitología, Zeus se disfrazó de cisne. ¡Hogar de muchos objetos de cielo profundo!',
+        descLyra: ' ¡Lira representa la lira de Orfeo! Contiene Vega, la 5ª estrella más brillante en el cielo nocturno. ¡También hogar de la Nebulosa del Anillo, una famosa nebulosa planetaria!',
+        descAndromedaConst: ' ¡Andrómeda era la princesa encadenada a una roca y rescatada por Perseo! Esta constelación contiene la Galaxia de Andrómeda (M31), nuestra gran galaxia vecina más cercana!',
+        descPerseus: ' ¡Perseo el héroe que mató a Medusa! Hogar de la brillante estrella Mirfak y la famosa estrella variable Algol ("Estrella Demonio"). ¡Contiene el Doble Cúmulo!',
 
         // Estrellas cercanas
-        descSirius: ' áSirio es la estrella más brillante en el cielo nocturno de la Tierra! En realidad es un sistema binario de dos estrellas. Ubicada a 8,6 años luz en la constelación del Can Mayor.',
-        descBetelgeuse: ' áBetelgeuse es una supergigante roja que se acerca al final de su vida! Es tan grande que si se colocara en la posición de nuestro Sol, se extendería más allá de Marte. áAlgún día explotará como supernova!',
-        descRigel: ' áRigel es una supergigante azul, una de las estrellas más luminosas visibles a simple vista! Es 40.000 veces más luminosa que nuestro Sol y está a 860 años luz.',
-        descVega: ' áVega es una de las estrellas más brillantes en el cielo del norte! Fue la Estrella Polar hace 12.000 años y lo será nuevamente en 13.000 años debido a la precesión axial de la Tierra.',
-        descPolaris: ' áPolaris, la Estrella Polar, ha guiado a los viajeros por siglos! En realidad es un sistema triple de estrellas y actualmente está muy cerca del norte verdadero.',
-        descAlphaCentauriA: ' áAlfa Centauri A es muy similar a nuestro Sol! Forma parte de un sistema triple de estrellas que es nuestro vecino estelar más cercano a 4,37 años luz. Con su compañera Alfa Centauri B, se orbitan mutuamente cada 80 años.',
-        descProximaCentauri: ' áPróxima Centauri es una pequeña enana roja y la estrella más cercana a nuestro Sistema Solar a solo 4,24 años luz! Es mucho más fría y tenue que nuestro Sol, pero tiene al menos dos planetas, incluyendo el potencialmente habitable Próxima Centauri b.',
+        descSirius: ' ¡Sirio es la estrella más brillante en el cielo nocturno de la Tierra! En realidad es un sistema binario de dos estrellas. Ubicada a 8,6 años luz en la constelación del Can Mayor.',
+        descBetelgeuse: ' ¡Betelgeuse es una supergigante roja que se acerca al final de su vida! Es tan grande que si se colocara en la posición de nuestro Sol, se extendería más allá de Marte. ¡Algún día explotará como supernova!',
+        descRigel: ' ¡Rigel es una supergigante azul, una de las estrellas más luminosas visibles a simple vista! Es 40.000 veces más luminosa que nuestro Sol y está a 860 años luz.',
+        descVega: ' ¡Vega es una de las estrellas más brillantes en el cielo del norte! Fue la Estrella Polar hace 12.000 años y lo será nuevamente en 13.000 años debido a la precesión axial de la Tierra.',
+        descPolaris: ' ¡Polaris, la Estrella Polar, ha guiado a los viajeros por siglos! En realidad es un sistema triple de estrellas y actualmente está muy cerca del norte verdadero.',
+        descAlphaCentauriA: ' ¡Alfa Centauri A es muy similar a nuestro Sol! Forma parte de un sistema triple de estrellas que es nuestro vecino estelar más cercano a 4,37 años luz. Con su compañera Alfa Centauri B, se orbitan mutuamente cada 80 años.',
+        descProximaCentauri: ' ¡Próxima Centauri es una pequeña enana roja y la estrella más cercana a nuestro Sistema Solar a solo 4,24 años luz! Es mucho más fría y tenue que nuestro Sol, pero tiene al menos dos planetas, incluyendo el potencialmente habitable Próxima Centauri b.',
 
         // Estrellas con exoplanetas
-        descKepler452Star: ' áKepler-452 es una estrella similar al Sol que alberga el planeta "primo de la Tierra" Kepler-452b! Es 1.500 millones de años más vieja que nuestro Sol y 20% más brillante.',
-        descTrappist1Star: ' áTRAPPIST-1 es una enana roja ultrafría con 7 planetas del tamaño de la Tierra! Tres de ellos están en la zona habitable. Todo el sistema es tan compacto que los 7 planetas orbitan más cerca de su estrella que Mercurio de nuestro Sol.',
-        descKepler186Star: ' áKepler-186 es una enana roja con 5 planetas conocidos! Kepler-186f fue el primer planeta del tamaño de la Tierra descubierto en la zona habitable de otra estrella.',
+        descKepler452Star: ' ¡Kepler-452 es una estrella similar al Sol que alberga el planeta "primo de la Tierra" Kepler-452b! Es 1.500 millones de años más vieja que nuestro Sol y 20% más brillante.',
+        descTrappist1Star: ' ¡TRAPPIST-1 es una enana roja ultrafría con 7 planetas del tamaño de la Tierra! Tres de ellos están en la zona habitable. Todo el sistema es tan compacto que los 7 planetas orbitan más cerca de su estrella que Mercurio de nuestro Sol.',
+        descKepler186Star: ' ¡Kepler-186 es una enana roja con 5 planetas conocidos! Kepler-186f fue el primer planeta del tamaño de la Tierra descubierto en la zona habitable de otra estrella.',
 
         // Exoplanetas
-        descProximaCentauriB: ' áPróxima Centauri b es el exoplaneta conocido más cercano a la Tierra! Orbita en la zona habitable de Próxima Centauri, lo que significa que podría existir agua líquida en su superficie.',
-        descKepler452b: ' áKepler-452b se llama "el primo de la Tierra"! Es aproximadamente un 60% más grande que la Tierra y orbita una estrella similar al Sol en la zona habitable. Su año dura 385 días.',
-        descTrappist1e: ' áTRAPPIST-1e es parte de un sistema increíble con 7 planetas del tamaño de la Tierra! Orbita una fría enana roja y está en la zona habitable.',
-        descKepler186f: ' áKepler-186f fue el primer planeta del tamaño de la Tierra descubierto en la zona habitable de otra estrella! Recibe aproximadamente un tercio de la luz que la Tierra obtiene del Sol.',
+        descProximaCentauriB: ' ¡Próxima Centauri b es el exoplaneta conocido más cercano a la Tierra! Orbita en la zona habitable de Próxima Centauri, lo que significa que podría existir agua líquida en su superficie.',
+        descKepler452b: ' ¡Kepler-452b se llama "el primo de la Tierra"! Es aproximadamente un 60% más grande que la Tierra y orbita una estrella similar al Sol en la zona habitable. Su año dura 385 días.',
+        descTrappist1e: ' ¡TRAPPIST-1e es parte de un sistema increíble con 7 planetas del tamaño de la Tierra! Orbita una fría enana roja y está en la zona habitable.',
+        descKepler186f: ' ¡Kepler-186f fue el primer planeta del tamaño de la Tierra descubierto en la zona habitable de otra estrella! Recibe aproximadamente un tercio de la luz que la Tierra obtiene del Sol.',
 
         // Planetas enanos
-        descCeres: ' áCeres es el objeto más grande del cinturón de asteroides y un planeta enano! La sonda Dawn de la NASA reveló misteriosas manchas brillantes en el cráter Occator — resultaron ser depósitos de sal de antiguas salmueras.',
-        descHaumea: ' áHaumea gira tan rápido (una vez cada 4 horas) que ha sido aplastada hasta tener forma de huevo! También tiene dos lunas y un sistema de anillos, lo que la hace muy inusual entre los planetas enanos.',
-        descMakemake: ' áMakemake es un mundo brillante y rojizo en el Cinturón de Kuiper descubierto cerca de la Pascua de 2005, nombrado por el dios creador del pueblo Rapa Nui de la Isla de Pascua.',
-        descEris: ' áEris es ligeramente más pequeña que Plutón pero más masiva! Su descubrimiento en 2005 llevó directamente a la reclasificación de Plutón como planeta enano. Tiene una luna, Disnomia.',
-        descSedna: ' áSedna tiene una de las órbitas elípticas más extremas del sistema solar, que va de 76 a 937 UA. Tarda unos 11.400 años en completar una órbita y es tan roja que rivaliza con Marte en color!',
+        descCeres: ' ¡Ceres es el objeto más grande del cinturón de asteroides y un planeta enano! La sonda Dawn de la NASA reveló misteriosas manchas brillantes en el cráter Occator — resultaron ser depósitos de sal de antiguas salmueras.',
+        descHaumea: ' ¡Haumea gira tan rápido (una vez cada 4 horas) que ha sido aplastada hasta tener forma de huevo! También tiene dos lunas y un sistema de anillos, lo que la hace muy inusual entre los planetas enanos.',
+        descMakemake: ' ¡Makemake es un mundo brillante y rojizo en el Cinturón de Kuiper descubierto cerca de la Pascua de 2005, nombrado por el dios creador del pueblo Rapa Nui de la Isla de Pascua.',
+        descEris: ' ¡Eris es ligeramente más pequeña que Plutón pero más masiva! Su descubrimiento en 2005 llevó directamente a la reclasificación de Plutón como planeta enano. Tiene una luna, Disnomia.',
+        descSedna: ' ¡Sedna tiene una de las órbitas elípticas más extremas del sistema solar, que va de 76 a 937 UA. Tarda unos 11.400 años en completar una órbita y es tan roja que rivaliza con Marte en color!',
 
         // Cometas adicionales
-        descHyakutake: ' áEl cometa Hyakutake pasó extremadamente cerca de la Tierra en 1996, convirtiéndose en uno de los cometas más brillantes en décadas con una cola que se extendía por la mitad del cielo!',
-        descLovejoy: ' áEl cometa Lovejoy (C/2011 W3) sobrevivió un paso cercano a través de la corona del Sol! Es parte de los rasadores solares de Kreutz — fragmentos de un enorme cometa que se fragmentó hace siglos.',
-        descEncke: ' áEl cometa Encke tiene el período orbital más corto de todos los cometas conocidos — solo 3,3 años! Lleva el nombre de Johann Franz Encke, quien calculó su órbita en 1819.',
-        descSwiftTuttle: ' áEl cometa Swift-Tuttle es el cuerpo padre del espectacular lluvia de meteoritos de las Perseidas! Con un núcleo de 26 km, es el objeto más grande que pasa regularmente cerca de la Tierra.',
+        descHyakutake: ' ¡El cometa Hyakutake pasó extremadamente cerca de la Tierra en 1996, convirtiéndose en uno de los cometas más brillantes en décadas con una cola que se extendía por la mitad del cielo!',
+        descLovejoy: ' ¡El cometa Lovejoy (C/2011 W3) sobrevivió un paso cercano a través de la corona del Sol! Es parte de los rasadores solares de Kreutz — fragmentos de un enorme cometa que se fragmentó hace siglos.',
+        descEncke: ' ¡El cometa Encke tiene el período orbital más corto de todos los cometas conocidos — solo 3,3 años! Lleva el nombre de Johann Franz Encke, quien calculó su órbita en 1819.',
+        descSwiftTuttle: ' ¡El cometa Swift-Tuttle es el cuerpo padre del espectacular lluvia de meteoritos de las Perseidas! Con un núcleo de 26 km, es el objeto más grande que pasa regularmente cerca de la Tierra.',
 
         // Cinturón de asteroides / Cinturón de Kuiper / Nube de Oort
-        descAsteroidBelt: ' áEl cinturón de asteroides contiene millones de objetos rocosos entre Marte y Júpiter. áCeres, el objeto más grande aquí, es un planeta enano! La mayoría de los asteroides son material residual de la formación del sistema solar hace 4.600 millones de años.',
-        descKuiperBelt: ' áEl Cinturón de Kuiper es una región más allá de Neptuno llena de cuerpos helados y planetas enanos incluyendo Plutón! Es como una enorme dona de objetos congelados sobrantes de la formación del sistema solar. áLos cometas de período corto vienen de aquí!',
-        descOortCloud: ' áLa Nube de Oort es una vasta envoltura esférica de objetos helados que rodea todo nuestro sistema solar! Se extiende desde aproximadamente 50.000 hasta 200.000 UA del Sol. áLos cometas de período largo como Hale-Bopp se originan en este reino distante.'
+        descAsteroidBelt: ' ¡El cinturón de asteroides contiene millones de objetos rocosos entre Marte y Júpiter. ¡Ceres, el objeto más grande aquí, es un planeta enano! La mayoría de los asteroides son material residual de la formación del sistema solar hace 4.600 millones de años.',
+        descKuiperBelt: ' ¡El Cinturón de Kuiper es una región más allá de Neptuno llena de cuerpos helados y planetas enanos incluyendo Plutón! Es como una enorme dona de objetos congelados sobrantes de la formación del sistema solar. ¡Los cometas de período corto vienen de aquí!',
+        descOortCloud: ' ¡La Nube de Oort es una vasta envoltura esférica de objetos helados que rodea todo nuestro sistema solar! Se extiende desde aproximadamente 50.000 hasta 200.000 UA del Sol. ¡Los cometas de período largo como Hale-Bopp se originan en este reino distante.'
     },
     
     pt: {
@@ -1718,6 +1834,11 @@ const translations = {
         navDistantStars: "Estrelas Distantes",
         kuiperBelt: "Cinturão de Kuiper",
         asteroidBelt: "Cinturão de Asteroides",
+        plutoSystem: "Sistema de Plutão",
+        comets: "Cometas",
+        dwarfPlanets: "Planetas Anões e Candidatos",
+        constellationsZodiac: "Constelações (Zodíaco)",
+        constellationsOther: "Constelações (Outras)",
         
         // Botões de controle
         toggleOrbits: "×“rbitas",
@@ -1731,6 +1852,26 @@ const translations = {
         resetView: "Redefinir",
         enterVR: "Entrar em RV",
         enterAR: "Entrar em RA",
+        randomDiscovery: "Descobrir",
+        
+        // Integração
+        welcomeToSpace: "🚀 Bem-vindo ao Viagem Espacial!",
+        skip: "Pular",
+        next: "Próximo",
+        startExploring: "Começar a explorar! 🌟",
+        onboardingNav: "Navegar pelo Universo",
+        onboardingNavDesc: "Arrastar para girar • Rolar para dar zoom • Clicar com botão direito para deslocar",
+        onboardingExplore: "Explorar Objetos",
+        onboardingExploreDesc: "Clique em qualquer planeta, lua ou estrela para aprender fatos fascinantes!",
+        onboardingQuickNav: "Navegação Rápida",
+        onboardingQuickNavDesc: "Use o menu suspenso para ir diretamente a qualquer objeto",
+        
+        // Gestos móveis
+        pinchToZoom: "Beliscar para dar zoom",
+        dragToRotate: "Arrastar para girar",
+        
+        // Carregamento
+        preparingJourney: "Preparando sua viagem espacial...",
         
         // Controle de velocidade
         speedLabel: "Velocidade:",
@@ -1786,7 +1927,11 @@ const translations = {
         installTitle: "Instalar Viagem Espacial",
         installMessage: "Instale Viagem Espacial como aplicativo para uma melhor experiência!",
         installButton: "Instalar",
+        install: "Instalar",
         installLater: "Talvez Mais Tarde",
+        notNow: "Agora Não",
+        offlineMode: "Você está offline",
+        update: "Atualizar",
         errorLoading: "Erro ao carregar Viagem Espacial",
         errorMessage: "Por favor, atualize a página para tentar novamente.",
         

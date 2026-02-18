@@ -46,8 +46,8 @@ class EarthZoomManager {
 
         
         this.isInitialized = true;
+    }
 
-    
     /**
      * Create the map container element with transition styling
      */
@@ -135,6 +135,7 @@ class EarthZoomManager {
         // Update coordinates display on map move
         this.map.on('move', () => this.updateCoordsDisplay());
         this.map.on('zoomend', () => this.updateZoomDisplay());
+    }
 
     /**
      * Setup event listeners
