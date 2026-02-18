@@ -83,6 +83,9 @@ class App {
  this.uiManager.showLoading(t('initializing'));
  this.uiManager.updateLoadingProgress(0, t('settingUpScene'));
  
+ // Start cycling fun facts immediately (before any loading work begins)
+ this.setupSpaceFacts();
+ 
  // Setup global UI functions
  this.setupGlobalFunctions();
  this.uiManager.updateLoadingProgress(10, t('initializingControls'));
@@ -138,7 +141,6 @@ class App {
  this.setupRandomDiscovery();
  this.setupNavigationSearch();
  this.setupMobileGestureHints();
- this.setupSpaceFacts();
  this.setupSoundToggle();
  this.setupButtonSounds();
  
