@@ -1591,13 +1591,8 @@ export class SceneManager {
  }
  
  // Debug first frame
- if (frameCount === 0) {
- console.log('🎬 First frame rendered!');
- console.log('📊 Scene children:', this.scene.children.length);
- console.log('📷 Camera position:', this.camera.position);
- console.log('🎯 Camera looking at:', this.controls.target);
- console.log('🖼️ Canvas dimensions:', this.renderer.domElement.width, 'x', this.renderer.domElement.height);
- console.log('🎨 Background:', this.scene.background);
+ if (frameCount === 0 && DEBUG.enabled) {
+ console.log(`[Scene] First frame: ${this.scene.children.length} children, canvas ${this.renderer.domElement.width}×${this.renderer.domElement.height}`);
  }
  frameCount++;
  } catch (error) {

@@ -43,18 +43,10 @@ class EarthZoomManager {
             console.warn('[EarthZoomManager] No Earth object provided');
             return;
         }
-        
-        console.log('[EarthZoomManager] Earth object:', this.earthObject);
-        console.log('[EarthZoomManager] Earth position:', this.earthObject.position);
-        
-        this.createMapContainer();
-        this.initLeafletMap();
-        this.setupEventListeners();
+
         
         this.isInitialized = true;
-        console.log('[EarthZoomManager] Initialized with seamless zoom transitions');
-        console.log('[EarthZoomManager] Thresholds:', this.THRESHOLDS);
-    }
+
     
     /**
      * Create the map container element with transition styling
@@ -143,10 +135,7 @@ class EarthZoomManager {
         // Update coordinates display on map move
         this.map.on('move', () => this.updateCoordsDisplay());
         this.map.on('zoomend', () => this.updateZoomDisplay());
-        
-        console.log('[EarthZoomManager] Leaflet map initialized');
-    }
-    
+
     /**
      * Setup event listeners
      */
