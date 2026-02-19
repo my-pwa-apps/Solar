@@ -863,48 +863,115 @@ export class SolarSystemModule {
  // ===== HYPERREALISTIC TEXTURE GENERATORS =====
  
  createSunTexture(size) {
- // Use reusable utilities
  const { canvas, ctx } = TextureGeneratorUtils.createCanvas(size);
- 
- // Gradient from core to edge
- const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
- gradient.addColorStop(0, '#FFFF00');
- gradient.addColorStop(0.5, '#FFCC00');
- gradient.addColorStop(1, '#FF8800');
- ctx.fillStyle = gradient;
+ const cx = size / 2, cy = size / 2, R = size / 2;
+
+ // ── 1. Photosphere base gradient (white-hot core → dark red limb) ──────
+ const photosphere = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+ photosphere.addColorStop(0.00, '#FFF9EB');   // white-hot core
+ photosphere.addColorStop(0.15, '#FFF4C7');   // pale yellow
+ photosphere.addColorStop(0.38, '#FFE162');   // bright golden
+ photosphere.addColorStop(0.60, '#FFAE14');   // warm orange
+ photosphere.addColorStop(0.78, '#F27004');   // deep orange
+ photosphere.addColorStop(0.88, '#C73D02');   // orange-red
+ photosphere.addColorStop(0.95, '#8C1900');   // dark red
+ photosphere.addColorStop(1.00, '#3F0600');   // near-black edge
+ ctx.fillStyle = photosphere;
  ctx.fillRect(0, 0, size, size);
- 
- // Add granulation (convection cells)
- for (let i = 0; i < 5000; i++) {
+
+ // ── 2. Limb darkening overlay (multiply-like dark ring) ─────────────────
+ const limbDark = ctx.createRadialGradient(cx, cy, R * 0.55, cx, cy, R * 1.02);
+ limbDark.addColorStop(0,    'rgba(0,0,0,0)');
+ limbDark.addColorStop(0.55, 'rgba(0,0,0,0)');
+ limbDark.addColorStop(0.82, 'rgba(0,0,0,0.18)');
+ limbDark.addColorStop(0.95, 'rgba(0,0,0,0.52)');
+ limbDark.addColorStop(1.00, 'rgba(0,0,0,0.80)');
+ ctx.fillStyle = limbDark;
+ ctx.fillRect(0, 0, size, size);
+
+ // ── 3. Supergranulation (large convection cells, ~2-4 % of image) ──────
+ const cellCountLg = Math.floor(size / 512 * 260);
+ for (let i = 0; i < cellCountLg; i++) {
  const x = Math.random() * size;
  const y = Math.random() * size;
- const radius = 2 + Math.random() * 4;
- const brightness = 0.85 + Math.random() * 0.15;
- 
- ctx.fillStyle = `rgba(255, ${Math.floor(200 * brightness)}, 0, 0.3)`;
+ const radius = size / 512 * (8 + Math.random() * 14);
+ const bright = 0.55 + Math.random() * 0.45;  // centre brighter
+ const gCell = ctx.createRadialGradient(x, y, 0, x, y, radius);
+ gCell.addColorStop(0,   `rgba(255,230,150,${(bright * 0.14).toFixed(3)})`);
+ gCell.addColorStop(0.6, `rgba(220,120, 30,${(bright * 0.07).toFixed(3)})`);
+ gCell.addColorStop(1,   'rgba(0,0,0,0)');
+ ctx.fillStyle = gCell;
  ctx.beginPath();
  ctx.arc(x, y, radius, 0, Math.PI * 2);
  ctx.fill();
  }
- 
- // Add sunspots (cooler, darker regions)
- for (let i = 0; i < 30; i++) {
+
+ // ── 4. Fine granulation (small high-frequency texture) ──────────────────
+ const cellCountSm = Math.floor(size / 512 * 4500);
+ for (let i = 0; i < cellCountSm; i++) {
  const x = Math.random() * size;
  const y = Math.random() * size;
- const radius = 10 + Math.random() * 30;
- 
- // Sunspot umbra (dark center)
- const spotGradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
- spotGradient.addColorStop(0, 'rgba(30, 20, 0, 0.8)');
- spotGradient.addColorStop(0.6, 'rgba(100, 60, 0, 0.4)');
- spotGradient.addColorStop(1, 'rgba(255, 150, 0, 0)');
- 
- ctx.fillStyle = spotGradient;
+ const radius = size / 512 * (1.0 + Math.random() * 2.4);
+ const bright = Math.random();
+ // Mix bright granule cores and dark intergranular lanes
+ if (bright > 0.35) {
+ ctx.fillStyle = `rgba(255,220,100,${(0.06 + bright * 0.10).toFixed(3)})`;
+ } else {
+ ctx.fillStyle = `rgba(30,8,0,${(0.04 + (0.35 - bright) * 0.12).toFixed(3)})`;
+ }
  ctx.beginPath();
  ctx.arc(x, y, radius, 0, Math.PI * 2);
  ctx.fill();
  }
- 
+
+ // ── 5. Sunspots – umbra + penumbra, equatorial band ─────────────────────
+ const spotCount = 8 + Math.floor(Math.random() * 7);
+ for (let i = 0; i < spotCount; i++) {
+ const sx = cx + (Math.random() - 0.5) * size * 1.7;
+ const sy = cy + (Math.random() - 0.5) * size * 0.30;  // equatorial bias
+ const sr = size / 512 * (14 + Math.random() * 22);
+ // Skip if too close to limb
+ const nr = Math.sqrt(((sx - cx) / R) ** 2 + ((sy - cy) / R) ** 2);
+ if (nr > 0.83) continue;
+ // Penumbra
+ const penG = ctx.createRadialGradient(sx, sy, sr * 0.38, sx, sy, sr);
+ penG.addColorStop(0,    'rgba(20, 6, 0, 0.95)');
+ penG.addColorStop(0.42, 'rgba(40,12, 0, 0.75)');
+ penG.addColorStop(0.72, 'rgba(80,28, 0, 0.45)');
+ penG.addColorStop(1.00, 'rgba(0,  0, 0, 0)');
+ ctx.fillStyle = penG;
+ ctx.beginPath();
+ ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+ ctx.fill();
+ // Umbra
+ const umbG = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 0.40);
+ umbG.addColorStop(0,    'rgba(4,  1, 0, 0.97)');
+ umbG.addColorStop(0.65, 'rgba(15, 4, 0, 0.90)');
+ umbG.addColorStop(1.00, 'rgba(25, 8, 0, 0.00)');
+ ctx.fillStyle = umbG;
+ ctx.beginPath();
+ ctx.arc(sx, sy, sr * 0.42, 0, Math.PI * 2);
+ ctx.fill();
+ }
+
+ // ── 6. Solar faculae – bright patches near active regions ───────────────
+ for (let i = 0; i < 50; i++) {
+ const fx = cx + (Math.random() - 0.5) * size * 1.5;
+ const fy = cy + (Math.random() - 0.5) * size * 0.38;
+ const fr = size / 512 * (5 + Math.random() * 12);
+ const fi = 0.04 + Math.random() * 0.10;
+ const nr = Math.sqrt(((fx - cx) / R) ** 2 + ((fy - cy) / R) ** 2);
+ if (nr > 0.80) continue;
+ const facG = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+ facG.addColorStop(0,   `rgba(255,245,200,${fi.toFixed(3)})`);
+ facG.addColorStop(0.5, `rgba(255,220,120,${(fi * 0.5).toFixed(3)})`);
+ facG.addColorStop(1,   'rgba(0,0,0,0)');
+ ctx.fillStyle = facG;
+ ctx.beginPath();
+ ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+ ctx.fill();
+ }
+
  return TextureGeneratorUtils.finalizeTexture(canvas);
  }
  
