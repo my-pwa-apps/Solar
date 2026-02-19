@@ -371,13 +371,15 @@ export class SceneManager {
  this.dolly.add(this.camera);
  // Reset camera local position
  this.camera.position.set(0, 0, 0);
- // Position dolly for good initial view (updated for new educational scale)
- this.dolly.position.set(0, 100, 200);
+ // Position dolly at solar-system plane level (y=0) so the Sun/planets
+ // are directly ahead at eye level, not 27° below the user's gaze.
+ this.dolly.position.set(0, 0, 200);
+ this.dolly.rotation.set(0, 0, 0); // Ensure no stale rotation
  }
  
  // Set background based on session type
- if (session.mode === 'immersive-ar' || 
- session.environmentBlendMode === 'additive' || 
+ if (session.mode === 'immersive-ar' ||
+ session.environmentBlendMode === 'additive' ||
  session.environmentBlendMode === 'alpha-blend') {
  this.scene.background = null; // Transparent for AR
  } else {
@@ -1890,7 +1892,11 @@ export class SceneManager {
  let frameCount = 0;
  this.renderer.setAnimationLoop(() => {
  try {
+ // Skip OrbitControls while XR is presenting - the XR session owns the
+ // camera pose; running controls.update() would fight the headset tracking.
+ if (!this.renderer.xr.isPresenting) {
  this.controls.update();
+ }
  callback();
  this.renderer.render(this.scene, this.camera);
  if (this.labelRenderer) {
