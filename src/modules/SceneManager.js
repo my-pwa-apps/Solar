@@ -435,10 +435,12 @@ export class SceneManager {
  
  // Navigation state for scrollable object list
  this.vrNavState = {
- currentCategory: '', // '', 'planets', 'moons', 'dwarf', 'comets', 'spacecraft', 'stars', 'nebulae', 'galaxies', 'constellations'
+ currentPage: 'controls',   // 'controls' | 'navigate' | 'info'
+ currentCategory: 'solar',
  scrollOffset: 0,
- itemsPerPage: 8
+ itemsPerPage: 16
  };
+ this.vrLastObjectInfo = null;
 
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
@@ -479,6 +481,7 @@ export class SceneManager {
  getVRMenuState() {
  const app = window.app || {};
  const module = app.solarSystemModule;
+ const ns = this.vrNavState || {};
  return {
  timeSpeed: app.timeSpeed ?? 1,
  orbitsVisible: module?.orbitsVisible ?? true,
@@ -488,7 +491,12 @@ export class SceneManager {
  lasersVisible: this.lasersVisible,
  focusedObject: module?.focusedObject || null,
  statusMessage: this.vrStatusMessage,
- flashAction: this.vrFlashAction
+ flashAction: this.vrFlashAction,
+ currentPage: ns.currentPage || 'controls',
+ currentCategory: ns.currentCategory || 'solar',
+ scrollOffset: ns.scrollOffset || 0,
+ audioEnabled: window.audioManager?.enabled ?? true,
+ lastObjectInfo: this.vrLastObjectInfo || null
  };
  }
 
@@ -501,385 +509,421 @@ export class SceneManager {
  return [];
  }
  
- getAllNavigationTargets() {
- // Get all available navigation targets organized by category
- const app = window.app || {};
- const module = app.solarSystemModule;
- if (!module) return {};
- 
- const categories = {
- planets: [
- { id: 'sun', label: '☀️ Sun', object: module.sun },
- { id: 'mercury', label: '☿️ Mercury', object: module.planets?.mercury },
- { id: 'venus', label: '♀️ Venus', object: module.planets?.venus },
- { id: 'earth', label: '🌍 Earth', object: module.planets?.earth },
- { id: 'mars', label: '♂️ Mars', object: module.planets?.mars },
- { id: 'jupiter', label: '♃ Jupiter', object: module.planets?.jupiter },
- { id: 'saturn', label: '♄ Saturn', object: module.planets?.saturn },
- { id: 'uranus', label: '♅ Uranus', object: module.planets?.uranus },
- { id: 'neptune', label: '♆ Neptune', object: module.planets?.neptune }
- ],
- moons: [
- { id: 'moon', label: '🌙 Moon (Earth)', object: module.moons?.moon },
- { id: 'phobos', label: 'Phobos (Mars)', object: module.moons?.phobos },
- { id: 'deimos', label: 'Deimos (Mars)', object: module.moons?.deimos },
- { id: 'io', label: 'Io (Jupiter)', object: module.moons?.io },
- { id: 'europa', label: 'Europa (Jupiter)', object: module.moons?.europa },
- { id: 'ganymede', label: 'Ganymede (Jupiter)', object: module.moons?.ganymede },
- { id: 'callisto', label: 'Callisto (Jupiter)', object: module.moons?.callisto },
- { id: 'titan', label: 'Titan (Saturn)', object: module.moons?.titan },
- { id: 'enceladus', label: 'Enceladus (Saturn)', object: module.moons?.enceladus },
- { id: 'rhea', label: 'Rhea (Saturn)', object: module.moons?.rhea },
- { id: 'titania', label: 'Titania (Uranus)', object: module.moons?.titania },
- { id: 'miranda', label: 'Miranda (Uranus)', object: module.moons?.miranda },
- { id: 'triton', label: 'Triton (Neptune)', object: module.moons?.triton }
- ],
- dwarf: [
- { id: 'pluto', label: '🔭 Pluto', object: module.planets?.pluto },
- { id: 'charon', label: 'Charon', object: module.moons?.charon },
- { id: 'ceres', label: 'Ceres', object: module.planets?.ceres },
- { id: 'haumea', label: 'Haumea', object: module.planets?.haumea },
- { id: 'makemake', label: 'Makemake', object: module.planets?.makemake },
- { id: 'eris', label: 'Eris', object: module.planets?.eris }
- ],
- spacecraft: [
- { id: 'iss', label: '🛰️ ISS', object: module.satellites?.find(s => s.userData?.name === 'ISS') },
- { id: 'hubble', label: '🔭 Hubble', object: module.satellites?.find(s => s.userData?.name === 'Hubble') },
- { id: 'jwst', label: '🔭 JWST', object: module.satellites?.find(s => s.userData?.name === 'James Webb') }
- ],
- comets: [
- { id: 'halley', label: '☄️ Halley', object: module.comets?.find(c => c.userData?.name?.includes('Halley')) },
- { id: 'hale-bopp', label: '☄️ Hale-Bopp', object: module.comets?.find(c => c.userData?.name?.includes('Hale-Bopp')) }
- ],
- stars: [
- { id: 'alpha-centauri', label: '⭐ Alpha Centauri', object: module.distantStars?.find(s => s.userData?.name?.includes('Alpha Centauri')) },
- { id: 'proxima-centauri', label: '⭐ Proxima Centauri', object: module.distantStars?.find(s => s.userData?.name?.includes('Proxima')) }
- ],
- nebulae: [
- { id: 'orion-nebula', label: '🌫️ Orion Nebula', object: module.nebulae?.find(n => n.userData?.name?.includes('Orion')) },
- { id: 'crab-nebula', label: '🌫️ Crab Nebula', object: module.nebulae?.find(n => n.userData?.name?.includes('Crab')) },
- { id: 'ring-nebula', label: '🌫️ Ring Nebula', object: module.nebulae?.find(n => n.userData?.name?.includes('Ring')) }
- ],
- galaxies: [
- { id: 'andromeda-galaxy', label: '🌌 Andromeda', object: module.galaxies?.find(g => g.userData?.name?.includes('Andromeda')) },
- { id: 'whirlpool-galaxy', label: '🌌 Whirlpool', object: module.galaxies?.find(g => g.userData?.name?.includes('Whirlpool')) }
- ]
- };
- 
- // Filter out null/undefined objects
- Object.keys(categories).forEach(key => {
- categories[key] = categories[key].filter(item => item.object != null);
- });
- 
- return categories;
+ getVRNavCatalog() {
+ return [
+ { id: 'solar', label: '☀️ Solar', items: [
+ { id: 'sun', label: '☀️ Sun' },
+ { id: 'mercury', label: '☿ Mercury' },
+ { id: 'venus', label: '♀ Venus' },
+ { id: 'earth', label: '🌍 Earth' },
+ { id: 'mars', label: '♂ Mars' },
+ { id: 'jupiter', label: '♃ Jupiter' },
+ { id: 'saturn', label: '♄ Saturn' },
+ { id: 'uranus', label: '♅ Uranus' },
+ { id: 'neptune', label: '♆ Neptune' }
+ ]},
+ { id: 'moons', label: '🌙 Moons', items: [
+ { id: 'moon', label: '🌙 Moon' },
+ { id: 'phobos', label: 'Phobos' },
+ { id: 'deimos', label: 'Deimos' },
+ { id: 'io', label: 'Io' },
+ { id: 'europa', label: 'Europa' },
+ { id: 'ganymede', label: 'Ganymede' },
+ { id: 'callisto', label: 'Callisto' },
+ { id: 'titan', label: 'Titan' },
+ { id: 'enceladus', label: 'Enceladus' },
+ { id: 'rhea', label: 'Rhea' },
+ { id: 'titania', label: 'Titania' },
+ { id: 'miranda', label: 'Miranda' },
+ { id: 'triton', label: 'Triton' },
+ { id: 'charon', label: 'Charon' }
+ ]},
+ { id: 'dwarf', label: '🔭 Dwarf', items: [
+ { id: 'pluto', label: 'Pluto' },
+ { id: 'ceres', label: 'Ceres' },
+ { id: 'haumea', label: 'Haumea' },
+ { id: 'makemake', label: 'Makemake' },
+ { id: 'eris', label: 'Eris' },
+ { id: 'orcus', label: 'Orcus' },
+ { id: 'quaoar', label: 'Quaoar' },
+ { id: 'gonggong', label: 'Gonggong' },
+ { id: 'sedna', label: 'Sedna' }
+ ]},
+ { id: 'comets', label: '☄️ Comets', items: [
+ { id: 'halley', label: "Halley's" },
+ { id: 'hale-bopp', label: 'Hale-Bopp' },
+ { id: 'hyakutake', label: 'Hyakutake' },
+ { id: 'lovejoy', label: 'Lovejoy' },
+ { id: 'encke', label: 'Encke' },
+ { id: 'swift-tuttle', label: 'Swift-Tuttle' }
+ ]},
+ { id: 'craft', label: '🛰️ Craft', items: [
+ { id: 'iss', label: 'ISS' },
+ { id: 'hubble', label: 'Hubble' },
+ { id: 'jwst', label: 'JWST' },
+ { id: 'voyager-1', label: 'Voyager 1' },
+ { id: 'voyager-2', label: 'Voyager 2' },
+ { id: 'new-horizons', label: 'New Horizons' },
+ { id: 'juno', label: 'Juno' },
+ { id: 'cassini', label: 'Cassini' },
+ { id: 'pioneer-10', label: 'Pioneer 10' },
+ { id: 'pioneer-11', label: 'Pioneer 11' },
+ { id: 'gps-navstar', label: 'GPS Navstar' }
+ ]},
+ { id: 'deepsky', label: '🌌 Deep Sky', items: [
+ { id: 'orion-nebula', label: 'Orion Nebula' },
+ { id: 'crab-nebula', label: 'Crab Nebula' },
+ { id: 'ring-nebula', label: 'Ring Nebula' },
+ { id: 'andromeda-galaxy', label: 'Andromeda' },
+ { id: 'whirlpool-galaxy', label: 'Whirlpool' },
+ { id: 'sombrero-galaxy', label: 'Sombrero' },
+ { id: 'alpha-centauri', label: 'Alpha Cen.' },
+ { id: 'proxima-centauri', label: 'Proxima Cen.' }
+ ]},
+ { id: 'constellations', label: '✨ Stars', items: [
+ { id: 'constellation-orion', label: 'Orion' },
+ { id: 'constellation-big-dipper', label: 'Big Dipper' },
+ { id: 'constellation-little-dipper', label: 'Little Dipper' },
+ { id: 'constellation-southern-cross', label: 'Southern Cross' },
+ { id: 'constellation-cassiopeia', label: 'Cassiopeia' },
+ { id: 'constellation-cygnus', label: 'Cygnus' },
+ { id: 'constellation-lyra', label: 'Lyra' },
+ { id: 'constellation-andromeda', label: 'Andromeda' },
+ { id: 'constellation-perseus', label: 'Perseus' },
+ { id: 'constellation-aries', label: 'Aries' },
+ { id: 'constellation-taurus', label: 'Taurus' },
+ { id: 'constellation-gemini', label: 'Gemini' },
+ { id: 'constellation-cancer', label: 'Cancer' },
+ { id: 'constellation-leo', label: 'Leo' },
+ { id: 'constellation-virgo', label: 'Virgo' },
+ { id: 'constellation-libra', label: 'Libra' },
+ { id: 'constellation-scorpius', label: 'Scorpius' },
+ { id: 'constellation-sagittarius', label: 'Sagittarius' },
+ { id: 'constellation-capricornus', label: 'Capricornus' },
+ { id: 'constellation-aquarius', label: 'Aquarius' },
+ { id: 'constellation-pisces', label: 'Pisces' }
+ ]}
+ ];
  }
+
 
  drawVRMenu() {
  if (!this.vrUIContext || !this.vrUICanvas) return;
-
  const ctx = this.vrUIContext;
- const canvas = this.vrUICanvas;
- const app = window.app || {};
- const module = app.solarSystemModule;
+ const W = this.vrUICanvas.width;   // 1400
+ const H = this.vrUICanvas.height;  // 1000
  const state = this.getVRMenuState();
- 
- // Initialize navigation state if not exists
- if (!this.vrNavState) {
- this.vrNavState = {
- currentCategory: '',
- scrollOffset: 0,
- itemsPerPage: 8
- };
- }
 
- ctx.clearRect(0, 0, canvas.width, canvas.height);
+ // ── helpers ────────────────────────────────────────────────
+ const EDGE = 26, COL_GAP = 14;
+ const COLS = 4;
+ const COL_W = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS); // 326
+ const colX = c => EDGE + c * (COL_W + COL_GAP);
 
- // Fluent Design: Acrylic background with gradient
- const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
- bgGradient.addColorStop(0, 'rgba(30, 30, 40, 0.95)');
- bgGradient.addColorStop(0.5, 'rgba(20, 20, 35, 0.97)');
- bgGradient.addColorStop(1, 'rgba(15, 15, 30, 0.98)');
- ctx.fillStyle = bgGradient;
- ctx.fillRect(0, 0, canvas.width, canvas.height);
- 
- // Subtle vignette border for depth
- const vignette = ctx.createRadialGradient(
- canvas.width / 2, canvas.height / 2, canvas.height * 0.3,
- canvas.width / 2, canvas.height / 2, canvas.height * 0.8
- );
- vignette.addColorStop(0, 'rgba(0,0,0,0)');
- vignette.addColorStop(1, 'rgba(0,0,0,0.25)');
- ctx.fillStyle = vignette;
- ctx.fillRect(0, 0, canvas.width, canvas.height);
+ const BTN_H = 96;
+ const ROW_GAP = 12;
+ const rowY = r => 162 + r * (BTN_H + ROW_GAP);
 
- // Fluent Design: Title with glow effect
- ctx.shadowColor = '#0078D4';
- ctx.shadowBlur = 20;
- ctx.fillStyle = '#0078D4';
- ctx.font = 'bold 54px "Segoe UI", Arial, sans-serif';
- ctx.textAlign = 'center';
- ctx.textBaseline = 'middle';
- ctx.fillText(this.vrMenuTitle, canvas.width / 2, 60);
- ctx.shadowBlur = 0;
+ this.vrButtons = [];
 
- const columnWidth = 230;
- const columnSpacing = 20;
- const columns = 5;
- const buttonHeight = 70;
- const rowHeight = 90;
- const startX = (canvas.width - (columnWidth * columns + columnSpacing * (columns - 1))) / 2;
- const startY = 130;
-
- const buttons = [];
- this.vrQuickNavMap = new Map();
-
- const blendWithWhite = (hex, amount = 0.3) => {
- const num = parseInt(hex.replace('#', ''), 16);
- const r = (num >> 16) & 0xff;
- const g = (num >> 8) & 0xff;
- const b = num & 0xff;
- const mix = (channel) => Math.round(channel + (255 - channel) * amount);
- return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
- };
-
- const drawButton = ({ col, row, colSpan = 1, label, action, baseColor = '#2c3e50', active = false }) => {
- const width = columnWidth * colSpan + columnSpacing * (colSpan - 1);
- const x = startX + col * (columnWidth + columnSpacing);
- const y = startY + row * rowHeight;
-
- // Fluent Design: Soft shadow
- ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
- ctx.shadowBlur = 8;
- ctx.shadowOffsetX = 0;
- ctx.shadowOffsetY = 4;
-
- // Fluent Design: Acrylic button with gradient
- const buttonGradient = ctx.createLinearGradient(x, y, x, y + buttonHeight);
- if (active) {
- // Active state: Accent color gradient
- buttonGradient.addColorStop(0, baseColor);
- buttonGradient.addColorStop(1, blendWithWhite(baseColor, -0.1));
- } else {
- // Inactive state: Subtle gradient
- buttonGradient.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
- buttonGradient.addColorStop(1, 'rgba(255, 255, 255, 0.04)');
- }
- ctx.fillStyle = buttonGradient;
- ctx.fillRect(x, y, width, buttonHeight);
-
- // Fluent Design: Border with accent color
- ctx.shadowBlur = 0;
- ctx.strokeStyle = active ? baseColor : 'rgba(255, 255, 255, 0.15)';
- ctx.lineWidth = active ? 3 : 1.5;
- ctx.strokeRect(x, y, width, buttonHeight);
-
- // Fluent Design: Inner highlight
- if (!active) {
- ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
- ctx.lineWidth = 1;
- ctx.strokeRect(x + 1, y + 1, width - 2, buttonHeight - 2);
- }
-
- // Button text with proper contrast
- ctx.fillStyle = active ? '#ffffff' : 'rgba(255, 255, 255, 0.9)';
- ctx.font = active ? 'bold 28px "Segoe UI", Arial, sans-serif' : '600 28px "Segoe UI", Arial, sans-serif';
- ctx.textAlign = 'center';
- ctx.textBaseline = 'middle';
- ctx.fillText(label, x + width / 2, y + buttonHeight / 2);
-
- // Flash effect for interactions
- if (this.vrFlashAction === action) {
- ctx.fillStyle = 'rgba(0, 120, 212, 0.4)';
- ctx.fillRect(x, y, width, buttonHeight);
- }
-
- buttons.push({ x, y, w: width, h: buttonHeight, action, label });
- };
-
- const earthName = module?.planets?.earth?.userData?.name;
-
- drawButton({
- col: 0,
- row: 0,
- label: state.timeSpeed === 0 ? 'â¸ Paused' : 'â¸ Pause',
- action: 'speed0',
- baseColor: '#D13438',
- active: state.timeSpeed === 0
- });
-
- drawButton({
- col: 1,
- row: 0,
- label: state.timeSpeed > 0 ? ' Playing' : ' Play',
- action: 'speed1',
- baseColor: '#107C10',
- active: state.timeSpeed > 0
- });
-
- drawButton({
- col: 2,
- row: 0,
- label: ' Reset View',
- action: 'reset',
- baseColor: '#0078D4'
- });
-
- drawButton({
- col: 3,
- row: 0,
- label: state.lasersVisible ? ' Lasers ON' : ' Lasers OFF',
- action: 'togglelasers',
- baseColor: '#00B7C3',
- active: state.lasersVisible
- });
-
- drawButton({
- col: 0,
- row: 1,
- label: state.orbitsVisible ? ' Orbits ON' : ' Orbits OFF',
- action: 'orbits',
- baseColor: '#0078D4',
- active: state.orbitsVisible
- });
-
- drawButton({
- col: 1,
- row: 1,
- label: state.labelsVisible ? ' Labels ON' : ' Labels OFF',
- action: 'labels',
- baseColor: '#8764B8',
- active: state.labelsVisible
- });
-
- drawButton({
- col: 2,
- row: 1,
- label: state.constellationsVisible ? ' Constellations ON' : ' Constellations OFF',
- action: 'constellations',
- baseColor: '#FFB900',
- active: state.constellationsVisible
- });
-
- drawButton({
- col: 3,
- row: 1,
- label: state.realisticScale ? ' Realistic' : ' Educational',
- action: 'scale',
- baseColor: '#FF8C00',
- active: state.realisticScale
- });
-
- this.vrQuickNavMap.set('earth', module?.planets?.earth || null);
-
- drawButton({
- col: 0,
- row: 2,
- label: ' Focus Earth',
- action: 'focus:earth',
- baseColor: '#10893E',
- active: earthName ? state.focusedObject?.userData?.name === earthName : false
- });
-
- const quickTargets = this.getVRQuickNavTargets().slice(0, 7);
-
- quickTargets.forEach((target, index) => {
- const adjustedIndex = index + 1; // Account for Earth button at row 2, col 0
- const row = 2 + Math.floor(adjustedIndex / columns);
- const col = adjustedIndex % columns;
- const isActive = state.focusedObject === target.object;
- drawButton({
- col,
- row,
- label: target.label,
- action: `focus:${target.id}`,
- baseColor: '#005A9E',
- active: isActive
- });
- this.vrQuickNavMap.set(target.id, target.object);
- });
-
- const extraRow = 2 + Math.ceil((quickTargets.length + 1) / columns);
-
- drawButton({
- col: 0,
- row: extraRow,
- colSpan: 2,
- label: ' Close Menu',
- action: 'hide',
- baseColor: '#69797E'
- });
-
- drawButton({
- col: 2,
- row: extraRow,
- colSpan: 2,
- label: ' Exit VR',
- action: 'exitvr',
- baseColor: '#D13438'
- });
-
- const statusHeight = 90;
- const statusY = canvas.height - statusHeight;
- 
- // Fluent Design: Status bar with gradient
- const statusGradient = ctx.createLinearGradient(0, statusY, 0, canvas.height);
- statusGradient.addColorStop(0, 'rgba(0, 120, 212, 0.15)');
- statusGradient.addColorStop(1, 'rgba(0, 120, 212, 0.25)');
- ctx.fillStyle = statusGradient;
- ctx.fillRect(0, statusY, canvas.width, statusHeight);
-
- // Fluent Design: Top border
- ctx.strokeStyle = 'rgba(0, 120, 212, 0.5)';
- ctx.lineWidth = 2;
+ const btn = (label, action, x, y, w, h, opts = {}) => {
+ const isActive    = opts.active    ?? false;
+ const isFlashing  = state.flashAction === action;
+ let bg;
+ if (isFlashing)   bg = '#FFEE44';
+ else if (isActive) bg = '#2A6496';
+ else               bg = opts.bg || '#1a2a3a';
+ ctx.fillStyle = bg;
  ctx.beginPath();
- ctx.moveTo(0, statusY);
- ctx.lineTo(canvas.width, statusY);
+ ctx.roundRect(x, y, w, h, 10);
+ ctx.fill();
+ ctx.strokeStyle = isActive ? '#5BC0F5' : (opts.border || '#334455');
+ ctx.lineWidth = isActive ? 2 : 1;
+ ctx.beginPath();
+ ctx.roundRect(x, y, w, h, 10);
  ctx.stroke();
+ ctx.fillStyle = isFlashing ? '#222' : (isActive ? '#FFF' : (opts.text || '#CCE8FF'));
+ ctx.font = opts.font || 'bold 22px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ if (label) ctx.fillText(label, x + w / 2, y + h / 2, w - 12);
+ if (action) this.vrButtons.push({ x, y, w, h, label, action });
+ };
 
- // Status text with subtle glow
- ctx.shadowColor = '#0078D4';
- ctx.shadowBlur = 8;
- ctx.fillStyle = '#ffffff';
- ctx.font = '600 28px "Segoe UI", Arial, sans-serif';
- ctx.fillText(state.statusMessage, canvas.width / 2, statusY + statusHeight / 2);
- ctx.shadowBlur = 0;
+ // ── background ─────────────────────────────────────────────
+ const grad = ctx.createLinearGradient(0, 0, 0, H);
+ grad.addColorStop(0, '#0a0e1a');
+ grad.addColorStop(1, '#060a14');
+ ctx.fillStyle = grad;
+ ctx.fillRect(0, 0, W, H);
 
- this.vrButtons = buttons;
- if (this.vrUIPanel) {
+ // ── title bar ──────────────────────────────────────────────
+ ctx.fillStyle = '#121e30';
+ ctx.fillRect(0, 0, W, 74);
+ ctx.fillStyle = '#E8F4FF';
+ ctx.font = 'bold 34px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText('🌌 Space Voyage VR', W / 2, 37);
+ // divider
+ const dg = ctx.createLinearGradient(0, 74, W, 74);
+ dg.addColorStop(0, 'transparent'); dg.addColorStop(0.5, '#4A90D9'); dg.addColorStop(1, 'transparent');
+ ctx.fillStyle = dg; ctx.fillRect(0, 74, W, 3);
+
+ // ── page tabs ──────────────────────────────────────────────
+ const TABS = [
+ { id: 'controls',  label: '⚙️ Controls' },
+ { id: 'navigate',  label: '🧭 Navigate' },
+ { id: 'info',      label: 'ℹ️ Info' }
+ ];
+ const TW = Math.floor(W / TABS.length);
+ TABS.forEach((t, i) => {
+ const isActive = state.currentPage === t.id;
+ ctx.fillStyle = isActive ? '#1a3a5a' : '#0d1a2a';
+ ctx.fillRect(i * TW, 80, TW - 2, 72);
+ if (isActive) {
+ ctx.fillStyle = '#4A90D9';
+ ctx.fillRect(i * TW, 148, TW - 2, 4);
+ }
+ ctx.fillStyle = isActive ? '#FFF' : '#7799BB';
+ ctx.font = isActive ? 'bold 26px Arial' : '24px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(t.label, i * TW + TW / 2, 116);
+ this.vrButtons.push({ x: i * TW, y: 80, w: TW - 2, h: 68, label: t.label, action: `page:${t.id}` });
+ });
+ // tab bottom divider
+ ctx.fillStyle = '#223344'; ctx.fillRect(0, 152, W, 2);
+
+ // status bar
+ ctx.fillStyle = '#0f1822';
+ ctx.fillRect(0, H - 88, W, 88);
+ ctx.fillStyle = '#334455'; ctx.fillRect(0, H - 88, W, 1);
+ const msg = state.statusMessage || '✨ Ready';
+ ctx.fillStyle = '#88AACC';
+ ctx.font = '22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(msg, W / 2, H - 44);
+
+ const CONTENT_Y = 162;
+ const FOOT_Y    = H - 88 - 108;   // ~804  footer row
+
+ // close / exit buttons (shared by all pages)
+ const closeW = Math.floor((W - EDGE * 2 - COL_GAP) / 2);
+ btn('🚪 Close Menu', 'hide',   EDGE,            FOOT_Y, closeW, BTN_H);
+ btn('❌ Exit VR',          'exitvr', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H, { bg:'#3a1a1a', border:'#AA3333', text:'#FFAAAA' });
+
+ // ═══════════════════════════════════════════════════════════
+ // CONTROLS PAGE
+ // ═══════════════════════════════════════════════════════════
+ if (state.currentPage === 'controls') {
+ // Row 0 – speed presets
+ const spd  = state.timeSpeed;
+ const s0   = spd === 0;
+ const s1   = spd === 1 && !s0;
+ const s10  = spd === 10;
+ const s100 = spd >= 100;
+ btn('⏸ Pause',   'speed0',   colX(0), rowY(0), COL_W, BTN_H, { active: s0 });
+ btn('▶ 1×', 'speed1',   colX(1), rowY(0), COL_W, BTN_H, { active: s1 });
+ btn('⏩ 10×','speed10',  colX(2), rowY(0), COL_W, BTN_H, { active: s10 });
+ btn('⏩⏩ 100×','speed100', colX(3), rowY(0), COL_W, BTN_H, { active: s100 });
+
+ // Row 1 – tools
+ btn('🔄 Reset',    'reset',       colX(0), rowY(1), COL_W, BTN_H);
+ btn('🎲 Discover', 'discover',    colX(1), rowY(1), COL_W, BTN_H);
+ btn(state.audioEnabled ? '🔊 Sound' : '🔇 Sound', 'sound',
+ colX(2), rowY(1), COL_W, BTN_H, { active: state.audioEnabled });
+ btn('🎯 Lasers',   'togglelasers',colX(3), rowY(1), COL_W, BTN_H, { active: state.lasersVisible });
+
+ // Row 2 – view toggles
+ btn('🪐 Orbits',       'orbits',        colX(0), rowY(2), COL_W, BTN_H, { active: state.orbitsVisible });
+ btn('🏷️ Labels', 'labels',         colX(1), rowY(2), COL_W, BTN_H, { active: state.labelsVisible });
+ btn('⭐ Stars',              'constellations', colX(2), rowY(2), COL_W, BTN_H, { active: state.constellationsVisible });
+ btn('📏 Scale',        'scale',          colX(3), rowY(2), COL_W, BTN_H, { active: state.realisticScale });
+ }
+
+ // ═══════════════════════════════════════════════════════════
+ // NAVIGATE PAGE
+ // ═══════════════════════════════════════════════════════════
+ else if (state.currentPage === 'navigate') {
+ const catalog = this.getVRNavCatalog();
+ const CAT_TAB_H = 52;
+ const catW = Math.floor(W / catalog.length);
+
+ // category tabs
+ catalog.forEach((cat, i) => {
+ const isActive = state.currentCategory === cat.id;
+ ctx.fillStyle = isActive ? '#1a3a5a' : '#0d1522';
+ ctx.fillRect(i * catW, CONTENT_Y, catW - 1, CAT_TAB_H);
+ if (isActive) { ctx.fillStyle = '#2A6496'; ctx.fillRect(i * catW, CONTENT_Y + CAT_TAB_H - 4, catW - 1, 4); }
+ ctx.fillStyle = isActive ? '#FFF' : '#6688AA';
+ ctx.font = isActive ? 'bold 19px Arial' : '17px Arial';
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(cat.label, i * catW + catW / 2, CONTENT_Y + CAT_TAB_H / 2);
+ this.vrButtons.push({ x: i * catW, y: CONTENT_Y, w: catW - 1, h: CAT_TAB_H, label: cat.label, action: `cat:${cat.id}` });
+ });
+
+ // item grid
+ const curCat  = catalog.find(c => c.id === state.currentCategory) || catalog[0];
+ const items   = curCat.items;
+ const PER     = 16;
+ const offset  = state.scrollOffset || 0;
+ const page    = items.slice(offset, offset + PER);
+ const ITEM_H  = 74;
+ const ITEM_GAP= 8;
+ const GRID_Y  = CONTENT_Y + CAT_TAB_H + 8;
+ const ITEM_W  = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS);
+
+ page.forEach((item, idx) => {
+ const col   = idx % COLS;
+ const row   = Math.floor(idx / COLS);
+ const ix    = EDGE + col * (ITEM_W + COL_GAP);
+ const iy    = GRID_Y + row * (ITEM_H + ITEM_GAP);
+ btn(item.label, `navigate-to:${item.id}`, ix, iy, ITEM_W, ITEM_H, { font: '20px Arial' });
+ });
+
+ // pagination
+ const totalPages = Math.ceil(items.length / PER);
+ const curPage    = Math.floor(offset / PER) + 1;
+ const PAG_Y      = GRID_Y + 4 * (ITEM_H + ITEM_GAP) + 8;
+ const prevDisabled = offset <= 0;
+ const nextDisabled = offset + PER >= items.length;
+ const pagW = Math.floor((W - EDGE * 2 - COL_GAP * 2) / 3);
+
+ if (!prevDisabled) btn('◄ Prev', 'scroll:prev', EDGE, PAG_Y, pagW, BTN_H);
+ ctx.fillStyle = '#88AACC'; ctx.font = '22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(`${curPage} / ${totalPages}`, EDGE + pagW + COL_GAP + pagW / 2, PAG_Y + BTN_H / 2);
+ if (!nextDisabled) btn('Next ►', 'scroll:next', EDGE + (pagW + COL_GAP) * 2, PAG_Y, pagW, BTN_H);
+ }
+
+ // ═══════════════════════════════════════════════════════════
+ // INFO PAGE
+ // ═══════════════════════════════════════════════════════════
+ else if (state.currentPage === 'info') {
+ const info = state.lastObjectInfo;
+ const INFO_X = EDGE, INFO_W = W - EDGE * 2;
+ if (info) {
+ const NAME_Y = CONTENT_Y + 44;
+ ctx.fillStyle = '#E8F4FF';
+ ctx.font = 'bold 40px Arial';
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(info.name || 'Unknown Object', W / 2, NAME_Y);
+
+ ctx.fillStyle = '#334455'; ctx.fillRect(EDGE, NAME_Y + 30, INFO_W, 1);
+
+ const props = [
+ ['Type', info.type || 'Celestial Object'],
+ ['Distance', info.distance != null ? `${info.distance.toFixed ? info.distance.toFixed(1) : info.distance} AU` : 'N/A'],
+ ['Size', info.size != null ? `${info.size.toFixed ? info.size.toFixed(0) : info.size} km` : 'N/A']
+ ];
+ let propY = NAME_Y + 46;
+ props.forEach(([k, v]) => {
+ ctx.fillStyle = '#5596CC'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left';
+ ctx.fillText(k + ':', INFO_X, propY);
+ ctx.fillStyle = '#CCE8FF'; ctx.font = '22px Arial';
+ ctx.fillText(v, INFO_X + 160, propY);
+ propY += 38;
+ });
+
+ // description box
+ const DESC_Y = NAME_Y + 46 + props.length * 38 + 14;
+ const DESC_H = FOOT_Y - DESC_Y - 16;
+ ctx.fillStyle = '#0d1d2d';
+ ctx.beginPath(); ctx.roundRect(INFO_X, DESC_Y, INFO_W, DESC_H, 8); ctx.fill();
+ ctx.strokeStyle = '#223344'; ctx.lineWidth = 1;
+ ctx.beginPath(); ctx.roundRect(INFO_X, DESC_Y, INFO_W, DESC_H, 8); ctx.stroke();
+
+ const desc = info.description || 'No description available.';
+ ctx.fillStyle = '#A0C8E8';
+ ctx.font = '21px Arial';
+ ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+ const words = desc.split(' ');
+ let line = '', lineY = DESC_Y + 14;
+ const maxW = INFO_W - 24;
+ words.forEach(word => {
+ const test = line ? line + ' ' + word : word;
+ if (ctx.measureText(test).width > maxW && line) {
+ if (lineY + 26 < DESC_Y + DESC_H - 10) ctx.fillText(line, INFO_X + 12, lineY);
+ line = word; lineY += 28;
+ } else { line = test; }
+ });
+ if (line && lineY + 26 < DESC_Y + DESC_H - 10) ctx.fillText(line, INFO_X + 12, lineY);
+ } else {
+ ctx.fillStyle = '#668899';
+ ctx.font = '28px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText('Point at an object and select it', W / 2, CONTENT_Y + 200);
+ ctx.fillText('to see its information here.', W / 2, CONTENT_Y + 240);
+ }
+
+ // override footer buttons for info page
+ this.vrButtons = this.vrButtons.filter(b => b.action !== 'hide' && b.action !== 'exitvr');
+ btn('🧭 Navigate', 'page:navigate', EDGE,            FOOT_Y, closeW, BTN_H, { bg:'#1a3a1a', border:'#336633', text:'#AAFFAA' });
+ btn('⚙️ Controls',  'page:controls', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H);
+ }
+
+ // ── flush texture ──────────────────────────────────────────
+ if (this.vrUIPanel?.material?.map) {
  this.vrUIPanel.material.map.needsUpdate = true;
  }
  }
+
 
  focusVRTarget(targetId) {
  const app = window.app || this;
  const module = app.solarSystemModule;
  if (!module) return false;
 
- let target = this.vrQuickNavMap.get(targetId);
+ let target = this.vrQuickNavMap?.get(targetId);
  if (!target && typeof module.getQuickNavTargets === 'function') {
  const fallback = module.getQuickNavTargets().find(item => item.id === targetId);
  target = fallback?.object;
  }
 
  if (!target) {
- this.updateVRStatus(' Target not available');
+ this.updateVRStatus('⚠️ Target not available: ' + targetId);
  return false;
  }
 
  module.focusOnObject(target, this.camera, this.controls);
 
- if (typeof module.getObjectInfo === 'function') {
- const info = module.getObjectInfo(target);
+ const info = typeof module.getObjectInfo === 'function' ? module.getObjectInfo(target) : null;
+ if (info) {
+ this.vrLastObjectInfo = info;
  app.uiManager?.updateInfoPanel(info);
+ if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
 
  app.uiManager?.setQuickNavValue?.(targetId);
-
  const name = target.userData?.name || 'Object';
- this.updateVRStatus(` Selected: ${name}`);
+ this.updateVRStatus('✔ Selected: ' + name);
  this.requestVRMenuRefresh();
  return true;
  }
+
+ navigateVRTarget(value) {
+ const app = window.app || this;
+ if (!app || typeof app.findObjectByNavigationValue !== 'function') {
+ // fallback: try focusVRTarget
+ this.focusVRTarget(value);
+ return;
+ }
+ const target = app.findObjectByNavigationValue(value);
+ if (!target) {
+ this.updateVRStatus('⚠️ Not found: ' + value);
+ return;
+ }
+ const module = app.solarSystemModule;
+ if (module?.focusOnObject) module.focusOnObject(target, this.camera, this.controls);
+ const info = typeof module?.getObjectInfo === 'function' ? module.getObjectInfo(target) : null;
+ if (info) {
+ this.vrLastObjectInfo = info;
+ app.uiManager?.updateInfoPanel(info);
+ }
+ if (this.vrNavState) this.vrNavState.currentPage = 'info';
+ const name = target.userData?.name || value;
+ this.updateVRStatus('✔ → ' + name);
+ this.requestVRMenuRefresh();
+ }
+
 
  onSelectStart(controller, index) {
  // Handle controller trigger press
@@ -1066,154 +1110,168 @@ export class SceneManager {
  }
  
  handleVRAction(action) {
- if (DEBUG.VR) console.log(`[VR] Executing action: "${action}"`);
+ if (DEBUG.VR) console.log('[VR] Action: "' + action + '"');
 
  const app = window.app || this;
- if (!app) {
- console.error(' VR Action failed: app not found');
- return;
- }
-
- if (!action) {
- this.updateVRStatus(' No action provided');
- return;
- }
+ if (!app || !action) return;
 
  const scheduleRefresh = (delay = 0) => {
- if (delay > 0) {
- setTimeout(() => this.requestVRMenuRefresh(), delay);
- } else {
- this.requestVRMenuRefresh();
- }
+ if (delay > 0) setTimeout(() => this.requestVRMenuRefresh(), delay);
+ else this.requestVRMenuRefresh();
  };
 
+ // ── page switching ────────────────────────────────────────
+ if (action.startsWith('page:')) {
+ const page = action.split(':')[1];
+ if (this.vrNavState) this.vrNavState.currentPage = page;
+ scheduleRefresh(); return;
+ }
+
+ // ── category switch ───────────────────────────────────────
+ if (action.startsWith('cat:')) {
+ const cat = action.split(':')[1];
+ if (this.vrNavState) { this.vrNavState.currentCategory = cat; this.vrNavState.scrollOffset = 0; }
+ scheduleRefresh(); return;
+ }
+
+ // ── direct navigation ─────────────────────────────────────
+ if (action.startsWith('navigate-to:')) {
+ this.navigateVRTarget(action.slice(12)); return;
+ }
+
+ // ── pagination ────────────────────────────────────────────
+ if (action.startsWith('scroll:')) {
+ const dir = action.split(':')[1];
+ const ns  = this.vrNavState;
+ if (ns) {
+ const catalog = this.getVRNavCatalog();
+ const curCat  = catalog.find(c => c.id === ns.currentCategory) || catalog[0];
+ const total   = curCat?.items?.length || 0;
+ const PER     = 16;
+ if (dir === 'next') ns.scrollOffset = Math.min(ns.scrollOffset + PER, Math.max(0, total - PER));
+ else                ns.scrollOffset = Math.max(0, ns.scrollOffset - PER);
+ }
+ scheduleRefresh(); return;
+ }
+
+ // ── legacy focus: prefix ──────────────────────────────────
  if (action.startsWith('focus:')) {
  const targetId = action.split(':')[1];
- if (!targetId) {
- this.updateVRStatus('⚠️ No target specified');
+ if (targetId) this.focusVRTarget(targetId);
  return;
  }
- const success = this.focusVRTarget(targetId);
- if (success) {
- scheduleRefresh(80);
- }
- return;
- }
- 
+
+ // ── legacy nav: prefix ────────────────────────────────────
  if (action.startsWith('nav:')) {
- const category = action.split(':')[1];
- if (category === 'back') {
- // Go back to category list
- this.vrNavState.currentCategory = '';
- this.vrNavState.scrollOffset = 0;
- this.updateVRStatus('🔙 Navigation Menu');
+ const sub = action.split(':')[1];
+ if (sub === 'back') {
+ if (this.vrNavState) this.vrNavState.currentPage = 'navigate';
  } else {
- // Enter a category
- this.vrNavState.currentCategory = category;
- this.vrNavState.scrollOffset = 0;
- const categoryNames = {
- planets: 'Planets',
- moons: 'Moons',
- dwarf: 'Dwarf Planets',
- spacecraft: 'Spacecraft',
- comets: 'Comets',
- stars: 'Stars',
- nebulae: 'Nebulae',
- galaxies: 'Galaxies'
- };
- this.updateVRStatus(`📂 ${categoryNames[category] || category}`);
+ if (this.vrNavState) { this.vrNavState.currentPage = 'navigate'; this.vrNavState.currentCategory = sub; }
  }
- scheduleRefresh();
- return;
+ scheduleRefresh(); return;
  }
 
  switch (action) {
  case 'speed0':
  app.timeSpeed = 0;
- this.updateVRStatus('â¸ Paused');
- scheduleRefresh();
- break;
+ this.updateVRStatus('⏸ Paused');
+ scheduleRefresh(); break;
 
  case 'speed1':
  app.timeSpeed = 1;
- this.updateVRStatus(' Playing');
- scheduleRefresh();
- break;
+ this.updateVRStatus('▶ Real Time (1×)');
+ scheduleRefresh(); break;
+
+ case 'speed10':
+ app.timeSpeed = 10;
+ this.updateVRStatus('⏩ Fast (10×)');
+ scheduleRefresh(); break;
+
+ case 'speed100':
+ app.timeSpeed = 100;
+ this.updateVRStatus('⏩⏩ Max Speed (100×)');
+ scheduleRefresh(); break;
 
  case 'orbits':
  document.getElementById('toggle-orbits')?.click();
- this.updateVRStatus(' Orbits toggled');
- scheduleRefresh(120);
- break;
+ this.updateVRStatus('🪐 Orbits toggled');
+ scheduleRefresh(120); break;
 
  case 'labels':
  document.getElementById('toggle-details')?.click();
- this.updateVRStatus(' Labels toggled');
- scheduleRefresh(120);
- break;
+ this.updateVRStatus('🏷️ Labels toggled');
+ scheduleRefresh(120); break;
 
  case 'constellations':
  document.getElementById('toggle-constellations')?.click();
- this.updateVRStatus(' Constellations toggled');
- scheduleRefresh(120);
- break;
+ this.updateVRStatus('⭐ Stars/Constellations toggled');
+ scheduleRefresh(120); break;
 
  case 'scale':
  document.getElementById('toggle-scale')?.click();
- this.updateVRStatus(' Scale mode switched');
- scheduleRefresh(120);
+ this.updateVRStatus('📏 Scale mode switched');
+ scheduleRefresh(120); break;
+
+ case 'sound': {
+ const am = window.audioManager;
+ if (am) {
+ am.enabled = !am.enabled;
+ try { localStorage.setItem('space_voyage_sound', am.enabled ? 'true' : 'false'); } catch(_) {}
+ this.updateVRStatus(am.enabled ? '🔊 Sound ON' : '🔇 Sound OFF');
+ } else {
+ this.updateVRStatus('⚠️ Audio not available');
+ }
+ scheduleRefresh(); break;
+ }
+
+ case 'discover': {
+ const pool = ['sun','mercury','venus','earth','moon','mars','jupiter','saturn',
+ 'uranus','neptune','pluto','io','europa','titan','enceladus',
+ 'triton','ganymede','callisto','ceres','eris','haumea'];
+ this.navigateVRTarget(pool[Math.floor(Math.random() * pool.length)]);
  break;
+ }
 
  case 'togglelasers':
  this.lasersVisible = !this.lasersVisible;
- this.controllers.forEach(controller => {
- const laser = controller.getObjectByName('laser');
- const pointer = controller.getObjectByName('pointer');
- const cone = controller.getObjectByName('cone');
- if (laser) laser.visible = this.lasersVisible;
+ this.controllers.forEach(ctrl => {
+ const laser = ctrl.getObjectByName('laser');
+ const pointer = ctrl.getObjectByName('pointer');
+ const cone = ctrl.getObjectByName('cone');
+ if (laser)   laser.visible   = this.lasersVisible;
  if (pointer) pointer.visible = this.lasersVisible;
- if (cone) cone.visible = this.lasersVisible;
+ if (cone)    cone.visible    = this.lasersVisible;
  });
- this.updateVRStatus(` Lasers ${this.lasersVisible ? 'ON' : 'OFF'}`);
- scheduleRefresh();
- break;
+ this.updateVRStatus('🎯 Lasers ' + (this.lasersVisible ? 'ON' : 'OFF'));
+ scheduleRefresh(); break;
 
  case 'reset':
  this.resetCamera();
- if (app.solarSystemModule) {
- app.solarSystemModule.focusedObject = null;
- }
- this.updateVRStatus(' View reset');
- scheduleRefresh();
- break;
+ if (app.solarSystemModule) app.solarSystemModule.focusedObject = null;
+ this.vrLastObjectInfo = null;
+ this.updateVRStatus('🔄 View reset');
+ scheduleRefresh(); break;
 
  case 'earth':
- this.handleVRAction('focus:earth');
- break;
+ this.navigateVRTarget('earth'); break;
 
  case 'hide':
- if (DEBUG.VR) console.log(' Hiding VR menu');
- if (this.vrUIPanel) {
- this.vrUIPanel.visible = false;
- }
- this.updateVRStatus('VR menu hidden');
- break;
+ if (this.vrUIPanel) this.vrUIPanel.visible = false;
+ this.updateVRStatus('🚪 Menu closed'); break;
 
  case 'exitvr':
- if (DEBUG.VR) console.log(' Exiting VR mode');
  if (this.renderer.xr.isPresenting) {
  const session = this.renderer.xr.getSession();
- session?.end().then(() => console.log(' VR session ended'))
- .catch(err => console.error(' Error ending VR session:', err));
- }
- break;
+ session?.end().catch(err => console.error('[VR] Error ending session:', err));
+ } break;
 
  default:
- console.warn(` Unknown VR action: "${action}"`);
- this.updateVRStatus(` Unknown action: ${action}`);
+ if (DEBUG.VR) console.warn('[VR] Unknown action: "' + action + '"');
  break;
  }
  }
+
 
  flashVRButton(btn) {
  this.vrFlashAction = btn?.action || null;
