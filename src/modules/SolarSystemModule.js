@@ -4957,8 +4957,17 @@ export class SolarSystemModule {
  
  // Create star mesh using factory (with geometry caching)
  const starMesh = ConstellationFactory.createStar(star, position, this.geometryCache);
- // Tag for individual hover tooltip (doesn't affect click – no userData.name on mesh)
- if (star.name) starMesh.userData.hoverLabel = star.name;
+ // Full userData so the star is independently clickable and hoverable
+ const constShortName = constData.name.split(/\s*\(/)[0].trim();
+ starMesh.userData = {
+ hoverLabel: star.name, // legacy, kept for line-hover fallback
+ name: star.name,
+ type: 'star',
+ isConstellationStar: true,
+ parentConstellation: constShortName,
+ description: `A star in the ${constShortName} constellation.`,
+ distance: 'Hundreds to thousands of light-years',
+ };
  group.add(starMesh);
  starMeshes.push(starMesh);
  
@@ -8545,6 +8554,9 @@ createHyperrealisticHubble(satData) {
  if (userData.isSpacecraft || userData.isComet) {
  // Use actual size for spacecraft and comets, not glow/tail size
  actualRadius = userData.actualSize || 0.1;
+ } else if (userData.isConstellationStar) {
+ // Individual constellation star: treat as a small point of light
+ actualRadius = 1;
  } else if (userData.type === 'constellation') {
  // Constellations: use calculated radius (star pattern spread)
  actualRadius = userData.radius || 500;
@@ -8561,6 +8573,9 @@ createHyperrealisticHubble(satData) {
  // Constellations: Position camera to view the star pattern
  // They're at distance ~10000, so we need to be relatively close but not inside
  distance = actualRadius * 3; // View from 3x the pattern size
+ } else if (userData.isConstellationStar) {
+ // Individual star: zoom in close but not absurdly so
+ distance = 120;
  } else if (userData.type === 'galaxy') {
  // Galaxies: Distant objects, zoom to appreciate structure
  distance = actualRadius * 4;
@@ -8648,6 +8663,10 @@ createHyperrealisticHubble(satData) {
  
  // Highlight this constellation and dim others
  this.highlightConstellation(object);
+ } else if (userData.isConstellationStar && object.parent) {
+ // Individual star: fly to its world position, highlight the parent constellation
+ object.getWorldPosition(targetPosition);
+ this.highlightConstellation(object.parent);
  } else {
  // Reset constellation highlighting if focusing on non-constellation
  this.resetConstellationHighlight();

@@ -898,32 +898,12 @@ class App {
  // Store current hovered object
  this._currentHoveredObject = target;
 
+ // Translate object name (star meshes and constellation groups both have userData.name)
  const t = window.t || ((key) => key);
- let displayName = null;
-
- // When hovering a constellation group, check if the cursor is directly
- // over an individual named star (e.g. Polaris) via a second lightweight
- // raycast on constellation children only. This leaves click behaviour
- // unchanged (clicks still resolve to the constellation group).
- if (target.userData.type === 'constellation' && this.solarSystemModule.constellations?.length) {
- const mouse = this._getMouseCoordinates(event);
- const mv = new THREE.Vector2(mouse.x, mouse.y);
- this.sceneManager.raycaster.setFromCamera(mv, this.sceneManager.camera);
- const hits = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.constellations, true);
- for (const hit of hits) {
- // Check the hit mesh itself, then its parent (glow spheres are children of star meshes)
- const label = hit.object.userData?.hoverLabel ?? hit.object.parent?.userData?.hoverLabel;
- if (label) { displayName = label; break; }
- }
- }
-
- if (!displayName) {
- // Default: translate the constellation/object name
  const nameKey = target.userData.name?.replace(/\s+/g, '');
- displayName = (nameKey && window.t && window.t(nameKey) !== nameKey)
+ const displayName = (nameKey && window.t && window.t(nameKey) !== nameKey)
  ? t(nameKey)
  : target.userData.name;
- }
 
  // Show hover label
  this._hoverLabel.textContent = displayName;
