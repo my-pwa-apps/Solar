@@ -757,15 +757,17 @@ class App {
  const cross = new THREE.Vector3().crossVectors(ray.direction, toObj.normalize());
  const angularDist = cross.length(); // sin(angle) ≈ angle for small values
 
- // Type weights — solid bodies score best; comets score above decorations but
- // below planets/moons/stars (their large coma/tail meshes can clip the ray
- // even when the user is pointing at a planet far from the comet nucleus).
- const type = object.userData?.type || '';
- const isSolidBody = ['Planet', 'Moon', 'Star', 'DwarfPlanet', 'Galaxy',
- 'Nebula', 'Constellation', 'Spacecraft'].includes(type)
- || object.userData?.isSpacecraft;
- const isComet = object.userData?.isComet || type === 'Comet' || type === 'Asteroid';
- const typeWeight = isSolidBody ? 0 : isComet ? 0.5 : 1; // decorations worst
+ // Type weights — comets score below all other named objects because their
+ // large coma/tail meshes can clip the ray even when hovering over a different
+ // object. We detect comets via the explicit isComet flag or the hardcoded
+ // English type string 'Comet' (never translated). All other named objects
+ // (planets, moons, stars, dwarf planets, exoplanets, etc.) get priority 0
+ // regardless of what translated string their `type` field contains — the
+ // previous isSolidBody check used hardcoded English names which broke in
+ // Dutch ('Planeet'), French ('Planète'), etc., causing comets to win over
+ // planets in non-English UIs.
+ const isComet = object.userData?.isComet === true || object.userData?.type === 'Comet';
+ const typeWeight = isComet ? 0.5 : 0;
 
  return { object, distance, angularDist, typeWeight };
  });
@@ -786,11 +788,13 @@ class App {
  // If two bodies are within 0.05 rad (~3°) of each other and one is a moon
  // of the other, prefer the moon.
  if (angularDiff < 0.05) {
+ // Moon type is hardcoded 'Moon'; use parentPlanet presence as fallback
  const moonCandidate = [first, second].find(
- s => s.object.userData?.type === 'Moon'
+ s => s.object.userData?.type === 'Moon' || s.object.userData?.parentPlanet
  );
+ // Planet candidate is the non-moon that the moon orbits
  const planetCandidate = [first, second].find(
- s => s.object.userData?.type === 'Planet'
+ s => s !== moonCandidate && !s.object.userData?.parentPlanet
  );
  if (moonCandidate && planetCandidate &&
  moonCandidate.object.userData?.parentPlanet === planetCandidate.object.userData?.name) {
