@@ -369,7 +369,36 @@ const translations = {
         // Asteroid belt / Kuiper belt / Oort cloud
         descAsteroidBelt: ' The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
         descKuiperBelt: ' The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
-        descOortCloud: ' The Oort Cloud is a vast spherical shell of icy objects surrounding our entire solar system! It extends from about 50,000 to 200,000 AU from the Sun. Long-period comets like Hale-Bopp originate from this distant realm.'
+        descOortCloud: ' The Oort Cloud is a vast spherical shell of icy objects surrounding our entire solar system! It extends from about 50,000 to 200,000 AU from the Sun. Long-period comets like Hale-Bopp originate from this distant realm.',
+
+        // Fun facts for additional objects
+        funFactAsteroidBelt: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
+        funFactKuiperBelt: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
+        funFactOortCloud: 'The Oort Cloud is so far away that light from the Sun takes over 1.5 years to reach its outer edge! It would take Voyager 1 about 300 years to reach the inner edge.',
+        funFactCeres: 'Ceres may host subsurface liquid water - making it a top candidate for finding life!',
+        funFactHaumea: 'Rotation period ~4 hours gives Haumea its unique egg-like triaxial ellipsoid shape!',
+        funFactMakemake: 'Discovered near Easter 2005, Makemake is named after the Rapa Nui creator deity!',
+        funFactEris: 'Eris\'s discovery directly led to Pluto\'s reclassification as a dwarf planet in 2006!',
+        funFactSedna: 'Sedna takes 11,400 years to complete one orbit - it may be influenced by an unseen Planet Nine!',
+        funFactAlphaCentauriA: 'Alpha Centauri is visible from the Southern Hemisphere and is the third brightest star in our night sky!',
+        funFactProximaCentauri: 'Despite being our closest star, Proxima is too dim to see with the naked eye!',
+        funFactSirius: 'Sirius is actually getting closer to us - it will be at its closest in about 60,000 years!',
+        funFactBetelgeuse: 'Betelgeuse could go supernova any day now (astronomically speaking - could be tomorrow or 100,000 years!)!',
+        funFactDefaultStar: 'This star is visible to the naked eye from Earth!',
+        funFactOrionNebula: 'New stars are being born in the Orion Nebula right now!',
+        funFactCrabNebula: 'The Crab Nebula\'s pulsar spins 30 times per second and is expanding at 1,500 km/s!',
+        funFactRingNebula: 'Planetary nebulae have nothing to do with planets - they just look round like planets through old telescopes!',
+        funFactAndromedaGalaxy: 'The Andromeda Galaxy is approaching us at 110 km/s!',
+        funFactWhirlpoolGalaxy: 'You can see the Whirlpool Galaxy with a good pair of binoculars!',
+        funFactSombreroGalaxy: 'Despite billions of stars, galaxies are mostly empty space - the Sombrero included!',
+        funFactTrappist1Star: 'TRAPPIST-1 is named after the telescope that discovered it - The TRAnsiting Planets and PlanetesImals Small Telescope!',
+        funFactKepler452Star: 'Kepler-452 is 6 billion years old - it shows us what our Sun might be like in 1.5 billion years!',
+        funFactKepler186Star: 'Plants on Kepler-186f would likely photosynthesize using infrared light and appear dark red or black!',
+        funFactProximaCentauriB: 'With current technology, it would take 6,300 years to reach Proxima b!',
+        funFactKepler452b: 'Kepler-452b is 6 billion years old - 1.5 billion years older than Earth!',
+        funFactTrappist1e: 'From TRAPPIST-1e, you could see the other planets as large as our Moon in the sky!',
+        funFactKepler186f: 'Kepler-186f orbits a red dwarf, so its sky would glow orange-red!',
+        funFactComets: 'Comets have two tails: a curved dust tail (yellowish) and a straight ion tail (blue) - both always point away from the Sun!'
     },
     
     nl: {
@@ -734,7 +763,36 @@ const translations = {
         // Asteroïdengordel / Kuipergordel / Oortwolk
         descAsteroidBelt: ' De asteroïdengordel bevat miljoenen rotsachtige objecten tussen Mars en Jupiter. Ceres, het grootste object hier, is een dwergplaneet! De meeste asteroïden zijn overgebleven materiaal van de vorming van het zonnestelsel 4,6 miljard jaar geleden.',
         descKuiperBelt: ' De Kuipergordel is een gebied voorbij Neptunus vol ijzige lichamen en dwergplaneten waaronder Pluto! Het is als een gigantische donut van bevroren objecten overgebleven van de vorming van het zonnestelsel. Kortperiodieke kometen komen hiervandaan!',
-        descOortCloud: ' De Oortwolk is een uitgestrekte bolvormige schil van ijzige objecten die ons hele zonnestelsel omgeeft! Hij strekt zich uit van ongeveer 50.000 tot 200.000 AE van de Zon. Langperiodieke kometen zoals Hale-Bopp komen uit dit verre gebied.'
+        descOortCloud: ' De Oortwolk is een uitgestrekte bolvormige schil van ijzige objecten die ons hele zonnestelsel omgeeft! Hij strekt zich uit van ongeveer 50.000 tot 200.000 AE van de Zon. Langperiodieke kometen zoals Hale-Bopp komen uit dit verre gebied.',
+
+        // Wetenswaardigheden voor extra objecten
+        funFactAsteroidBelt: 'In tegenstelling tot films zijn asteroïden heel ver van elkaar - ruimtevaartuigen kunnen er veilig doorheen vliegen!',
+        funFactKuiperBelt: 'De Kuipergordel is 20 keer breder dan de asteroïdengordel en bevat miljarden objecten!',
+        funFactOortCloud: 'De Oortwolk is zo ver weg dat licht van de Zon er meer dan 1,5 jaar over doet om de buitenrand te bereiken! Voyager 1 zou er zo\'n 300 jaar over doen om de binnenrand te bereiken.',
+        funFactCeres: 'Ceres heeft mogelijk vloeibaar water onder het oppervlak - een topkandidaat voor leven!',
+        funFactHaumea: 'Een rotatieperiode van ~4 uur geeft Haumea zijn unieke eivormige triaxiale ellipsoïdevorm!',
+        funFactMakemake: 'Ontdekt rond Pasen 2005, is Makemake vernoemd naar de scheppingsgod van de Rapa Nui!',
+        funFactEris: 'De ontdekking van Eris leidde er direct toe dat Pluto in 2006 werd herclassificeerd als dwergplaneet!',
+        funFactSedna: 'Sedna doet er 11.400 jaar over om één baan te voltooien - mogelijk beïnvloed door een onzichtbare Planeet Negen!',
+        funFactAlphaCentauriA: 'Alpha Centauri is zichtbaar vanuit het zuidelijk halfrond en is de op twee na helderste ster aan onze nachtelijke hemel!',
+        funFactProximaCentauri: 'Ondanks dat Proxima onze dichtstbijzijnde ster is, is hij te zwak om met het blote oog te zien!',
+        funFactSirius: 'Sirius beweegt eigenlijk steeds dichter naar ons toe - over ~60.000 jaar zal hij het dichtst bij zijn!',
+        funFactBetelgeuse: 'Betelgeuze kan elk moment als supernova ontploffen (astronomisch gezien - morgen of over 100.000 jaar)!',
+        funFactDefaultStar: 'Deze ster is met het blote oog zichtbaar vanaf de Aarde!',
+        funFactOrionNebula: 'In de Orionnevel worden nu op dit moment nieuwe sterren geboren!',
+        funFactCrabNebula: 'De pulsar in de Krabnevel draait 30 keer per seconde en breidt uit met 1.500 km/s!',
+        funFactRingNebula: 'Planetaire nevels hebben niets met planeten te maken - ze zien er alleen maar rond uit als planeten door oude telescopen!',
+        funFactAndromedaGalaxy: 'Het Andromedastelsel nadert ons met 110 km/s!',
+        funFactWhirlpoolGalaxy: 'Je kunt het Wervelwindsterrenstelsel zien met een goede verrekijker!',
+        funFactSombreroGalaxy: 'Ondanks miljarden sterren is ook het Sombrerostelsel grotendeels leeg!',
+        funFactTrappist1Star: 'TRAPPIST-1 is vernoemd naar de telescoop die het ontdekte - The TRAnsiting Planets and PlanetesImals Small Telescope!',
+        funFactKepler452Star: 'Kepler-452 is 6 miljard jaar oud - het laat zien hoe onze Zon er over 1,5 miljard jaar uitziet!',
+        funFactKepler186Star: 'Planten op Kepler-186f zouden waarschijnlijk fotosynthetiseren met infrarood licht en donkerrood of zwart lijken!',
+        funFactProximaCentauriB: 'Met de huidige technologie zou het 6.300 jaar duren om Proxima b te bereiken!',
+        funFactKepler452b: 'Kepler-452b is 6 miljard jaar oud - 1,5 miljard jaar ouder dan de Aarde!',
+        funFactTrappist1e: 'Vanuit TRAPPIST-1e zou je de andere planeten zo groot als onze Maan aan de hemel zien!',
+        funFactKepler186f: 'Kepler-186f cirkelt om een rode dwerg, dus zijn lucht zou oranje-rood gloeien!',
+        funFactComets: 'Kometen hebben twee staarten: een gebogen stofstaart (gelig) en een rechte ionenstaart (blauw) - beide wijzen altijd van de Zon af!'
     },
     
     fr: {
@@ -1063,7 +1121,7 @@ const translations = {
         // Étoiles avec exoplanètes
         descKepler452Star: ' Kepler-452 est une étoile semblable au Soleil qui héberge la planète "cousine de la Terre" Kepler-452b! Elle est 1,5 milliard d\'années plus âgée que notre Soleil et 20% plus brillante.',
         descTrappist1Star: ' TRAPPIST-1 est une naine rouge ultra-froide avec 7 planètes de la taille de la Terre! Trois d\'entre elles sont dans la zone habitable. Tout le système est si compact que les 7 planètes orbitent plus près de leur étoile que Mercure de notre Soleil.',
-        descKepler186Star: ' Kepler-186 est une étoile naine rouge avec 5 planètes connues! Kepler-186f fue la primera planète de la taille de la Terre découverte dans la zone habitable d\'une autre étoile.',
+        descKepler186Star: ' Kepler-186 est une étoile naine rouge avec 5 planètes connues! Kepler-186f est la première planète de la taille de la Terre découverte dans la zone habitable d\'une autre étoile. L\'étoile est plus froide que notre Soleil, lui donnant une teinte orange-rouge.',
 
         // Exoplanètes
         descProximaCentauriB: ' Proxima Centauri b est l\'exoplanète connue la plus proche de la Terre! Elle orbite dans la zone habitable de Proxima du Centaure, ce qui signifie que l\'eau liquide pourrait exister à sa surface.',
@@ -1087,7 +1145,36 @@ const translations = {
         // Ceinture d\'astéroïdes / Ceinture de Kuiper / Nuage de Oort
         descAsteroidBelt: ' La ceinture d\'astéroïdes contient des millions d\'objets rocheux entre Mars et Jupiter. Cérès, le plus grand objet ici, est une planète naine! La plupart des astéroïdes sont des matériaux résiduels de la formation du système solaire il y a 4,6 milliards d\'années.',
         descKuiperBelt: ' La Ceinture de Kuiper est une région au-delà de Neptune remplie de corps glacés et de planètes naines dont Pluton! C\'est comme un gigantesque beignet d\'objets gelés restants de la formation du système solaire. Les comètes à courte période viennent d\'ici!',
-        descOortCloud: ' Le nuage de Oort est une vaste enveloppe sphérique d\'objets glacés entourant tout notre système solaire! Il s\'étend d\'environ 50 000 à 200 000 UA du Soleil. Les comètes à longue période comme Hale-Bopp proviennent de ce domaine lointain.'
+        descOortCloud: ' Le nuage de Oort est une vaste enveloppe sphérique d\'objets glacés entourant tout notre système solaire! Il s\'étend d\'environ 50 000 à 200 000 UA du Soleil. Les comètes à longue période comme Hale-Bopp proviennent de ce domaine lointain.',
+
+        // Faits amusants pour les objets supplémentaires
+        funFactAsteroidBelt: 'Contrairement aux films, les astéroïdes sont très éloignés - les sondes spatiales peuvent les traverser sans danger!',
+        funFactKuiperBelt: 'La ceinture de Kuiper est 20 fois plus large que la ceinture d\'astéroïdes et contient des milliards d\'objets!',
+        funFactOortCloud: 'Le nuage de Oort est si loin que la lumière du Soleil met plus d\'1,5 an pour atteindre sa lisière externe! Voyager 1 mettrait environ 300 ans pour atteindre la lisière interne.',
+        funFactCeres: 'Cérès pourrait abriter de l\'eau liquide souterraine - un candidat de premier plan pour la vie!',
+        funFactHaumea: 'Une période de rotation de ~4 heures donne à Hauméa sa forme unique d\'ellipsoïde triaxial en œuf!',
+        funFactMakemake: 'Découverte près de Pâques 2005, Makemake est nommée d\'après le dieu créateur du peuple Rapa Nui!',
+        funFactEris: 'La découverte d\'Éris a directement conduit à la reclassification de Pluton en planète naine en 2006!',
+        funFactSedna: 'Sedna met 11 400 ans pour compléter une orbite - peut-être influencée par une Planète Neuf invisible!',
+        funFactAlphaCentauriA: 'Alpha du Centaure est visible depuis l\'hémisphère sud et est la troisième étoile la plus brillante de notre ciel nocturne!',
+        funFactProximaCentauri: 'Bien qu\'elle soit l\'étoile la plus proche, Proxima est trop faible pour être vue à l\'œil nu!',
+        funFactSirius: 'Sirius se rapproche en réalité de nous - elle sera à sa distance minimale dans environ 60 000 ans!',
+        funFactBetelgeuse: 'Bételgeuse pourrait exploser en supernova à tout moment (dans le sens astronomique - demain ou dans 100 000 ans)!',
+        funFactDefaultStar: 'Cette étoile est visible à l\'œil nu depuis la Terre!',
+        funFactOrionNebula: 'De nouvelles étoiles naissent en ce moment même dans la nébuleuse d\'Orion!',
+        funFactCrabNebula: 'Le pulsar de la nébuleuse du Crabe tourne 30 fois par seconde et s\'étend à 1 500 km/s!',
+        funFactRingNebula: 'Les nébuleuses planétaires n\'ont rien à voir avec les planètes - elles ressemblent juste à des planètes rondes à travers les vieux télescopes!',
+        funFactAndromedaGalaxy: 'La galaxie d\'Andromède s\'approche de nous à 110 km/s!',
+        funFactWhirlpoolGalaxy: 'Vous pouvez voir la galaxie du Tourbillon avec une bonne paire de jumelles!',
+        funFactSombreroGalaxy: 'Malgré des milliards d\'étoiles, la galaxie du Sombrero est aussi surtout de l\'espace vide!',
+        funFactTrappist1Star: 'TRAPPIST-1 est nommé d\'après le télescope qui l\'a découvert - The TRAnsiting Planets and PlanetesImals Small Telescope!',
+        funFactKepler452Star: 'Kepler-452 a 6 milliards d\'années - elle nous montre à quoi pourrait ressembler notre Soleil dans 1,5 milliard d\'années!',
+        funFactKepler186Star: 'Les plantes sur Kepler-186f effectueraient probablement la photosynthèse avec la lumière infrarouge et paraîtraient rouge foncé ou noires!',
+        funFactProximaCentauriB: 'Avec la technologie actuelle, il faudrait 6 300 ans pour atteindre Proxima b!',
+        funFactKepler452b: 'Kepler-452b a 6 milliards d\'années - 1,5 milliard de plus que la Terre!',
+        funFactTrappist1e: 'Depuis TRAPPIST-1e, vous pourriez voir les autres planètes aussi grandes que notre Lune dans le ciel!',
+        funFactKepler186f: 'Kepler-186f orbite autour d\'une naine rouge, donc son ciel brillerait d\'orange-rouge!',
+        funFactComets: 'Les comètes ont deux queues: une queue de poussière courbée (jaunâtre) et une queue ionique droite (bleue) - les deux pointent toujours à l\'opposé du Soleil!'
     },
     
     de: {
@@ -1440,7 +1527,36 @@ const translations = {
         // Asteroidengürtel / Kuiper-Gürtel / Oort-Wolke
         descAsteroidBelt: ' Der Asteroidengürtel enthält Millionen felsiger Objekte zwischen Mars und Jupiter. Ceres, das größte Objekt hier, ist ein Zwergplanet! Die meisten Asteroiden sind übrig gebliebenes Material aus der Entstehung des Sonnensystems vor 4,6 Milliarden Jahren.',
         descKuiperBelt: ' Der Kuiper-Gürtel ist eine Region jenseits von Neptun, gefüllt mit eisigen Körpern und Zwergplaneten, einschließlich Pluto! Es ist wie ein riesiger Donut gefrorener Objekte aus der Entstehung des Sonnensystems. Kurzperiodische Kometen kommen von hier!',
-        descOortCloud: ' Die Oort-Wolke ist eine riesige kugelförmige Hülle aus eisigen Objekten, die unser gesamtes Sonnensystem umgibt! Sie erstreckt sich von etwa 50.000 bis 200.000 AE von der Sonne. Langperiodische Kometen wie Hale-Bopp stammen aus diesem fernen Reich.'
+        descOortCloud: ' Die Oort-Wolke ist eine riesige kugelförmige Hülle aus eisigen Objekten, die unser gesamtes Sonnensystem umgibt! Sie erstreckt sich von etwa 50.000 bis 200.000 AE von der Sonne. Langperiodische Kometen wie Hale-Bopp stammen aus diesem fernen Reich.',
+
+        // Wissenswertes für zusätzliche Objekte
+        funFactAsteroidBelt: 'Entgegen Filmdarstellungen sind Asteroiden sehr weit voneinander entfernt - Raumfahrzeuge können sicher hindurchfliegen!',
+        funFactKuiperBelt: 'Der Kuiper-Gürtel ist 20-mal breiter als der Asteroidengürtel und enthält Milliarden von Objekten!',
+        funFactOortCloud: 'Die Oort-Wolke ist so weit entfernt, dass Licht der Sonne über 1,5 Jahre braucht, um ihren Außenrand zu erreichen! Voyager 1 würde etwa 300 Jahre brauchen, um den Innenrand zu erreichen.',
+        funFactCeres: 'Ceres könnte unterirdisches flüssiges Wasser beherbergen - ein Spitzenkandidat für Leben!',
+        funFactHaumea: 'Eine Rotationsperiode von ~4 Stunden verleiht Haumea seine einzigartige eiförmige dreiachsige Ellipsoidform!',
+        funFactMakemake: 'In der Nähe von Ostern 2005 entdeckt, ist Makemake nach dem Schöpfergott des Rapa-Nui-Volkes benannt!',
+        funFactEris: 'Die Entdeckung von Eris führte direkt zur Neueinstufung von Pluto als Zwergplanet im Jahr 2006!',
+        funFactSedna: 'Sedna braucht 11.400 Jahre für eine Umlaufbahn - möglicherweise beeinflusst von einem unsichtbaren Planeten Neun!',
+        funFactAlphaCentauriA: 'Alpha Centauri ist von der Südhalbkugel aus sichtbar und ist der dritthellste Stern an unserem Nachthimmel!',
+        funFactProximaCentauri: 'Obwohl Proxima unser nächster Stern ist, ist er zu schwach, um mit bloßem Auge gesehen zu werden!',
+        funFactSirius: 'Sirius nähert sich uns tatsächlich - er wird in etwa 60.000 Jahren am nächsten sein!',
+        funFactBetelgeuse: 'Beteigeuze könnte jederzeit als Supernova explodieren (astronomisch gesehen - morgen oder in 100.000 Jahren)!',
+        funFactDefaultStar: 'Dieser Stern ist von der Erde aus mit bloßem Auge sichtbar!',
+        funFactOrionNebula: 'Im Orionnebel werden gerade jetzt neue Sterne geboren!',
+        funFactCrabNebula: 'Der Pulsar im Krebsnebel dreht sich 30 Mal pro Sekunde und dehnt sich mit 1.500 km/s aus!',
+        funFactRingNebula: 'Planetarische Nebel haben nichts mit Planeten zu tun - sie sehen durch alte Teleskope nur rund wie Planeten aus!',
+        funFactAndromedaGalaxy: 'Die Andromeda-Galaxie nähert sich uns mit 110 km/s!',
+        funFactWhirlpoolGalaxy: 'Die Whirlpool-Galaxie ist mit einem guten Fernglas zu sehen!',
+        funFactSombreroGalaxy: 'Trotz Milliarden von Sternen besteht auch die Sombrero-Galaxie größtenteils aus leerem Raum!',
+        funFactTrappist1Star: 'TRAPPIST-1 ist nach dem Teleskop benannt, das es entdeckte - The TRAnsiting Planets and PlanetesImals Small Telescope!',
+        funFactKepler452Star: 'Kepler-452 ist 6 Milliarden Jahre alt - es zeigt uns, wie unsere Sonne in 1,5 Milliarden Jahren aussehen könnte!',
+        funFactKepler186Star: 'Pflanzen auf Kepler-186f würden wahrscheinlich mit Infrarotlicht photosynthetisieren und dunkelrot oder schwarz erscheinen!',
+        funFactProximaCentauriB: 'Mit aktueller Technologie würde es 6.300 Jahre dauern, Proxima b zu erreichen!',
+        funFactKepler452b: 'Kepler-452b ist 6 Milliarden Jahre alt - 1,5 Milliarden Jahre älter als die Erde!',
+        funFactTrappist1e: 'Von TRAPPIST-1e aus könnten Sie die anderen Planeten so groß wie unseren Mond am Himmel sehen!',
+        funFactKepler186f: 'Kepler-186f umkreist einen roten Zwerg, also würde sein Himmel orangerot leuchten!',
+        funFactComets: 'Kometen haben zwei Schweife: einen gebogenen Staubschweif (gelblich) und einen geraden Ionenschweif (blau) - beide zeigen immer von der Sonne weg!'
     },
     
     es: {
@@ -1793,7 +1909,36 @@ const translations = {
         // Cinturón de asteroides / Cinturón de Kuiper / Nube de Oort
         descAsteroidBelt: ' ¡El cinturón de asteroides contiene millones de objetos rocosos entre Marte y Júpiter. ¡Ceres, el objeto más grande aquí, es un planeta enano! La mayoría de los asteroides son material residual de la formación del sistema solar hace 4.600 millones de años.',
         descKuiperBelt: ' ¡El Cinturón de Kuiper es una región más allá de Neptuno llena de cuerpos helados y planetas enanos incluyendo Plutón! Es como una enorme dona de objetos congelados sobrantes de la formación del sistema solar. ¡Los cometas de período corto vienen de aquí!',
-        descOortCloud: ' ¡La Nube de Oort es una vasta envoltura esférica de objetos helados que rodea todo nuestro sistema solar! Se extiende desde aproximadamente 50.000 hasta 200.000 UA del Sol. ¡Los cometas de período largo como Hale-Bopp se originan en este reino distante.'
+        descOortCloud: ' ¡La Nube de Oort es una vasta envoltura esférica de objetos helados que rodea todo nuestro sistema solar! Se extiende desde aproximadamente 50.000 hasta 200.000 UA del Sol. ¡Los cometas de período largo como Hale-Bopp se originan en este reino distante.',
+
+        // Datos curiosos para objetos adicionales
+        funFactAsteroidBelt: '¡Al contrario de lo que muestran las películas, los asteroides están muy lejos unos de otros - las naves espaciales pueden atravesarlos con seguridad!',
+        funFactKuiperBelt: '¡El cinturón de Kuiper es 20 veces más ancho que el cinturón de asteroides y contiene miles de millones de objetos!',
+        funFactOortCloud: '¡La nube de Oort está tan lejos que la luz del Sol tarda más de 1,5 años en alcanzar su borde exterior! Voyager 1 tardaría unos 300 años en alcanzar el borde interior.',
+        funFactCeres: '¡Ceres podría albergar agua líquida subterránea - un candidato principal para la vida!',
+        funFactHaumea: '¡Un período de rotación de ~4 horas le da a Haumea su forma única de elipsoide triaxial como un huevo!',
+        funFactMakemake: '¡Descubierto cerca de la Pascua de 2005, Makemake lleva el nombre del dios creador del pueblo Rapa Nui!',
+        funFactEris: '¡El descubrimiento de Eris llevó directamente a la reclasificación de Plutón como planeta enano en 2006!',
+        funFactSedna: '¡Sedna tarda 11.400 años en completar una órbita - posiblemente influenciada por un Planeta Nueve invisible!',
+        funFactAlphaCentauriA: '¡Alfa Centauri es visible desde el hemisferio sur y es la tercera estrella más brillante en nuestro cielo nocturno!',
+        funFactProximaCentauri: '¡A pesar de ser nuestra estrella más cercana, Próxima es demasiado tenue para verla a simple vista!',
+        funFactSirius: '¡Sirio se está acercando a nosotros - estará más cerca en unos 60.000 años!',
+        funFactBetelgeuse: '¡Betelgeuse podría explotar como supernova en cualquier momento (hablando astronómicamente - mañana o en 100.000 años)!',
+        funFactDefaultStar: '¡Esta estrella es visible a simple vista desde la Tierra!',
+        funFactOrionNebula: '¡En la nebulosa de Orión están naciendo nuevas estrellas ahora mismo!',
+        funFactCrabNebula: '¡El púlsar de la Nebulosa del Cangrejo gira 30 veces por segundo y se expande a 1.500 km/s!',
+        funFactRingNebula: '¡Las nebulosas planetarias no tienen nada que ver con los planetas - solo parecen redondas como planetas a través de telescopios antiguos!',
+        funFactAndromedaGalaxy: '¡La galaxia de Andrómeda se aproxima a nosotros a 110 km/s!',
+        funFactWhirlpoolGalaxy: '¡Puedes ver la galaxia del Remolino con unos buenos prismáticos!',
+        funFactSombreroGalaxy: '¡A pesar de miles de millones de estrellas, la galaxia del Sombrero también es principalmente espacio vacío!',
+        funFactTrappist1Star: '¡TRAPPIST-1 lleva el nombre del telescopio que lo descubrió - The TRAnsiting Planets and PlanetesImals Small Telescope!',
+        funFactKepler452Star: '¡Kepler-452 tiene 6 mil millones de años - nos muestra cómo podría ser nuestro Sol en 1.500 millones de años!',
+        funFactKepler186Star: '¡Las plantas en Kepler-186f probablemente realizarían la fotosíntesis usando luz infrarroja y aparecerían de color rojo oscuro o negro!',
+        funFactProximaCentauriB: '¡Con la tecnología actual, tomaría 6.300 años llegar a Próxima b!',
+        funFactKepler452b: '¡Kepler-452b tiene 6 mil millones de años - 1.500 millones más que la Tierra!',
+        funFactTrappist1e: '¡Desde TRAPPIST-1e, podrías ver los otros planetas tan grandes como nuestra Luna en el cielo!',
+        funFactKepler186f: '¡Kepler-186f orbita una enana roja, así que su cielo brillaría con un tono anaranjado-rojizo!',
+        funFactComets: '¡Los cometas tienen dos colas: una cola de polvo curva (amarillenta) y una cola iónica recta (azul) - ambas siempre apuntan alejándose del Sol!'
     },
     
     pt: {
@@ -2146,7 +2291,36 @@ const translations = {
         // Cinturão de asteroides / Cinturão de Kuiper / Nuvem de Oort
         descAsteroidBelt: ' O cinturão de asteroides contém milhões de objetos rochosos entre Marte e Júpiter. Ceres, o maior objeto aqui, é um planeta anão! A maioria dos asteroides são materiais residuais da formação do sistema solar há 4,6 bilhões de anos.',
         descKuiperBelt: ' O Cinturão de Kuiper é uma região além de Netuno repleta de corpos gelados e planetas anões, incluindo Plutão! É como uma enorme rosca de objetos congelados restantes da formação do sistema solar. Cometas de período curto vêm daqui!',
-        descOortCloud: ' A Nuvem de Oort é uma vasta concha esférica de objetos gelados que envolve todo o nosso sistema solar! Ela se estende de aproximadamente 50.000 a 200.000 UA do Sol. Cometas de longo período como Hale-Bopp se originam neste reino distante.'
+        descOortCloud: ' A Nuvem de Oort é uma vasta concha esférica de objetos gelados que envolve todo o nosso sistema solar! Ela se estende de aproximadamente 50.000 a 200.000 UA do Sol. Cometas de longo período como Hale-Bopp se originam neste reino distante.',
+
+        // Fatos divertidos para objetos adicionais
+        funFactAsteroidBelt: 'Ao contrário do que os filmes mostram, os asteroides estão muito distantes uns dos outros - sondas espaciais podem passar com segurança!',
+        funFactKuiperBelt: 'O cinturão de Kuiper é 20 vezes mais largo que o cinturão de asteroides e contém bilhões de objetos!',
+        funFactOortCloud: 'A nuvem de Oort está tão distante que a luz do Sol leva mais de 1,5 ano para alcançar sua borda externa! A Voyager 1 levaria cerca de 300 anos para alcançar a borda interna.',
+        funFactCeres: 'Ceres pode abrigar água líquida subterrânea - um candidato de topo para a vida!',
+        funFactHaumea: 'Um período de rotação de ~4 horas dá a Haumea sua forma única de elipsoide triaxial semelhante a um ovo!',
+        funFactMakemake: 'Descoberto perto da Páscoa de 2005, Makemake recebeu o nome do deus criador do povo Rapa Nui!',
+        funFactEris: 'A descoberta de Éris levou diretamente à reclassificação de Plutão como planeta anão em 2006!',
+        funFactSedna: 'Sedna leva 11.400 anos para completar uma órbita - possivelmente influenciada por um Planeta Nove invisível!',
+        funFactAlphaCentauriA: 'Alfa Centauri é visível do hemisfério sul e é a terceira estrela mais brilhante em nosso céu noturno!',
+        funFactProximaCentauri: 'Apesar de ser nossa estrela mais próxima, Proxima é muito tênue para ser vista a olho nu!',
+        funFactSirius: 'Sírius está na verdade se aproximando de nós - estará mais próxima em cerca de 60.000 anos!',
+        funFactBetelgeuse: 'Betelgeuse poderia explodir como supernova a qualquer momento (astronomicamente falando - amanhã ou em 100.000 anos)!',
+        funFactDefaultStar: 'Esta estrela é visível a olho nu da Terra!',
+        funFactOrionNebula: 'Novas estrelas estão nascendo na Nebulosa de Órion agora mesmo!',
+        funFactCrabNebula: 'O pulsar na Nebulosa do Caranguejo gira 30 vezes por segundo e se expande a 1.500 km/s!',
+        funFactRingNebula: 'Nebulosas planetárias não têm nada a ver com planetas - elas só parecem redondas como planetas através de telescópios antigos!',
+        funFactAndromedaGalaxy: 'A Galáxia de Andrômeda está se aproximando de nós a 110 km/s!',
+        funFactWhirlpoolGalaxy: 'Você pode ver a Galáxia do Redemoinho com um bom par de binóculos!',
+        funFactSombreroGalaxy: 'Apesar de bilhões de estrelas, a Galáxia do Sombrero também é principalmente espaço vazio!',
+        funFactTrappist1Star: 'TRAPPIST-1 recebeu o nome do telescópio que o descobriu - The TRAnsiting Planets and PlanetesImals Small Telescope!',
+        funFactKepler452Star: 'Kepler-452 tem 6 bilhões de anos - nos mostra como nosso Sol pode ser daqui a 1,5 bilhão de anos!',
+        funFactKepler186Star: 'Plantas em Kepler-186f provavelmente realizariam fotossíntese usando luz infravermelha e pareceriam vermelho escuro ou pretas!',
+        funFactProximaCentauriB: 'Com a tecnologia atual, levaria 6.300 anos para chegar a Proxima b!',
+        funFactKepler452b: 'Kepler-452b tem 6 bilhões de anos - 1,5 bilhão de anos mais velho que a Terra!',
+        funFactTrappist1e: 'De TRAPPIST-1e, você poderia ver os outros planetas tão grandes quanto nossa Lua no céu!',
+        funFactKepler186f: 'Kepler-186f orbita uma anã vermelha, então seu céu brilharia em laranja-avermelhado!',
+        funFactComets: 'Os cometas têm duas caudas: uma cauda de poeira curva (amarelada) e uma cauda iônica reta (azul) - ambas sempre apontam para longe do Sol!'
     }
 };
 

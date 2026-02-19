@@ -3397,7 +3397,7 @@ export class SolarSystemModule {
  name: 'Asteroid Belt',
  type: 'Asteroid Belt',
  description: t('descAsteroidBelt'),
- funFact: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
+ funFact: t('funFactAsteroidBelt'),
  count: largeCount + mediumCount + dustCount,
  radius: 40
  };
@@ -3599,7 +3599,7 @@ export class SolarSystemModule {
  name: 'Kuiper Belt',
  type: 'Kuiper Belt',
  description: t('descKuiperBelt'),
- funFact: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
+ funFact: t('funFactKuiperBelt'),
  count: largeKBOCount + mediumKBOCount + smallKBOCount + scatteredCount,
  radius: 60
  };
@@ -3751,7 +3751,7 @@ export class SolarSystemModule {
  name: 'Oort Cloud',
  type: 'Oort Cloud',
  description: t('descOortCloud'),
- funFact: 'The Oort Cloud is so far away that light from the Sun takes over 1.5 years to reach its outer edge! It would take Voyager 1 about 300 years to reach the inner edge.',
+ funFact: t('funFactOortCloud'),
  count: innerOortCount + outerOortCount + cometaryCount,
  radius: this.realisticScale ? 10256000 : 15000
  };
@@ -4146,9 +4146,9 @@ export class SolarSystemModule {
  description: starData.description,
  distance: 'Light-years away',
  realSize: `${starData.size} solar radii`,
- funFact: starData.name === 'Betelgeuse' ? 'Betelgeuse could go supernova any day now (astronomically speaking - could be tomorrow or 100,000 years!)' : 
- starData.name === 'Sirius' ? 'Sirius is actually getting closer to us - it will be at its closest in about 60,000 years!' :
- 'This star is visible to the naked eye from Earth!'
+ funFact: starData.name === 'Betelgeuse' ? t('funFactBetelgeuse') :
+ starData.name === 'Sirius' ? t('funFactSirius') :
+ t('funFactDefaultStar')
  };
  
  scene.add(star);
@@ -4278,9 +4278,9 @@ export class SolarSystemModule {
  radius: nebData.size,
  description: nebData.description,
  distance: 'Thousands of light-years',
- funFact: nebData.name === 'Orion Nebula' ? 'New stars are being born here right now!' :
- nebData.name === 'Crab Nebula' ? 'It\'s expanding at 1,500 km/s!' :
- 'Planetary nebulae have nothing to do with planets - they just look round like planets through old telescopes!',
+ funFact: nebData.name === 'Orion Nebula' ? t('funFactOrionNebula') :
+ nebData.name === 'Crab Nebula' ? t('funFactCrabNebula') :
+ t('funFactRingNebula'),
  ra: nebData.ra,
  dec: nebData.dec,
  basePosition: { x: position.x, y: position.y, z: position.z }
@@ -5130,9 +5130,9 @@ export class SolarSystemModule {
  angularSize: galData.angularSize, // Angular size in arcminutes
  ra: galData.ra,
  dec: galData.dec,
- funFact: galData.name === 'Andromeda Galaxy' ? 'Andromeda is approaching us at 110 km/s!' :
- galData.name === 'Whirlpool Galaxy' ? 'You can see this galaxy with a good pair of binoculars!' :
- 'Despite billions of stars, galaxies are mostly empty space!',
+ funFact: galData.name === 'Andromeda Galaxy' ? t('funFactAndromedaGalaxy') :
+ galData.name === 'Whirlpool Galaxy' ? t('funFactWhirlpoolGalaxy') :
+ t('funFactSombreroGalaxy'),
  basePosition: { x: position.x, y: position.y, z: position.z }
  };
  
@@ -5442,7 +5442,7 @@ export class SolarSystemModule {
  description: t('descAlphaCentauriA'),
  distance: '4.37 light-years',
  realSize: '1.22 times the Sun\'s diameter',
- funFact: 'Alpha Centauri is visible from the Southern Hemisphere and is the third brightest star in our night sky!'
+ funFact: t('funFactAlphaCentauriA')
  };
  
  alphaCentauriGroup.add(alphaA);
@@ -5473,7 +5473,7 @@ export class SolarSystemModule {
  description: t('descProximaCentauri'),
  distance: '4.24 light-years (40 trillion km!)',
  realSize: '0.14 times the Sun\'s diameter',
- funFact: 'Despite being our closest star, Proxima is too dim to see with the naked eye!'
+ funFact: t('funFactProximaCentauri')
  };
  
  alphaCentauriGroup.add(proxima);
@@ -5510,7 +5510,7 @@ export class SolarSystemModule {
  description: t('descKepler452Star'),
  distance: '1,400 light-years',
  realSize: '1.11 times the Sun\'s diameter',
- funFact: 'Kepler-452 is 6 billion years old - it shows us what our Sun might be like in 1.5 billion years!'
+ funFact: t('funFactKepler452Star')
  };
  
  scene.add(kepler452);
@@ -5543,7 +5543,7 @@ export class SolarSystemModule {
  description: t('descTrappist1Star'),
  distance: '40 light-years',
  realSize: '0.12 times the Sun\'s diameter (barely larger than Jupiter!)',
- funFact: 'TRAPPIST-1 is named after the telescope that discovered it - The TRAnsiting Planets and PlanetesImals Small Telescope!'
+ funFact: t('funFactTrappist1Star')
  };
  
  scene.add(trappist1);
@@ -5576,7 +5576,7 @@ export class SolarSystemModule {
  description: t('descKepler186Star'),
  distance: '500 light-years',
  realSize: '0.54 times the Sun\'s diameter',
- funFact: 'Plants on Kepler-186f would likely photosynthesize using infrared light and appear dark red or black!'
+ funFact: t('funFactKepler186Star')
  };
  
  scene.add(kepler186);
@@ -5606,7 +5606,7 @@ export class SolarSystemModule {
  description: t('descProximaCentauriB'),
  distance: '4.24 light-years',
  realSize: '~1.17 Earth masses',
- funFact: 'With current technology, it would take 6,300 years to reach Proxima b!'
+ funFact: t('funFactProximaCentauriB')
  },
  {
  name: ' Kepler-452b',
@@ -5619,7 +5619,7 @@ export class SolarSystemModule {
  description: t('descKepler452b'),
  distance: '1,400 light-years',
  realSize: '1.6 times Earth\'s radius',
- funFact: 'Kepler-452b is 6 billion years old - 1.5 billion years older than Earth!'
+ funFact: t('funFactKepler452b')
  },
  {
  name: ' TRAPPIST-1e',
@@ -5632,7 +5632,7 @@ export class SolarSystemModule {
  description: t('descTrappist1e'),
  distance: '40 light-years',
  realSize: '0.92 times Earth\'s radius',
- funFact: 'From TRAPPIST-1e, you could see the other planets as large as our Moon in the sky!'
+ funFact: t('funFactTrappist1e')
  },
  {
  name: ' Kepler-186f',
@@ -5645,7 +5645,7 @@ export class SolarSystemModule {
  description: t('descKepler186f'),
  distance: '500 light-years',
  realSize: '1.1 times Earth\'s radius',
- funFact: 'Kepler-186f orbits a red dwarf, so its sky would glow orange-red!'
+ funFact: t('funFactKepler186f')
  }
  ];
 
@@ -5980,7 +5980,7 @@ export class SolarSystemModule {
  eccentricity: cometData.eccentricity,
  description: cometData.description,
  realSize: '1-60 km nucleus',
- funFact: 'Comets have two tails: a curved dust tail (yellowish) and a straight ion tail (blue) - both always point away from the Sun!',
+ funFact: t('funFactComets'),
  dustTail: dustTail,
  ionTail: ionTail,
  isComet: true // Flag for special zoom handling
@@ -7014,8 +7014,8 @@ createHyperrealisticHubble(satData) {
  speed: 2.0,
  size: 0.015,
  color: 0x00FF00,
- description: ' GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻¹⁴ seconds.',
- funFact: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
+ description: t('descGPS'),
+ funFact: t('funFactGPS'),
  realSize: 'GPS III: 2,161 kg, 7.8m solar span',
  orbitTime: '11h 58min'
  }
@@ -7168,8 +7168,8 @@ createHyperrealisticHubble(satData) {
  size: 0.08,
  color: 0xFFD700,
  type: 'observatory',
- description: '🔭 James Webb Space Telescope (JWST) is the most powerful space telescope ever built! Launched Dec 25, 2021, it orbits the Sun-Earth L2 point (1.5 million km from Earth). Observes infrared (0.6-28.5 μm) with a 6.5m segmented beryllium mirror — 6.25× the light-collecting area of Hubble (2.4m mirror)!',
- funFact: 'JWST operates at -233°C (-388°F) behind a tennis court-sized sunshield! It can see the first galaxies formed just 280 million years after the Big Bang.',
+ description: t('descJWST'),
+ funFact: t('funFactJWST'),
  realSize: '6.5m mirror, 21.2m × 14.2m sunshield, 6,161 kg',
  launched: 'December 25, 2021',
  status: 'Active at L2 Point'
