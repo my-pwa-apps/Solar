@@ -766,7 +766,7 @@ class App {
  // previous isSolidBody check used hardcoded English names which broke in
  // Dutch ('Planeet'), French ('Planète'), etc., causing comets to win over
  // planets in non-English UIs.
- const isComet = object.userData?.isComet === true || object.userData?.type === 'Comet';
+ const isComet = object.userData?.isComet === true || object.userData?.type === 'comet';
  const typeWeight = isComet ? 0.5 : 0;
 
  return { object, distance, angularDist, typeWeight };
@@ -790,7 +790,7 @@ class App {
  if (angularDiff < 0.05) {
  // Moon type is hardcoded 'Moon'; use parentPlanet presence as fallback
  const moonCandidate = [first, second].find(
- s => s.object.userData?.type === 'Moon' || s.object.userData?.parentPlanet
+ s => s.object.userData?.type === 'moon' || s.object.userData?.parentPlanet
  );
  // Planet candidate is the non-moon that the moon orbits
  const planetCandidate = [first, second].find(
@@ -899,7 +899,7 @@ class App {
  
  // Translate object name
  const t = window.t || ((key) => key);
- const nameKey = target.userData.name.toLowerCase().replace(/\s+/g, '');
+ const nameKey = target.userData.name?.replace(/\s+/g, '');
  const translatedName = (nameKey && window.t && window.t(nameKey) !== nameKey) 
  ? t(nameKey) 
  : target.userData.name;
