@@ -880,7 +880,7 @@ export class SceneManager {
  if (offset > 0) btn('\u25C4 Prev', 'scroll:prev', EDGE, PAG_Y, pAgW, BTN_H);
  ctx.fillStyle = '#4a7090'; ctx.font = '20px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(`${curPage} \u2F / ${totalPages}`, EDGE + pAgW + COL_GAP + pMidW/2, PAG_Y + BTN_H/2);
+ ctx.fillText(`${curPage} / ${totalPages}`, EDGE + pAgW + COL_GAP + pMidW/2, PAG_Y + BTN_H/2);
  if (offset + PER < items.length) btn('Next \u25BA', 'scroll:next', EDGE + pAgW + COL_GAP + pMidW + COL_GAP, PAG_Y, pAgW, BTN_H);
  }
 
