@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
 // Version 2.5.17 - Fix missing texture cache entries, luminance-based deep-sky blending
 
-const CACHE_VERSION = '2.5.32';
+const CACHE_VERSION = '2.5.33';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

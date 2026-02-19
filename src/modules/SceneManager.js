@@ -42,6 +42,7 @@ export class SceneManager {
  this._vrCameraRight = new THREE.Vector3();
  this._vrUpVector = new THREE.Vector3(0, 1, 0);
  this._vrTempPosition = new THREE.Vector3();
+ this._vrGrabDelta = new THREE.Vector3(); // For grab-to-rotate delta calc
  
  this.init();
  }
@@ -467,7 +468,12 @@ export class SceneManager {
 
  requestVRMenuRefresh() {
  if (!this.vrUIContext) return;
+ // Debounce: coalesce rapid refresh requests into a single redraw
+ if (this._vrMenuRefreshTimer) clearTimeout(this._vrMenuRefreshTimer);
+ this._vrMenuRefreshTimer = setTimeout(() => {
+ this._vrMenuRefreshTimer = null;
  this.drawVRMenu();
+ }, 16); // ~1 frame at 60fps
  }
 
  getVRMenuState() {
@@ -595,15 +601,16 @@ export class SceneManager {
  bgGradient.addColorStop(1, 'rgba(15, 15, 30, 0.98)');
  ctx.fillStyle = bgGradient;
  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
- // Fluent Design: Add subtle noise texture for acrylic effect
- for (let i = 0; i < 300; i++) {
- ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.03})`;
- const x = Math.random() * canvas.width;
- const y = Math.random() * canvas.height;
- const size = Math.random() * 2;
- ctx.fillRect(x, y, size, size);
- }
+ 
+ // Subtle vignette border for depth
+ const vignette = ctx.createRadialGradient(
+ canvas.width / 2, canvas.height / 2, canvas.height * 0.3,
+ canvas.width / 2, canvas.height / 2, canvas.height * 0.8
+ );
+ vignette.addColorStop(0, 'rgba(0,0,0,0)');
+ vignette.addColorStop(1, 'rgba(0,0,0,0.25)');
+ ctx.fillStyle = vignette;
+ ctx.fillRect(0, 0, canvas.width, canvas.height);
 
  // Fluent Design: Title with glow effect
  ctx.shadowColor = '#0078D4';
@@ -923,6 +930,7 @@ export class SceneManager {
  if (DEBUG.VR) console.log(`[VR] Button clicked: "${btn.label}" - Action: ${btn.action}`);
  this.handleVRAction(btn.action);
  this.flashVRButton(btn);
+ this.triggerVRHaptic(index, 0.4, 60); // Light haptic click
  buttonFound = true;
  }
  });
@@ -955,6 +963,7 @@ export class SceneManager {
  if (this.vrUIPanel) {
  this.updateVRStatus(` Inspecting: ${hitObject.name}`);
  }
+ this.triggerVRHaptic(index, 0.8, 100); // Stronger pulse for close zoom
  } else {
  // Normal focus
  module.focusOnObject(hitObject, this.camera, this.controls);
@@ -962,6 +971,7 @@ export class SceneManager {
  if (this.vrUIPanel) {
  this.updateVRStatus(` Selected: ${hitObject.name}`);
  }
+ this.triggerVRHaptic(index, 0.6, 80); // Medium pulse for selection
  }
  }
  }
@@ -988,6 +998,7 @@ export class SceneManager {
  this.grabRotateState.startDollyRotation.copy(this.dolly.rotation);
  this.grabRotateState.lastPosition.copy(this.grabRotateState.startPosition);
  
+ this.triggerVRHaptic(index, 0.5, 80); // Confirm grab start
  if (DEBUG.VR) console.log('🤚 [VR] Grab-to-rotate STARTED (LEFT GRIP)');
  this.updateVRStatus('🤚 Grab & Move to Rotate View');
  }
@@ -1158,8 +1169,10 @@ export class SceneManager {
  this.controllers.forEach(controller => {
  const laser = controller.getObjectByName('laser');
  const pointer = controller.getObjectByName('pointer');
+ const cone = controller.getObjectByName('cone');
  if (laser) laser.visible = this.lasersVisible;
  if (pointer) pointer.visible = this.lasersVisible;
+ if (cone) cone.visible = this.lasersVisible;
  });
  this.updateVRStatus(` Lasers ${this.lasersVisible ? 'ON' : 'OFF'}`);
  scheduleRefresh();
@@ -1222,10 +1235,36 @@ export class SceneManager {
  updateVRUI() {
  this.requestVRMenuRefresh();
  }
- 
+
+ /**
+ * Trigger haptic vibration on the specified controller.
+ * @param {number} controllerIndex - 0 or 1
+ * @param {number} intensity - 0.0 (off) to 1.0 (max)
+ * @param {number} durationMs - vibration time in milliseconds
+ */
+ triggerVRHaptic(controllerIndex, intensity = 0.5, durationMs = 60) {
+ try {
+ const session = this.renderer?.xr?.getSession();
+ if (!session) return;
+ let srcIndex = 0;
+ for (const inputSource of session.inputSources) {
+ if (srcIndex === controllerIndex) {
+ const actuators = inputSource.gamepad?.hapticActuators;
+ if (actuators && actuators.length > 0) {
+ actuators[0].pulse(intensity, durationMs);
+ }
+ break;
+ }
+ srcIndex++;
+ }
+ } catch (e) {
+ // Haptics are optional; swallow errors silently
+ }
+ }
+
  updateLaserPointers() {
- // Update laser pointer colors based on what they're pointing at
- if (!this.renderer.xr.isPresenting || !this.controllers) return;
+ // Skip entirely when lasers are hidden — avoids expensive per-frame raycasting
+ if (!this.renderer.xr.isPresenting || !this.controllers || !this.lasersVisible) return;
  
  // Check if sprint mode is active (check trigger buttons)
  let sprintActive = false;
@@ -1240,13 +1279,18 @@ export class SceneManager {
  }
  }
  }
- 
+
+ // Limit raycast range to cover solar system scene (ignores distant background stars)
+ const prevFar = this._vrRaycaster.far;
+ this._vrRaycaster.far = 2000;
+ const LASER_DEFAULT_LENGTH = 10; // visual length of the laser beam in meters
+
  this.controllers.forEach((controller, index) => {
  const laser = controller.getObjectByName('laser');
  const pointer = controller.getObjectByName('pointer');
  const cone = controller.getObjectByName('cone');
  
- if (!laser) return;
+ if (!laser || !laser.visible) return;
  
  // Setup raycaster (reuse pre-allocated objects)
  this._vrTempMatrix.identity().extractRotation(controller.matrixWorld);
@@ -1257,17 +1301,22 @@ export class SceneManager {
  // Use local reference for readability
  const raycaster = this._vrRaycaster;
  
- // Check what we're pointing at
+ // Check what we're pointing at (deep traversal, limited to 2000 units)
  const intersects = raycaster.intersectObjects(this.scene.children, true);
  
- // Change color based on sprint mode and what we're hitting
+ const hasHit = intersects.length > 0;
+ // Visual laser length — clamped to default max so the beam stays short even for distant objects
+ const hitDist = hasHit ? intersects[0].distance : LASER_DEFAULT_LENGTH;
+ const visualDist = Math.min(hitDist, LASER_DEFAULT_LENGTH);
+ 
+ // Change color based on sprint mode and whether anything is hit (at any distance)
  if (sprintActive) {
  // SPRINT MODE - ORANGE/RED laser
  laser.material.color.setHex(0xff6600);
  if (pointer) pointer.material.color.setHex(0xff6600);
  if (cone) cone.material.color.setHex(0xff6600);
- } else if (intersects.length > 0 && intersects[0].distance < 10) {
- // Pointing at something - make it GREEN
+ } else if (hasHit) {
+ // Pointing at something (near or far) - GREEN
  laser.material.color.setHex(0x00ff00);
  if (pointer) pointer.material.color.setHex(0x00ff00);
  if (cone) cone.material.color.setHex(0x00ff00);
@@ -1278,14 +1327,17 @@ export class SceneManager {
  if (cone) cone.material.color.setHex(0x00ffff);
  }
  
- // Update pointer position
- if (intersects.length > 0 && intersects[0].distance < 10) {
- const hitDistance = Math.min(intersects[0].distance, 10);
- if (pointer) pointer.position.set(0, 0, -hitDistance);
- } else {
- if (pointer) pointer.position.set(0, 0, -10);
- }
+ // Dynamic laser length: scale cylinder to reach exactly the hit point (or default)
+ // Cylinder Y-axis maps to -Z (forward) due to rotation.x = PI/2 applied at creation
+ laser.scale.y = visualDist / LASER_DEFAULT_LENGTH;
+ laser.position.z = -(visualDist / 2);
+ 
+ // Move pointer dot to hit point
+ if (pointer) pointer.position.set(0, 0, -visualDist);
  });
+
+ // Restore raycaster far to default so other code is unaffected
+ this._vrRaycaster.far = prevFar;
  }
  
  updateXRMovement() {
@@ -1502,11 +1554,12 @@ export class SceneManager {
  if (this.grabRotateState.active) {
  const controller = this.controllers[this.grabRotateState.controllerIndex];
  if (controller) {
- const currentPosition = new THREE.Vector3();
+ // Reuse pre-allocated vectors — no heap allocation on the hot path
+ const currentPosition = this._vrTempPosition;
  controller.getWorldPosition(currentPosition);
  
- // Calculate movement delta
- const delta = new THREE.Vector3().subVectors(
+ // Calculate movement delta using pre-allocated vector
+ const delta = this._vrGrabDelta.subVectors(
  currentPosition, 
  this.grabRotateState.lastPosition
  );
