@@ -614,131 +614,214 @@ export class SceneManager {
  const H = this.vrUICanvas.height;  // 1000
  const state = this.getVRMenuState();
 
- // ── helpers ────────────────────────────────────────────────
+ // ─────────────────── layout constants ──────────────────────
  const EDGE = 26, COL_GAP = 14;
  const COLS = 4;
- const COL_W = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS); // 326
+ const COL_W = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS);
  const colX = c => EDGE + c * (COL_W + COL_GAP);
-
- const BTN_H = 96;
- const ROW_GAP = 12;
- const rowY = r => 162 + r * (BTN_H + ROW_GAP);
+ const BTN_H = 96, ROW_GAP = 12;
+ const rowY  = r => 162 + r * (BTN_H + ROW_GAP);
+ const CONTENT_Y = 162;
+ const FOOT_Y    = H - 88 - 108;
+ const closeW    = Math.floor((W - EDGE * 2 - COL_GAP) / 2);
 
  this.vrButtons = [];
 
+ // ─────────────────── btn() helper ──────────────────────────
  const btn = (label, action, x, y, w, h, opts = {}) => {
- const isActive    = opts.active    ?? false;
- const isFlashing  = state.flashAction === action;
- let bg;
- if (isFlashing)   bg = '#FFEE44';
- else if (isActive) bg = '#2A6496';
- else               bg = opts.bg || '#1a2a3a';
- ctx.fillStyle = bg;
- ctx.beginPath();
- ctx.roundRect(x, y, w, h, 10);
- ctx.fill();
- ctx.strokeStyle = isActive ? '#5BC0F5' : (opts.border || '#334455');
- ctx.lineWidth = isActive ? 2 : 1;
- ctx.beginPath();
- ctx.roundRect(x, y, w, h, 10);
- ctx.stroke();
- ctx.fillStyle = isFlashing ? '#222' : (isActive ? '#FFF' : (opts.text || '#CCE8FF'));
+ const isActive   = opts.active   ?? false;
+ const isDanger   = opts.danger   ?? false;
+ const isSuccess  = opts.success  ?? false;
+ const isFlashing = state.flashAction === action;
+
+ ctx.save();
+
+ let topCol, botCol, bdrCol, txtCol;
+ if (isFlashing) {
+ topCol = '#FFF176'; botCol = '#FFD600'; bdrCol = '#FF8F00'; txtCol = '#1a0e00';
+ } else if (isDanger) {
+ topCol = opts.bg  || '#2e0d0d'; botCol = opts.bg2 || '#1a0606';
+ bdrCol = opts.border || '#882222'; txtCol = opts.text || '#FFAAAA';
+ } else if (isSuccess) {
+ topCol = '#0e2a0e'; botCol = '#061606';
+ bdrCol = '#2a8822'; txtCol = '#AAFFAA';
+ } else if (isActive) {
+ topCol = '#1e5a98'; botCol = '#0d2d50';
+ bdrCol = '#5BC0F5'; txtCol = '#FFFFFF';
+ } else {
+ topCol = opts.bg  || '#162030'; botCol = opts.bg2 || '#0c1420';
+ bdrCol = opts.border || '#2a4060'; txtCol = opts.text || '#B0D4F0';
+ }
+
+ const fg = ctx.createLinearGradient(x, y, x, y + h);
+ fg.addColorStop(0, topCol); fg.addColorStop(1, botCol);
+ ctx.fillStyle = fg;
+ ctx.beginPath(); ctx.roundRect(x, y, w, h, 10); ctx.fill();
+
+ if (isActive) { ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 14; }
+ ctx.strokeStyle = bdrCol;
+ ctx.lineWidth = isActive ? 1.5 : 1;
+ ctx.beginPath(); ctx.roundRect(x, y, w, h, 10); ctx.stroke();
+ ctx.shadowBlur = 0;
+
+ if (opts.sublabel) {
+ ctx.fillStyle = isActive ? 'rgba(255,255,255,0.6)' : 'rgba(130,170,200,0.7)';
+ ctx.font = '14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(opts.sublabel, x + w / 2, y + h * 0.68, w - 12);
+ ctx.fillStyle = txtCol;
  ctx.font = opts.font || 'bold 22px Arial';
- ctx.textAlign = 'center';
- ctx.textBaseline = 'middle';
- if (label) ctx.fillText(label, x + w / 2, y + h / 2, w - 12);
+ ctx.fillText(label, x + w / 2, y + h * 0.35, w - 12);
+ } else {
+ ctx.fillStyle = txtCol;
+ ctx.font = opts.font || 'bold 22px Arial';
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(label, x + w / 2, y + h / 2, w - 16);
+ }
+
+ ctx.restore();
  if (action) this.vrButtons.push({ x, y, w, h, label, action });
  };
 
- // ── background ─────────────────────────────────────────────
- const grad = ctx.createLinearGradient(0, 0, 0, H);
- grad.addColorStop(0, '#0a0e1a');
- grad.addColorStop(1, '#060a14');
- ctx.fillStyle = grad;
- ctx.fillRect(0, 0, W, H);
+ // ─────────────────── section label helper ──────────────────
+ const sectionLabel = (text, lx, ly, lw) => {
+ const m = ctx.measureText(text);
+ ctx.fillStyle = '#243040';
+ ctx.fillRect(lx, ly + 9, lw, 1);
+ ctx.fillStyle = '#0c1828';
+ ctx.fillRect(lx, ly - 2, m.width + 14, 20);
+ ctx.fillStyle = '#4a7a9a';
+ ctx.font = 'bold 14px Arial';
+ ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+ ctx.fillText(text, lx, ly - 1);
+ };
 
- // ── title bar ──────────────────────────────────────────────
- ctx.fillStyle = '#121e30';
- ctx.fillRect(0, 0, W, 74);
- ctx.fillStyle = '#E8F4FF';
+ // ─────────────────── background + stars ────────────────────
+ const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+ bgGrad.addColorStop(0, '#060a14');
+ bgGrad.addColorStop(0.5, '#08101e');
+ bgGrad.addColorStop(1, '#04080f');
+ ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
+
+ // nebula accent glow
+ const nebGrad = ctx.createRadialGradient(W * 0.78, H * 0.22, 0, W * 0.78, H * 0.22, W * 0.45);
+ nebGrad.addColorStop(0, 'rgba(60, 20, 100, 0.12)');
+ nebGrad.addColorStop(0.5, 'rgba(20, 10, 60, 0.06)');
+ nebGrad.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = nebGrad; ctx.fillRect(0, 0, W, H);
+
+ // deterministic star field (seeded LCG)
+ let sr = 98273;
+ const srand = () => { sr = (sr * 1103515245 + 12345) & 0x7fffffff; return sr / 0x7fffffff; };
+ for (let i = 0; i < 90; i++) {
+ const sx = srand() * W, sy = srand() * (H - 100) + 5;
+ const sa = 0.12 + srand() * 0.55;
+ const ss = 0.4 + srand() * 1.4;
+ ctx.fillStyle = `rgba(180,210,255,${sa.toFixed(2)})`;
+ ctx.beginPath(); ctx.arc(sx, sy, ss, 0, Math.PI * 2); ctx.fill();
+ }
+
+ // ─────────────────── title bar ─────────────────────────────
+ const hdrGrad = ctx.createLinearGradient(0, 0, W, 0);
+ hdrGrad.addColorStop(0, '#08101e'); hdrGrad.addColorStop(0.5, '#0e1e34'); hdrGrad.addColorStop(1, '#08101e');
+ ctx.fillStyle = hdrGrad; ctx.fillRect(0, 0, W, 74);
+
+ ctx.save();
+ const titleGrad = ctx.createLinearGradient(W/2 - 220, 0, W/2 + 220, 0);
+ titleGrad.addColorStop(0, '#8EC5FC');
+ titleGrad.addColorStop(0.45, '#D0EAFF');
+ titleGrad.addColorStop(0.75, '#C8B8FF');
+ titleGrad.addColorStop(1, '#E0C3FC');
+ ctx.fillStyle = titleGrad;
  ctx.font = 'bold 34px Arial';
- ctx.textAlign = 'center';
- ctx.textBaseline = 'middle';
- ctx.fillText('🌌 Space Voyage VR', W / 2, 37);
- // divider
- const dg = ctx.createLinearGradient(0, 74, W, 74);
- dg.addColorStop(0, 'transparent'); dg.addColorStop(0.5, '#4A90D9'); dg.addColorStop(1, 'transparent');
- ctx.fillStyle = dg; ctx.fillRect(0, 74, W, 3);
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 18;
+ ctx.fillText('\uD83C\uDF0C Space Voyage VR', W / 2, 37);
+ ctx.restore();
 
- // ── page tabs ──────────────────────────────────────────────
+ // glowing title divider
+ const divGrad = ctx.createLinearGradient(0, 74, W, 74);
+ divGrad.addColorStop(0, 'rgba(74,144,217,0)');
+ divGrad.addColorStop(0.3, 'rgba(74,144,217,0.9)');
+ divGrad.addColorStop(0.7, 'rgba(123,184,245,0.9)');
+ divGrad.addColorStop(1, 'rgba(74,144,217,0)');
+ ctx.fillStyle = divGrad; ctx.fillRect(0, 74, W, 2);
+
+ // ─────────────────── page tabs ─────────────────────────────
  const TABS = [
- { id: 'controls',  label: '⚙️ Controls' },
- { id: 'navigate',  label: '🧭 Navigate' },
- { id: 'info',      label: 'ℹ️ Info' }
+ { id: 'controls', label: '\u2699\uFE0F  Controls' },
+ { id: 'navigate', label: '\uD83E\uDDED  Navigate' },
+ { id: 'info',     label: '\u2139\uFE0F  Info' }
  ];
  const TW = Math.floor(W / TABS.length);
  TABS.forEach((t, i) => {
- const isActive = state.currentPage === t.id;
- ctx.fillStyle = isActive ? '#1a3a5a' : '#0d1a2a';
+ const active = state.currentPage === t.id;
+ const tabBg = active
+ ? ctx.createLinearGradient(i*TW, 80, i*TW, 152)
+ : ctx.createLinearGradient(i*TW, 80, i*TW, 152);
+ if (active) { tabBg.addColorStop(0, '#0f2640'); tabBg.addColorStop(1, '#0a1a2e'); }
+ else        { tabBg.addColorStop(0, '#080f1a'); tabBg.addColorStop(1, '#060c14'); }
+ ctx.fillStyle = tabBg;
  ctx.fillRect(i * TW, 80, TW - 2, 72);
- if (isActive) {
- ctx.fillStyle = '#4A90D9';
- ctx.fillRect(i * TW, 148, TW - 2, 4);
+
+ if (active) {
+ ctx.save();
+ const glowGrad = ctx.createLinearGradient(i*TW, 148, (i+1)*TW-2, 148);
+ glowGrad.addColorStop(0, 'rgba(74,144,217,0.2)');
+ glowGrad.addColorStop(0.5, '#5BC0F5');
+ glowGrad.addColorStop(1, 'rgba(74,144,217,0.2)');
+ ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 8;
+ ctx.fillStyle = glowGrad; ctx.fillRect(i * TW, 148, TW - 2, 4);
+ ctx.restore();
  }
- ctx.fillStyle = isActive ? '#FFF' : '#7799BB';
- ctx.font = isActive ? 'bold 26px Arial' : '24px Arial';
- ctx.textAlign = 'center';
- ctx.textBaseline = 'middle';
+
+ ctx.fillStyle = active ? '#E8F4FF' : '#4a6a8a';
+ ctx.font = active ? 'bold 26px Arial' : '24px Arial';
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
  ctx.fillText(t.label, i * TW + TW / 2, 116);
  this.vrButtons.push({ x: i * TW, y: 80, w: TW - 2, h: 68, label: t.label, action: `page:${t.id}` });
  });
- // tab bottom divider
- ctx.fillStyle = '#223344'; ctx.fillRect(0, 152, W, 2);
+ ctx.fillStyle = '#1a2a3a'; ctx.fillRect(0, 152, W, 2);
 
- // status bar
- ctx.fillStyle = '#0f1822';
- ctx.fillRect(0, H - 88, W, 88);
- ctx.fillStyle = '#334455'; ctx.fillRect(0, H - 88, W, 1);
- const msg = state.statusMessage || '✨ Ready';
- ctx.fillStyle = '#88AACC';
- ctx.font = '22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ // ─────────────────── status bar ────────────────────────────
+ const stBarGrad = ctx.createLinearGradient(0, H-88, 0, H);
+ stBarGrad.addColorStop(0, '#0c1520'); stBarGrad.addColorStop(1, '#080e18');
+ ctx.fillStyle = stBarGrad; ctx.fillRect(0, H - 88, W, 88);
+ ctx.fillStyle = '#1e3040'; ctx.fillRect(0, H - 88, W, 1);
+ const msg = state.statusMessage || '\u2728 Ready';
+ const msgColor = msg.includes('\u26A0') ? '#FFB347' : msg.includes('\u2714') ? '#66CC88' : '#7AAACE';
+ ctx.fillStyle = msgColor;
+ ctx.font = '21px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
  ctx.fillText(msg, W / 2, H - 44);
 
- const CONTENT_Y = 162;
- const FOOT_Y    = H - 88 - 108;   // ~804  footer row
-
- // close / exit buttons (shared by all pages)
- const closeW = Math.floor((W - EDGE * 2 - COL_GAP) / 2);
- btn('🚪 Close Menu', 'hide',   EDGE,            FOOT_Y, closeW, BTN_H);
- btn('❌ Exit VR',          'exitvr', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H, { bg:'#3a1a1a', border:'#AA3333', text:'#FFAAAA' });
+ // ─────────────────── shared footer buttons ─────────────────
+ btn('\uD83D\uDEAA Close Menu', 'hide', EDGE, FOOT_Y, closeW, BTN_H);
+ btn('\u274C Exit VR', 'exitvr', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H, { danger: true });
 
  // ═══════════════════════════════════════════════════════════
  // CONTROLS PAGE
  // ═══════════════════════════════════════════════════════════
  if (state.currentPage === 'controls') {
- // Row 0 – speed presets
- const spd  = state.timeSpeed;
- const s0   = spd === 0;
- const s1   = spd === 1 && !s0;
- const s10  = spd === 10;
- const s100 = spd >= 100;
- btn('⏸ Pause',   'speed0',   colX(0), rowY(0), COL_W, BTN_H, { active: s0 });
- btn('▶ 1×', 'speed1',   colX(1), rowY(0), COL_W, BTN_H, { active: s1 });
- btn('⏩ 10×','speed10',  colX(2), rowY(0), COL_W, BTN_H, { active: s10 });
- btn('⏩⏩ 100×','speed100', colX(3), rowY(0), COL_W, BTN_H, { active: s100 });
+ const spd = state.timeSpeed;
+ const s0 = spd === 0, s1 = spd === 1, s10 = spd === 10, s100 = spd >= 100;
 
- // Row 1 – tools
- btn('🔄 Reset',    'reset',       colX(0), rowY(1), COL_W, BTN_H);
- btn('🎲 Discover', 'discover',    colX(1), rowY(1), COL_W, BTN_H);
- btn(state.audioEnabled ? '🔊 Sound' : '🔇 Sound', 'sound',
- colX(2), rowY(1), COL_W, BTN_H, { active: state.audioEnabled });
- btn('🎯 Lasers',   'togglelasers',colX(3), rowY(1), COL_W, BTN_H, { active: state.lasersVisible });
+ sectionLabel('TIME SCALE', EDGE, rowY(0) - 22, W - EDGE * 2);
+ btn('\u23F8 Pause', 'speed0',  colX(0), rowY(0), COL_W, BTN_H, { active: s0,   sublabel: '0\u00D7' });
+ btn('\u25B6 Play',  'speed1',  colX(1), rowY(0), COL_W, BTN_H, { active: s1,   sublabel: '1\u00D7' });
+ btn('\u23E9 Fast',  'speed10', colX(2), rowY(0), COL_W, BTN_H, { active: s10,  sublabel: '10\u00D7' });
+ btn('\u23E9\u23E9 Max', 'speed100', colX(3), rowY(0), COL_W, BTN_H, { active: s100, sublabel: '100\u00D7' });
 
- // Row 2 – view toggles
- btn('🪐 Orbits',       'orbits',        colX(0), rowY(2), COL_W, BTN_H, { active: state.orbitsVisible });
- btn('🏷️ Labels', 'labels',         colX(1), rowY(2), COL_W, BTN_H, { active: state.labelsVisible });
- btn('⭐ Stars',              'constellations', colX(2), rowY(2), COL_W, BTN_H, { active: state.constellationsVisible });
- btn('📏 Scale',        'scale',          colX(3), rowY(2), COL_W, BTN_H, { active: state.realisticScale });
+ sectionLabel('TOOLS', EDGE, rowY(1) - 22, W - EDGE * 2);
+ btn('\uD83D\uDD04 Reset',    'reset',       colX(0), rowY(1), COL_W, BTN_H);
+ btn('\uD83C\uDFB2 Discover', 'discover',    colX(1), rowY(1), COL_W, BTN_H);
+ btn(state.audioEnabled ? '\uD83D\uDD0A Sound' : '\uD83D\uDD07 Sound',
+ 'sound', colX(2), rowY(1), COL_W, BTN_H, { active: state.audioEnabled });
+ btn('\uD83C\uDFAF Lasers', 'togglelasers', colX(3), rowY(1), COL_W, BTN_H, { active: state.lasersVisible });
+
+ sectionLabel('DISPLAY', EDGE, rowY(2) - 22, W - EDGE * 2);
+ btn('\uD83E\uDE90 Orbits',       'orbits',         colX(0), rowY(2), COL_W, BTN_H, { active: state.orbitsVisible });
+ btn('\uD83C\uDFF7\uFE0F Labels', 'labels',          colX(1), rowY(2), COL_W, BTN_H, { active: state.labelsVisible });
+ btn('\u2B50 Stars',              'constellations',  colX(2), rowY(2), COL_W, BTN_H, { active: state.constellationsVisible });
+ btn('\uD83D\uDCCF Scale',        'scale',           colX(3), rowY(2), COL_W, BTN_H, { active: state.realisticScale });
  }
 
  // ═══════════════════════════════════════════════════════════
@@ -746,53 +829,59 @@ export class SceneManager {
  // ═══════════════════════════════════════════════════════════
  else if (state.currentPage === 'navigate') {
  const catalog = this.getVRNavCatalog();
- const CAT_TAB_H = 52;
- const catW = Math.floor(W / catalog.length);
+ const CAT_H = 50;
+ const catW  = Math.floor(W / catalog.length);
 
- // category tabs
  catalog.forEach((cat, i) => {
- const isActive = state.currentCategory === cat.id;
- ctx.fillStyle = isActive ? '#1a3a5a' : '#0d1522';
- ctx.fillRect(i * catW, CONTENT_Y, catW - 1, CAT_TAB_H);
- if (isActive) { ctx.fillStyle = '#2A6496'; ctx.fillRect(i * catW, CONTENT_Y + CAT_TAB_H - 4, catW - 1, 4); }
- ctx.fillStyle = isActive ? '#FFF' : '#6688AA';
- ctx.font = isActive ? 'bold 19px Arial' : '17px Arial';
+ const active = state.currentCategory === cat.id;
+ const cbg = active
+ ? (() => { const g = ctx.createLinearGradient(i*catW, CONTENT_Y, i*catW, CONTENT_Y+CAT_H); g.addColorStop(0,'#12304e'); g.addColorStop(1,'#0a1e32'); return g; })()
+ : (() => { const g = ctx.createLinearGradient(i*catW, CONTENT_Y, i*catW, CONTENT_Y+CAT_H); g.addColorStop(0,'#0a1220'); g.addColorStop(1,'#060c16'); return g; })();
+ ctx.fillStyle = cbg;
+ ctx.fillRect(i * catW, CONTENT_Y, catW - 1, CAT_H);
+
+ if (active) {
+ ctx.save();
+ ctx.shadowColor = '#3A80D0'; ctx.shadowBlur = 8;
+ const cbdr = ctx.createLinearGradient(i*catW, 0, (i+1)*catW, 0);
+ cbdr.addColorStop(0,'rgba(74,144,217,0.3)'); cbdr.addColorStop(0.5,'#4A90D9'); cbdr.addColorStop(1,'rgba(74,144,217,0.3)');
+ ctx.fillStyle = cbdr; ctx.fillRect(i * catW, CONTENT_Y + CAT_H - 3, catW - 1, 3);
+ ctx.restore();
+ }
+ ctx.fillStyle = active ? '#D8EEFF' : '#3a5a7a';
+ ctx.font = active ? 'bold 18px Arial' : '16px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(cat.label, i * catW + catW / 2, CONTENT_Y + CAT_TAB_H / 2);
- this.vrButtons.push({ x: i * catW, y: CONTENT_Y, w: catW - 1, h: CAT_TAB_H, label: cat.label, action: `cat:${cat.id}` });
+ ctx.fillText(cat.label, i * catW + catW / 2, CONTENT_Y + CAT_H / 2);
+ this.vrButtons.push({ x: i*catW, y: CONTENT_Y, w: catW-1, h: CAT_H, label: cat.label, action: `cat:${cat.id}` });
  });
 
- // item grid
- const curCat  = catalog.find(c => c.id === state.currentCategory) || catalog[0];
- const items   = curCat.items;
- const PER     = 16;
- const offset  = state.scrollOffset || 0;
- const page    = items.slice(offset, offset + PER);
- const ITEM_H  = 74;
- const ITEM_GAP= 8;
- const GRID_Y  = CONTENT_Y + CAT_TAB_H + 8;
- const ITEM_W  = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS);
+ const curCat = catalog.find(c => c.id === state.currentCategory) || catalog[0];
+ const items  = curCat.items;
+ const PER = 16;
+ const offset = state.scrollOffset || 0;
+ const page = items.slice(offset, offset + PER);
+ const ITEM_H = 72, ITEM_GAP = 8;
+ const GRID_Y = CONTENT_Y + CAT_H + 10;
+ const ITEM_W = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS);
 
  page.forEach((item, idx) => {
- const col   = idx % COLS;
- const row   = Math.floor(idx / COLS);
- const ix    = EDGE + col * (ITEM_W + COL_GAP);
- const iy    = GRID_Y + row * (ITEM_H + ITEM_GAP);
- btn(item.label, `navigate-to:${item.id}`, ix, iy, ITEM_W, ITEM_H, { font: '20px Arial' });
+ const col = idx % COLS, row = Math.floor(idx / COLS);
+ const ix = EDGE + col * (ITEM_W + COL_GAP);
+ const iy = GRID_Y + row * (ITEM_H + ITEM_GAP);
+ btn(item.label, `navigate-to:${item.id}`, ix, iy, ITEM_W, ITEM_H, { font: 'bold 19px Arial' });
  });
 
- // pagination
  const totalPages = Math.ceil(items.length / PER);
- const curPage    = Math.floor(offset / PER) + 1;
- const PAG_Y      = GRID_Y + 4 * (ITEM_H + ITEM_GAP) + 8;
- const prevDisabled = offset <= 0;
- const nextDisabled = offset + PER >= items.length;
- const pagW = Math.floor((W - EDGE * 2 - COL_GAP * 2) / 3);
+ const curPage = Math.floor(offset / PER) + 1;
+ const PAG_Y = GRID_Y + 4 * (ITEM_H + ITEM_GAP) + 8;
+ const pAgW  = Math.floor((W - EDGE*2 - COL_GAP*2) / 3);
+ const pMidW = W - EDGE*2 - pAgW*2 - COL_GAP*2;
 
- if (!prevDisabled) btn('◄ Prev', 'scroll:prev', EDGE, PAG_Y, pagW, BTN_H);
- ctx.fillStyle = '#88AACC'; ctx.font = '22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(`${curPage} / ${totalPages}`, EDGE + pagW + COL_GAP + pagW / 2, PAG_Y + BTN_H / 2);
- if (!nextDisabled) btn('Next ►', 'scroll:next', EDGE + (pagW + COL_GAP) * 2, PAG_Y, pagW, BTN_H);
+ if (offset > 0) btn('\u25C4 Prev', 'scroll:prev', EDGE, PAG_Y, pAgW, BTN_H);
+ ctx.fillStyle = '#4a7090'; ctx.font = '20px Arial';
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(`${curPage} \u2F / ${totalPages}`, EDGE + pAgW + COL_GAP + pMidW/2, PAG_Y + BTN_H/2);
+ if (offset + PER < items.length) btn('Next \u25BA', 'scroll:next', EDGE + pAgW + COL_GAP + pMidW + COL_GAP, PAG_Y, pAgW, BTN_H);
  }
 
  // ═══════════════════════════════════════════════════════════
@@ -800,67 +889,157 @@ export class SceneManager {
  // ═══════════════════════════════════════════════════════════
  else if (state.currentPage === 'info') {
  const info = state.lastObjectInfo;
- const INFO_X = EDGE, INFO_W = W - EDGE * 2;
+
  if (info) {
- const NAME_Y = CONTENT_Y + 44;
- ctx.fillStyle = '#E8F4FF';
- ctx.font = 'bold 40px Arial';
+ // helper: type → accent colors + icon
+ const typeStyle = (t) => {
+ const tl = (t || '').toLowerCase();
+ if (tl.includes('star')) return { icon: '\u2B50', accent: '#FFD700', dim:'#3d2e00', badge:'#2a1e00' };
+ if (tl.includes('gas'))  return { icon: '\uD83E\uDE90', accent: '#88AAEE', dim:'#1a1e40', badge:'#0e1428' };
+ if (tl.includes('moon')) return { icon: '\uD83C\uDF19', accent: '#AAAACC', dim:'#1e1e30', badge:'#12121e' };
+ if (tl.includes('planet')) return { icon: '\uD83C\uDF0D', accent: '#44CC88', dim:'#0e2a1a', badge:'#081a10' };
+ if (tl.includes('dwarf')) return { icon: '\uD83D\uDD34', accent: '#CC8844', dim:'#2a1a0a', badge:'#1a1006' };
+ if (tl.includes('comet') || tl.includes('comet')) return { icon: '\u2604\uFE0F', accent: '#88CCFF', dim:'#0a2030', badge:'#061520' };
+ if (tl.includes('nebula')) return { icon: '\uD83C\uDF0B', accent: '#CC88FF', dim:'#1e0a30', badge:'#120620' };
+ if (tl.includes('galaxy')) return { icon: '\uD83C\uDF00', accent: '#FF88CC', dim:'#2a0a1a', badge:'#1a0610' };
+ if (tl.includes('constellation')) return { icon: '\u2728', accent: '#FFCC88', dim:'#2a1e00', badge:'#1a1200' };
+ if (tl.includes('spacecraft') || tl.includes('station')) return { icon: '\uD83D\uDEF8', accent: '#80CCFF', dim:'#0a1e30', badge:'#061220' };
+ return { icon: '\u2022', accent: '#70B0E0', dim:'#0a1a2a', badge:'#060e1a' };
+ };
+
+ const ts = typeStyle(info.type);
+
+ // ── glowing object name ──────────────────────────
+ const NAME_Y = CONTENT_Y + 56;
+ ctx.save();
+ const nameGlow = ctx.createRadialGradient(W/2, NAME_Y, 0, W/2, NAME_Y, 300);
+ nameGlow.addColorStop(0, `rgba(${ts.accent === '#FFD700' ? '200,150,0' : '30,80,160'},0.18)`);
+ nameGlow.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = nameGlow; ctx.fillRect(0, NAME_Y - 60, W, 120);
+
+ const nameGrad = ctx.createLinearGradient(W/2 - 250, 0, W/2 + 250, 0);
+ nameGrad.addColorStop(0, ts.accent);
+ nameGrad.addColorStop(0.5, '#FFFFFF');
+ nameGrad.addColorStop(1, ts.accent);
+ ctx.fillStyle = nameGrad;
+ ctx.font = 'bold 46px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(info.name || 'Unknown Object', W / 2, NAME_Y);
+ ctx.shadowColor = ts.accent; ctx.shadowBlur = 22;
+ ctx.fillText(info.name || 'Unknown Object', W / 2, NAME_Y, W - EDGE*2);
+ ctx.restore();
 
- ctx.fillStyle = '#334455'; ctx.fillRect(EDGE, NAME_Y + 30, INFO_W, 1);
+ // ── type badge ───────────────────────────────────
+ const BADGE_Y = NAME_Y + 46;
+ const typeLabel = (info.type || 'Celestial Object').toUpperCase();
+ ctx.font = 'bold 17px Arial';
+ const tw = ctx.measureText(ts.icon + '  ' + typeLabel).width + 28;
+ const bx = W/2 - tw/2;
+ ctx.fillStyle = ts.badge;
+ ctx.beginPath(); ctx.roundRect(bx, BADGE_Y, tw, 28, 14); ctx.fill();
+ ctx.strokeStyle = ts.accent + '88';
+ ctx.lineWidth = 1;
+ ctx.beginPath(); ctx.roundRect(bx, BADGE_Y, tw, 28, 14); ctx.stroke();
+ ctx.fillStyle = ts.accent;
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(ts.icon + '  ' + typeLabel, W/2, BADGE_Y + 14);
 
- const props = [
- ['Type', info.type || 'Celestial Object'],
- ['Distance', info.distance != null ? `${info.distance.toFixed ? info.distance.toFixed(1) : info.distance} AU` : 'N/A'],
- ['Size', info.size != null ? `${info.size.toFixed ? info.size.toFixed(0) : info.size} km` : 'N/A']
+ // ── stat tiles ───────────────────────────────────
+ const STAT_Y = BADGE_Y + 44;
+ const STAT_H = 84;
+ const statW  = Math.floor((W - EDGE*2 - COL_GAP*2) / 3);
+ const stats  = [
+ { lbl: 'DISTANCE',  val: info.distance != null
+ ? (info.distance.toFixed ? info.distance.toFixed(2) + ' AU' : info.distance + ' AU')
+ : '—',
+ icon: '\uD83D\uDD2D' },
+ { lbl: 'DIAMETER',  val: info.size != null
+ ? (info.size.toFixed ? Math.round(info.size).toLocaleString() + ' km' : info.size + ' km')
+ : '—',
+ icon: '\uD83D\uDCCF' },
+ { lbl: 'PERIOD',    val: info.orbitalPeriod != null
+ ? (info.orbitalPeriod < 5 ? info.orbitalPeriod.toFixed(2) + ' yrs' : Math.round(info.orbitalPeriod) + ' yrs')
+ : (info.rotationPeriod != null ? info.rotationPeriod.toFixed(1) + ' hrs rot' : '—'),
+ icon: '\u23F3' }
  ];
- let propY = NAME_Y + 46;
- props.forEach(([k, v]) => {
- ctx.fillStyle = '#5596CC'; ctx.font = 'bold 22px Arial'; ctx.textAlign = 'left';
- ctx.fillText(k + ':', INFO_X, propY);
- ctx.fillStyle = '#CCE8FF'; ctx.font = '22px Arial';
- ctx.fillText(v, INFO_X + 160, propY);
- propY += 38;
+
+ stats.forEach((st, i) => {
+ const sx = EDGE + i * (statW + COL_GAP);
+ const sg = ctx.createLinearGradient(sx, STAT_Y, sx, STAT_Y + STAT_H);
+ sg.addColorStop(0, '#10202e'); sg.addColorStop(1, '#081420');
+ ctx.fillStyle = sg;
+ ctx.beginPath(); ctx.roundRect(sx, STAT_Y, statW, STAT_H, 10); ctx.fill();
+ ctx.strokeStyle = '#1e3a54'; ctx.lineWidth = 1;
+ ctx.beginPath(); ctx.roundRect(sx, STAT_Y, statW, STAT_H, 10); ctx.stroke();
+
+ ctx.fillStyle = '#4a7090';
+ ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+ ctx.fillText(st.icon + ' ' + st.lbl, sx + statW/2, STAT_Y + 10);
+
+ ctx.fillStyle = '#C8E8FF';
+ ctx.font = 'bold 22px Arial'; ctx.textBaseline = 'middle';
+ ctx.fillText(st.val, sx + statW/2, STAT_Y + STAT_H - 28, statW - 12);
  });
 
- // description box
- const DESC_Y = NAME_Y + 46 + props.length * 38 + 14;
- const DESC_H = FOOT_Y - DESC_Y - 16;
- ctx.fillStyle = '#0d1d2d';
- ctx.beginPath(); ctx.roundRect(INFO_X, DESC_Y, INFO_W, DESC_H, 8); ctx.fill();
- ctx.strokeStyle = '#223344'; ctx.lineWidth = 1;
- ctx.beginPath(); ctx.roundRect(INFO_X, DESC_Y, INFO_W, DESC_H, 8); ctx.stroke();
-
+ // ── description ──────────────────────────────────
+ const DESC_Y  = STAT_Y + STAT_H + 18;
+ const DESC_H  = FOOT_Y - DESC_Y - 12;
  const desc = info.description || 'No description available.';
- ctx.fillStyle = '#A0C8E8';
- ctx.font = '21px Arial';
+
+ const descBg = ctx.createLinearGradient(EDGE, DESC_Y, EDGE, DESC_Y + DESC_H);
+ descBg.addColorStop(0, '#0c1e30'); descBg.addColorStop(1, '#080f1e');
+ ctx.fillStyle = descBg;
+ ctx.beginPath(); ctx.roundRect(EDGE, DESC_Y, W - EDGE*2, DESC_H, 12); ctx.fill();
+ ctx.strokeStyle = '#1e3a54'; ctx.lineWidth = 1;
+ ctx.beginPath(); ctx.roundRect(EDGE, DESC_Y, W - EDGE*2, DESC_H, 12); ctx.stroke();
+
+ // left accent bar
+ ctx.save();
+ const accentBar = ctx.createLinearGradient(EDGE, DESC_Y, EDGE, DESC_Y + DESC_H);
+ accentBar.addColorStop(0, ts.accent); accentBar.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = accentBar; ctx.fillRect(EDGE + 1, DESC_Y + 1, 3, DESC_H - 2);
+ ctx.restore();
+
+ ctx.fillStyle = '#8ab8d8';
+ ctx.font = '20px Arial';
  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
  const words = desc.split(' ');
- let line = '', lineY = DESC_Y + 14;
- const maxW = INFO_W - 24;
- words.forEach(word => {
+ let line = '', lineY = DESC_Y + 16;
+ const maxW = W - EDGE*2 - 28;
+ for (const word of words) {
  const test = line ? line + ' ' + word : word;
  if (ctx.measureText(test).width > maxW && line) {
- if (lineY + 26 < DESC_Y + DESC_H - 10) ctx.fillText(line, INFO_X + 12, lineY);
- line = word; lineY += 28;
+ if (lineY + 24 < DESC_Y + DESC_H - 10) ctx.fillText(line, EDGE + 16, lineY);
+ line = word; lineY += 26;
  } else { line = test; }
- });
- if (line && lineY + 26 < DESC_Y + DESC_H - 10) ctx.fillText(line, INFO_X + 12, lineY);
+ }
+ if (line && lineY + 24 < DESC_Y + DESC_H - 10) ctx.fillText(line, EDGE + 16, lineY);
+
  } else {
- ctx.fillStyle = '#668899';
- ctx.font = '28px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText('Point at an object and select it', W / 2, CONTENT_Y + 200);
- ctx.fillText('to see its information here.', W / 2, CONTENT_Y + 240);
+ // No info – placeholder with gentle animation hint
+ const cx = W/2, cy = CONTENT_Y + 260;
+ const phGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 160);
+ phGlow.addColorStop(0, 'rgba(60,120,200,0.12)'); phGlow.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = phGlow; ctx.fillRect(cx-200, cy-80, 400, 160);
+
+ ctx.fillStyle = '#2a4860';
+ ctx.font = '58px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText('\uD83D\uDD2D', cx, cy - 40);
+
+ ctx.fillStyle = '#3a6080';
+ ctx.font = 'bold 28px Arial';
+ ctx.fillText('Point & select an object', cx, cy + 30);
+ ctx.fillStyle = '#2a4860';
+ ctx.font = '22px Arial';
+ ctx.fillText('in space to see its details here', cx, cy + 66);
  }
 
- // override footer buttons for info page
+ // Info page footer – replace with Navigate / Controls
  this.vrButtons = this.vrButtons.filter(b => b.action !== 'hide' && b.action !== 'exitvr');
- btn('🧭 Navigate', 'page:navigate', EDGE,            FOOT_Y, closeW, BTN_H, { bg:'#1a3a1a', border:'#336633', text:'#AAFFAA' });
- btn('⚙️ Controls',  'page:controls', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H);
+ btn('\uD83E\uDDED Navigate', 'page:navigate', EDGE, FOOT_Y, closeW, BTN_H, { success: true });
+ btn('\u2699\uFE0F Controls',  'page:controls', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H);
  }
 
- // ── flush texture ──────────────────────────────────────────
+ // ─────────────────── flush texture ─────────────────────────
  if (this.vrUIPanel?.material?.map) {
  this.vrUIPanel.material.map.needsUpdate = true;
  }
@@ -1000,21 +1179,39 @@ export class SceneManager {
  
  // Check if it's a planet or celestial body
  if (hitObject.name && module.focusOnObject) {
+ // Fetch object info for display
+ const infoForPanel = typeof module.getObjectInfo === 'function' ? module.getObjectInfo(hitObject) : null;
+ const objName = hitObject.userData?.name || hitObject.name || 'Object';
+
  // If grip+trigger held, zoom VERY close for inspection
  if (gripHeld) {
  this.zoomToObject(hitObject, 'close');
  if (DEBUG.VR) console.log('[VR] Zooming to:', hitObject.name);
- if (this.vrUIPanel) {
- this.updateVRStatus(` Inspecting: ${hitObject.name}`);
+ if (infoForPanel) {
+ this.vrLastObjectInfo = infoForPanel;
+ app.uiManager?.updateInfoPanel(infoForPanel);
+ if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
+ if (this.vrUIPanel) {
+ this.vrUIPanel.visible = true;
+ this.updateVRStatus('\uD83D\uDD0D Inspecting: ' + objName);
+ }
+ this.requestVRMenuRefresh();
  this.triggerVRHaptic(index, 0.8, 100); // Stronger pulse for close zoom
  } else {
- // Normal focus
+ // Normal focus – focus camera and show info page
  module.focusOnObject(hitObject, this.camera, this.controls);
  if (DEBUG.VR) console.log('[VR] Focused on:', hitObject.name);
- if (this.vrUIPanel) {
- this.updateVRStatus(` Selected: ${hitObject.name}`);
+ if (infoForPanel) {
+ this.vrLastObjectInfo = infoForPanel;
+ app.uiManager?.updateInfoPanel(infoForPanel);
+ if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
+ if (this.vrUIPanel) {
+ this.vrUIPanel.visible = true;
+ this.updateVRStatus('\u2714\uFE0F ' + objName);
+ }
+ this.requestVRMenuRefresh();
  this.triggerVRHaptic(index, 0.6, 80); // Medium pulse for selection
  }
  }
