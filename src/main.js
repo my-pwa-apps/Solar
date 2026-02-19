@@ -452,6 +452,7 @@ class App {
  resetButton.addEventListener('click', () => {
  if (this.solarSystemModule) {
  this.solarSystemModule.focusedObject = null;
+ this.solarSystemModule.resetConstellationHighlight();
  }
  this.sceneManager.resetCamera();
  });
@@ -570,28 +571,28 @@ class App {
  
  // Pattern-based lookups for arrays (stars, exoplanets, spacecraft, etc.)
  const searchPatterns = [
- { prefix: 'constellation-', array: 'constellations', exactMatch: true, patterns: {
- 'aries': ['Aries (The Ram)'],
- 'taurus': ['Taurus (The Bull)'],
- 'gemini': ['Gemini (The Twins)'],
- 'cancer': ['Cancer (The Crab)'],
- 'leo': ['Leo (The Lion)'],
- 'virgo': ['Virgo (The Maiden)'],
- 'libra': ['Libra (The Scales)'],
- 'scorpius': ['Scorpius (The Scorpion)'],
- 'sagittarius': ['Sagittarius (The Archer)'],
- 'capricornus': ['Capricornus (The Sea-Goat)'],
- 'aquarius': ['Aquarius (The Water-Bearer)'],
- 'pisces': ['Pisces (The Fish)'],
- 'orion': ['Orion (The Hunter)'],
- 'big-dipper': ['Big Dipper (Ursa Major)'],
- 'little-dipper': ['Little Dipper (Ursa Minor)'],
- 'southern-cross': ['Southern Cross (Crux)'],
- 'cassiopeia': ['Cassiopeia (The Queen)'],
- 'cygnus': ['Cygnus (The Swan)'],
- 'lyra': ['Lyra (The Lyre)'],
- 'andromeda': ['Andromeda (The Princess)'], // Distinct from "Andromeda Galaxy"
- 'perseus': ['Perseus (The Hero)'],
+ { prefix: 'constellation-', array: 'constellations', exactMatch: false, patterns: {
+ 'aries': ['aries'],
+ 'taurus': ['taurus'],
+ 'gemini': ['gemini'],
+ 'cancer': ['cancer'],
+ 'leo': ['leo'],
+ 'virgo': ['virgo'],
+ 'libra': ['libra'],
+ 'scorpius': ['scorpius'],
+ 'sagittarius': ['sagittarius'],
+ 'capricornus': ['capricornus'],
+ 'aquarius': ['aquarius'],
+ 'pisces': ['pisces'],
+ 'orion': ['orion'],
+ 'big-dipper': ['bigDipper'],
+ 'little-dipper': ['littleDipper'],
+ 'southern-cross': ['southernCross'],
+ 'cassiopeia': ['cassiopeia'],
+ 'cygnus': ['cygnus'],
+ 'lyra': ['lyra'],
+ 'andromeda': ['andromedaConst'], // Distinct from "andromeda galaxy"
+ 'perseus': ['perseus'],
  }},
  { prefix: '', array: 'satellites', patterns: {
  'iss': ['ISS', 'International Space Station'],
@@ -613,22 +614,22 @@ class App {
  'pioneer': ['Pioneer'],
  }},
  { prefix: '', array: 'nebulae', patterns: {
- 'orion-nebula': ['Orion'],
- 'crab-nebula': ['Crab'],
- 'ring-nebula': ['Ring'],
+ 'orion-nebula': ['orionNebula'],
+ 'crab-nebula': ['crabNebula'],
+ 'ring-nebula': ['ringNebula'],
  }},
  { prefix: '', array: 'galaxies', patterns: {
- 'andromeda-galaxy': ['Andromeda'],
- 'whirlpool-galaxy': ['Whirlpool'],
- 'sombrero-galaxy': ['Sombrero'],
+ 'andromeda-galaxy': ['andromedaGalaxy'],
+ 'whirlpool-galaxy': ['whirlpoolGalaxy'],
+ 'sombrero-galaxy': ['sombreroGalaxy'],
  }},
  { prefix: '', array: 'objects', patterns: {
- 'alpha-centauri': [' Alpha Centauri A'],
- 'proxima-centauri': [' Proxima Centauri'],
- 'proxima-b': [' Proxima Centauri b'],
- 'kepler-452b': [' Kepler-452b'],
- 'trappist-1e': [' TRAPPIST-1e'],
- 'kepler-186f': [' Kepler-186f'],
+ 'alpha-centauri': ['alphaCentauriA'],
+ 'proxima-centauri': ['proximaCentauri'],
+ 'proxima-b': ['proximaCentauri'],
+ 'kepler-452b': ['kepler452Star'],
+ 'trappist-1e': ['trappist1Star'],
+ 'kepler-186f': ['kepler186Star'],
  }},
  { prefix: '', array: 'comets', patterns: {
  'halley': ["Halley's Comet"],
@@ -766,7 +767,7 @@ class App {
  // previous isSolidBody check used hardcoded English names which broke in
  // Dutch ('Planeet'), French ('Planète'), etc., causing comets to win over
  // planets in non-English UIs.
- const isComet = object.userData?.isComet === true || object.userData?.type === 'Comet';
+ const isComet = object.userData?.isComet === true || object.userData?.type === 'comet';
  const typeWeight = isComet ? 0.5 : 0;
 
  return { object, distance, angularDist, typeWeight };
@@ -790,7 +791,7 @@ class App {
  if (angularDiff < 0.05) {
  // Moon type is hardcoded 'Moon'; use parentPlanet presence as fallback
  const moonCandidate = [first, second].find(
- s => s.object.userData?.type === 'Moon' || s.object.userData?.parentPlanet
+ s => s.object.userData?.type === 'moon' || s.object.userData?.parentPlanet
  );
  // Planet candidate is the non-moon that the moon orbits
  const planetCandidate = [first, second].find(
@@ -896,16 +897,16 @@ class App {
  if (target) {
  // Store current hovered object
  this._currentHoveredObject = target;
- 
- // Translate object name
+
+ // Translate object name (star meshes and constellation groups both have userData.name)
  const t = window.t || ((key) => key);
- const nameKey = target.userData.name.toLowerCase().replace(/\s+/g, '');
- const translatedName = (nameKey && window.t && window.t(nameKey) !== nameKey) 
- ? t(nameKey) 
+ const nameKey = target.userData.name?.replace(/\s+/g, '');
+ const displayName = (nameKey && window.t && window.t(nameKey) !== nameKey)
+ ? t(nameKey)
  : target.userData.name;
- 
- // Show hover label with translated name
- this._hoverLabel.textContent = translatedName;
+
+ // Show hover label
+ this._hoverLabel.textContent = displayName;
  this._hoverLabel.style.left = `${event.clientX + 15}px`;
  this._hoverLabel.style.top = `${event.clientY + 15}px`;
  this._hoverLabel.classList.add('visible');
