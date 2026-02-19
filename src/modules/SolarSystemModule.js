@@ -4823,7 +4823,7 @@ export class SolarSystemModule {
  // === FAMOUS NON-ZODIAC CONSTELLATIONS ===
  {
  name: 'Orion (The Hunter)',
- description: t('descOrionConst'),
+ description: t('descOrion'),
  stars: [
  { name: 'Betelgeuse', ra: 88.8, dec: 7.4, mag: 0.5, color: 0xFF4500 }, // Red supergiant
  { name: 'Rigel', ra: 78.6, dec: -8.2, mag: 0.1, color: 0x87CEEB }, // Blue supergiant
@@ -4837,6 +4837,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Big Dipper (Ursa Major)',
+ id: 'bigDipper',
  description: t('descUrsaMajor'),
  stars: [
  { name: 'Dubhe', ra: 165.9, dec: 61.8, mag: 1.8, color: 0xFFFFE0 },
@@ -4851,6 +4852,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Little Dipper (Ursa Minor)',
+ id: 'littleDipper',
  description: t('descUrsaMinor'),
  stars: [
  { name: 'Polaris', ra: 37.95, dec: 89.26, mag: 2.0, color: 0xFFFACD }, // North Star!
@@ -4865,6 +4867,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Southern Cross (Crux)',
+ id: 'southernCross',
  description: t('descCrux'),
  stars: [
  { name: 'Acrux', ra: 186.6, dec: -63.1, mag: 0.8, color: 0xE0FFFF },
@@ -4912,6 +4915,7 @@ export class SolarSystemModule {
  },
  {
  name: 'Andromeda (The Princess)',
+ id: 'andromedaConst',
  description: t('descAndromedaConst'),
  stars: [
  { name: 'Alpheratz', ra: 2.1, dec: 29.1, mag: 2.1, color: 0xE0FFFF }, // 0 - Head (shared with Pegasus)
@@ -4953,6 +4957,8 @@ export class SolarSystemModule {
  
  // Create star mesh using factory (with geometry caching)
  const starMesh = ConstellationFactory.createStar(star, position, this.geometryCache);
+ // Tag for individual hover tooltip (doesn't affect click – no userData.name on mesh)
+ if (star.name) starMesh.userData.hoverLabel = star.name;
  group.add(starMesh);
  starMeshes.push(starMesh);
  
@@ -4976,7 +4982,7 @@ export class SolarSystemModule {
  
  // Add constellation metadata
  group.userData = {
- name: constData.name.split(/\s*\(/)[0].trim().toLowerCase(),
+ name: constData.id || constData.name.split(/\s*\(/)[0].trim().toLowerCase(),
  type: 'constellation',
  description: constData.description,
  distance: '100s to 1000s of light-years',
@@ -4995,43 +5001,40 @@ export class SolarSystemModule {
  }
  
  highlightConstellation(focusedConstellation) {
- // Highlight the focused constellation and dim all others
+ // Show only the focused constellation; completely hide all others
  if (!this.constellations) return;
+ this.focusedConstellation = focusedConstellation;
  
  this.constellations.forEach(constellation => {
  const isFocused = constellation === focusedConstellation;
- 
- // Traverse all children (stars, lines, etc.)
+ if (isFocused) {
+ constellation.visible = true;
+ // Ensure full brightness on all children
  constellation.traverse(child => {
  if (child.material) {
- // Store original opacity if not already stored
- if (!child.material.userData?.originalOpacity) {
- child.material.userData = child.material.userData || {};
- child.material.userData.originalOpacity = child.material.opacity;
- }
- 
- if (isFocused) {
- // Brighten focused constellation - boost opacity beyond original for extra brightness
- const originalOpacity = child.material.userData.originalOpacity;
- child.material.opacity = Math.min(originalOpacity * 1.3, 1.0); // 30% brighter
  child.visible = true;
- } else {
- // Dim other constellations significantly
- child.material.opacity = 0.05; // Very dim
+ if (child.material.userData?.originalOpacity !== undefined) {
+ child.material.opacity = child.material.userData.originalOpacity;
  }
  }
  });
+ } else {
+ constellation.visible = false;
+ }
  });
  }
  
  resetConstellationHighlight() {
- // Reset all constellations to normal visibility
+ // Restore all constellations to full visibility
  if (!this.constellations) return;
+ this.focusedConstellation = null;
  
  this.constellations.forEach(constellation => {
+ constellation.visible = true;
  constellation.traverse(child => {
- if (child.material && child.material.userData?.originalOpacity) {
+ if (child.material && child.material.userData?.originalOpacity !== undefined) {
  child.material.opacity = child.material.userData.originalOpacity;
+ child.visible = true;
  }
  });
  });
@@ -7988,6 +7991,10 @@ createHyperrealisticHubble(satData) {
  toggleConstellations(visible) {
  this.constellationsVisible = visible;
  this.constellations.forEach(constellation => {
+ // When turning on: respect focus state — keep non-focused ones hidden
+ if (visible && this.focusedConstellation && this.focusedConstellation !== constellation) {
+ return;
+ }
  constellation.visible = visible;
  });
  if (DEBUG.enabled) console.log(` Constellations ${visible ? 'shown' : 'hidden'}`);
@@ -8538,10 +8545,10 @@ createHyperrealisticHubble(satData) {
  if (userData.isSpacecraft || userData.isComet) {
  // Use actual size for spacecraft and comets, not glow/tail size
  actualRadius = userData.actualSize || 0.1;
- } else if (userData.type === 'Constellation') {
+ } else if (userData.type === 'constellation') {
  // Constellations: use calculated radius (star pattern spread)
  actualRadius = userData.radius || 500;
- } else if (userData.type === 'Galaxy' || userData.type === 'Nebula') {
+ } else if (userData.type === 'galaxy' || userData.type === 'nebula') {
  // Distant deep-sky objects
  actualRadius = userData.radius || 300;
  } else {
@@ -8550,14 +8557,14 @@ createHyperrealisticHubble(satData) {
  
  // Calculate appropriate viewing distance based on object type
  let distance;
- if (userData.type === 'Constellation') {
+ if (userData.type === 'constellation') {
  // Constellations: Position camera to view the star pattern
  // They're at distance ~10000, so we need to be relatively close but not inside
  distance = actualRadius * 3; // View from 3x the pattern size
- } else if (userData.type === 'Galaxy') {
+ } else if (userData.type === 'galaxy') {
  // Galaxies: Distant objects, zoom to appreciate structure
  distance = actualRadius * 4;
- } else if (userData.type === 'Nebula') {
+ } else if (userData.type === 'nebula') {
  // Nebulae: Clouds in space, zoom to show details
  distance = actualRadius * 3.5;
  } else if (userData.isSpacecraft && userData.distance > 100) {
@@ -8568,7 +8575,7 @@ createHyperrealisticHubble(satData) {
  // For tiny objects like ISS (size ~0.03), position camera at reasonable distance (1.0 units minimum)
  distance = Math.max(actualRadius * 15, 1.0);
  if (DEBUG.enabled) console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 15, min 1.0) for ISS viewing`);
- } else if (userData.type === 'Moon' && userData.parentPlanet) {
+ } else if (userData.type === 'moon' && userData.parentPlanet) {
  // Moons: Close chase-cam to see moon details and parent planet surface
  // Scale initial distance proportionally so small moons (Enceladus r=0.04, Phobos r=0.08) start close
  distance = Math.max(actualRadius * 6, Math.min(2, actualRadius * 15));
@@ -8632,7 +8639,7 @@ createHyperrealisticHubble(satData) {
  }
  
  // Special handling for constellations - use center of star pattern
- if (userData.type === 'Constellation' && userData.centerPosition) {
+ if (userData.type === 'constellation' && userData.centerPosition) {
  targetPosition.set(
  userData.centerPosition.x,
  userData.centerPosition.y,
@@ -8662,7 +8669,7 @@ createHyperrealisticHubble(satData) {
  // Camera will orbit WITH the object (spacecraft, moons, etc.)
  const isPlanetOrbitingSun = (userData.type === 'planet' || userData.isPlanet) && userData.orbitPlanet?.toLowerCase() === 'sun';
  
- if (userData.type === 'Constellation') {
+ if (userData.type === 'constellation') {
      // Constellations: never follow
      this.cameraFollowMode = false;
      this.cameraCoRotateMode = false;
@@ -8701,7 +8708,7 @@ createHyperrealisticHubble(satData) {
  // Configure controls for focused object inspection
  let minDist, maxDist;
  
- if (userData.type === 'Constellation') {
+ if (userData.type === 'constellation') {
  // Constellations: large viewing range since they're at distance 10000
  minDist = 100; // Don't get too close or you'll be inside stars
  maxDist = 20000; // Allow zooming far out
@@ -8752,7 +8759,7 @@ createHyperrealisticHubble(satData) {
  // Calculate camera end position based on object type
  let endPos;
 
- if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
+ if (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula') {
      // For distant objects: Position camera OUTSIDE solar system, looking AT the constellation
      // Strategy: Place camera on a sphere around the constellation, ensuring line of sight
      // doesn't pass through the solar system at origin
@@ -8826,7 +8833,7 @@ createHyperrealisticHubble(satData) {
          targetPosition.z + distance
      );
      controls.target.copy(targetPosition);
- } else if (userData.type === 'Moon' && userData.parentPlanet) {
+ } else if (userData.type === 'moon' && userData.parentPlanet) {
      // Moons: Chase-cam perspective showing moon and parent planet surface
      parentPlanet = this.planets[userData.parentPlanet.toLowerCase()];
      if (parentPlanet) {
@@ -8963,7 +8970,7 @@ createHyperrealisticHubble(satData) {
  }
  
  // For constellations, immediately set up the camera orientation before animation
- if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
+ if (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula') {
      camera.lookAt(targetPosition); // Immediately orient camera toward target
      controls.update(); // Apply the change
      if (DEBUG.enabled) console.log(` [${userData.type}] Pre-animation: Camera oriented to look at target`);
@@ -8978,7 +8985,7 @@ createHyperrealisticHubble(satData) {
  const eased = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
  
  // Update target position differently based on object type
- if (userData.type === 'Constellation') {
+ if (userData.type === 'constellation') {
  // Constellations: keep static target (don't update position)
  // targetPosition already set to constellation center
  } else if (useRelativeOffset && progress < 1) {
@@ -9001,7 +9008,7 @@ createHyperrealisticHubble(satData) {
  controls.target.copy(targetPosition);
  
  // For constellations and distant objects, ensure camera orientation is maintained
- if (userData.type === 'Constellation' || userData.type === 'Galaxy' || userData.type === 'Nebula') {
+ if (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula') {
  camera.lookAt(targetPosition); // Force camera to look at target during animation
  }
  

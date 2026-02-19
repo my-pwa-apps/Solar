@@ -43,6 +43,25 @@ const translations = {
         titania: "Titania",
         miranda: "Miranda",
         triton: "Triton",
+        // Dwarf planets
+        ceres: 'Ceres', haumea: 'Haumea', makemake: 'Makemake', eris: 'Eris',
+        orcus: 'Orcus', quaoar: 'Quaoar', gonggong: 'Gonggong', sedna: 'Sedna',
+        salacia: 'Salacia', varda: 'Varda', varuna: 'Varuna',
+        // Comets
+        halley: "Halley's Comet", haleBopp: 'Hale-Bopp', hyakutake: 'Hyakutake',
+        lovejoy: 'Lovejoy', encke: 'Encke', swiftTuttle: 'Swift-Tuttle',
+        // Nearby stars
+        alphaCentauri: 'Alpha Centauri',
+        // Exoplanets
+        proximaB: 'Proxima Centauri b', kepler452b: 'Kepler-452b',
+        trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
+        // Other constellations
+        bigDipper: 'Big Dipper', littleDipper: 'Little Dipper', southernCross: 'Southern Cross',
+        // Spacecraft
+        iss: 'ISS', hubble: 'Hubble',
+        jwst: 'James Webb Space Telescope', gpsNavstar: 'GPS Satellite (NAVSTAR)',
+        voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
+        juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturn)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
         // Navigation menu sections
         jupiterSystem: "Jupiter System",
@@ -80,7 +99,7 @@ const translations = {
         leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpius: 'Scorpius',
         sagittarius: 'Sagittarius', capricornus: 'Capricornus', aquarius: 'Aquarius',
         pisces: 'Pisces', orion: 'Orion', cassiopeia: 'Cassiopeia',
-        cygnus: 'Cygnus', lyra: 'Lyra', andromeda: 'Andromeda', perseus: 'Perseus',
+        cygnus: 'Cygnus', lyra: 'Lyra', andromeda: 'Andromeda', andromedaConst: 'Andromeda', perseus: 'Perseus',
         // Nearby stars & exoplanet hosts
         alphaCentauriA: 'Alpha Centauri A',
         proximaCentauri: 'Proxima Centauri',
@@ -355,10 +374,13 @@ const translations = {
         descCapricornus: ' Capricornus is one of the oldest constellations! Represents a creature with the head of a goat and tail of a fish. Associated with the god Pan in Greek mythology.',
         descAquarius: ' Aquarius represents the water-bearer pouring from his urn! Home to several famous deep-sky objects including the Helix Nebula. One of the oldest named constellations.',
         descPisces: ' Pisces shows two fish tied together! Represents Aphrodite and Eros who transformed into fish to escape the monster Typhon. Contains the vernal equinox point!',
-        descOrionConst: ' Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
+        descOrion: ' Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
         descUrsaMajor: ' The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
         descUrsaMinor: ' The Little Dipper contains Polaris, the North Star! Polaris marks the end of the Little Dipper\'s handle and stays nearly fixed in the northern sky. Essential for celestial navigation!',
         descCrux: ' The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
+        descBigDipper: ' The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+        descLittleDipper: ' The Little Dipper contains Polaris, the North Star! Polaris marks the end of the Little Dipper\'s handle and stays nearly fixed in the northern sky. Essential for celestial navigation!',
+        descSouthernCross: ' The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
         descCassiopeia: ' Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
         descCygnus: ' Cygnus the Swan flies along the Milky Way! Also called the Northern Cross. In mythology, Zeus disguised himself as a swan. Home to many deep-sky objects!',
         descLyra: ' Lyra represents the lyre of Orpheus! Contains Vega, the 5th brightest star in the night sky. Also home to the Ring Nebula, a famous planetary nebula!',
@@ -488,6 +510,25 @@ const translations = {
         titania: "Titania",
         miranda: "Miranda",
         triton: "Triton",
+        // Dwergplaneten
+        ceres: 'Ceres', haumea: 'Haumea', makemake: 'Makemake', eris: 'Eris',
+        orcus: 'Orcus', quaoar: 'Quaoar', gonggong: 'Gonggong', sedna: 'Sedna',
+        salacia: 'Salacia', varda: 'Varda', varuna: 'Varuna',
+        // Kometen
+        halley: 'Komeet Halley', haleBopp: 'Hale-Bopp', hyakutake: 'Hyakutake',
+        lovejoy: 'Lovejoy', encke: 'Encke', swiftTuttle: 'Swift-Tuttle',
+        // Nabije sterren
+        alphaCentauri: 'Alpha Centauri',
+        // Exoplaneten
+        proximaB: 'Proxima Centauri b', kepler452b: 'Kepler-452b',
+        trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
+        // Andere sterrenbeelden
+        bigDipper: 'Grote Beer', littleDipper: 'Kleine Beer', southernCross: 'Zuiderkruis',
+        // Ruimtevaartuigen
+        iss: 'ISS', hubble: 'Hubble',
+        jwst: 'James Webb-ruimtetelescoop', gpsNavstar: 'GPS-satelliet (NAVSTAR)',
+        voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
+        juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturnus)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
         // Navigatiemenu secties
         nearbyStars: "Nabije Sterren",
@@ -515,12 +556,12 @@ const translations = {
         andromedaGalaxy: 'Andromedastelsel',
         whirlpoolGalaxy: 'Wervelstormstelsel',
         sombreroGalaxy: 'Sombrerostelsel',
-        // Sterrenbeelden (Latijnse namen)
-        aries: 'Aries', taurus: 'Taurus', gemini: 'Gemini', cancer: 'Cancer',
-        leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpius: 'Scorpius',
-        sagittarius: 'Sagittarius', capricornus: 'Capricornus', aquarius: 'Aquarius',
-        pisces: 'Pisces', orion: 'Orion', cassiopeia: 'Cassiopeia',
-        cygnus: 'Cygnus', lyra: 'Lyra', andromeda: 'Andromeda', perseus: 'Perseus',
+        // Sterrenbeelden
+        aries: 'Ram', taurus: 'Stier', gemini: 'Tweelingen', cancer: 'Kreeft',
+        leo: 'Leeuw', virgo: 'Maagd', libra: 'Weegschaal', scorpius: 'Schorpioen',
+        sagittarius: 'Boogschutter', capricornus: 'Steenbok', aquarius: 'Waterman',
+        pisces: 'Vissen', orion: 'Orion', cassiopeia: 'Cassiopeia',
+        cygnus: 'Zwaan', lyra: 'Lier', andromeda: 'Andromeda', andromedaConst: 'Andromeda', perseus: 'Perseus',
         // Nabije sterren & exoplaneetsterren
         alphaCentauriA: 'Alpha Centauri A',
         proximaCentauri: 'Proxima Centauri',
@@ -793,10 +834,13 @@ const translations = {
         descCapricornus: ' Steenbok is een van de oudste sterrenbeelden! Stelt een wezen voor met het hoofd van een geit en de staart van een vis. In de Griekse mythologie geassocieerd met de god Pan.',
         descAquarius: ' Waterman stelt de waterdrager voor die uit zijn kan giet! Thuisbasis van verschillende beroemde deep-sky objecten waaronder de Helixnevel. Een van de oudst benoemde sterrenbeelden.',
         descPisces: ' Vissen toont twee vissen die aan elkaar vastgebonden zijn! Stelt Aphrodite en Eros voor die zich in vissen veranderden om het monster Typhon te ontvluchten. Bevat het lentepunt!',
-        descOrionConst: ' Orion is een van de meest herkenbare sterrenbeelden! Zoek naar de drie sterren op een rij die de Gordel van Orion vormen. De heldere rode ster Betelgeuze markeert zijn schouder en blauwe Rigel zijn voet.',
+        descOrion: ' Orion is een van de meest herkenbare sterrenbeelden! Zoek naar de drie sterren op een rij die de Gordel van Orion vormen. De heldere rode ster Betelgeuze markeert zijn schouder en blauwe Rigel zijn voet.',
         descUrsaMajor: ' De Grote Beer (Grote Steelpan) is een van de bekendste sterrenbeelden! De twee sterren aan het einde van de "bak" wijzen naar Polaris, de Poolster. Duizenden jaren gebruikt voor navigatie!',
         descUrsaMinor: ' De Kleine Beer bevat Polaris, de Poolster! Polaris markeert het uiteinde van de steel van de Kleine Beer en staat bijna vast aan de noordelijke hemel. Essentieel voor hemelnavigatie!',
         descCrux: ' Het Zuiderkruis is het kleinste sterrenbeeld maar een van de bekendste op het zuidelijk halfrond! Gebruikt voor navigatie, wijst het naar de Zuidelijke Hemelpool.',
+        descBigDipper: ' De Grote Beer (Grote Steelpan) is een van de bekendste sterrenbeelden! De twee sterren aan het einde van de "bak" wijzen naar Polaris, de Poolster. Duizenden jaren gebruikt voor navigatie!',
+        descLittleDipper: ' De Kleine Beer bevat Polaris, de Poolster! Polaris markeert het uiteinde van de steel van de Kleine Beer en staat bijna vast aan de noordelijke hemel. Essentieel voor hemelnavigatie!',
+        descSouthernCross: ' Het Zuiderkruis is het kleinste sterrenbeeld maar een van de bekendste op het zuidelijk halfrond! Gebruikt voor navigatie, wijst het naar de Zuidelijke Hemelpool.',
         descCassiopeia: ' Cassiopeia lijkt op een W of M afhankelijk van het seizoen! In de Griekse mythologie was Cassiopeia een ijdele koningin. Het sterrenbeeld is circumpolair op noordelijke breedtegraden.',
         descCygnus: ' Cygnus de Zwaan vliegt langs de Melkweg! Ook wel het Noordelijk Kruis genoemd. In de mythologie verkleedde Zeus zich als zwaan. Thuisbasis van veel deep-sky objecten!',
         descLyra: ' Lyra stelt de lier van Orpheus voor! Bevat Vega, de 5e helderste ster aan de nachtelijke hemel. Ook de thuisbasis van de Ringnevel, een beroemde planetaire nevel!',
@@ -925,6 +969,25 @@ const translations = {
         titania: "Titania",
         miranda: "Miranda",
         triton: "Triton",
+        // Planètes naines
+        ceres: 'Cérès', haumea: 'Hauméa', makemake: 'Makémaké', eris: 'Éris',
+        orcus: 'Orcus', quaoar: 'Quaoar', gonggong: 'Gonggong', sedna: 'Sedna',
+        salacia: 'Salacia', varda: 'Varda', varuna: 'Varuna',
+        // Comètes
+        halley: 'Comète de Halley', haleBopp: 'Hale-Bopp', hyakutake: 'Hyakutake',
+        lovejoy: 'Lovejoy', encke: 'Encke', swiftTuttle: 'Swift-Tuttle',
+        // Étoiles proches
+        alphaCentauri: 'Alpha du Centaure',
+        // Exoplanètes
+        proximaB: 'Proxima du Centaure b', kepler452b: 'Kepler-452b',
+        trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
+        // Autres constellations
+        bigDipper: 'Grande Ourse', littleDipper: 'Petite Ourse', southernCross: 'Croix du Sud',
+        // Engins spatiaux
+        iss: 'ISS', hubble: 'Hubble',
+        jwst: 'Télescope spatial James-Webb', gpsNavstar: 'Satellite GPS (NAVSTAR)',
+        voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
+        juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturne)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
         // Sections du menu de navigation
         navOurStar: "Notre Étoile",
@@ -948,12 +1011,12 @@ const translations = {
         andromedaGalaxy: "Galaxie d'Andromède",
         whirlpoolGalaxy: 'Galaxie du Tourbillon',
         sombreroGalaxy: 'Galaxie du Sombrero',
-        // Constellations (noms latins)
-        aries: 'Aries', taurus: 'Taurus', gemini: 'Gemini', cancer: 'Cancer',
-        leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpius: 'Scorpius',
-        sagittarius: 'Sagittarius', capricornus: 'Capricornus', aquarius: 'Aquarius',
-        pisces: 'Pisces', orion: 'Orion', cassiopeia: 'Cassiopeia',
-        cygnus: 'Cygnus', lyra: 'Lyra', andromeda: 'Andromeda', perseus: 'Perseus',
+        // Constellations
+        aries: 'Bélier', taurus: 'Taureau', gemini: 'Gémeaux', cancer: 'Cancer',
+        leo: 'Lion', virgo: 'Vierge', libra: 'Balance', scorpius: 'Scorpion',
+        sagittarius: 'Sagittaire', capricornus: 'Capricorne', aquarius: 'Verseau',
+        pisces: 'Poissons', orion: 'Orion', cassiopeia: 'Cassiopée',
+        cygnus: 'Cygne', lyra: 'Lyre', andromeda: 'Andromède', andromedaConst: 'Andromède', perseus: 'Persée',
         // Étoiles proches & hôtes exoplanètes
         alphaCentauriA: 'Alpha Centauri A',
         proximaCentauri: 'Proxima Centauri',
@@ -1219,10 +1282,13 @@ const translations = {
         descCapricornus: ' Le Capricorne est l\'une des plus anciennes constellations! Représente une créature avec la tête d\'une chèvre et la queue d\'un poisson. Associé au dieu Pan dans la mythologie grecque.',
         descAquarius: ' Le Verseau représente le porteur d\'eau versant de son urne! Demeure de plusieurs objets du ciel profond célèbres dont la nébuleuse Hélix. L\'une des constellations nommées les plus anciennes.',
         descPisces: ' Les Poissons montrent deux poissons attachés ensemble! Représente Aphrodite et Éros qui se transformèrent en poissons pour échapper au monstre Typhon. Contient le point équinoxial vernal!',
-        descOrionConst: ' Orion est l\'une des constellations les plus reconnaissables! Cherchez les trois étoiles en ligne formant la Ceinture d\'Orion. La brillante étoile rouge Bételgeuse marque son épaule, et le bleu Rigel marque son pied.',
+        descOrion: ' Orion est l\'une des constellations les plus reconnaissables! Cherchez les trois étoiles en ligne formant la Ceinture d\'Orion. La brillante étoile rouge Bételgeuse marque son épaule, et le bleu Rigel marque son pied.',
         descUrsaMajor: ' La Grande Ourse (Grande Casserole) est l\'une des constellations les plus connues! Les deux étoiles au bout de la "tasse" pointent vers Polaris, l\'Étoile Polaire. Utilisée pour la navigation depuis des millénaires!',
         descUrsaMinor: ' La Petite Ourse contient Polaris, l\'Étoile Polaire! Polaris marque l\'extrémité du manche de la Petite Ourse et reste presque fixe dans le ciel du nord. Essentielle pour la navigation céleste!',
         descCrux: ' La Croix du Sud est la plus petite constellation mais l\'une des plus célèbres dans l\'hémisphère sud! Utilisée pour la navigation, elle pointe vers le pôle céleste sud.',
+        descBigDipper: ' La Grande Ourse (Grande Casserole) est l\'une des constellations les plus connues! Les deux étoiles au bout de la "tasse" pointent vers Polaris, l\'Étoile Polaire. Utilisée pour la navigation depuis des millénaires!',
+        descLittleDipper: ' La Petite Ourse contient Polaris, l\'Étoile Polaire! Polaris marque l\'extrémité du manche de la Petite Ourse et reste presque fixe dans le ciel du nord. Essentielle pour la navigation céleste!',
+        descSouthernCross: ' La Croix du Sud est la plus petite constellation mais l\'une des plus célèbres dans l\'hémisphère sud! Utilisée pour la navigation, elle pointe vers le pôle céleste sud.',
         descCassiopeia: ' Cassiopée ressemble à un W ou M selon la saison! Dans la mythologie grecque, Cassiopée était une reine vaniteuse. La constellation est circumpolaire aux latitudes nord.',
         descCygnus: ' Cygnus le Cygne vole le long de la Voie lactée! Aussi appelé la Croix du Nord. Dans la mythologie, Zeus se déguisa en cygne. Demeure de nombreux objets du ciel profond!',
         descLyra: ' La Lyre représente la lyre d\'Orphée! Contient Véga, la 5e étoile la plus brillante dans le ciel nocturne. Aussi demeure de la nébuleuse de l\'Anneau, une célèbre nébuleuse planétaire!',
@@ -1351,6 +1417,25 @@ const translations = {
         titania: "Titania",
         miranda: "Miranda",
         triton: "Triton",
+        // Zwergplaneten
+        ceres: 'Ceres', haumea: 'Haumea', makemake: 'Makemake', eris: 'Eris',
+        orcus: 'Orcus', quaoar: 'Quaoar', gonggong: 'Gonggong', sedna: 'Sedna',
+        salacia: 'Salacia', varda: 'Varda', varuna: 'Varuna',
+        // Kometen
+        halley: 'Halleyscher Komet', haleBopp: 'Hale-Bopp', hyakutake: 'Hyakutake',
+        lovejoy: 'Lovejoy', encke: 'Encke', swiftTuttle: 'Swift-Tuttle',
+        // Nahe Sterne
+        alphaCentauri: 'Alpha Centauri',
+        // Exoplaneten
+        proximaB: 'Proxima Centauri b', kepler452b: 'Kepler-452b',
+        trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
+        // Andere Sternbilder
+        bigDipper: 'Großer Wagen', littleDipper: 'Kleiner Wagen', southernCross: 'Kreuz des Südens',
+        // Raumfahrzeuge
+        iss: 'ISS', hubble: 'Hubble',
+        jwst: 'James-Webb-Weltraumteleskop', gpsNavstar: 'GPS-Satellit (NAVSTAR)',
+        voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
+        juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturn)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
         // Navigationsmenü-Abschnitte
         navOurStar: "Unser Stern",
@@ -1374,12 +1459,12 @@ const translations = {
         andromedaGalaxy: 'Andromedagalaxie',
         whirlpoolGalaxy: 'Strudelgalaxie',
         sombreroGalaxy: 'Sombrero-Galaxie',
-        // Sternbilder (lateinische Namen)
-        aries: 'Aries', taurus: 'Taurus', gemini: 'Gemini', cancer: 'Cancer',
-        leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpius: 'Scorpius',
-        sagittarius: 'Sagittarius', capricornus: 'Capricornus', aquarius: 'Aquarius',
-        pisces: 'Pisces', orion: 'Orion', cassiopeia: 'Cassiopeia',
-        cygnus: 'Cygnus', lyra: 'Lyra', andromeda: 'Andromeda', perseus: 'Perseus',
+        // Sternbilder
+        aries: 'Widder', taurus: 'Stier', gemini: 'Zwillinge', cancer: 'Krebs',
+        leo: 'Löwe', virgo: 'Jungfrau', libra: 'Waage', scorpius: 'Skorpion',
+        sagittarius: 'Schütze', capricornus: 'Steinbock', aquarius: 'Wassermann',
+        pisces: 'Fische', orion: 'Orion', cassiopeia: 'Kassiopeia',
+        cygnus: 'Schwan', lyra: 'Leier', andromeda: 'Andromeda', andromedaConst: 'Andromeda', perseus: 'Perseus',
         // Nahe Sterne & Exoplaneten-Wirte
         alphaCentauriA: 'Alpha Centauri A',
         proximaCentauri: 'Proxima Centauri',
@@ -1645,10 +1730,13 @@ const translations = {
         descCapricornus: ' Steinbock ist eines der ältesten Sternbilder! Stellt ein Wesen mit dem Kopf einer Ziege und dem Schwanz eines Fisches dar. In der griechischen Mythologie mit dem Gott Pan assoziiert.',
         descAquarius: ' Wassermann stellt den Wasserträger dar, der aus seinem Krug gießt! Heimat mehrerer berühmter Tiefenhimmelobjekte einschließlich des Helixnebels. Eines der ältesten benannten Sternbilder.',
         descPisces: ' Fische zeigt zwei zusammengebundene Fische! Stellt Aphrodite und Eros dar, die sich in Fische verwandelten, um dem Monster Typhon zu entkommen. Enthält den Frühlingspunkt!',
-        descOrionConst: ' Orion ist eines der bekanntesten Sternbilder! Achten Sie auf die drei in einer Reihe stehenden Sterne, die Orions Gürtel bilden. Der helle rote Stern Beteigeuze markiert seine Schulter und das blaue Rigel seinen Fuß.',
+        descOrion: ' Orion ist eines der bekanntesten Sternbilder! Achten Sie auf die drei in einer Reihe stehenden Sterne, die Orions Gürtel bilden. Der helle rote Stern Beteigeuze markiert seine Schulter und das blaue Rigel seinen Fuß.',
         descUrsaMajor: ' Der Große Bär (Großer Wagen) ist eines der bekanntesten Sternbilder! Die zwei Sterne am Ende der "Tasse" zeigen auf Polaris, den Nordstern. Jahrtausende lang zur Navigation verwendet!',
         descUrsaMinor: ' Der Kleine Bär enthält Polaris, den Nordstern! Polaris markiert das Ende des Stiels des Kleinen Bären und bleibt am nördlichen Himmel nahezu fest. Unverzichtbar für die Himmelsnavigation!',
         descCrux: ' Das Kreuz des Südens ist das kleinste Sternbild, aber eines der bekanntesten auf der Südhalbkugel! Es wird zur Navigation verwendet und zeigt zum Südlichen Himmelspol.',
+        descBigDipper: ' Der Große Bär (Großer Wagen) ist eines der bekanntesten Sternbilder! Die zwei Sterne am Ende der "Tasse" zeigen auf Polaris, den Nordstern. Jahrtausende lang zur Navigation verwendet!',
+        descLittleDipper: ' Der Kleine Bär enthält Polaris, den Nordstern! Polaris markiert das Ende des Stiels des Kleinen Bären und bleibt am nördlichen Himmel nahezu fest. Unverzichtbar für die Himmelsnavigation!',
+        descSouthernCross: ' Das Kreuz des Südens ist das kleinste Sternbild, aber eines der bekanntesten auf der Südhalbkugel! Es wird zur Navigation verwendet und zeigt zum Südlichen Himmelspol.',
         descCassiopeia: ' Kassiopeia sieht je nach Jahreszeit wie ein W oder M aus! In der griechischen Mythologie war Kassiopeia eine eitle Königin. Das Sternbild ist in nördlichen Breiten zirkumpolar.',
         descCygnus: ' Schwan fliegt entlang der Milchstraße! Auch Nordliches Kreuz genannt. In der Mythologie verkleidete sich Zeus als Schwan. Heimat vieler Tiefenhimmelobjekte!',
         descLyra: ' Leier stellt die Leier des Orpheus dar! Enthält Wega, den 5. hellsten Stern am Nachthimmel. Auch Heimat des Ringnebels, eines berühmten planetarischen Nebels!',
@@ -1777,6 +1865,25 @@ const translations = {
         titania: "Titania",
         miranda: "Miranda",
         triton: "Tritón",
+        // Planetas enanos
+        ceres: 'Ceres', haumea: 'Haumea', makemake: 'Makemake', eris: 'Eris',
+        orcus: 'Orcus', quaoar: 'Quaoar', gonggong: 'Gonggong', sedna: 'Sedna',
+        salacia: 'Salacia', varda: 'Varda', varuna: 'Varuna',
+        // Cometas
+        halley: 'Cometa Halley', haleBopp: 'Hale-Bopp', hyakutake: 'Hyakutake',
+        lovejoy: 'Lovejoy', encke: 'Encke', swiftTuttle: 'Swift-Tuttle',
+        // Estrellas cercanas
+        alphaCentauri: 'Alfa Centauri',
+        // Exoplanetas
+        proximaB: 'Próxima Centauri b', kepler452b: 'Kepler-452b',
+        trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
+        // Otras constelaciones
+        bigDipper: 'Osa Mayor', littleDipper: 'Osa Menor', southernCross: 'Cruz del Sur',
+        // Naves espaciales
+        iss: 'ISS', hubble: 'Hubble',
+        jwst: 'Telescopio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)',
+        voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
+        juno: 'Juno (Júpiter)', cassini: 'Cassini (Saturno)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
         // Secciones del menú de navegación
         navOurStar: "Nuestra Estrella",
@@ -1800,12 +1907,12 @@ const translations = {
         andromedaGalaxy: 'Galaxia de Andrómeda',
         whirlpoolGalaxy: 'Galaxia del Remolino',
         sombreroGalaxy: 'Galaxia del Sombrero',
-        // Constelaciones (nombres latinos)
-        aries: 'Aries', taurus: 'Taurus', gemini: 'Gemini', cancer: 'Cancer',
-        leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpius: 'Scorpius',
-        sagittarius: 'Sagittarius', capricornus: 'Capricornus', aquarius: 'Aquarius',
-        pisces: 'Pisces', orion: 'Orion', cassiopeia: 'Cassiopeia',
-        cygnus: 'Cygnus', lyra: 'Lyra', andromeda: 'Andromeda', perseus: 'Perseus',
+        // Constelaciones
+        aries: 'Aries', taurus: 'Tauro', gemini: 'Géminis', cancer: 'Cáncer',
+        leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpius: 'Escorpio',
+        sagittarius: 'Sagitario', capricornus: 'Capricornio', aquarius: 'Acuario',
+        pisces: 'Piscis', orion: 'Orión', cassiopeia: 'Casiopea',
+        cygnus: 'Cisne', lyra: 'Lyra', andromeda: 'Andrómeda', andromedaConst: 'Andrómeda', perseus: 'Perseo',
         // Estrellas cercanas y anfitrionas de exoplanetas
         alphaCentauriA: 'Alpha Centauri A',
         proximaCentauri: 'Proxima Centauri',
@@ -2071,10 +2178,13 @@ const translations = {
         descCapricornus: ' ¡Capricornio es una de las constelaciones más antiguas! Representa una criatura con cabeza de cabra y cola de pez. Asociado con el dios Pan en la mitología griega.',
         descAquarius: ' ¡Acuario representa al portador de agua vertiendo de su urna! Hogar de varios famosos objetos de cielo profundo incluyendo la Nebulosa Hélice. Una de las constelaciones nombradas más antiguas.',
         descPisces: ' ¡Piscis muestra dos peces atados juntos! Representa a Afrodita y Eros que se transformaron en peces para escapar del monstruo Tifón. ¡Contiene el punto equinoccial vernal!',
-        descOrionConst: ' ¡Orión es una de las constelaciones más reconocibles! Busca las tres estrellas en fila formando el Cinturón de Orión. La brillante estrella roja Betelgeuse marca su hombro y el azul Rigel su pie.',
+        descOrion: ' ¡Orión es una de las constelaciones más reconocibles! Busca las tres estrellas en fila formando el Cinturón de Orión. La brillante estrella roja Betelgeuse marca su hombro y el azul Rigel su pie.',
         descUrsaMajor: ' ¡La Osa Mayor (Carro Mayor) es una de las constelaciones más conocidas! Las dos estrellas al final de la "taza" apuntan a Polaris, la Estrella Polar. ¡Usada para navegación durante miles de años!',
         descUrsaMinor: ' ¡La Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. ¡Esencial para la navegación celeste!',
         descCrux: ' ¡La Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
+        descBigDipper: ' ¡La Osa Mayor (Carro Mayor) es una de las constelaciones más conocidas! Las dos estrellas al final de la "taza" apuntan a Polaris, la Estrella Polar. ¡Usada para navegación durante miles de años!',
+        descLittleDipper: ' ¡La Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. ¡Esencial para la navegación celeste!',
+        descSouthernCross: ' ¡La Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
         descCassiopeia: ' ¡Casiopea parece una W o M según la estación! En la mitología griega, Casiopea era una reina vanidosa. La constelación es circumpolar en latitudes norteñas.',
         descCygnus: ' ¡Cisne el Cisne vuela a lo largo de la Vía L¡ctea! También llamado la Cruz del Norte. En la mitología, Zeus se disfrazó de cisne. ¡Hogar de muchos objetos de cielo profundo!',
         descLyra: ' ¡Lira representa la lira de Orfeo! Contiene Vega, la 5ª estrella más brillante en el cielo nocturno. ¡También hogar de la Nebulosa del Anillo, una famosa nebulosa planetaria!',
@@ -2203,6 +2313,25 @@ const translations = {
         titania: "Titania",
         miranda: "Miranda",
         triton: "Tritão",
+        // Planetas anões
+        ceres: 'Ceres', haumea: 'Haumea', makemake: 'Makemake', eris: 'Éris',
+        orcus: 'Orcus', quaoar: 'Quaoar', gonggong: 'Gonggong', sedna: 'Sedna',
+        salacia: 'Salacia', varda: 'Varda', varuna: 'Varuna',
+        // Cometas
+        halley: 'Cometa Halley', haleBopp: 'Hale-Bopp', hyakutake: 'Hyakutake',
+        lovejoy: 'Lovejoy', encke: 'Encke', swiftTuttle: 'Swift-Tuttle',
+        // Estrelas próximas
+        alphaCentauri: 'Alfa do Centauro',
+        // Exoplanetas
+        proximaB: 'Próxima Centauri b', kepler452b: 'Kepler-452b',
+        trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
+        // Outras constelações
+        bigDipper: 'Ursa Maior', littleDipper: 'Ursa Menor', southernCross: 'Cruzeiro do Sul',
+        // Naves espaciais
+        iss: 'ISS', hubble: 'Hubble',
+        jwst: 'Telescópio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)',
+        voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
+        juno: 'Juno (Júpiter)', cassini: 'Cassini (Saturno)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
         // Seções do menu de navegação
         navOurStar: "Nossa Estrela",
@@ -2226,12 +2355,12 @@ const translations = {
         andromedaGalaxy: 'Galáxia de Andrômeda',
         whirlpoolGalaxy: 'Galáxia do Redemoinho',
         sombreroGalaxy: 'Galáxia do Sombrero',
-        // Constelações (nomes latinos)
-        aries: 'Aries', taurus: 'Taurus', gemini: 'Gemini', cancer: 'Cancer',
-        leo: 'Leo', virgo: 'Virgo', libra: 'Libra', scorpius: 'Scorpius',
-        sagittarius: 'Sagittarius', capricornus: 'Capricornus', aquarius: 'Aquarius',
-        pisces: 'Pisces', orion: 'Orion', cassiopeia: 'Cassiopeia',
-        cygnus: 'Cygnus', lyra: 'Lyra', andromeda: 'Andromeda', perseus: 'Perseus',
+        // Constelações
+        aries: 'Áries', taurus: 'Touro', gemini: 'Gêmeos', cancer: 'Câncer',
+        leo: 'Leão', virgo: 'Virgem', libra: 'Libra', scorpius: 'Escorpião',
+        sagittarius: 'Sagitário', capricornus: 'Capricórnio', aquarius: 'Aquário',
+        pisces: 'Peixes', orion: 'Órion', cassiopeia: 'Cassiopeia',
+        cygnus: 'Cisne', lyra: 'Lira', andromeda: 'Andrômeda', andromedaConst: 'Andrômeda', perseus: 'Perseu',
         // Estrelas próximas e hospedeiras de exoplanetas
         alphaCentauriA: 'Alpha Centauri A',
         proximaCentauri: 'Proxima Centauri',
@@ -2497,10 +2626,13 @@ const translations = {
         descCapricornus: ' Capricórnio é uma das constelações mais antigas! Representa uma criatura com cabeça de cabra e cauda de peixe. Associado ao deus Pã na mitologia grega.',
         descAquarius: ' Aquário representa o portador de água vertendo de sua urna! Lar de vários famosos objetos do céu profundo, incluindo a Nebulosa Hélice. Uma das constelações nomeadas mais antigas.',
         descPisces: ' Peixes mostra dois peixes amarrados juntos! Representa Afrodite e Eros que se transformaram em peixes para escapar do monstro Tifão. Contém o ponto vernal equinocial!',
-        descOrionConst: ' Órion é uma das constelações mais reconhecíveis! Procure as três estrelas em fila formando o Cinturão de Órion. A brilhante estrela vermelha Betelgeuse marca seu ombro e o azul Rigel seu pé.',
+        descOrion: ' Órion é uma das constelações mais reconhecíveis! Procure as três estrelas em fila formando o Cinturão de Órion. A brilhante estrela vermelha Betelgeuse marca seu ombro e o azul Rigel seu pé.',
         descUrsaMajor: ' A Ursa Maior (Grande Carro) é uma das constelações mais conhecidas! As duas estrelas no final da "taça" apontam para Polaris, a Estrela do Norte. Usada para navegação por milhares de anos!',
         descUrsaMinor: ' A Ursa Menor contém Polaris, a Estrela do Norte! Polaris marca o extremo do cabo da Ursa Menor e permanece quase fixo no céu do norte. Essencial para a navegação celeste!',
         descCrux: ' O Cruzeiro do Sul é a menor constelação, mas uma das mais famosas no hemisfério sul! Usado para navegação, aponta para o Polo Celeste Sul.',
+        descBigDipper: ' A Ursa Maior (Grande Carro) é uma das constelações mais conhecidas! As duas estrelas no final da "taça" apontam para Polaris, a Estrela do Norte. Usada para navegação por milhares de anos!',
+        descLittleDipper: ' A Ursa Menor contém Polaris, a Estrela do Norte! Polaris marca o extremo do cabo da Ursa Menor e permanece quase fixo no céu do norte. Essencial para a navegação celeste!',
+        descSouthernCross: ' O Cruzeiro do Sul é a menor constelação, mas uma das mais famosas no hemisfério sul! Usado para navegação, aponta para o Polo Celeste Sul.',
         descCassiopeia: ' Cassiopeia parece um W ou M dependendo da estação! Na mitologia grega, Cassiopeia era uma rainha vaidosa. A constelação é circumpolar em latitudes do norte.',
         descCygnus: ' Cygnus o Cisne voa ao longo da Via Láctea! Também chamada de Cruz do Norte. Na mitologia, Zeus se disfarçou de cisne. Lar de muitos objetos do céu profundo!',
         descLyra: ' Lyra representa a lira de Orfeu! Contém Vega, a 5ª estrela mais brilhante no céu noturno. Também lar da Nebulosa do Anel, uma famosa nebulosa planetária!',
