@@ -398,7 +398,19 @@ const translations = {
         funFactKepler452b: 'Kepler-452b is 6 billion years old - 1.5 billion years older than Earth!',
         funFactTrappist1e: 'From TRAPPIST-1e, you could see the other planets as large as our Moon in the sky!',
         funFactKepler186f: 'Kepler-186f orbits a red dwarf, so its sky would glow orange-red!',
-        funFactComets: 'Comets have two tails: a curved dust tail (yellowish) and a straight ion tail (blue) - both always point away from the Sun!'
+        funFactComets: 'Comets have two tails: a curved dust tail (yellowish) and a straight ion tail (blue) - both always point away from the Sun!',
+        descOrcus: 'Orcus is a large Kuiper Belt object in a 2:3 orbital resonance with Neptune, just like Pluto. It has its own moon named Vanth.',
+        funFactOrcus: 'Orcus is sometimes called anti-Pluto — their orbits are almost perfect mirror images of each other on opposite sides of the Sun!',
+        descQuaoar: 'Quaoar is a large Kuiper Belt object with its own moon Weywot. Remarkably, it has a ring system — the first ring ever discovered around a Kuiper Belt object.',
+        funFactQuaoar: 'Quaoar\'s ring orbits far beyond its Roche limit, where rings shouldn\'t be able to exist — a mystery that challenges our understanding of ring formation!',
+        descGonggong: 'Gonggong (formerly 2007 OR10) is a distant scattered disc object with a reddish surface caused by radiation-altered methane ice. It has a moon called Xiangliu.',
+        funFactGonggong: 'Gonggong is named after a Chinese water god who, according to myth, tilted the Earth by crashing into a pillar holding up the sky!',
+        descSalacia: 'Salacia is a dark Kuiper Belt object with a moon named Actaea. It is one of the largest trans-Neptunian objects that has not yet been classified as a dwarf planet.',
+        funFactSalacia: 'Salacia is named after the Roman goddess of the sea and wife of Neptune — fitting for an icy world orbiting in the realm of the outermost planets!',
+        descVarda: 'Varda is a binary Kuiper Belt object paired with its large moon Ilmarë. By measuring their mutual orbit, scientists can precisely calculate the system\'s combined mass.',
+        funFactVarda: 'Varda is named after the Queen of the Stars in Tolkien\'s mythology — the deity who fashioned the stars and placed them in the sky of Middle-earth!',
+        descVaruna: 'Varuna is a classical Kuiper Belt object known for its extremely fast rotation — completing a full spin every 6.3 hours, one of the fastest in the outer solar system.',
+        funFactVaruna: 'Varuna spins so fast it bulges at the equator, making it shaped like a squashed ball — its equatorial diameter is noticeably larger than its polar diameter!'
     },
     
     nl: {
@@ -792,7 +804,19 @@ const translations = {
         funFactKepler452b: 'Kepler-452b is 6 miljard jaar oud - 1,5 miljard jaar ouder dan de Aarde!',
         funFactTrappist1e: 'Vanuit TRAPPIST-1e zou je de andere planeten zo groot als onze Maan aan de hemel zien!',
         funFactKepler186f: 'Kepler-186f cirkelt om een rode dwerg, dus zijn lucht zou oranje-rood gloeien!',
-        funFactComets: 'Kometen hebben twee staarten: een gebogen stofstaart (gelig) en een rechte ionenstaart (blauw) - beide wijzen altijd van de Zon af!'
+        funFactComets: 'Kometen hebben twee staarten: een gebogen stofstaart (gelig) en een rechte ionenstaart (blauw) - beide wijzen altijd van de Zon af!',
+        descOrcus: 'Orcus is een groot Kuipergordel-object in een 2:3-baanresonantie met Neptunus, net als Pluto. Het heeft een eigen maan genaamd Vanth.',
+        funFactOrcus: 'Orcus wordt soms anti-Pluto genoemd — hun banen zijn bijna perfecte spiegelbeelden van elkaar aan tegenovergestelde kanten van de Zon!',
+        descQuaoar: 'Quaoar is een groot Kuipergordel-object met zijn eigen maan Weywot. Opmerkelijk genoeg heeft het een ringsysteem — de eerste ring ooit ontdekt rond een Kuipergordel-object.',
+        funFactQuaoar: 'De ring van Quaoar cirkelt ver voorbij zijn Roche-limiet, waar ringen niet zouden mogen bestaan — een mysterie dat ons begrip van ringvorming uitdaagt!',
+        descGonggong: 'Gonggong (voorheen 2007 OR10) is een ver verstrooide schijfobject met een roodachtig oppervlak veroorzaakt door straling die methaanijs heeft aangetast. Het heeft een maan genaamd Xiangliu.',
+        funFactGonggong: 'Gonggong is vernoemd naar een Chinese watergod die, volgens de mythe, de aarde deed kantelen door tegen een pijler te botsen die de hemel ondersteunde!',
+        descSalacia: 'Salacia is een donker Kuipergordel-object met een maan genaamd Actaea. Het is een van de grootste trans-Neptuniaanse objecten die nog niet als dwergplaneet zijn geclassificeerd.',
+        funFactSalacia: 'Salacia is vernoemd naar de Romeinse godin van de zee en vrouw van Neptunus — passend voor een ijzige wereld die in het rijk van de buitenste planeten omloopt!',
+        descVarda: 'Varda is een binair Kuipergordel-object dat samen met zijn grote maan Ilmarë bestaat. Door hun wederzijdse baan te meten, kunnen wetenschappers de gecombineerde massa van het systeem nauwkeurig berekenen.',
+        funFactVarda: 'Varda is vernoemd naar de Koningin der Sterren in de mythologie van Tolkien — de godheid die de sterren vormde en aan de hemel van Midden-aarde plaatste!',
+        descVaruna: 'Varuna is een klassiek Kuipergordel-object dat bekendstaat om zijn extreem snelle rotatie — een volledige omwenteling in slechts 6,3 uur, een van de snelste in het buitenste zonnestelsel.',
+        funFactVaruna: 'Varuna draait zo snel dat het bij de evenaar uitpuilt en de vorm heeft van een platgedrukte bal — zijn equatoriale diameter is merkbaar groter dan zijn polaire diameter!'
     },
     
     fr: {
@@ -1174,7 +1198,19 @@ const translations = {
         funFactKepler452b: 'Kepler-452b a 6 milliards d\'années - 1,5 milliard de plus que la Terre!',
         funFactTrappist1e: 'Depuis TRAPPIST-1e, vous pourriez voir les autres planètes aussi grandes que notre Lune dans le ciel!',
         funFactKepler186f: 'Kepler-186f orbite autour d\'une naine rouge, donc son ciel brillerait d\'orange-rouge!',
-        funFactComets: 'Les comètes ont deux queues: une queue de poussière courbée (jaunâtre) et une queue ionique droite (bleue) - les deux pointent toujours à l\'opposé du Soleil!'
+        funFactComets: 'Les comètes ont deux queues: une queue de poussière courbée (jaunâtre) et une queue ionique droite (bleue) - les deux pointent toujours à l\'opposé du Soleil!',
+        descOrcus: 'Orcus est un grand objet de la Ceinture de Kuiper en résonance orbitale 2:3 avec Neptune, tout comme Pluton. Il possède sa propre lune nommée Vanth.',
+        funFactOrcus: 'Orcus est parfois appelé l\'anti-Pluton — leurs orbites sont presque des images miroir parfaites de l\'une de l\'autre, de part et d\'autre du Soleil!',
+        descQuaoar: 'Quaoar est un grand objet de la Ceinture de Kuiper avec sa propre lune Weywot. Il possède remarquablement un système d\'anneaux — le premier jamais découvert autour d\'un objet de la Ceinture de Kuiper.',
+        funFactQuaoar: 'L\'anneau de Quaoar orbite bien au-delà de sa limite de Roche, là où les anneaux ne devraient pas pouvoir exister — un mystère qui remet en question notre compréhension de la formation des anneaux!',
+        descGonggong: 'Gonggong (anciennement 2007 OR10) est un objet lointain du disque dispersé avec une surface rougeâtre causée par de la glace de méthane altérée par les radiations. Il possède une lune appelée Xiangliu.',
+        funFactGonggong: 'Gonggong est nommé d\'après un dieu de l\'eau chinois qui, selon la mythologie, a incliné la Terre en percutant un pilier soutenant le ciel!',
+        descSalacia: 'Salacia est un objet sombre de la Ceinture de Kuiper avec une lune nommée Actaea. C\'est l\'un des plus grands objets trans-neptuniens qui n\'a pas encore été classé comme planète naine.',
+        funFactSalacia: 'Salacia est nommée d\'après la déesse romaine de la mer et épouse de Neptune — approprié pour un monde glacé orbitant dans le royaume des planètes les plus éloignées!',
+        descVarda: 'Varda est un objet binaire de la Ceinture de Kuiper associé à sa grande lune Ilmarë. En mesurant leur orbite mutuelle, les scientifiques peuvent calculer précisément la masse combinée du système.',
+        funFactVarda: 'Varda est nommée d\'après la Reine des Étoiles dans la mythologie de Tolkien — la divinité qui a façonné les étoiles et les a placées dans le ciel de la Terre du Milieu!',
+        descVaruna: 'Varuna est un objet classique de la Ceinture de Kuiper connu pour sa rotation extrêmement rapide — effectuant un tour complet en seulement 6,3 heures, l\'une des plus rapides du système solaire externe.',
+        funFactVaruna: 'Varuna tourne si vite qu\'il se renfle à l\'équateur, lui donnant la forme d\'une balle aplatie — son diamètre équatorial est sensiblement plus grand que son diamètre polaire!'
     },
     
     de: {
@@ -1556,7 +1592,19 @@ const translations = {
         funFactKepler452b: 'Kepler-452b ist 6 Milliarden Jahre alt - 1,5 Milliarden Jahre älter als die Erde!',
         funFactTrappist1e: 'Von TRAPPIST-1e aus könnten Sie die anderen Planeten so groß wie unseren Mond am Himmel sehen!',
         funFactKepler186f: 'Kepler-186f umkreist einen roten Zwerg, also würde sein Himmel orangerot leuchten!',
-        funFactComets: 'Kometen haben zwei Schweife: einen gebogenen Staubschweif (gelblich) und einen geraden Ionenschweif (blau) - beide zeigen immer von der Sonne weg!'
+        funFactComets: 'Kometen haben zwei Schweife: einen gebogenen Staubschweif (gelblich) und einen geraden Ionenschweif (blau) - beide zeigen immer von der Sonne weg!',
+        descOrcus: 'Orcus ist ein großes Kuipergürtel-Objekt in einer 2:3-Bahnresonanz mit Neptun, genau wie Pluto. Es hat seinen eigenen Mond namens Vanth.',
+        funFactOrcus: 'Orcus wird manchmal Anti-Pluto genannt — ihre Bahnen sind fast perfekte Spiegelbilder voneinander auf gegenüberliegenden Seiten der Sonne!',
+        descQuaoar: 'Quaoar ist ein großes Kuipergürtel-Objekt mit seinem eigenen Mond Weywot. Bemerkenswerterweise besitzt es ein Ringsystem — der erste Ring, der je um ein Kuipergürtel-Objekt entdeckt wurde.',
+        funFactQuaoar: 'Quaoars Ring umkreist weit jenseits seiner Roche-Grenze, wo Ringe nicht existieren sollten — ein Rätsel, das unser Verständnis der Ringbildung in Frage stellt!',
+        descGonggong: 'Gonggong (früher 2007 OR10) ist ein weit entferntes Streuscheiben-Objekt mit einer rötlichen Oberfläche, die durch strahlungsverändertes Methaneis verursacht wird. Es hat einen Mond namens Xiangliu.',
+        funFactGonggong: 'Gonggong ist nach einem chinesischen Wassergott benannt, der laut Mythologie die Erde neigte, indem er gegen eine Säule rammte, die den Himmel stützte!',
+        descSalacia: 'Salacia ist ein dunkles Kuipergürtel-Objekt mit einem Mond namens Actaea. Es ist eines der größten transneptunischen Objekte, das noch nicht als Zwergplanet klassifiziert wurde.',
+        funFactSalacia: 'Salacia ist nach der römischen Meeresgöttin und Frau von Neptun benannt — passend für eine eisige Welt, die im Reich der äußersten Planeten umkreist!',
+        descVarda: 'Varda ist ein binäres Kuipergürtel-Objekt, das mit seinem großen Mond Ilmarë gepaart ist. Durch die Messung ihrer gegenseitigen Umlaufbahn können Wissenschaftler die kombinierte Masse des Systems genau berechnen.',
+        funFactVarda: 'Varda ist nach der Königin der Sterne in Tolkiens Mythologie benannt — der Gottheit, die die Sterne formte und an den Himmel von Mittelerde setzte!',
+        descVaruna: 'Varuna ist ein klassisches Kuipergürtel-Objekt, das für seine extrem schnelle Rotation bekannt ist — eine vollständige Drehung in nur 6,3 Stunden, eine der schnellsten im äußeren Sonnensystem.',
+        funFactVaruna: 'Varuna rotiert so schnell, dass es am Äquator aufgebaucht ist und wie ein abgeflachter Ball geformt ist — sein äquatorialer Durchmesser ist merklich größer als sein polarer Durchmesser!'
     },
     
     es: {
@@ -1938,7 +1986,19 @@ const translations = {
         funFactKepler452b: '¡Kepler-452b tiene 6 mil millones de años - 1.500 millones más que la Tierra!',
         funFactTrappist1e: '¡Desde TRAPPIST-1e, podrías ver los otros planetas tan grandes como nuestra Luna en el cielo!',
         funFactKepler186f: '¡Kepler-186f orbita una enana roja, así que su cielo brillaría con un tono anaranjado-rojizo!',
-        funFactComets: '¡Los cometas tienen dos colas: una cola de polvo curva (amarillenta) y una cola iónica recta (azul) - ambas siempre apuntan alejándose del Sol!'
+        funFactComets: '¡Los cometas tienen dos colas: una cola de polvo curva (amarillenta) y una cola iónica recta (azul) - ambas siempre apuntan alejándose del Sol!',
+        descOrcus: 'Orcus es un gran objeto del Cinturón de Kuiper en resonancia orbital 2:3 con Neptuno, igual que Plutón. Tiene su propia luna llamada Vanth.',
+        funFactOrcus: '¡Orcus a veces se llama anti-Plutón — sus órbitas son casi imágenes especulares perfectas entre sí, en lados opuestos del Sol!',
+        descQuaoar: 'Quaoar es un gran objeto del Cinturón de Kuiper con su propia luna Weywot. Notablemente, posee un sistema de anillos — el primero descubierto alrededor de un objeto del Cinturón de Kuiper.',
+        funFactQuaoar: '¡El anillo de Quaoar orbita mucho más allá de su límite de Roche, donde los anillos no deberían poder existir — un misterio que desafía nuestra comprensión de la formación de anillos!',
+        descGonggong: 'Gonggong (antes 2007 OR10) es un objeto distante del disco disperso con una superficie rojiza causada por hielo de metano alterado por radiación. Tiene una luna llamada Xiangliu.',
+        funFactGonggong: '¡Gonggong lleva el nombre de un dios del agua chino que, según la mitología, inclinó la Tierra al chocar contra un pilar que sostenía el cielo!',
+        descSalacia: 'Salacia es un objeto oscuro del Cinturón de Kuiper con una luna llamada Actaea. Es uno de los objetos transneptunianos más grandes que aún no ha sido clasificado como planeta enano.',
+        funFactSalacia: '¡Salacia lleva el nombre de la diosa romana del mar y esposa de Neptuno — apropiado para un mundo helado que orbita en el reino de los planetas más lejanos!',
+        descVarda: 'Varda es un objeto binario del Cinturón de Kuiper emparejado con su gran luna Ilmarë. Midiendo su órbita mutua, los científicos pueden calcular con precisión la masa combinada del sistema.',
+        funFactVarda: '¡Varda lleva el nombre de la Reina de las Estrellas en la mitología de Tolkien — la deidad que moldeó las estrellas y las colocó en el cielo de la Tierra Media!',
+        descVaruna: 'Varuna es un objeto clásico del Cinturón de Kuiper conocido por su rotación extremadamente rápida — completando una vuelta completa en solo 6,3 horas, una de las más rápidas del sistema solar exterior.',
+        funFactVaruna: '¡Varuna gira tan rápido que se abomba en el ecuador, dándole la forma de una pelota aplastada — su diámetro ecuatorial es notablemente mayor que su diámetro polar!'
     },
     
     pt: {
@@ -2320,7 +2380,19 @@ const translations = {
         funFactKepler452b: 'Kepler-452b tem 6 bilhões de anos - 1,5 bilhão de anos mais velho que a Terra!',
         funFactTrappist1e: 'De TRAPPIST-1e, você poderia ver os outros planetas tão grandes quanto nossa Lua no céu!',
         funFactKepler186f: 'Kepler-186f orbita uma anã vermelha, então seu céu brilharia em laranja-avermelhado!',
-        funFactComets: 'Os cometas têm duas caudas: uma cauda de poeira curva (amarelada) e uma cauda iônica reta (azul) - ambas sempre apontam para longe do Sol!'
+        funFactComets: 'Os cometas têm duas caudas: uma cauda de poeira curva (amarelada) e uma cauda iônica reta (azul) - ambas sempre apontam para longe do Sol!',
+        descOrcus: 'Orcus é um grande objeto do Cinturão de Kuiper em ressonância orbital 2:3 com Netuno, assim como Plutão. Tem sua própria lua chamada Vanth.',
+        funFactOrcus: 'Orcus às vezes é chamado de anti-Plutão — suas órbitas são quase imagens espelhadas perfeitas uma da outra, em lados opostos do Sol!',
+        descQuaoar: 'Quaoar é um grande objeto do Cinturão de Kuiper com sua própria lua Weywot. Notavelmente, possui um sistema de anéis — o primeiro descoberto ao redor de um objeto do Cinturão de Kuiper.',
+        funFactQuaoar: 'O anel de Quaoar orbita muito além do seu limite de Roche, onde os anéis não deveriam conseguir existir — um mistério que desafia nossa compreensão sobre a formação de anéis!',
+        descGonggong: 'Gonggong (anteriormente 2007 OR10) é um objeto distante do disco disperso com uma superfície avermelhada causada por gelo de metano alterado por radiação. Tem uma lua chamada Xiangliu.',
+        funFactGonggong: 'Gonggong leva o nome de um deus da água chinês que, segundo a mitologia, inclinou a Terra ao se chocar contra um pilar que sustentava o céu!',
+        descSalacia: 'Salacia é um objeto escuro do Cinturão de Kuiper com uma lua chamada Actaea. É um dos maiores objetos trans-neptunianos que ainda não foi classificado como planeta anão.',
+        funFactSalacia: 'Salacia leva o nome da deusa romana do mar e esposa de Netuno — apropriado para um mundo gelado em órbita no reino dos planetas mais distantes!',
+        descVarda: 'Varda é um objeto binário do Cinturão de Kuiper emparelhado com sua grande lua Ilmarë. Medindo sua órbita mútua, os cientistas podem calcular com precisão a massa combinada do sistema.',
+        funFactVarda: 'Varda leva o nome da Rainha das Estrelas na mitologia de Tolkien — a divindade que moldou as estrelas e as colocou no céu da Terra Média!',
+        descVaruna: 'Varuna é um objeto clássico do Cinturão de Kuiper conhecido por sua rotação extremamente rápida — completando uma volta completa em apenas 6,3 horas, uma das mais rápidas do sistema solar externo.',
+        funFactVaruna: 'Varuna gira tão rápido que se expande no equador, dando-lhe a forma de uma bola achatada — seu diâmetro equatorial é visivelmente maior que seu diâmetro polar!'
     }
 };
 
