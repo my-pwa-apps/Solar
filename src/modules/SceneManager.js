@@ -55,6 +55,12 @@ export class SceneManager {
  this.setupLighting();
  this.setupXR();
  this.setupEventListeners();
+
+ // Desktop VR emulation: apply VR camera position so you can see
+ // exactly what the headset sees, without needing a headset.
+ if (DEBUG.EMULATE_VR) {
+ this.applyVREmulation();
+ }
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.error('Error initializing scene:', error);
  this.showError('Failed to initialize 3D scene. Please refresh the page.');
@@ -369,8 +375,9 @@ export class SceneManager {
 
  // Handle XR session start
  this.renderer.xr.addEventListener('sessionstart', () => {
+ try {
  const session = this.renderer.xr.getSession();
- if (DEBUG.VR) console.log(`[XR] Session started: ${session.mode}`);
+ console.log(`[XR] Session started: ${session.mode}`);
  
  // Save desktop camera state so we can restore it after the session ends.
  this._preVRCameraPosition = this.camera.position.clone();
@@ -390,6 +397,9 @@ export class SceneManager {
  // slightly to improve depth precision for the compressed educational scale.
  this.camera.near = 1.0;
  this.camera.updateProjectionMatrix();
+
+ console.log(`[XR] Dolly at (${this.dolly.position.x}, ${this.dolly.position.y}, ${this.dolly.position.z}), camera near=${this.camera.near}, far=${this.camera.far}`);
+ console.log(`[XR] Scene children: ${this.scene.children.length}`);
  
  // Set background based on session type
  if (session.mode === 'immersive-ar' ||
@@ -401,17 +411,20 @@ export class SceneManager {
  this.scene.background = new THREE.Color(0x000011);
  }
  
- if (DEBUG.VR) console.log('[VR] Controls: LStick=move, RStick=turn/up-down, LTrigger=sprint, LGrip=rotate, X=menu, Trigger=select');
+ console.log('[VR] Controls: LStick=move, RStick=turn/up-down, LTrigger=sprint, LGrip=rotate, X=menu, Trigger=select');
  
  // Hide VR UI panel initially - let user toggle with X button
  if (this.vrUIPanel) {
  this.vrUIPanel.visible = false;
  }
+ } catch (error) {
+ console.error('[XR] ERROR in sessionstart handler:', error, error.stack);
+ }
  });
 
  // Handle XR session end
  this.renderer.xr.addEventListener('sessionend', () => {
- if (DEBUG.VR) console.log('[XR] Session ended');
+ console.log('[XR] Session ended');
  
  // Return dolly to origin so desktop camera world == camera local
  this.dolly.position.set(0, 0, 0);
@@ -440,6 +453,89 @@ export class SceneManager {
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.warn('WebXR not supported:', error);
  }
+ }
+
+ /**
+  * Desktop VR Emulation — ?emulate-vr in the URL
+  * Applies the same camera setup that sessionstart does, so you can see
+  * on a flat desktop screen exactly what the VR headset shows. Useful for
+  * diagnosing black-screen issues without needing a headset.
+  *
+  * Also adds an on-screen HUD showing VR diagnostics.
+  */
+ applyVREmulation() {
+ console.log('%c[VR-Emulate] Activating desktop VR emulation mode', 'color: #00ff88; font-weight: bold; font-size: 14px');
+
+ // Replicate what sessionstart does
+ this.dolly.position.set(0, 0, 200);
+ this.dolly.rotation.set(0, 0, 0);
+ this.camera.position.set(0, 0, 0);
+ this.camera.quaternion.set(0, 0, 0, 1);
+ this.dolly.updateMatrixWorld(true);
+
+ this.camera.near = 1.0;
+ this.camera.updateProjectionMatrix();
+
+ // Point camera towards origin (where the Sun/planets are)
+ this.camera.lookAt(0, 0, 0);
+
+ // Disable OrbitControls target reset — keep looking at origin
+ this.controls.target.set(0, 0, 0);
+ this.controls.update();
+
+ // Log diagnostic info
+ const worldPos = new THREE.Vector3();
+ this.camera.getWorldPosition(worldPos);
+ console.log(`[VR-Emulate] Camera world position: (${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)}, ${worldPos.z.toFixed(1)})`);
+ console.log(`[VR-Emulate] Camera near=${this.camera.near}, far=${this.camera.far}`);
+ console.log(`[VR-Emulate] Dolly position: (${this.dolly.position.x}, ${this.dolly.position.y}, ${this.dolly.position.z})`);
+ console.log(`[VR-Emulate] Scene children: ${this.scene.children.length}`);
+
+ // Add on-screen VR debug HUD
+ this._createVRDebugHUD();
+ }
+
+ /** On-screen diagnostic overlay for VR emulation mode */
+ _createVRDebugHUD() {
+ const hud = document.createElement('div');
+ hud.id = 'vr-debug-hud';
+ hud.style.cssText = `
+ position: fixed; top: 10px; left: 10px; z-index: 10000;
+ background: rgba(0,0,0,0.85); color: #00ff88; padding: 12px 16px;
+ font: 12px monospace; border: 1px solid #00ff88; border-radius: 6px;
+ pointer-events: none; max-width: 400px; line-height: 1.6;
+ `;
+ document.body.appendChild(hud);
+
+ // Update HUD every second
+ const updateHUD = () => {
+ if (!this.camera || !this.dolly) return;
+ const wp = new THREE.Vector3();
+ this.camera.getWorldPosition(wp);
+
+ // Count visible meshes
+ let meshCount = 0, visibleMeshes = 0;
+ this.scene.traverse(obj => {
+ if (obj.isMesh) {
+ meshCount++;
+ if (obj.visible) visibleMeshes++;
+ }
+ });
+
+ hud.innerHTML = `
+ <div style="color:#ffaa00;font-weight:bold;margin-bottom:4px">🥽 VR EMULATION MODE</div>
+ <div>Dolly: (${this.dolly.position.x.toFixed(1)}, ${this.dolly.position.y.toFixed(1)}, ${this.dolly.position.z.toFixed(1)})</div>
+ <div>Camera World: (${wp.x.toFixed(1)}, ${wp.y.toFixed(1)}, ${wp.z.toFixed(1)})</div>
+ <div>Near: ${this.camera.near} | Far: ${this.camera.far}</div>
+ <div>FOV: ${this.camera.fov.toFixed(0)}°</div>
+ <div>Meshes: ${visibleMeshes}/${meshCount} visible</div>
+ <div>Scene children: ${this.scene.children.length}</div>
+ <div style="margin-top:6px;color:#888">Use OrbitControls to look around from VR start pos</div>
+ `;
+ };
+
+ updateHUD();
+ setInterval(updateHUD, 1000);
  }
 
  setupVRUI() {
@@ -1675,6 +1771,9 @@ export class SceneManager {
  const inputSource = inputSources[i];
  const gamepad = inputSource.gamepad;
  const handedness = inputSource.handedness;
+ if (!this.previousButtonStates[i]) {
+ this.previousButtonStates[i] = {};
+ }
  
  if (!gamepad) {
  if (DEBUG && DEBUG.VR && Math.random() < 0.01) {
@@ -1741,7 +1840,7 @@ export class SceneManager {
  if (DEBUG.VR) console.log(' Thumbstick pressed - PLAY');
  } else {
  app.timeSpeed = 0;
- this.updateVRStatus('â¸ Paused');
+ this.updateVRStatus('⏸ Paused');
  if (DEBUG.VR) console.log(' Thumbstick pressed - PAUSE');
  }
  this.requestVRMenuRefresh();
@@ -1916,31 +2015,59 @@ export class SceneManager {
 
  animate(callback) {
  let frameCount = 0;
+ let vrErrorCount = 0;
+ const VR_ERROR_LOG_LIMIT = 10; // Don't spam console after N errors
  this.renderer.setAnimationLoop(() => {
+ // ── 1. Controls ─────────────────────────────────
  try {
  // Skip OrbitControls while XR is presenting - the XR session owns the
  // camera pose; running controls.update() would fight the headset tracking.
+ // In emulate-vr mode, keep controls so user can look around from VR pos.
  if (!this.renderer.xr.isPresenting) {
  this.controls.update();
  }
+ } catch (e) {
+ if (DEBUG.enabled || DEBUG.VR) console.error('[Scene] controls.update error:', e);
+ }
+
+ // ── 2. App callback (update logic) ──────────────
+ try {
  callback();
+ } catch (e) {
+ // ALWAYS log VR errors to help diagnose black-screen issues
+ if (this.renderer.xr.isPresenting || DEBUG.EMULATE_VR) {
+ vrErrorCount++;
+ if (vrErrorCount <= VR_ERROR_LOG_LIMIT) {
+ console.error(`[VR] Frame error #${vrErrorCount}:`, e.message, e.stack);
+ } else if (vrErrorCount === VR_ERROR_LOG_LIMIT + 1) {
+ console.error(`[VR] Suppressing further errors (${VR_ERROR_LOG_LIMIT} logged)`);
+ }
+ } else if (DEBUG.enabled) {
+ console.error('[Scene] Callback error:', e);
+ }
+ }
+
+ // ── 3. RENDER (must ALWAYS run, even if callback threw) ─────
+ try {
  this.renderer.render(this.scene, this.camera);
- if (this.labelRenderer) {
+ } catch (e) {
+ console.error('[Scene] render() FAILED:', e);
+ }
+
+ try {
+ if (this.labelRenderer && !this.renderer.xr.isPresenting) {
  this.labelRenderer.render(this.scene, this.camera);
  }
- 
+ } catch (_) { /* label render is non-critical */ }
+
  // Debug first frame
- if (frameCount === 0 && DEBUG.enabled) {
+ if (frameCount === 0 && (DEBUG.enabled || DEBUG.VR || DEBUG.EMULATE_VR)) {
  console.log(`[Scene] First frame: ${this.scene.children.length} children, canvas ${this.renderer.domElement.width}×${this.renderer.domElement.height}`);
+ if (DEBUG.EMULATE_VR) {
+ console.log('[VR-Emulate] Desktop VR emulation active — camera at VR start position');
+ }
  }
  frameCount++;
- } catch (error) {
- if (DEBUG && DEBUG.enabled) {
- console.error(' ERROR in animation loop:', error);
- console.error(' Stack:', error.stack);
- }
- // Don't stop the loop, just log the error
- }
  });
  }
 

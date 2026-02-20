@@ -4,11 +4,13 @@
 import * as THREE from 'three';
 
 // Debug configuration - enable with URL parameters: ?debug=true&debug-vr=true&debug-textures=true
+const _urlParams = new URLSearchParams(window.location.search);
 export const DEBUG = {
- enabled: new URLSearchParams(window.location.search).has('debug'),
- VR: new URLSearchParams(window.location.search).has('debug-vr'),
- TEXTURES: new URLSearchParams(window.location.search).has('debug-textures'),
- PERFORMANCE: new URLSearchParams(window.location.search).has('debug-performance')
+ enabled: _urlParams.has('debug'),
+ VR: _urlParams.has('debug-vr'),
+ TEXTURES: _urlParams.has('debug-textures'),
+ PERFORMANCE: _urlParams.has('debug-performance'),
+ EMULATE_VR: _urlParams.has('emulate-vr') // Desktop VR camera emulation
 };
 
 // Mobile & Performance Detection

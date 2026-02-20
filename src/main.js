@@ -163,8 +163,23 @@ class App {
  this.lastTime = currentTime;
  
  // Update XR controller movement and laser pointers
+ // Each wrapped separately so one failure doesn't block the others
+ try {
  this.sceneManager.updateXRMovement();
+ } catch (e) {
+ if (!this._vrMoveErrLogged) {
+ console.error('[VR] updateXRMovement crashed:', e.message, e.stack);
+ this._vrMoveErrLogged = true;
+ }
+ }
+ try {
  this.sceneManager.updateLaserPointers();
+ } catch (e) {
+ if (!this._vrLaserErrLogged) {
+ console.error('[VR] updateLaserPointers crashed:', e.message, e.stack);
+ this._vrLaserErrLogged = true;
+ }
+ }
  
  // Update Solar System module every frame
  if (this.solarSystemModule) {
