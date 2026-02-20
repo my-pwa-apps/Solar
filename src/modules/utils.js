@@ -22,7 +22,10 @@ export const CONFIG = {
  alpha: true,
  powerPreference: 'high-performance',
  maxPixelRatio: IS_MOBILE ? 1.5 : 2, // Lower on mobile
- logarithmicDepthBuffer: true
+ // logarithmicDepthBuffer disabled on mobile/Quest: the EXT_frag_depth extension
+ // fails inside the WebXR framebuffer on Quest browsers, rendering all objects black.
+ // Desktop gets it for better depth precision; mobile/Quest does not need it.
+ logarithmicDepthBuffer: !IS_MOBILE
  },
  CAMERA: {
  fov: 75,

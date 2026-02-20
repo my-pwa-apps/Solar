@@ -120,6 +120,16 @@ const translations = {
         enterVR: "Enter VR",
         enterAR: "Enter AR",
         randomDiscovery: "Discover",
+
+        // Bottom bar tooltips
+        tooltipOrbits: "Show/hide orbital paths (O)",
+        tooltipConstellations: "Show/hide star constellations (C)",
+        tooltipLabels: "Toggle object labels (D)",
+        tooltipScale: "Switch between compact and expanded scale (S)",
+        tooltipSound: "Toggle sound effects",
+        tooltipReset: "Reset camera to default view (R)",
+        tooltipDiscover: "Surprise me! Jump to a random object",
+        tooltipHelp: "Show controls and features (H)",
         
         // Onboarding
         welcomeToSpace: "🚀 Welcome to Space Voyage!",
@@ -587,6 +597,16 @@ const translations = {
         enterVR: "VR Starten",
         enterAR: "AR Starten",
         randomDiscovery: "Ontdekken",
+
+        // Knopinfo onderste balk
+        tooltipOrbits: "Orbitale paden tonen/verbergen (O)",
+        tooltipConstellations: "Sterrenbeelden tonen/verbergen (C)",
+        tooltipLabels: "Objectlabels in-/uitschakelen (D)",
+        tooltipScale: "Wisselen tussen compacte en uitgebreide schaal (S)",
+        tooltipSound: "Geluidseffecten in-/uitschakelen",
+        tooltipReset: "Camera terugzetten naar standaardweergave (R)",
+        tooltipDiscover: "Verras me! Spring naar een willekeurig object",
+        tooltipHelp: "Bedieningselementen en functies tonen (H)",
         
         // Onboarding
         welcomeToSpace: "🚀 Welkom bij Ruimtereis!",
@@ -1044,6 +1064,16 @@ const translations = {
         enterVR: "Entrer en RV",
         enterAR: "Entrer en RA",
         randomDiscovery: "Découvrir",
+
+        // Infobulles barre du bas
+        tooltipOrbits: "Afficher/masquer les orbites (O)",
+        tooltipConstellations: "Afficher/masquer les constellations (C)",
+        tooltipLabels: "Basculer les étiquettes d'objets (D)",
+        tooltipScale: "Basculer entre échelle compacte et étendue (S)",
+        tooltipSound: "Activer/désactiver les effets sonores",
+        tooltipReset: "Réinitialiser la caméra (R)",
+        tooltipDiscover: "Surprenez-moi ! Saut vers un objet aléatoire",
+        tooltipHelp: "Afficher les commandes et fonctionnalités (H)",
         
         // Embarquement
         welcomeToSpace: "🚀 Bienvenue dans Voyage Spatial!",
@@ -1493,6 +1523,16 @@ const translations = {
         enterVR: "VR Starten",
         enterAR: "AR Starten",
         randomDiscovery: "Entdecken",
+
+        // Tooltips untere Leiste
+        tooltipOrbits: "Umlaufbahnen ein-/ausblenden (O)",
+        tooltipConstellations: "Sternbilder ein-/ausblenden (C)",
+        tooltipLabels: "Objektbeschriftungen umschalten (D)",
+        tooltipScale: "Zwischen kompakter und erweiterter Skala wechseln (S)",
+        tooltipSound: "Soundeffekte ein-/ausschalten",
+        tooltipReset: "Kamera zurücksetzen (R)",
+        tooltipDiscover: "Überrasch mich! Zu einem zufälligen Objekt springen",
+        tooltipHelp: "Steuerung und Funktionen anzeigen (H)",
         
         // Onboarding
         welcomeToSpace: "🚀 Willkommen bei Weltraumreise!",
@@ -1942,6 +1982,16 @@ const translations = {
         enterVR: "Entrar en RV",
         enterAR: "Entrar en RA",
         randomDiscovery: "Descubrir",
+
+        // Información sobre herramientas barra inferior
+        tooltipOrbits: "Mostrar/ocultar trayectorias orbitales (O)",
+        tooltipConstellations: "Mostrar/ocultar constelaciones (C)",
+        tooltipLabels: "Alternar etiquetas de objetos (D)",
+        tooltipScale: "Cambiar entre escala compacta y ampliada (S)",
+        tooltipSound: "Activar/desactivar efectos de sonido",
+        tooltipReset: "Restablecer cámara a vista predeterminada (R)",
+        tooltipDiscover: "¡Sorpréndeme! Saltar a un objeto aleatorio",
+        tooltipHelp: "Mostrar controles y funciones (H)",
         
         // Incorporación
         welcomeToSpace: "🚀 ¡Bienvenido a Viaje Espacial!",
@@ -2391,6 +2441,16 @@ const translations = {
         enterVR: "Entrar em RV",
         enterAR: "Entrar em RA",
         randomDiscovery: "Descobrir",
+
+        // Dicas da barra inferior
+        tooltipOrbits: "Mostrar/ocultar trajetórias orbitais (O)",
+        tooltipConstellations: "Mostrar/ocultar constelações (C)",
+        tooltipLabels: "Alternar etiquetas de objetos (D)",
+        tooltipScale: "Alternar entre escala compacta e expandida (S)",
+        tooltipSound: "Ativar/desativar efeitos sonoros",
+        tooltipReset: "Redefinir câmera para vista padrão (R)",
+        tooltipDiscover: "Surpreenda-me! Saltar para um objeto aleatório",
+        tooltipHelp: "Mostrar controles e funcionalidades (H)",
         
         // Integração
         welcomeToSpace: "🚀 Bem-vindo ao Viagem Espacial!",
@@ -2764,6 +2824,15 @@ function applyTranslations() {
     document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
         const key = element.getAttribute('data-i18n-placeholder');
         element.placeholder = t(key);
+    });
+
+    // Update data-tooltip attributes via data-i18n-tooltip
+    document.querySelectorAll('[data-i18n-tooltip]').forEach(element => {
+        const key = element.getAttribute('data-i18n-tooltip');
+        const translation = t(key);
+        if (translation && translation !== key) {
+            element.setAttribute('data-tooltip', translation);
+        }
     });
 
     // Update document title

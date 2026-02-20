@@ -181,13 +181,25 @@ export class SceneManager {
  try {
  if (DEBUG.VR) console.log('[XR] Setting up WebXR');
  
- // Create a dolly (rig) for VR movement (but don't add camera yet - only in VR mode)
+ // Create dolly (VR locomotion rig) at the scene origin.
+ // The camera lives INSIDE the dolly from app start - this is the correct
+ // Three.js WebXR pattern. It avoids the race condition where XR renders
+ // its first frame before sessionstart fires and caches camera.parent = scene,
+ // which would permanently ignore the dolly offset.
+ // In desktop mode: dolly stays at (0,0,0) so camera.world == camera.local.
+ // In VR/AR mode: dolly is repositioned to VR start; XR adds the HMD offset.
  this.dolly = new THREE.Group();
- this.dolly.position.set(0, 100, 200); // Start away from Sun (updated for new educational scale)
+ this.dolly.position.set(0, 0, 0);
  this.scene.add(this.dolly);
- 
- // Store original camera parent for switching back
- this.cameraOriginalParent = this.camera.parent;
+
+ // Move camera into the dolly immediately (removes it from scene automatically).
+ // setupCamera() already set camera.position = CONFIG.CAMERA.startPos (0,100,200),
+ // so with dolly at origin the camera world position is unchanged.
+ this.dolly.add(this.camera);
+
+ // Use 'local' reference space: origin at the viewer's starting position,
+ // no floor-tracking calibration required. More reliable across headsets.
+ this.renderer.xr.setReferenceSpaceType('local');
 
  // Controller models
  this.controllerModelFactory = new XRControllerModelFactory();
@@ -292,12 +304,13 @@ export class SceneManager {
  
  vrButton.onclick = async () => {
  try {
- // Explicitly request immersive-vr mode
+ // 'local' reference space is set globally in setupXR via setReferenceSpaceType.
+ // We list 'local-floor' as optional so Quest can use floor-level origin if
+ // room calibration is set up, but the session does NOT require it.
  const session = await navigator.xr.requestSession('immersive-vr', {
- requiredFeatures: ['local-floor']
+ optionalFeatures: ['local-floor', 'bounded-floor']
  });
  await this.renderer.xr.setSession(session);
-
  } catch (error) {
  console.error('[VR] Failed to start VR session:', error);
  alert('Could not enter VR mode: ' + error.message);
@@ -335,10 +348,8 @@ export class SceneManager {
  
  arButton.onclick = async () => {
  try {
- // Explicitly request immersive-ar mode
  const session = await navigator.xr.requestSession('immersive-ar', {
- requiredFeatures: ['local-floor'],
- optionalFeatures: ['dom-overlay', 'hit-test']
+ optionalFeatures: ['local-floor', 'bounded-floor', 'dom-overlay', 'hit-test']
  });
  await this.renderer.xr.setSession(session);
  } catch (error) {
@@ -361,21 +372,24 @@ export class SceneManager {
  const session = this.renderer.xr.getSession();
  if (DEBUG.VR) console.log(`[XR] Session started: ${session.mode}`);
  
- // Move camera to dolly for VR
- if (this.dolly && this.camera) {
- // Remove camera from scene
- if (this.camera.parent) {
- this.camera.parent.remove(this.camera);
- }
- // Add camera to dolly
- this.dolly.add(this.camera);
- // Reset camera local position
- this.camera.position.set(0, 0, 0);
- // Position dolly at solar-system plane level (y=0) so the Sun/planets
- // are directly ahead at eye level, not 27° below the user's gaze.
+ // Save desktop camera state so we can restore it after the session ends.
+ this._preVRCameraPosition = this.camera.position.clone();
+ this._preVRCameraQuaternion = this.camera.quaternion.clone();
+ this._preVRControlsTarget = this.controls.target.clone();
+
+ // The camera is already parented to the dolly (done in setupXR).
+ // Just move the dolly to the VR start position and reset the camera's
+ // local transform so the HMD pose is the sole source of camera movement.
  this.dolly.position.set(0, 0, 200);
- this.dolly.rotation.set(0, 0, 0); // Ensure no stale rotation
- }
+ this.dolly.rotation.set(0, 0, 0);
+ this.camera.position.set(0, 0, 0);
+ this.camera.quaternion.set(0, 0, 0, 1);
+ this.dolly.updateMatrixWorld(true);
+
+ // Without logarithmicDepthBuffer on mobile/Quest, widen the near plane
+ // slightly to improve depth precision for the compressed educational scale.
+ this.camera.near = 1.0;
+ this.camera.updateProjectionMatrix();
  
  // Set background based on session type
  if (session.mode === 'immersive-ar' ||
@@ -399,13 +413,25 @@ export class SceneManager {
  this.renderer.xr.addEventListener('sessionend', () => {
  if (DEBUG.VR) console.log('[XR] Session ended');
  
- // Restore camera to scene
- if (this.dolly && this.camera && this.camera.parent === this.dolly) {
- this.dolly.remove(this.camera);
- this.scene.add(this.camera);
- // Restore camera position from dolly position
- this.camera.position.copy(this.dolly.position);
+ // Return dolly to origin so desktop camera world == camera local
+ this.dolly.position.set(0, 0, 0);
+ this.dolly.rotation.set(0, 0, 0);
+
+ // Restore the camera state that was saved when the session started
+ if (this._preVRCameraPosition) {
+ this.camera.position.copy(this._preVRCameraPosition);
  }
+ if (this._preVRCameraQuaternion) {
+ this.camera.quaternion.copy(this._preVRCameraQuaternion);
+ }
+ if (this._preVRControlsTarget) {
+ this.controls.target.copy(this._preVRControlsTarget);
+ this.controls.update();
+ }
+
+ // Restore desktop near value
+ this.camera.near = 0.1;
+ this.camera.updateProjectionMatrix();
  
  this.scene.background = new THREE.Color(0x000011); // Restore original space background
  // Hide VR UI panel
