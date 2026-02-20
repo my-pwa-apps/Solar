@@ -67,7 +67,7 @@ export class SceneManager {
  this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, CONFIG.RENDERER.maxPixelRatio));
  this.renderer.xr.enabled = true;
  this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
- this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+ this.renderer.shadowMap.type = THREE.PCFShadowMap;
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
  this.renderer.toneMappingExposure = 1.2; // Increased to brighten dark areas
  
@@ -168,7 +168,7 @@ export class SceneManager {
  this.scene.add(this.lights.hemisphere);
 
  // Camera light - helps viewing dark sides without overpowering
- this.lights.camera = new THREE.PointLight(0x8899dd, 0.8, 600);
+ this.lights.camera = new THREE.PointLight(0x8899dd, 0.8, 600, 1);
  this.camera.add(this.lights.camera);
  this.scene.add(this.camera);
  
@@ -438,7 +438,7 @@ export class SceneManager {
  if (this.vrUIPanel) this.vrUIPanel.visible = false;
  });
  } catch (error) {
- console.warn('WebXR not supported:', error);
+ if (DEBUG && DEBUG.enabled) console.warn('WebXR not supported:', error);
  }
  }
 
@@ -1629,7 +1629,7 @@ export class SceneManager {
  
  // Ensure dolly exists
  if (!this.dolly) {
- console.warn('⚠️ Dolly not found!');
+ if (DEBUG && DEBUG.VR) console.warn('⚠️ Dolly not found!');
  return;
  }
  
@@ -1677,7 +1677,7 @@ export class SceneManager {
  const handedness = inputSource.handedness;
  
  if (!gamepad) {
- if (Math.random() < 0.01) {
+ if (DEBUG && DEBUG.VR && Math.random() < 0.01) {
  console.warn(` No gamepad for controller ${i}`);
  }
  continue;
@@ -1694,7 +1694,7 @@ export class SceneManager {
  if (!prevState) {
  // NEW PRESS - Toggle VR menu
  if (!this.vrUIPanel) {
- console.warn('⚠️ VR UI Panel not initialized!');
+ if (DEBUG && DEBUG.VR) console.warn('⚠️ VR UI Panel not initialized!');
  } else {
  this.vrUIPanel.visible = !this.vrUIPanel.visible;
  

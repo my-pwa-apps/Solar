@@ -353,7 +353,7 @@ export class MaterialFactory {
  };
  
  if (!presets[type]) {
- console.warn(`Unknown spacecraft material type: ${type}, using silver as fallback`);
+ if (DEBUG && DEBUG.enabled) console.warn(`Unknown spacecraft material type: ${type}, using silver as fallback`);
  return MaterialFactory.createStandardMaterial(presets.silver);
  }
  

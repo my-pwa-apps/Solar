@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.5.41 - Fix missing texture cache entries, luminance-based deep-sky blending
+// Version 2.6.0 - Three.js upgraded from r160 to r183
 
-const CACHE_VERSION = '2.5.41';
+const CACHE_VERSION = '2.6.0';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;

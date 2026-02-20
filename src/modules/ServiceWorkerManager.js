@@ -44,7 +44,7 @@ export class ServiceWorkerManager {
             this.setupMessageListener();
             
         } catch (error) {
-            console.warn('Service Worker registration failed:', error);
+            if (DEBUG && DEBUG.enabled) console.warn('Service Worker registration failed:', error);
         }
     }
 

@@ -1278,7 +1278,7 @@ export class SolarSystemModule {
         }
         
         if (!planet.material) {
-            console.warn(`?? ${planetName} has no material to apply procedural texture to`);
+            if (DEBUG && DEBUG.enabled) console.warn(`⚠️ ${planetName} has no material to apply procedural texture to`);
             return;
         }
         

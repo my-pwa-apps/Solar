@@ -2,8 +2,6 @@
 // SPACE VOYAGE - MODULAR VERSION
 // Main Application Entry Point
 // ===========================
-
-// Import THREE.js
 import * as THREE from 'three';
 
 // Import all modules
@@ -59,6 +57,12 @@ class App {
  this.timeSpeed = 1; // Default to 1x real-time (original default)
  this.brightness = 100; // Default brightness percentage
  
+ // Pre-allocate reusable objects for raycast hot path (avoid per-hover GC)
+ this._mouseVec = new THREE.Vector2();
+ this._objCentre = new THREE.Vector3();
+ this._toObj = new THREE.Vector3();
+ this._crossVec = new THREE.Vector3();
+
  // Make this app instance globally accessible for VR and other modules
  window.app = this;
  
@@ -695,9 +699,9 @@ class App {
  if (!this.solarSystemModule) return null;
 
  const mouse = this._getMouseCoordinates(event);
- const mouseVec = new THREE.Vector2(mouse.x, mouse.y);
+ this._mouseVec.set(mouse.x, mouse.y);
  
- this.sceneManager.raycaster.setFromCamera(mouseVec, this.sceneManager.camera);
+ this.sceneManager.raycaster.setFromCamera(this._mouseVec, this.sceneManager.camera);
  
  // Ensure world matrices are up-to-date for child objects (moons are children of planets)
  this.sceneManager.scene.updateMatrixWorld(true);
@@ -743,11 +747,10 @@ class App {
  const ray = this.sceneManager.raycaster.ray;
  const scored = namedObjects.map(({ object, distance }) => {
  // Angular distance from ray to object world-space centre
- const centre = new THREE.Vector3();
- object.getWorldPosition(centre);
- const toObj = centre.clone().sub(ray.origin);
- const cross = new THREE.Vector3().crossVectors(ray.direction, toObj.normalize());
- const angularDist = cross.length(); // sin(angle) ≈ angle for small values
+ object.getWorldPosition(this._objCentre);
+ this._toObj.copy(this._objCentre).sub(ray.origin).normalize();
+ this._crossVec.crossVectors(ray.direction, this._toObj);
+ const angularDist = this._crossVec.length(); // sin(angle) ≈ angle for small values
 
  // Type weights — comets score below all other named objects because their
  // large coma/tail meshes can clip the ray even when hovering over a different
@@ -814,30 +817,10 @@ class App {
  // Play selection sound
  audioManager.playSelect();
 
- // Check if Earth was clicked
- const isEarth = target.userData?.name?.toLowerCase() === 'earth';
-
  const info = this.solarSystemModule.getObjectInfo(target);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
  }
- }
-
- /**
-  * Get the intersection point on Earth for coordinate calculation
-  */
- _getEarthIntersection(event) {
- const mouse = this._getMouseCoordinates(event);
- const mouseVec = new THREE.Vector2(mouse.x, mouse.y);
- 
- this.sceneManager.raycaster.setFromCamera(mouseVec, this.sceneManager.camera);
- 
- const earthMesh = this.solarSystemModule?.celestialObjects?.get('earth');
- if (!earthMesh) return null;
- 
- // Raycast specifically against Earth
- const intersects = this.sceneManager.raycaster.intersectObject(earthMesh, true);
- return intersects.length > 0 ? intersects[0] : null;
  }
 
  hideHoverLabel() {
