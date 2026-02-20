@@ -43,6 +43,11 @@ export class SceneManager {
  this._vrUpVector = new THREE.Vector3(0, 1, 0);
  this._vrTempPosition = new THREE.Vector3();
  this._vrGrabDelta = new THREE.Vector3(); // For grab-to-rotate delta calc
+ this._vrMoveScratch = new THREE.Vector3(); // For zero-alloc movement additions
+
+ // Panel drag state — right grip moves the open menu panel
+ this.vrPanelDrag = { active: false, controllerIndex: -1 };
+ this._vrPanelDragOffset = new THREE.Vector3();
  
  this.init();
  }
@@ -215,6 +220,18 @@ export class SceneManager {
  this.controllerGrips = [];
  this.lasersVisible = true; // Toggle for laser pointers
  
+ // Shared materials for controller visuals (same colour both sides → one material each)
+ const laserMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
+ const pointerMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
+ const glowMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false });
+ const coneMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+
+ // Shared geometries (identical for both controllers)
+ const laserGeo = new THREE.CylinderGeometry(0.001, 0.001, 10, 6);
+ const pointerGeo = new THREE.SphereGeometry(0.01, 8, 8);
+ const glowGeo = new THREE.SphereGeometry(0.015, 8, 8);
+ const coneGeo = new THREE.ConeGeometry(0.02, 0.4, 8);
+
  // Setup two controllers
  for (let i = 0; i < 2; i++) {
  // Controller for pointing/selecting
@@ -226,61 +243,39 @@ export class SceneManager {
  controller.userData.index = i;
  this.dolly.add(controller);
  this.controllers.push(controller);
- 
+
  // Controller grip for models
  const controllerGrip = this.renderer.xr.getControllerGrip(i);
- 
- // Thin laser line - subtle and precise
- const laserGeometry = new THREE.CylinderGeometry(0.001, 0.001, 10, 6);
- const laserMaterial = new THREE.MeshBasicMaterial({ 
- color: 0x00ffff,
- transparent: true,
- opacity: 0.6
- });
- 
- const laser = new THREE.Mesh(laserGeometry, laserMaterial);
- laser.rotation.x = Math.PI / 2; // Rotate to point forward
- laser.position.set(0, 0, -5); // Position at center of 10m length
+
+ // Laser beam
+ const laser = new THREE.Mesh(laserGeo, laserMat.clone()); // clone so each ctrl has own colour state
+ laser.rotation.x = Math.PI / 2;
+ laser.position.set(0, 0, -5);
  laser.name = 'laser';
- laser.visible = true; // Can be toggled
  controller.add(laser);
- 
- // Small, clear target point where laser hits
- const pointerGeometry = new THREE.SphereGeometry(0.01, 8, 8);
- const pointerMaterial = new THREE.MeshBasicMaterial({ 
- color: 0x00ffff,
- transparent: true,
- opacity: 0.8
- });
- const pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
+
+ // Hit-point dot
+ const pointer = new THREE.Mesh(pointerGeo, pointerMat.clone());
  pointer.position.set(0, 0, -10);
  pointer.name = 'pointer';
- pointer.visible = true; // Can be toggled
  controller.add(pointer);
- 
- // Subtle outer ring for better visibility
- const glowGeometry = new THREE.SphereGeometry(0.015, 8, 8);
- const glowMaterial = new THREE.MeshBasicMaterial({ 
- color: 0x00ffff,
- transparent: true,
- opacity: 0.2,
- blending: THREE.AdditiveBlending,
- depthWrite: false // Don't block objects behind the glow
- });
- const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+
+ // Glow ring around dot
+ const glow = new THREE.Mesh(glowGeo, glowMat);
  pointer.add(glow);
- 
- // Add a cone at controller tip for direction indicator
- const coneGeometry = new THREE.ConeGeometry(0.02, 0.4, 8);
- const coneMaterial = new THREE.MeshBasicMaterial({ 
- color: 0x00ffff
- });
- const cone = new THREE.Mesh(coneGeometry, coneMaterial);
- cone.rotation.x = Math.PI / 2; // Point forward
+
+ // Direction cone at tip
+ const cone = new THREE.Mesh(coneGeo, coneMat.clone());
+ cone.rotation.x = Math.PI / 2;
  cone.position.set(0, 0, -0.2);
  cone.name = 'cone';
  controller.add(cone);
- 
+
+ // Cache refs so updateLaserPointers never needs getObjectByName per frame
+ controller.userData.laserMesh = laser;
+ controller.userData.pointerMesh = pointer;
+ controller.userData.coneMesh = cone;
+
  this.dolly.add(controllerGrip);
  this.controllerGrips.push(controllerGrip);
  }
@@ -412,11 +407,19 @@ export class SceneManager {
  }
  
  console.log('[VR] Controls: LStick=move, RStick=turn/up-down, LTrigger=sprint, LGrip=rotate, X=menu, Trigger=select');
- 
- // Hide VR UI panel initially - let user toggle with X button
- if (this.vrUIPanel) {
- this.vrUIPanel.visible = false;
- }
+
+ // Re-init button-state map for however many input sources exist.
+ // Done here (not per-frame) so the hot loop needs no guard.
+ this.previousButtonStates = [];
+
+ // Clear per-session error-suppression flags so a new session
+ // produces fresh diagnostics in the console.
+ this._vrMoveErrLogged = false;
+ this._vrLaserErrLogged = false;
+
+ // Hide VR UI panel initially — user opens it with X button
+ if (this.vrUIPanel) this.vrUIPanel.visible = false;
+
  } catch (error) {
  console.error('[XR] ERROR in sessionstart handler:', error, error.stack);
  }
@@ -862,6 +865,14 @@ export class SceneManager {
  ctx.fillText('\uD83C\uDF0C Space Voyage VR', W / 2, 37);
  ctx.restore();
 
+ // ✕ close button — always visible in top-right of title bar
+ btn('\u2715', 'hide', W - 74, 8, 58, 58, { danger: true, font: 'bold 26px Arial' });
+
+ // Grab hint (tiny, right side of title bar, left of close button)
+ ctx.fillStyle = 'rgba(70,110,160,0.65)';
+ ctx.font = '12px Arial'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+ ctx.fillText('\uD83E\uDD1A right grip: move', W - 84, 60);
+
  // glowing title divider
  const divGrad = ctx.createLinearGradient(0, 74, W, 74);
  divGrad.addColorStop(0, 'rgba(74,144,217,0)');
@@ -1157,10 +1168,10 @@ export class SceneManager {
  ctx.fillText('in space to see its details here', cx, cy + 66);
  }
 
- // Info page footer – replace with Navigate / Controls
+ // Info page footer — Navigate to go back, ✕ to close the overlay
  this.vrButtons = this.vrButtons.filter(b => b.action !== 'hide' && b.action !== 'exitvr');
  btn('\uD83E\uDDED Navigate', 'page:navigate', EDGE, FOOT_Y, closeW, BTN_H, { success: true });
- btn('\u2699\uFE0F Controls',  'page:controls', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H);
+ btn('\u2715 Close', 'hide', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H, { danger: true });
  }
 
  // ─────────────────── flush texture ─────────────────────────
@@ -1186,18 +1197,27 @@ export class SceneManager {
  return false;
  }
 
+ // Always call focusOnObject to set focusedObject, chase-cam, time speed etc.
  module.focusOnObject(target, this.camera, this.controls);
 
+ // In VR the XR session owns camera.position — focusOnObject's camera moves
+ // are ignored. Teleport the dolly instead so the user actually goes there.
+ if (this.renderer.xr.isPresenting) {
+ this.teleportVRToObject(target);
+ // Dismiss nav menu; show compact info overlay to the side
+ this._showVRInfoOverlay();
+ } else {
  const info = typeof module.getObjectInfo === 'function' ? module.getObjectInfo(target) : null;
  if (info) {
  this.vrLastObjectInfo = info;
- app.uiManager?.updateInfoPanel(info);
+ window.app?.uiManager?.updateInfoPanel(info);
  if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
+ }
 
- app.uiManager?.setQuickNavValue?.(targetId);
+ window.app?.uiManager?.setQuickNavValue?.(targetId);
  const name = target.userData?.name || 'Object';
- this.updateVRStatus('✔ Selected: ' + name);
+ this.updateVRStatus('✔ → ' + name);
  this.requestVRMenuRefresh();
  return true;
  }
@@ -1215,7 +1235,18 @@ export class SceneManager {
  return;
  }
  const module = app.solarSystemModule;
+
+ // Always call focusOnObject to set focusedObject, chase-cam, time speed etc.
  if (module?.focusOnObject) module.focusOnObject(target, this.camera, this.controls);
+
+ // In VR the XR session owns camera.position — focusOnObject's camera moves
+ // are ignored. Teleport the dolly instead so the user actually goes there.
+ if (this.renderer.xr.isPresenting) {
+ this.teleportVRToObject(target);
+ // Dismiss nav menu; show compact info overlay to the side
+ this._showVRInfoOverlay();
+ }
+
  const info = typeof module?.getObjectInfo === 'function' ? module.getObjectInfo(target) : null;
  if (info) {
  this.vrLastObjectInfo = info;
@@ -1314,27 +1345,22 @@ export class SceneManager {
  if (infoForPanel) {
  this.vrLastObjectInfo = infoForPanel;
  app.uiManager?.updateInfoPanel(infoForPanel);
- if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
- if (this.vrUIPanel) {
- this.vrUIPanel.visible = true;
+ this._showVRInfoOverlay();
  this.updateVRStatus('\uD83D\uDD0D Inspecting: ' + objName);
- }
  this.requestVRMenuRefresh();
  this.triggerVRHaptic(index, 0.8, 100); // Stronger pulse for close zoom
  } else {
- // Normal focus – focus camera and show info page
+ // Normal focus – teleport dolly, show info overlay to the side
  module.focusOnObject(hitObject, this.camera, this.controls);
+ if (this.renderer.xr.isPresenting) this.teleportVRToObject(hitObject);
  if (DEBUG.VR) console.log('[VR] Focused on:', hitObject.name);
  if (infoForPanel) {
  this.vrLastObjectInfo = infoForPanel;
  app.uiManager?.updateInfoPanel(infoForPanel);
- if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
- if (this.vrUIPanel) {
- this.vrUIPanel.visible = true;
+ this._showVRInfoOverlay();
  this.updateVRStatus('\u2714\uFE0F ' + objName);
- }
  this.requestVRMenuRefresh();
  this.triggerVRHaptic(index, 0.6, 80); // Medium pulse for selection
  }
@@ -1349,10 +1375,22 @@ export class SceneManager {
  }
  
  onSqueezeStart(controller, index) {
- // LEFT GRIP: Start grab-to-rotate mode
- const handedness = controller.userData?.handedness || 
+ const handedness = controller.userData?.handedness ||
  (index === 0 ? 'left' : 'right');
- 
+
+ // RIGHT GRIP while menu is open: drag the panel to reposition it
+ if (handedness === 'right' && this.vrUIPanel?.visible) {
+ this.vrPanelDrag.active = true;
+ this.vrPanelDrag.controllerIndex = index;
+ // Both panel and controller are children of dolly — offset is dolly-local
+ this._vrPanelDragOffset.subVectors(this.vrUIPanel.position, controller.position);
+ this.triggerVRHaptic(index, 0.4, 50);
+ if (DEBUG.VR) console.log('[VR] Panel drag START');
+ this.updateVRStatus('✋ Move panel — release grip to drop');
+ return; // Don’t start grab-to-rotate while dragging panel
+ }
+
+ // LEFT GRIP: grab-to-rotate the scene
  if (handedness === 'left' && !this.grabRotateState.active) {
  // Start grab-to-rotate with left controller
  this.grabRotateState.active = true;
@@ -1370,7 +1408,17 @@ export class SceneManager {
  }
  
  onSqueezeEnd(controller, index) {
- // Grip released - End grab-to-rotate
+ // End panel drag (right grip)
+ if (this.vrPanelDrag.active && this.vrPanelDrag.controllerIndex === index) {
+ this.vrPanelDrag.active = false;
+ this.vrPanelDrag.controllerIndex = -1;
+ this._billboardVRPanel(); // face user wherever it landed
+ this.triggerVRHaptic(index, 0.2, 30);
+ if (DEBUG.VR) console.log('[VR] Panel drag END');
+ this.updateVRStatus('✨ Ready for interaction');
+ return;
+ }
+ // End grab-to-rotate (left grip)
  if (this.grabRotateState.active && this.grabRotateState.controllerIndex === index) {
  this.grabRotateState.active = false;
  this.grabRotateState.controllerIndex = -1;
@@ -1429,7 +1477,130 @@ export class SceneManager {
  this.dolly.position.copy(newPosition);
  if (DEBUG.VR) console.log(`[VR] Zoomed to ${object.userData?.name || 'object'} at distance ${distance.toFixed(2)}`);
  }
- 
+
+ /**
+ * Teleport the VR dolly to a good viewing position for the given object.
+ * This is the VR equivalent of focusOnObject() camera movement — in VR the
+ * XR session owns camera.position so we must move the dolly instead.
+ */
+ teleportVRToObject(object) {
+ if (!this.dolly || !object) return;
+
+ const ud = object.userData || {};
+ const targetPos = new THREE.Vector3();
+ object.getWorldPosition(targetPos);
+
+ // Mirror the distance logic from SolarSystemModule.focusOnObject
+ const radius = ud.radius || ud.actualSize || 1;
+ let distance;
+ if (ud.type === 'constellation' || ud.type === 'galaxy' || ud.type === 'nebula') {
+ distance = (ud.radius || 500) * 3;
+ } else if (ud.isSpacecraft && ud.orbitPlanet) {
+ distance = Math.max(radius * 15, 1.5);
+ } else if (ud.type === 'moon' || ud.parentPlanet) {
+ distance = Math.max(radius * 6, 2);
+ } else if (ud.type === 'DwarfPlanet') {
+ distance = Math.max(radius * 3, 0.8);
+ } else if (ud.isComet) {
+ distance = 80;
+ } else if (ud.isSpacecraft) {
+ distance = Math.max(radius * 10, 3);
+ } else {
+ distance = Math.max(radius * 5, 10);
+ }
+
+ // Direction from origin → target (planets orbit sun at origin, so this
+ // places the user "outside" the object with origin/sun behind them).
+ // For objects near origin (sun) use a default approach vector.
+ const approachDir = new THREE.Vector3();
+ const flatDist = Math.sqrt(targetPos.x * targetPos.x + targetPos.z * targetPos.z);
+ if (flatDist > 1) {
+ approachDir.set(targetPos.x / flatDist, 0, targetPos.z / flatDist);
+ } else {
+ approachDir.set(0, 0, 1); // default: come from +Z for sun/origin
+ }
+
+ // Position dolly behind/slightly above the object
+ const newDollyPos = new THREE.Vector3(
+ targetPos.x + approachDir.x * distance,
+ targetPos.y + distance * 0.3,
+ targetPos.z + approachDir.z * distance
+ );
+
+ // Rotate dolly so the user faces the object
+ const dx = targetPos.x - newDollyPos.x;
+ const dz = targetPos.z - newDollyPos.z;
+ const facing = Math.atan2(dx, dz);
+
+ this.dolly.position.copy(newDollyPos);
+ this.dolly.rotation.set(0, facing, 0);
+ this.dolly.updateMatrixWorld(true);
+
+ const name = ud.name || object.name || 'object';
+ if (DEBUG.VR) {
+ console.log(`[VR] Teleported to "${name}" — dolly (${newDollyPos.x.toFixed(1)}, ${newDollyPos.y.toFixed(1)}, ${newDollyPos.z.toFixed(1)}), dist=${distance.toFixed(1)}, facing ${(facing * 180 / Math.PI).toFixed(1)}°`);
+ }
+ }
+
+ /**
+ * Place the menu panel directly in the user’s current line of sight at eye level.
+ * Uses the HMD camera position + forward direction in dolly-local space.
+ */
+ _positionMenuAtEyeLevel() {
+ if (!this.vrUIPanel) return;
+ // camera.position is dolly-local and reflects actual HMD position in VR
+ const eyeY = this.camera.position.y;
+ // Horizontal forward direction in dolly space
+ const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+ forward.y = 0;
+ if (forward.lengthSq() < 0.01) forward.set(0, 0, -1);
+ forward.normalize();
+ const dist = 2.2;
+ this.vrUIPanel.position.set(
+ this.camera.position.x + forward.x * dist,
+ eyeY, // exact eye height — no vertical offset
+ this.camera.position.z + forward.z * dist
+ );
+ this._billboardVRPanel();
+ }
+
+ /**
+ * Rotate the panel to face the user (yaw only — keeps panel vertical, no tilt).
+ */
+ _billboardVRPanel() {
+ if (!this.vrUIPanel) return;
+ const camWorldPos = new THREE.Vector3();
+ this.camera.getWorldPosition(camWorldPos);
+ this.vrUIPanel.lookAt(camWorldPos);
+ // Strip pitch/roll so panel stays vertical
+ const yRot = this.vrUIPanel.rotation.y;
+ this.vrUIPanel.rotation.set(0, yRot, 0);
+ }
+
+ /**
+ * After navigating to an object: switch the panel to the info page and
+ * move it to the right side of the view so it doesn’t block the scene.
+ */
+ _showVRInfoOverlay() {
+ if (!this.vrUIPanel) return;
+ if (this.vrNavState) this.vrNavState.currentPage = 'info';
+ // Place panel to the right of where the user is facing, slightly lower
+ const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+ forward.y = 0;
+ if (forward.lengthSq() < 0.01) forward.set(0, 0, -1);
+ forward.normalize();
+ const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+ const dist = 2.0;
+ this.vrUIPanel.position.set(
+ this.camera.position.x + forward.x * dist + right.x * 1.2,
+ this.camera.position.y - 0.1, // slightly below eye level for comfort
+ this.camera.position.z + forward.z * dist + right.z * 1.2
+ );
+ this._billboardVRPanel();
+ this.vrUIPanel.visible = true;
+ this.requestVRMenuRefresh();
+ }
+
  handleVRAction(action) {
  if (DEBUG.VR) console.log('[VR] Action: "' + action + '"');
 
@@ -1555,20 +1726,20 @@ export class SceneManager {
  }
 
  case 'togglelasers':
- this.lasersVisible = !this.lasersVisible;
- this.controllers.forEach(ctrl => {
- const laser = ctrl.getObjectByName('laser');
- const pointer = ctrl.getObjectByName('pointer');
- const cone = ctrl.getObjectByName('cone');
- if (laser)   laser.visible   = this.lasersVisible;
- if (pointer) pointer.visible = this.lasersVisible;
- if (cone)    cone.visible    = this.lasersVisible;
- });
+ this._setLasersVisible(!this.lasersVisible);
  this.updateVRStatus('🎯 Lasers ' + (this.lasersVisible ? 'ON' : 'OFF'));
  scheduleRefresh(); break;
 
  case 'reset':
+ if (this.renderer.xr.isPresenting) {
+ // In VR camera.position is owned by the HMD — move the dolly back to
+ // the VR spawn point instead
+ this.dolly.position.set(0, 0, 200);
+ this.dolly.rotation.set(0, 0, 0);
+ this.dolly.updateMatrixWorld(true);
+ } else {
  this.resetCamera();
+ }
  if (app.solarSystemModule) app.solarSystemModule.focusedObject = null;
  this.vrLastObjectInfo = null;
  this.updateVRStatus('🔄 View reset');
@@ -1615,6 +1786,20 @@ export class SceneManager {
  this.requestVRMenuRefresh();
  }
 
+ /** Show or hide laser visuals on all controllers using cached refs. */
+ _setLasersVisible(visible) {
+ this.lasersVisible = visible;
+ if (!this.controllers) return;
+ for (const ctrl of this.controllers) {
+ const l = ctrl.userData.laserMesh;
+ const p = ctrl.userData.pointerMesh;
+ const c = ctrl.userData.coneMesh;
+ if (l) l.visible = visible;
+ if (p) p.visible = visible;
+ if (c) c.visible = visible;
+ }
+ }
+
  /**
  * Trigger haptic vibration on the specified controller.
  * @param {number} controllerIndex - 0 or 1
@@ -1644,79 +1829,49 @@ export class SceneManager {
  updateLaserPointers() {
  // Skip entirely when lasers are hidden — avoids expensive per-frame raycasting
  if (!this.renderer.xr.isPresenting || !this.controllers || !this.lasersVisible) return;
- 
- // Check if sprint mode is active (check trigger buttons)
+
+ // Detect sprint (trigger held on any controller)
  let sprintActive = false;
  const session = this.renderer.xr.getSession();
  if (session) {
- const inputSources = session.inputSources;
- for (let i = 0; i < inputSources.length; i++) {
- const gamepad = inputSources[i].gamepad;
- if (gamepad && gamepad.buttons.length > 0 && gamepad.buttons[0].pressed) {
- sprintActive = true;
- break;
- }
+ for (const src of session.inputSources) {
+ if (src.gamepad?.buttons[0]?.pressed) { sprintActive = true; break; }
  }
  }
 
- // Limit raycast range to cover solar system scene (ignores distant background stars)
- const prevFar = this._vrRaycaster.far;
- this._vrRaycaster.far = 2000;
- const LASER_DEFAULT_LENGTH = 10; // visual length of the laser beam in meters
+ const LASER_DEFAULT_LENGTH = 10;
+ this._vrRaycaster.far = 2000; // limit to solar-system range
 
- this.controllers.forEach((controller, index) => {
- const laser = controller.getObjectByName('laser');
- const pointer = controller.getObjectByName('pointer');
- const cone = controller.getObjectByName('cone');
- 
- if (!laser || !laser.visible) return;
- 
- // Setup raycaster (reuse pre-allocated objects)
+ for (const controller of this.controllers) {
+ // Use cached refs — avoids getObjectByName graph traversal every frame
+ const laser = controller.userData.laserMesh;
+ const pointer = controller.userData.pointerMesh;
+ const cone = controller.userData.coneMesh;
+
+ if (!laser?.visible) continue;
+
+ // Aim raycaster along controller forward (reuse pre-allocated objects)
  this._vrTempMatrix.identity().extractRotation(controller.matrixWorld);
- 
  this._vrRaycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
  this._vrRaycaster.ray.direction.set(0, 0, -1).applyMatrix4(this._vrTempMatrix);
- 
- // Use local reference for readability
- const raycaster = this._vrRaycaster;
- 
- // Check what we're pointing at (deep traversal, limited to 2000 units)
- const intersects = raycaster.intersectObjects(this.scene.children, true);
- 
+
+ const intersects = this._vrRaycaster.intersectObjects(this.scene.children, true);
  const hasHit = intersects.length > 0;
- // Visual laser length — clamped to default max so the beam stays short even for distant objects
- const hitDist = hasHit ? intersects[0].distance : LASER_DEFAULT_LENGTH;
- const visualDist = Math.min(hitDist, LASER_DEFAULT_LENGTH);
- 
- // Change color based on sprint mode and whether anything is hit (at any distance)
- if (sprintActive) {
- // SPRINT MODE - ORANGE/RED laser
- laser.material.color.setHex(0xff6600);
- if (pointer) pointer.material.color.setHex(0xff6600);
- if (cone) cone.material.color.setHex(0xff6600);
- } else if (hasHit) {
- // Pointing at something (near or far) - GREEN
- laser.material.color.setHex(0x00ff00);
- if (pointer) pointer.material.color.setHex(0x00ff00);
- if (cone) cone.material.color.setHex(0x00ff00);
- } else {
- // Not pointing at anything - CYAN
- laser.material.color.setHex(0x00ffff);
- if (pointer) pointer.material.color.setHex(0x00ffff);
- if (cone) cone.material.color.setHex(0x00ffff);
- }
- 
- // Dynamic laser length: scale cylinder to reach exactly the hit point (or default)
- // Cylinder Y-axis maps to -Z (forward) due to rotation.x = PI/2 applied at creation
+ const visualDist = hasHit ? Math.min(intersects[0].distance, LASER_DEFAULT_LENGTH) : LASER_DEFAULT_LENGTH;
+
+ // Colour: orange = sprint, green = hit, cyan = idle
+ const col = sprintActive ? 0xff6600 : hasHit ? 0x00ff00 : 0x00ffff;
+ laser.material.color.setHex(col);
+ if (pointer) pointer.material.color.setHex(col);
+ if (cone) cone.material.color.setHex(col);
+
+ // Stretch beam and move dot to hit point
  laser.scale.y = visualDist / LASER_DEFAULT_LENGTH;
  laser.position.z = -(visualDist / 2);
- 
- // Move pointer dot to hit point
- if (pointer) pointer.position.set(0, 0, -visualDist);
- });
+ if (pointer) pointer.position.z = -visualDist;
+ }
 
- // Restore raycaster far to default so other code is unaffected
- this._vrRaycaster.far = prevFar;
+ this._vrRaycaster.far = Infinity; // restore default
  }
  
  updateXRMovement() {
@@ -1771,16 +1926,10 @@ export class SceneManager {
  const inputSource = inputSources[i];
  const gamepad = inputSource.gamepad;
  const handedness = inputSource.handedness;
- if (!this.previousButtonStates[i]) {
- this.previousButtonStates[i] = {};
- }
- 
- if (!gamepad) {
- if (DEBUG && DEBUG.VR && Math.random() < 0.01) {
- console.warn(` No gamepad for controller ${i}`);
- }
- continue;
- }
+ // Lazily expand the array if more sources appear after session start
+ if (!this.previousButtonStates[i]) this.previousButtonStates[i] = {};
+
+ if (!gamepad) continue;
  
  // ============================================
  // X BUTTON (Button 4 on LEFT controller) - TOGGLE VR MENU
@@ -1799,21 +1948,13 @@ export class SceneManager {
  
  // Position panel in front of user when showing
  if (this.vrUIPanel.visible) {
- this.vrUIPanel.position.set(0, 1.6, -2.5);
- this.vrUIPanel.rotation.set(0, 0, 0);
- 
+ this._positionMenuAtEyeLevel();
+
  // Always force lasers ON when menu opens
- this.lasersVisible = true;
- this.controllers.forEach(ctrl => {
- const laser = ctrl.getObjectByName('laser');
- const pointer = ctrl.getObjectByName('pointer');
- if (laser) laser.visible = true;
- if (pointer) pointer.visible = true;
- });
- 
+ this._setLasersVisible(true);
+
  if (DEBUG.VR) console.log('📋 [VR] Menu TOGGLED (X button)');
- this.updateVRStatus(this.vrUIPanel.visible ? 
- '📋 VR Menu Active' : '✨ Ready for interaction');
+ this.updateVRStatus('📋 VR Menu Active');
  this.requestVRMenuRefresh();
  }
  }
@@ -1836,12 +1977,12 @@ export class SceneManager {
  const app = window.app || this;
  if (app.timeSpeed === 0) {
  app.timeSpeed = 1;
- this.updateVRStatus(' Playing');
- if (DEBUG.VR) console.log(' Thumbstick pressed - PLAY');
+ this.updateVRStatus('▶ Playing');
+ if (DEBUG.VR) console.log('[VR] Thumbstick pressed - PLAY');
  } else {
  app.timeSpeed = 0;
  this.updateVRStatus('⏸ Paused');
- if (DEBUG.VR) console.log(' Thumbstick pressed - PAUSE');
+ if (DEBUG.VR) console.log('[VR] Thumbstick pressed - PAUSE');
  }
  this.requestVRMenuRefresh();
  }
@@ -1874,17 +2015,14 @@ export class SceneManager {
  const baseSpeed = 0.25 * sprintMultiplier;
  
  // Forward/Backward & Strafe (only if NOT grab-rotating)
- if (!this.grabRotateState.active && 
+ if (!this.grabRotateState.active &&
  (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone)) {
- // FORWARD/BACKWARD: Push stick FORWARD to move where you're LOOKING
- // Most VR controllers: forward = negative Y, backward = positive Y
- // We want: forward stick → move forward → add to position
- // So we negate: -(-1) = +1 for forward movement
- this.dolly.position.add(cameraForward.clone().multiplyScalar(-stickY * baseSpeed));
- 
- // STRAFE LEFT/RIGHT: Use camera's right direction
- // Right stick = positive X, left stick = negative X
- this.dolly.position.add(cameraRight.clone().multiplyScalar(stickX * baseSpeed));
+ // Forward/back: negate stickY (forward stick = negative Y on Quest)
+ this._vrMoveScratch.copy(cameraForward).multiplyScalar(-stickY * baseSpeed);
+ this.dolly.position.add(this._vrMoveScratch);
+ // Strafe: right = +X
+ this._vrMoveScratch.copy(cameraRight).multiplyScalar(stickX * baseSpeed);
+ this.dolly.position.add(this._vrMoveScratch);
  }
  
  // UP/DOWN with Y button (X button now used for menu)
@@ -1959,6 +2097,13 @@ export class SceneManager {
  
  // Update last position for next frame
  this.grabRotateState.lastPosition.copy(currentPosition);
+ // ── Panel drag update (right grip held) ─────────────────────────────
+ if (this.vrPanelDrag?.active && this.vrUIPanel?.visible) {
+ const ctrl = this.controllers[this.vrPanelDrag.controllerIndex];
+ if (ctrl) {
+ // Both panel and controller are children of dolly — simple offset in dolly space
+ this.vrUIPanel.position.copy(ctrl.position).add(this._vrPanelDragOffset);
+ this._billboardVRPanel();
  }
  }
  }
