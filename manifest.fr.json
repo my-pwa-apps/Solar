@@ -489,8 +489,8 @@
       "url": "./?planet=earth&lang=fr",
       "icons": [
         {
-          "src": "./icons/earth-96x96.png",
-          "sizes": "96x96"
+          "src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png",
+          "sizes": "256x256"
         }
       ]
     },
@@ -501,8 +501,8 @@
       "url": "./?planet=mars&lang=fr",
       "icons": [
         {
-          "src": "./icons/mars-96x96.png",
-          "sizes": "96x96"
+          "src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png",
+          "sizes": "256x256"
         }
       ]
     },
@@ -513,8 +513,8 @@
       "url": "./?vr=true&lang=fr",
       "icons": [
         {
-          "src": "./icons/vr-96x96.png",
-          "sizes": "96x96"
+          "src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png",
+          "sizes": "256x256"
         }
       ]
     }

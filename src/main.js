@@ -1382,8 +1382,6 @@ class App {
  document.addEventListener('pointerdown', () => audioManager.init(), { once: true });
  document.addEventListener('keydown', () => audioManager.init(), { once: true });
  }
-
- /**
 }
 
 // Start the application when DOM is ready
