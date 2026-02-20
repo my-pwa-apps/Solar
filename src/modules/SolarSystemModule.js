@@ -8679,6 +8679,11 @@ createHyperrealisticHubble(satData) {
  // Position camera far enough back to see the full spectacle
  distance = 80; // Fixed distance to capture nucleus + coma + full tails
  if (DEBUG.enabled) console.log(` [Comet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (nucleus size: ${actualRadius.toFixed(4)})`);
+ } else if (userData.type === 'DwarfPlanet') {
+ // Dwarf planets: tiny radii (0.05-0.19) need much closer initial zoom
+ // At standard 5x multiplier they'd all hit the min=10 floor, way too far
+ distance = Math.max(actualRadius * 3, 0.6);
+ if (DEBUG.enabled) console.log(` [Dwarf Planet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (radius: ${actualRadius.toFixed(3)})`);
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
