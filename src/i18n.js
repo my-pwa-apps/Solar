@@ -1891,7 +1891,7 @@ const translations = {
         deimos: "Deimos",
         jupiterSystem: "Sistema Joviano",
         jupiter: "Júpiter",
-        io: "×o",
+        io: "Io",
         europa: "Europa",
         ganymede: "Ganímedes",
         callisto: "Calisto",
@@ -1970,7 +1970,7 @@ const translations = {
         constellationsOther: "Constelaciones (Otras)",
         
         // Botones de control
-        toggleOrbits: "×“rbitas",
+        toggleOrbits: "Órbitas",
         toggleConstellations: "Constelaciones",
         toggleScale: "Compacto",
         toggleScaleRealistic: "Expandido",
@@ -2104,13 +2104,13 @@ const translations = {
         descSun: 'El Sol es una estrella de tipo G (enana amarilla) que contiene el 99,86% de la masa del Sistema Solar. Temperatura superficial: 5.778 K. Edad: 4,6 mil millones de años. ¡Fusiona 600 millones de toneladas de hidrógeno en helio cada segundo!',
         descMercury: 'Mercurio es el planeta más pequeño y el más cercano al Sol. Su superficie está cubierta de cráteres como nuestra Luna. La temperatura varía de -180°C por la noche a 430°C durante el día: ¡el mayor rango de temperatura en el sistema solar!',
         descVenus: 'Venus es el planeta más caliente con una temperatura superficial de 465°C debido a un efecto invernadero extremo. Su atmósfera es 96% CO2 con nubes de ácido sulfúrico. ¡Venus gira hacia atrás en comparación con la mayoría de los planetas!',
-        descEarth: 'La Tierra es nuestro hogar, áel único planeta conocido con vida! El 71% está cubierto de agua, creando el color azul visible desde el espacio. La atmósfera nos protege de la radiación dañina y los meteoros.',
+        descEarth: 'La Tierra es nuestro hogar, ¡el único planeta conocido con vida! El 71% está cubierto de agua, creando el color azul visible desde el espacio. La atmósfera nos protege de la radiación dañina y los meteoros.',
         descMoon: 'La Luna terrestre es la quinta luna más grande del sistema solar. Crea las mareas, estabiliza la inclinación de la Tierra y se formó hace 4,5 mil millones de años cuando un objeto del tamaño de Marte impactó la Tierra!',
         descMars: 'Marte, el Planeta Rojo, debe su color al óxido de hierro (óxido). Tiene el volcán más grande (Olympus Mons - 22 km de altura) y el cañón más largo (Valles Marineris - 4.000 km de largo) del sistema solar. ¡Existe hielo de agua en sus polos!',
         descJupiter: 'Júpiter es el planeta más grande: ¡todos los demás planetas podrían caber dentro! La Gran Mancha Roja es una tormenta más grande que la Tierra que ha estado activa durante al menos 400 años. ¡Júpiter tiene 95 lunas conocidas!',
         descSaturn: 'Saturno es famoso por su espectacular sistema de anillos compuestos de partículas de hielo y roca. ¡Es el planeta menos denso: flotaría en agua! Saturno tiene 146 lunas conocidas, incluida Titán, que tiene una atmósfera densa.',
-        descUranus: 'Urano es único: ágira de lado! Esto significa que sus polos se turnan para mirar al Sol durante su órbita de 84 años. Compuesto de hielos de agua, metano y amoníaco, aparece de color azul verdoso debido al metano en su atmósfera.',
-        descNeptune: 'Neptuno es el planeta más ventoso con tormentas que alcanzan á2.100 km/h! Es el planeta más lejano del Sol y tarda 165 años terrestres en completar una órbita. Su color azul proviene del metano en la atmósfera.',
+        descUranus: 'Urano es único: ¡gira de lado! Esto significa que sus polos se turnan para mirar al Sol durante su órbita de 84 años. Compuesto de hielos de agua, metano y amoníaco, aparece de color azul verdoso debido al metano en su atmósfera.',
+        descNeptune: 'Neptuno es el planeta más ventoso con tormentas que alcanzan ¡2.100 km/h! Es el planeta más lejano del Sol y tarda 165 años terrestres en completar una órbita. Su color azul proviene del metano en la atmósfera.',
         
         // Mensajes de carga
         creatingMercury: 'Creando Mercurio...',
@@ -2161,13 +2161,13 @@ const translations = {
         funFactSaturn: '¡Los anillos de Saturno tienen solo 10 metros de espesor pero 280.000 km de ancho!',
         funFactUranus: '¡Urano fue el primer planeta descubierto con un telescopio (1781)!',
         funFactNeptune: '¡Neptuno fue descubierto por matemáticas antes de ser visto: su gravedad afectaba la órbita de Urano!',
-        descPluto: '🪐 Plutón es un planeta enano en el Cinturón de Kuiper. Tiene un glaciar en forma de corazón (Tombaugh Regio), montañas de hielo de agua y cinco lunas. Plutón y su luna más grande, Caronte, están bloqueados por mareas: ásiempre se muestran la misma cara!',
+        descPluto: '🪐 Plutón es un planeta enano en el Cinturón de Kuiper. Tiene un glaciar en forma de corazón (Tombaugh Regio), montañas de hielo de agua y cinco lunas. Plutón y su luna más grande, Caronte, están bloqueados por mareas: ¡siempre se muestran la misma cara!',
         funFactPluto: '¡Un año en Plutón dura 248 años terrestres! No ha completado una órbita desde su descubrimiento en 1930.',
         
         // Descripciones de lunas
         descPhobos: '¡Fobos orbita Marte más rápido de lo que Marte gira! Sale por el oeste y se pone por el este.',
         descDeimos: 'Deimos es la más pequeña de las dos lunas de Marte y tarda 30 horas en orbitar.',
-        descIo: 'á×o es el cuerpo más volcánicamente activo del sistema solar!',
+        descIo: '¡Io es el cuerpo más volcánicamente activo del sistema solar!',
         descEuropa: '¡Europa tiene un océano global bajo su hielo: un lugar potencial para la vida!',
         descGanymede: '¡Ganímedes es la luna más grande del sistema solar, más grande que Mercurio!',
         descCallisto: '¡Calisto es el objeto más craterizado del sistema solar!',
@@ -2180,13 +2180,13 @@ const translations = {
         descCharon: '¡Caronte es tan grande comparado con Plutón que forman un sistema binario!',
         
         // Descripciones y datos de satélites
-        descISS: 'La EEI orbita a 400 km de altitud, completando una órbita cada 92,68 minutos (15,54 órbitas/día). Lanzada el 20 nov 1998 (m³dulo Zarya). Ensamblaje: 1998-2011 (42 vuelos: 36 Shuttle, 6 rusos). Masa: 419.725 kg. Volumen presurizado: 1.000 m³. Ocupación continua desde el 2 nov 2000 (24+ años, 9.000+ días). 280+ astronautas de 23 países la han visitado.',
+        descISS: 'La EEI orbita a 400 km de altitud, completando una órbita cada 92,68 minutos (15,54 órbitas/día). Lanzada el 20 nov 1998 (módulo Zarya). Ensamblaje: 1998-2011 (42 vuelos: 36 Shuttle, 6 rusos). Masa: 419.725 kg. Volumen presurizado: 1.000 m³. Ocupación continua desde el 2 nov 2000 (24+ años, 9.000+ días). 280+ astronautas de 23 países la han visitado.',
         funFactISS: '¡La EEI viaja a 27.600 km/h! Los astronautas ven 16 amaneceres/atardeceres por día. ¡Ha estado continuamente ocupada durante 24+ años, más que cualquier otra nave espacial!',
         descHubble: 'Lanzado el 24 abril 1990 por el transbordador Discovery. Orbita a ~535 km de altitud. Ha realizado 1,6+ millones de observaciones hasta oct 2025. Espejo primario de 2,4m observa UV, visible e IR cercano. Cinco misiones de servicio (1993-2009) mejoraron los instrumentos.',
         funFactHubble: '¡Puede resolver objetos separados por 0,05 segundos de arco: como ver dos luciérnagas a 10.000 km! La imagen más profunda (eXtreme Deep Field) muestra 5.500 galaxias, algunas a 13,2 mil millones de años luz.',
         descGPS: 'Constelación GPS (NAVSTAR): 31 satélites operativos (oct 2025) en 6 planos orbitales, inclinación 55°. Cada satélite orbita a 20.180 km de altitud. Transmite señales banda L (1,2-1,5 GHz). Relojes atómicos de rubidio/cesio precisos a 10⁻¹⁴ segundos.',
         funFactGPS: '¡Necesita 4 satélites para posición 3D (trilateración + corrección de reloj). El sistema proporciona precisión de 5-10m. La señal militar (código P/Y) es precisa al centímetro!',
-        descJWST: 'Lanzado el 25 dic 2021. Alcanzó el punto L2 el 24 ene 2022. Primeras imágenes publicadas el 12 jul 2022. Observa infrarrojo (0,6-28,5 μm). Espejo segmentado de berilio de 6,5m (18 hexágonos) con 25 m² de área colectora: á6x Hubble! Parasol: 21,2m × 14,2m, 5 capas.',
+        descJWST: 'Lanzado el 25 dic 2021. Alcanzó el punto L2 el 24 ene 2022. Primeras imágenes publicadas el 12 jul 2022. Observa infrarrojo (0,6-28,5 μm). Espejo segmentado de berilio de 6,5m (18 hexágonos) con 25 m² de área colectora: ¡6x Hubble! Parasol: 21,2m × 14,2m, 5 capas.',
         funFactJWST: '¡Opera a -233°C (-388°F)! Puede detectar la firma térmica de un abejorro a distancia lunar. ¡Ha descubierto las galaxias más antiguas en z=14 (280 millones de años después del Big Bang)!',
         
         // Descripciones y datos de naves espaciales
@@ -2211,7 +2211,7 @@ const translations = {
         descNeowise: '¡El cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.',
 
         // Galaxias
-        descAndromeda: ' ¡La galaxia de Andrómeda es nuestra gran vecina galáctica más cercana, a 2,5 millones de años luz! Contiene 1 billón de estrellas y está en curso de colisión con la Vía L¡ctea (no te preocupes, colisión en 4,5 mil millones de años).',
+        descAndromeda: ' ¡La galaxia de Andrómeda es nuestra gran vecina galáctica más cercana, a 2,5 millones de años luz! Contiene 1 billón de estrellas y está en curso de colisión con la Vía Láctea (no te preocupes, colisión en 4,5 mil millones de años).',
         descWhirlpool: ' ¡La galaxia del Remolino (M51) es famosa por sus hermosos brazos espirales! Está interactuando con una galaxia compañera más pequeña, creando impresionantes fuerzas de marea y nueva formación de estrellas.',
         descSombrero: ' ¡La galaxia del Sombrero parece un sombrero mexicano! Tiene un núcleo brillante, un bulbo central inusualmente grande y una banda de polvo prominente. ¡Contiene 2.000 cúmulos globulares!',
 
@@ -2223,13 +2223,13 @@ const translations = {
         // Constelaciones
         descAries: ' ¡Aries es el primer signo del zodiaco! Busca las estrellas brillantes Hamal y Sheratan. En la mitología griega, Aries representa el carnero dorado que salvó a Frixo y Hele.',
         descTaurus: ' ¡Tauro contiene la brillante estrella roja Aldebarán, el ojo del toro! También hogar del cúmulo de las Pléyades. En la mitología, Zeus se transformó en toro para conquistar a Europa.',
-        descGemini: ' ¡Géminis tiene los brillantes gemelos C¡stor y Pólux! En la mitología, eran hermanos inseparables, los Dióscuros, conocidos por su vínculo y valentía.',
-        descCancer: ' ¡C¡ncer es débil pero contiene el hermoso Cúmulo de la Colmena (M44)! En la mitología, C¡ncer era el cangrejo enviado por Hera para distraer a Heracles durante su batalla.',
+        descGemini: ' ¡Géminis tiene los brillantes gemelos Cástor y Pólux! En la mitología, eran hermanos inseparables, los Dióscuros, conocidos por su vínculo y valentía.',
+        descCancer: ' ¡Cáncer es débil pero contiene el hermoso Cúmulo de la Colmena (M44)! En la mitología, Cáncer era el cangrejo enviado por Hera para distraer a Heracles durante su batalla.',
         descLeo: ' ¡Leo tiene la brillante estrella Régulo! El asterismo de la "Hoz" forma la cabeza del león. En la mitología, Leo representa al León de Nemea matado por Heracles.',
         descVirgo: ' ¡Virgo es la segunda constelación más grande! La brillante estrella Espiga representa trigo en la mano de la doncella. ¡Hogar de miles de galaxias en el Cúmulo de Virgo!',
         descLibra: ' ¡Libra representa las balanzas de la justicia! Sus estrellas más brillantes son Zubenelgenubi y Zubeneschamali, que significan "garra del sur" y "garra del norte" en árabe.',
         descScorpius: ' ¡Escorpio representa el escorpión que mató a Orión en la mitología griega! La brillante estrella roja Antares marca el corazón del escorpión. ¡Busca la cola curvada con el aguijón!',
-        descSagittarius: ' ¡Sagitario apunta su flecha al corazón de Escorpio! El asterismo de la "Tetera" es fácil de detectar. ¡Apunta hacia el centro de nuestra galaxia Vía L¡ctea!',
+        descSagittarius: ' ¡Sagitario apunta su flecha al corazón de Escorpio! El asterismo de la "Tetera" es fácil de detectar. ¡Apunta hacia el centro de nuestra galaxia Vía Láctea!',
         descCapricornus: ' ¡Capricornio es una de las constelaciones más antiguas! Representa una criatura con cabeza de cabra y cola de pez. Asociado con el dios Pan en la mitología griega.',
         descAquarius: ' ¡Acuario representa al portador de agua vertiendo de su urna! Hogar de varios famosos objetos de cielo profundo incluyendo la Nebulosa Hélice. Una de las constelaciones nombradas más antiguas.',
         descPisces: ' ¡Piscis muestra dos peces atados juntos! Representa a Afrodita y Eros que se transformaron en peces para escapar del monstruo Tifón. ¡Contiene el punto equinoccial vernal!',
@@ -2241,7 +2241,7 @@ const translations = {
         descLittleDipper: ' ¡La Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. ¡Esencial para la navegación celeste!',
         descSouthernCross: ' ¡La Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
         descCassiopeia: ' ¡Casiopea parece una W o M según la estación! En la mitología griega, Casiopea era una reina vanidosa. La constelación es circumpolar en latitudes norteñas.',
-        descCygnus: ' ¡Cisne el Cisne vuela a lo largo de la Vía L¡ctea! También llamado la Cruz del Norte. En la mitología, Zeus se disfrazó de cisne. ¡Hogar de muchos objetos de cielo profundo!',
+        descCygnus: ' ¡Cisne el Cisne vuela a lo largo de la Vía Láctea! También llamado la Cruz del Norte. En la mitología, Zeus se disfrazó de cisne. ¡Hogar de muchos objetos de cielo profundo!',
         descLyra: ' ¡Lira representa la lira de Orfeo! Contiene Vega, la 5ª estrella más brillante en el cielo nocturno. ¡También hogar de la Nebulosa del Anillo, una famosa nebulosa planetaria!',
         descAndromedaConst: ' ¡Andrómeda era la princesa encadenada a una roca y rescatada por Perseo! Esta constelación contiene la Galaxia de Andrómeda (M31), nuestra gran galaxia vecina más cercana!',
         descPerseus: ' ¡Perseo el héroe que mató a Medusa! Hogar de la brillante estrella Mirfak y la famosa estrella variable Algol ("Estrella Demonio"). ¡Contiene el Doble Cúmulo!',
@@ -2359,7 +2359,7 @@ const translations = {
         titan: "Titã",
         uranusSystem: "Sistema de Urano",
         uranus: "Urano",
-        neptuneSystem: "Sistema Netuniano",
+        neptuneSystem: "Sistema Neptuniano",
         neptune: "Netuno",
         pluto: "Plutão",
         charon: "Caronte",
@@ -2429,7 +2429,7 @@ const translations = {
         constellationsOther: "Constelações (Outras)",
         
         // Botões de controle
-        toggleOrbits: "×“rbitas",
+        toggleOrbits: "Órbitas",
         toggleConstellations: "Constelações",
         toggleScale: "Compacto",
         toggleScaleRealistic: "Expandido",
@@ -2453,7 +2453,7 @@ const translations = {
         tooltipHelp: "Mostrar controles e funcionalidades (H)",
         
         // Integração
-        welcomeToSpace: "🚀 Bem-vindo ao Viagem Espacial!",
+        welcomeToSpace: "🚀 Bem-vindo à Viagem Espacial!",
         skip: "Pular",
         next: "Próximo",
         startExploring: "Começar a explorar! 🌟",
@@ -2480,7 +2480,7 @@ const translations = {
         // Painel de informações
         name: "Nome",
         type: "Tipo",
-        distance: "Distancia",
+        distance: "Distância",
         size: "Tamanho",
         description: "Descrição",
         
@@ -2511,7 +2511,7 @@ const translations = {
         lKey: "L: Alternar ponteiros laser (RV)",
         features: "Recursos",
         vrSupport: "Suporte RV/RA com WebXR",
-        realisticOrbits: "Mecanica orbital realista",
+        realisticOrbits: "Mecânica orbital realista",
         educationalMode: "Modos de escala educacional e realista",
         constellations: "Principais constelações visíveis",
         spacecraft: "Naves espaciais e satélites históricos",
@@ -2565,10 +2565,10 @@ const translations = {
         descVenus: 'Vênus é o planeta mais quente com temperatura de superfície de 465°C devido a um efeito estufa extremo. Sua atmosfera é 96% CO2 com nuvens de ácido sulfúrico. Vênus gira para trás e não tem luas - um dos únicos dois planetas sem nenhuma!',
         descEarth: 'A Terra é nosso lar, o único planeta conhecido com vida! 71% é coberto por água, criando a cor azul visível do espaço. A atmosfera nos protege de radiação nociva e meteoros.',
         descMoon: 'A Lua da Terra é a quinta maior lua do sistema solar. Ela cria as marés, estabiliza a inclinação da Terra e foi formada há 4,5 bilhões de anos quando um objeto do tamanho de Marte colidiu com a Terra!',
-        descMars: 'Marte, o Planeta Vermelho, deve sua cor ao óxido de ferro (ferrugem). Ele tem o maior vulcão (Olympus Mons - 22 km de altura) e o canion mais longo (Valles Marineris - 4.000 km de comprimento) do sistema solar. Existe gelo de água em seus polos!',
+        descMars: 'Marte, o Planeta Vermelho, deve sua cor ao óxido de ferro (ferrugem). Ele tem o maior vulcão (Olympus Mons - 22 km de altura) e o cânion mais longo (Valles Marineris - 4.000 km de comprimento) do sistema solar. Existe gelo de água em seus polos!',
         descJupiter: 'Júpiter é o maior planeta - todos os outros planetas poderiam caber dentro dele! A Grande Mancha Vermelha é uma tempestade maior que a Terra que tem durado pelo menos 400 anos. Júpiter tem 95 luas conhecidas!',
         descSaturn: 'Saturno é famoso por seu espetacular sistema de anéis feito de partículas de gelo e rocha. É o planeta menos denso - flutuaria na água! Saturno tem 146 luas conhecidas, incluindo Titã, que tem uma atmosfera densa.',
-        descUranus: 'Urano é único - ele gira de lado! Isso significa que seus polos se revezam voltados para o Sol durante sua órbita de 84 anos. Feito de gelos de água, metano e amÃ´nia, aparece azul-esverdeado devido ao metano em sua atmosfera.',
+        descUranus: 'Urano é único - ele gira de lado! Isso significa que seus polos se revezam voltados para o Sol durante sua órbita de 84 anos. Feito de gelos de água, metano e amônia, aparece azul-esverdeado devido ao metano em sua atmosfera.',
         descNeptune: 'Netuno é o planeta mais ventoso com tempestades alcançando 2.100 km/h! É o planeta mais distante do Sol e leva 165 anos terrestres para completar uma órbita. Sua cor azul vem do metano na atmosfera.',
         
         // Mensagens de carregamento
@@ -2600,9 +2600,9 @@ const translations = {
         
         // Texto do sistema
         centerSolarSystem: 'Centro do Sistema Solar',
-        orbitsParent: 'Orbita',
+        orbitsParent: 'Órbita',
         millionKmFromSun: 'milhões de km do Sol',
-        distanceVaries: 'Distancia varia',
+        distanceVaries: 'Distância varia',
         noDescription: 'Nenhuma descrição disponível',
         moonCount: 'Este planeta tem',
         majorMoon: 'lua grande',
@@ -2631,22 +2631,22 @@ const translations = {
         descGanymede: 'Ganimedes é a maior lua do sistema solar, maior que Mercúrio!',
         descCallisto: 'Calisto é o objeto mais repleto de crateras no sistema solar!',
         descTitan: 'Titã tem lagos e rios de metano líquido - o único lugar com líquidos na superfície além da Terra!',
-        descEnceladus: 'Encélado expele jatos de água para o espaço de seu oceano subterraneo!',
+        descEnceladus: 'Encélado expele jatos de água para o espaço de seu oceano subterrâneo!',
         descRhea: 'Reia pode ter seu próprio sistema de anéis!',
-        descTitania: 'Titania é a maior lua de Urano com canions maciços!',
+        descTitania: 'Titania é a maior lua de Urano com cânions maciços!',
         descMiranda: 'Miranda tem o terreno mais dramático do sistema solar com falésias de 20 km de altura!',
         descTriton: 'Tritão orbita para trás e tem gêiseres de nitrogênio! Provavelmente é um objeto capturado do cinturão de Kuiper.',
         descCharon: 'Caronte é tão grande comparado a Plutão que eles formam um sistema binário!',
         
         // Descrições e fatos de satélites
-        descISS: 'A ISS orbita a 400 km de altitude, completando uma órbita a cada 92,68 minutos (15,54 órbitas/dia). Lançada em 20 nov 1998 (m³dulo Zarya). Montagem: 1998-2011 (42 voos: 36 Shuttle, 6 russos). Massa: 419.725 kg. Volume pressurizado: 1.000 m³. Ocupação contínua desde 2 nov 2000 (24+ anos, 9.000+ dias). 280+ astronautas de 23 países a visitaram.',
-        funFactISS: 'A ISS viaja a 27.600 km/h! Os astronautas veem 16 nascer/pÃ´r do sol por dia. Ela está continuamente ocupada há 24+ anos - mais do que qualquer outra nave espacial!',
-        descHubble: 'Lançado em 24 abril 1990 pelo Ã´nibus Discovery. Orbita a ~535 km de altitude. Realizou 1,6+ milhões de observações até out 2025. Espelho primário de 2,4m observa UV, visível e IV próximo. Cinco missões de serviço (1993-2009) melhoraram os instrumentos.',
+        descISS: 'A ISS orbita a 400 km de altitude, completando uma órbita a cada 92,68 minutos (15,54 órbitas/dia). Lançada em 20 nov 1998 (módulo Zarya). Montagem: 1998-2011 (42 voos: 36 Shuttle, 6 russos). Massa: 419.725 kg. Volume pressurizado: 1.000 m³. Ocupação contínua desde 2 nov 2000 (24+ anos, 9.000+ dias). 280+ astronautas de 23 países a visitaram.',
+        funFactISS: 'A ISS viaja a 27.600 km/h! Os astronautas veem 16 nascer/pôr do sol por dia. Ela está continuamente ocupada há 24+ anos - mais do que qualquer outra nave espacial!',
+        descHubble: 'Lançado em 24 abril 1990 pelo ônibus Discovery. Orbita a ~535 km de altitude. Realizou 1,6+ milhões de observações até out 2025. Espelho primário de 2,4m observa UV, visível e IV próximo. Cinco missões de serviço (1993-2009) melhoraram os instrumentos.',
         funFactHubble: 'Pode resolver objetos separados por 0,05 segundos de arco - como ver dois vaga-lumes a 10.000 km! A imagem mais profunda (eXtreme Deep Field) mostra 5.500 galáxias, algumas a 13,2 bilhões de anos-luz.',
         descGPS: 'Constelação GPS (NAVSTAR): 31 satélites operacionais (out 2025) em 6 planos orbitais, inclinação 55°. Cada satélite orbita a 20.180 km de altitude. Transmite sinais banda L (1,2-1,5 GHz). Relógios atômicos de rubídio/césio precisos a 10⁻¹⁴ segundos.',
         funFactGPS: 'Precisa de 4 satélites para posição 3D (trilateração + correção de relógio). O sistema fornece precisão de 5-10m. O sinal militar (código P/Y) é preciso ao centímetro!',
         descJWST: 'Lançado em 25 dez 2021. Alcançou o ponto L2 em 24 jan 2022. Primeiras imagens publicadas em 12 jul 2022. Observa infravermelho (0,6-28,5 μm). Espelho segmentado de berílio de 6,5m (18 hexágonos) com 25 m² de área coletora - 6x Hubble! Protetor solar: 21,2m × 14,2m, 5 camadas.',
-        funFactJWST: 'Opera a -233°C (-388°F)! Pode detectar a assinatura térmica de um zangão à distancia lunar. Descobriu as galáxias mais antigas em z=14 (280 milhões de anos após o Big Bang)!',
+        funFactJWST: 'Opera a -233°C (-388°F)! Pode detectar a assinatura térmica de um zangão à distância lunar. Descobriu as galáxias mais antigas em z=14 (280 milhões de anos após o Big Bang)!',
         
         // Descrições e fatos de naves espaciais
         descVoyager1: 'Voyager 1 é o objeto feito pelo homem mais distante da Terra! Lançada em 5 set 1977, entrou no espaço interestelar em 25 ago 2012. Atualmente a 24,3 bilhões de km (162 UA) do Sol. Carrega o Disco de Ouro com sons e imagens da Terra.',
@@ -2658,15 +2658,15 @@ const translations = {
         descJuno: 'Juno entrou em órbita de Júpiter em 4 julho 2016. Estuda composição, campo gravitacional, campo magnético e auroras polares. Descobriu que o núcleo de Júpiter é maior e "difuso", ciclones polares maciços e distribuição de amônia atmosférica. Missão estendida desde 2021.',
         funFactJuno: 'Primeira nave espacial solar para Júpiter! Três painéis solares de 9m geram 500W. Carrega três figuras LEGO: Galileu, Júpiter e Juno!',
         descCassini: 'Cassini orbitou Saturno de 30 junho 2004 a 15 set 2017 (13 anos). Descobriu lagos de metano/etano líquido em Titã, gêiseres de água em Encélado, novos anéis, 7 novas luas. A sonda Huygens pousou em Titã em 14 jan 2005. Terminou com entrada atmosférica "Grand Finale".',
-        funFactCassini: 'Descobriu o oceano subterraneo de Encélado! Os gêiseres de água expelem 250kg/s para o espaço. Cassini voou através das plumas, detectou H2, compostos organicos - ingredientes para a vida!',
+        funFactCassini: 'Descobriu o oceano subterrâneo de Encélado! Os gêiseres de água expelem 250kg/s para o espaço. Cassini voou através das plumas, detectou H2, compostos orgânicos - ingredientes para a vida!',
         descPioneer10: 'Pioneer 10 foi a primeira nave espacial a cruzar o cinturão de asteroides e visitar Júpiter (3 dez 1973)! Lançada em 2 março 1972, carregava a famosa placa Pioneer mostrando humanos e a localização da Terra. Último contato: 23 jan 2003 a 12,2 bilhões de km.',
         funFactPioneer10: 'Pioneer 10 carrega uma placa dourada projetada por Carl Sagan mostrando um homem, uma mulher e a localização da Terra - uma mensagem para alienígenas que possam encontrá-la!',
         descPioneer11: 'Pioneer 11 foi a primeira nave espacial a visitar Saturno (1 set 1979)! Também sobrevoou Júpiter (3 dez 1974). Lançada em 5 abril 1973, descobriu o anel F de Saturno e uma nova lua. Também carrega a placa Pioneer. Último contato: 24 nov 1995 a 6,5 bilhões de km.',
         funFactPioneer11: 'Pioneer 11 usou a gravidade de Júpiter para uma ousada assistência gravitacional, economizando anos de viagem para Saturno!',
         
         // Descrições de cometas
-        descHalley: 'O cometa Halley é o mais famoso! Ele retorna à s proximidades da Terra a cada 75-76 anos. Visto pela última vez em 1986, retornará em 2061. Quando você o vê, está observando uma bola de neve cósmica de 4,6 bilhões de anos!',
-        descHaleBopp: 'Hale-Bopp foi um dos cometas mais brilhantes do século 20, visível a olho nu por 18 meses em 1996-1997! Seu núcleo é excepcionalmente grande com 40 km de diametro.',
+        descHalley: 'O cometa Halley é o mais famoso! Ele retorna às proximidades da Terra a cada 75-76 anos. Visto pela última vez em 1986, retornará em 2061. Quando você o vê, está observando uma bola de neve cósmica de 4,6 bilhões de anos!',
+        descHaleBopp: 'Hale-Bopp foi um dos cometas mais brilhantes do século 20, visível a olho nu por 18 meses em 1996-1997! Seu núcleo é excepcionalmente grande com 40 km de diâmetro.',
         descNeowise: 'O cometa NEOWISE foi um espetáculo espetacular em julho de 2020! Ele não voltará por cerca de 6.800 anos. Cometas são "bolas de neve sujas" compostas de gelo, poeira e rocha da formação do sistema solar.',
 
         // Galáxias
