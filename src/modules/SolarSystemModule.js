@@ -7,7 +7,8 @@ import { TEXTURE_CACHE, cachedTextureGeneration } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
 
 // i18n.js is loaded globally in index.html, access via window.t
-const t = window.t || ((key) => key);
+// Late-binding: always delegate to window.t at call time (not captured at import time)
+const t = (key) => (window.t || ((k) => k))(key);
 
 export class SolarSystemModule {
  constructor(uiManager) {
@@ -112,6 +113,15 @@ export class SolarSystemModule {
  // Time acceleration factor (1 = real-time, higher = faster)
  this.timeAcceleration = 360; // 360x faster = 1 Earth day in 4 minutes
  this.realTimeStart = Date.now();
+
+ // Pre-allocated scratch vectors for update() hot path — avoids per-frame GC pressure
+ this._trackTargetPos = new THREE.Vector3();
+ this._trackOffset    = new THREE.Vector3();
+ this._satEarthPos    = new THREE.Vector3();
+
+ // Frame counters for throttled animations (initialised here, not lazily in update)
+ this._sunFlareFrame    = 0;
+ this._starTwinkleFrame = 0;
  }
  
  getGeometry(type, ...params) {
@@ -130,15 +140,14 @@ export class SolarSystemModule {
 
  async init(scene) {
  const initStartTime = performance.now();
- const t = window.t || ((key) => key);
- 
+
  // Define all loading steps with progress and tasks
  // Individual planet creation reports its own progress internally
  const loadingSteps = [
  { progress: 3, message: t('creatingSun'), task: async () => this.createSun(scene) },
  { progress: 5, message: t('creatingInnerPlanets'), task: async () => await this.createInnerPlanets(scene) },
  { progress: 38, message: t('creatingOuterPlanets'), task: async () => await this.createOuterPlanets(scene) },
-    { progress: 50, message: t('creatingDwarfPlanets'), task: async () => await this.createDwarfPlanets(scene) },
+ { progress: 50, message: t('creatingDwarfPlanets'), task: async () => await this.createDwarfPlanets(scene) },
  { progress: 62, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
  { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
  { progress: 67, message: t('creatingOortCloud'), task: () => this.createOortCloud(scene) },
@@ -157,26 +166,9 @@ export class SolarSystemModule {
  { progress: 100, message: t('creatingLabels'), task: () => this.createLabels() }
  ];
 
- // Execute steps sequentially with UI updates
- const executeStep = async (stepIndex) => {
- if (stepIndex >= loadingSteps.length) {
- // All steps complete
- const totalTime = performance.now() - initStartTime;
- if (DEBUG && DEBUG.PERFORMANCE) {
- console.log(` Full initialization completed in ${totalTime.toFixed(0)}ms`);
- console.log(` Total objects: Planets=${Object.keys(this.planets).length}, Satellites=${this.satellites.length}, Spacecraft=${this.spacecraft.length}`);
- }
- 
- // Signal that loading is complete
- if (window.app && typeof window.app.startExperience === 'function') {
- window.app.startExperience();
- }
- return;
- }
-
- const step = loadingSteps[stepIndex];
-
- // Update UI first
+ // Execute steps sequentially with UI updates (iterative — avoids 20-frame deep
+ // async-recursion stack that the previous executeStep pattern created)
+ for (const step of loadingSteps) {
  if (this.uiManager) {
  this.uiManager.updateLoadingProgress(step.progress, step.message);
  }
@@ -188,15 +180,20 @@ export class SolarSystemModule {
  try {
  await step.task();
  } catch (error) {
- if (DEBUG && DEBUG.enabled) console.error(` Error in loading step ${stepIndex}:`, error);
+ if (DEBUG && DEBUG.enabled) console.error(`[SolarSystem] Error in loading step "${step.message}":`, error);
+ }
  }
 
- // Move to next step
- await executeStep(stepIndex + 1);
- };
+ // All steps complete
+ const totalTime = performance.now() - initStartTime;
+ if (DEBUG && DEBUG.PERFORMANCE) {
+ console.log(`[SolarSystem] Initialized in ${totalTime.toFixed(0)}ms — Planets: ${Object.keys(this.planets).length}, Satellites: ${this.satellites.length}, Spacecraft: ${this.spacecraft.length}`);
+ }
 
- // Start the loading sequence
- await executeStep(0);
+ // Signal that loading is complete
+ if (window.app && typeof window.app.startExperience === 'function') {
+ window.app.startExperience();
+ }
  }
 
  createSun(scene) {
@@ -7673,17 +7670,16 @@ createHyperrealisticHubble(satData) {
  }
  });
  
- // Keep camera focused on selected object if it's moving
+ // Keep camera focused on selected object if it's moving (reuse scratch vectors — no per-frame GC)
  if (this.focusedObject && camera && controls) {
- const targetPosition = new THREE.Vector3();
- this.focusedObject.getWorldPosition(targetPosition);
+ this.focusedObject.getWorldPosition(this._trackTargetPos);
  
  // Calculate the offset from target to camera
- const cameraOffset = new THREE.Vector3().subVectors(camera.position, controls.target);
+ this._trackOffset.subVectors(camera.position, controls.target);
  
  // Update both target and camera position to maintain relative view
- controls.target.copy(targetPosition);
- camera.position.copy(targetPosition).add(cameraOffset);
+ controls.target.copy(this._trackTargetPos);
+ camera.position.copy(this._trackTargetPos).add(this._trackOffset);
  
  controls.update();
  }
@@ -7722,7 +7718,7 @@ createHyperrealisticHubble(satData) {
  }
  this.sun.userData.flares.geometry.attributes.size.needsUpdate = true;
  }
- this._sunFlareFrame = (this._sunFlareFrame || 0) + 1;
+ this._sunFlareFrame += 1;
  }
 
  // Twinkle stars slightly (optimized - only every 5 frames)
@@ -7735,12 +7731,7 @@ createHyperrealisticHubble(satData) {
  }
  this.starfield.geometry.attributes.size.needsUpdate = true;
  }
- this._starTwinkleFrame = (this._starTwinkleFrame || 0) + 1;
-
- // Milky Way always visible at constant opacity
- if (this.milkyWay) {
- this.milkyWay.material.opacity = 0.65;
- }
+ this._starTwinkleFrame += 1;
  
  // Update comets with elliptical orbits (optimized)
  if (this.comets) {
@@ -7877,9 +7868,8 @@ createHyperrealisticHubble(satData) {
  userData.angle += angleIncrement;
  }
  
- // Get Earth's world position
- const earthPosition = new THREE.Vector3();
- userData.planet.getWorldPosition(earthPosition);
+ // Get Earth's current world position (reuse pre-allocated scratch vector)
+ userData.planet.getWorldPosition(this._satEarthPos);
  
  // Calculate satellite position relative to Earth with inclination
  const cosAngle = Math.cos(userData.angle);
@@ -7887,9 +7877,9 @@ createHyperrealisticHubble(satData) {
  const cosIncl = Math.cos(userData.inclination);
  const sinIncl = Math.sin(userData.inclination);
  
- satellite.position.x = earthPosition.x + userData.distance * cosAngle;
- satellite.position.y = earthPosition.y + userData.distance * sinAngle * sinIncl;
- satellite.position.z = earthPosition.z + userData.distance * sinAngle * cosIncl;
+ satellite.position.x = this._satEarthPos.x + userData.distance * cosAngle;
+ satellite.position.y = this._satEarthPos.y + userData.distance * sinAngle * sinIncl;
+ satellite.position.z = this._satEarthPos.z + userData.distance * sinAngle * cosIncl;
  
  // Calculate and store orbital velocity vector for camera co-rotation
  // Tangent to circular orbit (perpendicular to radial direction)

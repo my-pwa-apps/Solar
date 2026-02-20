@@ -15,8 +15,9 @@ import { audioManager } from './modules/AudioManager.js';
 // Make audio manager globally accessible
 window.audioManager = audioManager;
 
-// i18n.js is loaded globally in index.html, access via window.t
-const t = window.t || ((key) => key);
+// i18n.js is loaded globally in index.html. Use a late-binding wrapper so calls always use
+// the fully-initialised translation function rather than capturing window.t at import time.
+const t = (key) => (window.t || ((k) => k))(key);
 
 // ===========================
 // CONSTANTS
@@ -54,14 +55,29 @@ class App {
  this.uiManager = null;
  this.solarSystemModule = null;
  this.lastTime = 0;
- this.timeSpeed = 1; // Default to 1x real-time (original default)
+ this.timeSpeed = 1; // Default to 1x real-time
  this.brightness = 100; // Default brightness percentage
- 
+
  // Pre-allocate reusable objects for raycast hot path (avoid per-hover GC)
  this._mouseVec = new THREE.Vector2();
  this._objCentre = new THREE.Vector3();
  this._toObj = new THREE.Vector3();
  this._crossVec = new THREE.Vector3();
+
+ // Hover / drag state (initialised here to avoid scattered lazy-init)
+ this._hoverLabel = null;
+ this._currentHoveredObject = null;
+ this._lastHoverCheck = 0;
+ this._isDragging = false;
+ this._mouseDownPos = null;
+
+ // Keyboard shortcut cycle indices
+ this._voyagerIndex = 0;
+ this._probeIndex = 0;
+
+ // One-shot VR error log flags
+ this._vrMoveErrLogged = false;
+ this._vrLaserErrLogged = false;
 
  // Make this app instance globally accessible for VR and other modules
  window.app = this;
@@ -113,7 +129,7 @@ class App {
  console.log(`📦 Loaded in ${(performance.now() - appStartTime).toFixed(0)}ms`);
  }
  } catch (error) {
- if (DEBUG && DEBUG.enabled) console.error(' Failed to initialize Space Voyage:', error);
+ if (DEBUG && DEBUG.enabled) console.error('[App] Failed to initialize Space Voyage:', error);
  this.sceneManager?.showError('Failed to start Space Voyage. Please refresh the page.');
  }
  }
@@ -913,69 +929,55 @@ class App {
  case 's':
  document.getElementById(UI_ELEMENTS.SCALE_BUTTON)?.click();
  break;
- case 'f':
+ case 'f': {
  const fpsCounter = document.getElementById(UI_ELEMENTS.FPS_COUNTER);
- if (fpsCounter) {
- fpsCounter.classList.toggle('hidden');
- }
+ if (fpsCounter) fpsCounter.classList.toggle('hidden');
  break;
+ }
  case 'l':
- // Toggle VR laser pointers (only works in VR)
+ // Toggle VR laser pointers via the dedicated helper (no getObjectByName in hot path)
  if (this.sceneManager.renderer.xr.isPresenting) {
- this.sceneManager.lasersVisible = !this.sceneManager.lasersVisible;
- this.sceneManager.controllers.forEach(controller => {
- const laser = controller.getObjectByName('laser');
- const pointer = controller.getObjectByName('pointer');
- if (laser) laser.visible = this.sceneManager.lasersVisible;
- if (pointer) pointer.visible = this.sceneManager.lasersVisible;
- });
+ this.sceneManager._setLasersVisible(!this.sceneManager.lasersVisible);
  }
  break;
  case '+':
- case '=':
+ case '=': {
  // Increase speed (slider 0-100)
  const speedSliderUp = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (speedSliderUp) {
- const currentValue = parseFloat(speedSliderUp.value);
- const newValue = Math.min(100, currentValue + 5);
- speedSliderUp.value = newValue;
+ speedSliderUp.value = Math.min(100, parseFloat(speedSliderUp.value) + 5);
  speedSliderUp.dispatchEvent(new Event('input'));
  audioManager.playSpeedTick();
  }
  break;
+ }
  case '-':
- case '_':
+ case '_': {
  // Decrease speed (slider 0-100)
  const speedSliderDown = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (speedSliderDown) {
- const currentValue = parseFloat(speedSliderDown.value);
- const newValue = Math.max(0, currentValue - 5);
- speedSliderDown.value = newValue;
+ speedSliderDown.value = Math.max(0, parseFloat(speedSliderDown.value) - 5);
  speedSliderDown.dispatchEvent(new Event('input'));
  audioManager.playSpeedTick();
  }
  break;
+ }
  case 'escape':
  this.uiManager.closeInfoPanel();
  this.uiManager.closeHelpModal();
  break;
  case ' ':
- case 'space':
+ case 'space': {
  // SPACE = Toggle between Paused and Normal speed (50 = 1x)
  e.preventDefault();
  const spaceSpeedSlider = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (spaceSpeedSlider) {
- if (this.timeSpeed === 0) {
- // If paused, go to normal (50 = 1x speed)
- spaceSpeedSlider.value = '50';
- } else {
- // If playing, pause
- spaceSpeedSlider.value = '0';
- }
+ spaceSpeedSlider.value = this.timeSpeed === 0 ? '50' : '0';
  spaceSpeedSlider.dispatchEvent(new Event('input'));
  audioManager.playClick();
  }
  break;
+ }
  case 'i':
  // Find and focus on ISS
  if (this.solarSystemModule?.satellites) {
@@ -989,10 +991,10 @@ class App {
  case 'v':
  // Cycle through Voyager probes
  if (this.solarSystemModule?.spacecraft) {
- const voyagers = this.solarSystemModule.spacecraft.filter(s => 
+ const voyagers = this.solarSystemModule.spacecraft.filter(s =>
  s.userData.name && s.userData.name.includes('Voyager'));
  if (voyagers.length > 0) {
- this._voyagerIndex = ((this._voyagerIndex || 0) + 1) % voyagers.length;
+ this._voyagerIndex = (this._voyagerIndex + 1) % voyagers.length;
  this.solarSystemModule.focusOnObject(voyagers[this._voyagerIndex], this.sceneManager.camera, this.sceneManager.controls);
  }
  }
@@ -1002,7 +1004,7 @@ class App {
  if (this.solarSystemModule?.spacecraft) {
  const probes = this.solarSystemModule.spacecraft.filter(s => s.userData.type === 'probe');
  if (probes.length > 0) {
- this._probeIndex = ((this._probeIndex || 0) + 1) % probes.length;
+ this._probeIndex = (this._probeIndex + 1) % probes.length;
  this.solarSystemModule.focusOnObject(probes[this._probeIndex], this.sceneManager.camera, this.sceneManager.controls);
  }
  }
@@ -1250,14 +1252,14 @@ class App {
  document.addEventListener('touchstart', () => {
  hints.classList.add('hidden');
  localStorage.setItem('space_voyage_gesture_hints_seen', 'true');
- }, { once: true });
+ }, { once: true, passive: true });
  }
  
  setupSpaceFacts() {
  const factText = document.getElementById('fact-text');
  if (!factText) return;
- 
- // Use translated fun-fact keys so facts match the selected language
+
+ // t() late-binds to the fully-initialised translation function so facts match the active language
  const spaceFacts = [
  t('funFactSun'),
  t('funFactMercury'),

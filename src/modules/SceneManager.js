@@ -48,7 +48,15 @@ export class SceneManager {
  // Panel drag state — right grip moves the open menu panel
  this.vrPanelDrag = { active: false, controllerIndex: -1 };
  this._vrPanelDragOffset = new THREE.Vector3();
- 
+
+ // Saved desktop camera state for restore after XR session ends
+ this._preVRCameraPosition = null;
+ this._preVRCameraQuaternion = null;
+ this._preVRControlsTarget = null;
+
+ // VR menu debounce timer
+ this._vrMenuRefreshTimer = null;
+
  this.init();
  }
 
@@ -120,9 +128,6 @@ export class SceneManager {
  this.labelRenderer.domElement.style.top = '0px';
  this.labelRenderer.domElement.style.pointerEvents = 'none';
  container.appendChild(this.labelRenderer.domElement);
- 
- // Label visibility state - start hidden
- this.labelsVisible = false;
 
  // VR UI state
  this.vrStatusMessage = ' Use Laser to Click Buttons';
@@ -154,7 +159,7 @@ export class SceneManager {
  if (window.app && window.app.solarSystemModule) {
  window.app.solarSystemModule.cameraFollowMode = false;
  window.app.solarSystemModule.cameraCoRotateMode = false;
- if (DEBUG && DEBUG.enabled) console.log(' [Controls] User interaction detected - follow and co-rotate modes disabled');
+ if (DEBUG && DEBUG.enabled) console.log('[Controls] User interaction: follow and co-rotate modes disabled');
  }
  });
  }
@@ -888,11 +893,9 @@ export class SceneManager {
  { id: 'info',     label: '\u2139\uFE0F  Info' }
  ];
  const TW = Math.floor(W / TABS.length);
- TABS.forEach((t, i) => {
- const active = state.currentPage === t.id;
- const tabBg = active
- ? ctx.createLinearGradient(i*TW, 80, i*TW, 152)
- : ctx.createLinearGradient(i*TW, 80, i*TW, 152);
+ TABS.forEach((tab, i) => {
+ const active = state.currentPage === tab.id;
+ const tabBg = ctx.createLinearGradient(i * TW, 80, i * TW, 152);
  if (active) { tabBg.addColorStop(0, '#0f2640'); tabBg.addColorStop(1, '#0a1a2e'); }
  else        { tabBg.addColorStop(0, '#080f1a'); tabBg.addColorStop(1, '#060c14'); }
  ctx.fillStyle = tabBg;
@@ -900,7 +903,7 @@ export class SceneManager {
 
  if (active) {
  ctx.save();
- const glowGrad = ctx.createLinearGradient(i*TW, 148, (i+1)*TW-2, 148);
+ const glowGrad = ctx.createLinearGradient(i * TW, 148, (i + 1) * TW - 2, 148);
  glowGrad.addColorStop(0, 'rgba(74,144,217,0.2)');
  glowGrad.addColorStop(0.5, '#5BC0F5');
  glowGrad.addColorStop(1, 'rgba(74,144,217,0.2)');
@@ -912,8 +915,8 @@ export class SceneManager {
  ctx.fillStyle = active ? '#E8F4FF' : '#4a6a8a';
  ctx.font = active ? 'bold 26px Arial' : '24px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(t.label, i * TW + TW / 2, 116);
- this.vrButtons.push({ x: i * TW, y: 80, w: TW - 2, h: 68, label: t.label, action: `page:${t.id}` });
+ ctx.fillText(tab.label, i * TW + TW / 2, 116);
+ this.vrButtons.push({ x: i * TW, y: 80, w: TW - 2, h: 68, label: tab.label, action: `page:${tab.id}` });
  });
  ctx.fillStyle = '#1a2a3a'; ctx.fillRect(0, 152, W, 2);
 
@@ -1034,7 +1037,7 @@ export class SceneManager {
  if (tl.includes('moon')) return { icon: '\uD83C\uDF19', accent: '#AAAACC', dim:'#1e1e30', badge:'#12121e' };
  if (tl.includes('planet')) return { icon: '\uD83C\uDF0D', accent: '#44CC88', dim:'#0e2a1a', badge:'#081a10' };
  if (tl.includes('dwarf')) return { icon: '\uD83D\uDD34', accent: '#CC8844', dim:'#2a1a0a', badge:'#1a1006' };
- if (tl.includes('comet') || tl.includes('comet')) return { icon: '\u2604\uFE0F', accent: '#88CCFF', dim:'#0a2030', badge:'#061520' };
+ if (tl.includes('comet')) return { icon: '\u2604\uFE0F', accent: '#88CCFF', dim:'#0a2030', badge:'#061520' };
  if (tl.includes('nebula')) return { icon: '\uD83C\uDF0B', accent: '#CC88FF', dim:'#1e0a30', badge:'#120620' };
  if (tl.includes('galaxy')) return { icon: '\uD83C\uDF00', accent: '#FF88CC', dim:'#2a0a1a', badge:'#1a0610' };
  if (tl.includes('constellation')) return { icon: '\u2728', accent: '#FFCC88', dim:'#2a1e00', badge:'#1a1200' };
@@ -2097,15 +2100,16 @@ export class SceneManager {
  
  // Update last position for next frame
  this.grabRotateState.lastPosition.copy(currentPosition);
- // ── Panel drag update (right grip held) ─────────────────────────────
+ }
+ }
+
+ // ── Panel drag update (right grip held) — independent of grab-rotate ──
  if (this.vrPanelDrag?.active && this.vrUIPanel?.visible) {
  const ctrl = this.controllers[this.vrPanelDrag.controllerIndex];
  if (ctrl) {
  // Both panel and controller are children of dolly — simple offset in dolly space
  this.vrUIPanel.position.copy(ctrl.position).add(this._vrPanelDragOffset);
  this._billboardVRPanel();
- }
- }
  }
  }
  }
@@ -2233,7 +2237,7 @@ export class SceneManager {
  showError(message) {
  const loading = document.getElementById('loading');
  if (loading) {
- loading.querySelector('h2').textContent = '?? Error';
+ loading.querySelector('h2').textContent = '⚠️ Error';
  loading.querySelector('#loading-text').textContent = message;
  loading.classList.remove('hidden');
  }
@@ -2243,10 +2247,14 @@ export class SceneManager {
  // Clean up resources
  this.clear();
  
- // Clear any pending VR flash timeout
+ // Clear any pending timers
  if (this.vrFlashTimeout) {
  clearTimeout(this.vrFlashTimeout);
  this.vrFlashTimeout = null;
+ }
+ if (this._vrMenuRefreshTimer) {
+ clearTimeout(this._vrMenuRefreshTimer);
+ this._vrMenuRefreshTimer = null;
  }
  
  // End active XR session

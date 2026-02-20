@@ -28,6 +28,9 @@ class EarthZoomManager {
         this.currentZoomLevel = 'space';  // 'space', 'transition', 'map'
         this.currentLatLng = { lat: 0, lng: 0 };
         this.transitionProgress = 0;      // 0 = full 3D, 1 = full map
+
+        // Track in-flight animation frame so it can be cancelled
+        this._animFrameId = null;
     }
     
     /**
@@ -39,13 +42,16 @@ class EarthZoomManager {
         this.camera = options.camera;
         this.controls = options.controls;
         this.scene = options.scene;
-        
+
         if (!this.earthObject) {
             if (DEBUG && DEBUG.enabled) console.warn('[EarthZoomManager] No Earth object provided');
             return;
         }
-        
-        
+
+        this.createMapContainer();
+        this.initLeafletMap();
+        this.setupEventListeners();
+
         this.isInitialized = true;
     }
 
@@ -196,34 +202,45 @@ class EarthZoomManager {
     }
     
     /**
-     * Animate camera to a target position
+     * Animate camera to a target position (cancels any in-flight animation)
+     * @param {THREE.Vector3} targetPosition
+     * @param {THREE.Vector3} lookAt
+     * @param {number} duration - milliseconds
      */
     animateCameraTo(targetPosition, lookAt, duration = 1000) {
+        // Cancel any previous animation
+        if (this._animFrameId !== null) {
+            cancelAnimationFrame(this._animFrameId);
+            this._animFrameId = null;
+        }
+
         const startPosition = this.camera.position.clone();
         const startTime = performance.now();
-        
+
         const animate = () => {
             const elapsed = performance.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            
+
             // Ease out cubic
             const eased = 1 - Math.pow(1 - progress, 3);
-            
+
             // Interpolate position
             this.camera.position.lerpVectors(startPosition, targetPosition, eased);
-            
+
             // Update controls target
             if (this.controls) {
                 this.controls.target.copy(lookAt);
                 this.controls.update();
             }
-            
+
             if (progress < 1) {
-                requestAnimationFrame(animate);
+                this._animFrameId = requestAnimationFrame(animate);
+            } else {
+                this._animFrameId = null;
             }
         };
-        
-        animate();
+
+        this._animFrameId = requestAnimationFrame(animate);
     }
 
     /**
@@ -361,20 +378,18 @@ class EarthZoomManager {
     }
     
     /**
-     * Calculate map zoom level based on camera distance
-     * @param {number} distance - Distance from Earth surface
-     * @returns {number} - Leaflet zoom level
+     * Calculate map zoom level based on camera surface distance
+     * @param {number} surfaceDist - Distance from camera to Earth surface (center dist − radius)
+     * @returns {number} - Leaflet zoom level (1 = whole Earth, 12 = city level)
      */
-    calculateMapZoom(distance) {
-        // Map camera distance to Leaflet zoom (closer = higher zoom)
-        // Start at zoom 1 (whole Earth visible) and go up to zoom 12 at closest
-        const surfaceDistance = Math.max(0, distance - this.THRESHOLDS.EARTH_RADIUS);
-        const range = this.THRESHOLDS.START_FADE - this.THRESHOLDS.FULL_MAP;
-        const t = 1 - Math.min((surfaceDistance - this.THRESHOLDS.FULL_MAP) / range, 1);
-        
-        // Zoom from 1 (whole Earth) to 12 (city level) based on distance
-        // t=0 at START_FADE, t=1 at FULL_MAP
-        return Math.round(1 + (Math.max(0, t) * 11));
+    calculateMapZoom(surfaceDist) {
+        // Convert centre-distance thresholds to surface-distance thresholds
+        const startFadeSurf = this.THRESHOLDS.START_FADE - this.THRESHOLDS.EARTH_RADIUS; // 1.5
+        const fullMapSurf   = this.THRESHOLDS.FULL_MAP   - this.THRESHOLDS.EARTH_RADIUS; // 0.8
+        const range = startFadeSurf - fullMapSurf; // 0.7
+        // t = 0 when camera is at START_FADE surface distance, 1 when at FULL_MAP
+        const t = 1 - Math.min(Math.max((surfaceDist - fullMapSurf) / range, 0), 1);
+        return Math.round(1 + t * 11);
     }
     
     /**
@@ -382,10 +397,6 @@ class EarthZoomManager {
      * @param {number} deltaTime - Time since last frame
      */
     update(deltaTime) {
-        // TEMPORARY DEBUG: Completely disable to test if this is breaking controls
-        // Remove return below to re-enable
-        return;
-        
         if (!this.isInitialized || !this.earthObject || !this.camera) {
             // Safety: always ensure controls are enabled if we can't run
             if (this.controls) this.controls.enabled = true;
@@ -456,7 +467,8 @@ class EarthZoomManager {
             this.mapContainer.style.opacity = progress.toString();
             this.mapContainer.style.pointerEvents = progress > 0.3 ? 'auto' : 'none';
             this.mapContainer.classList.remove('hidden');
-            
+            this.currentZoomLevel = progress < 0.99 ? 'transition' : 'map';
+
             if (!this.isMapVisible && progress > 0.5) {
                 this.isMapVisible = true;
                 
@@ -481,6 +493,7 @@ class EarthZoomManager {
             
             if (this.isMapVisible) {
                 this.isMapVisible = false;
+                this.currentZoomLevel = 'space';
                 if (DEBUG && DEBUG.enabled) console.log('[EarthZoomManager] Map hidden');
             }
         }
@@ -543,7 +556,8 @@ class EarthZoomManager {
     }
 
     /**
-     * Show map at specific coordinates
+     * Imperatively show the map at specific coordinates.
+     * Uses the same opacity-driven container as the automatic transition.
      * @param {number} lat - Latitude
      * @param {number} lng - Longitude
      * @param {number} zoom - Initial zoom level
@@ -556,59 +570,33 @@ class EarthZoomManager {
                 return;
             }
         }
-        
+
         this.currentLatLng = { lat, lng };
-        
-        // Show transition overlay
-        this.transitionOverlay.classList.remove('hidden');
-        this.transitionOverlay.classList.add('active');
-        
-        // After transition animation, show map
+        this.transitionProgress = 1;
+        this.currentZoomLevel = 'map';
+
+        this.mapContainer.classList.remove('hidden');
+        this.mapContainer.style.opacity = '1';
+        this.mapContainer.style.pointerEvents = 'auto';
+        this.isMapVisible = true;
+
+        this.map.setView([lat, lng], zoom);
+
+        // Force map resize after container becomes visible
         setTimeout(() => {
-            this.mapContainer.classList.remove('hidden');
-            this.isMapVisible = true;
-            
-            // Set map view
-            this.map.setView([lat, lng], zoom);
-            
-            // Force map resize (needed after container becomes visible)
-            setTimeout(() => {
-                this.map.invalidateSize();
-                this.updateCoordsDisplay();
-                this.updateZoomDisplay();
-            }, 100);
-            
-            // Hide transition overlay
-            this.transitionOverlay.classList.remove('active');
-            setTimeout(() => {
-                this.transitionOverlay.classList.add('hidden');
-            }, 500);
-            
-        }, 400);
-        
+            this.map?.invalidateSize();
+            this.updateCoordsDisplay();
+            this.updateZoomDisplay();
+        }, 100);
+
         if (DEBUG && DEBUG.enabled) console.log(`[EarthZoomManager] Showing map at ${lat.toFixed(2)}°, ${lng.toFixed(2)}°`);
     }
-    
+
     /**
      * Hide map and return to 3D view
      */
     hideMap() {
-        // Show transition overlay
-        this.transitionOverlay.classList.remove('hidden');
-        this.transitionOverlay.classList.add('active');
-        
-        setTimeout(() => {
-            this.mapContainer.classList.add('hidden');
-            this.isMapVisible = false;
-            
-            // Hide transition overlay
-            this.transitionOverlay.classList.remove('active');
-            setTimeout(() => {
-                this.transitionOverlay.classList.add('hidden');
-            }, 500);
-            
-        }, 400);
-        
+        this.zoomOutFromMap();
         if (DEBUG && DEBUG.enabled) console.log('[EarthZoomManager] Returning to space view');
     }
     
@@ -701,11 +689,16 @@ class EarthZoomManager {
      * Dispose resources
      */
     dispose() {
+        if (this._animFrameId !== null) {
+            cancelAnimationFrame(this._animFrameId);
+            this._animFrameId = null;
+        }
+
         if (this.map) {
             this.map.remove();
             this.map = null;
         }
-        
+
         this.mapContainer?.remove();
         this.zoomIndicator?.remove();
     }
