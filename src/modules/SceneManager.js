@@ -56,7 +56,7 @@ export class SceneManager {
  this.setupXR();
  this.setupEventListeners();
  } catch (error) {
- console.error('Error initializing scene:', error);
+ if (DEBUG && DEBUG.enabled) console.error('Error initializing scene:', error);
  this.showError('Failed to initialize 3D scene. Please refresh the page.');
  }
  }
@@ -66,7 +66,7 @@ export class SceneManager {
  this.renderer.setSize(window.innerWidth, window.innerHeight);
  this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, CONFIG.RENDERER.maxPixelRatio));
  this.renderer.xr.enabled = true;
- this.renderer.shadowMap.enabled = true;
+ this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
  this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
  this.renderer.toneMappingExposure = 1.2; // Increased to brighten dark areas
@@ -78,12 +78,12 @@ export class SceneManager {
  // Add WebGL context loss/restore handlers
  this.renderer.domElement.addEventListener('webglcontextlost', (event) => {
  event.preventDefault();
- console.warn('[WebGL] Context lost - attempting recovery...');
+ if (DEBUG && DEBUG.enabled) console.warn('[WebGL] Context lost - attempting recovery...');
  // Three.js setAnimationLoop handles this internally
  }, false);
  
  this.renderer.domElement.addEventListener('webglcontextrestored', () => {
- console.log('[WebGL] Context restored');
+ if (DEBUG && DEBUG.enabled) console.log('[WebGL] Context restored');
  // Three.js setAnimationLoop will automatically restart
  }, false);
  
@@ -95,7 +95,7 @@ export class SceneManager {
  this.renderer.domElement.style.height = '100%';
  
  container.appendChild(this.renderer.domElement);
- if (DEBUG.enabled) {
+ if (DEBUG && DEBUG.enabled) {
  console.log(`[Scene] Canvas ${this.renderer.domElement.width}×${this.renderer.domElement.height} → #${container.id}, colorSpace=${this.renderer.outputColorSpace}`);
  }
  } else {
@@ -143,7 +143,7 @@ export class SceneManager {
  if (window.app && window.app.solarSystemModule) {
  window.app.solarSystemModule.cameraFollowMode = false;
  window.app.solarSystemModule.cameraCoRotateMode = false;
- if (DEBUG.enabled) console.log(' [Controls] User interaction detected - follow and co-rotate modes disabled');
+ if (DEBUG && DEBUG.enabled) console.log(' [Controls] User interaction detected - follow and co-rotate modes disabled');
  }
  });
  }
@@ -172,7 +172,7 @@ export class SceneManager {
  this.camera.add(this.lights.camera);
  this.scene.add(this.camera);
  
- if (DEBUG.enabled) {
+ if (DEBUG && DEBUG.enabled) {
  console.log('[Lighting] Ambient lighting enhanced');
  }
  }
@@ -312,7 +312,7 @@ export class SceneManager {
  });
  await this.renderer.xr.setSession(session);
  } catch (error) {
- console.error('[VR] Failed to start VR session:', error);
+ if (DEBUG && DEBUG.enabled) console.error('[VR] Failed to start VR session:', error);
  alert('Could not enter VR mode: ' + error.message);
  }
  };
@@ -353,7 +353,7 @@ export class SceneManager {
  });
  await this.renderer.xr.setSession(session);
  } catch (error) {
- console.error('[AR] Failed to start AR session:', error);
+ if (DEBUG && DEBUG.enabled) console.error('[AR] Failed to start AR session:', error);
  alert('Could not enter AR mode: ' + error.message);
  }
  };
@@ -1488,7 +1488,7 @@ export class SceneManager {
  case 'exitvr':
  if (this.renderer.xr.isPresenting) {
  const session = this.renderer.xr.getSession();
- session?.end().catch(err => console.error('[VR] Error ending session:', err));
+ session?.end().catch(err => { if (DEBUG && DEBUG.enabled) console.error('[VR] Error ending session:', err); });
  } break;
 
  default:
@@ -1935,8 +1935,10 @@ export class SceneManager {
  }
  frameCount++;
  } catch (error) {
+ if (DEBUG && DEBUG.enabled) {
  console.error(' ERROR in animation loop:', error);
  console.error(' Stack:', error.stack);
+ }
  // Don't stop the loop, just log the error
  }
  });

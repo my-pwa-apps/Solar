@@ -13,7 +13,6 @@ import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
 import { SolarSystemModule } from './modules/SolarSystemModule.js';
 import { audioManager } from './modules/AudioManager.js';
-import { earthZoomManager } from './modules/EarthZoomManager.js';
 
 // Make audio manager globally accessible
 window.audioManager = audioManager;
@@ -72,7 +71,7 @@ class App {
  try {
  // ALWAYS warm up cache from IndexedDB (loads cached textures into memory)
  const cacheReady = await warmupTextureCache();
- if (cacheReady && DEBUG.PERFORMANCE) {
+ if (cacheReady && DEBUG && DEBUG.PERFORMANCE) {
  console.log('⚡ Fast start: All essential textures cached');
  }
  
@@ -106,11 +105,11 @@ class App {
 	 this.solarSystemModule.verifyTextureLoads(5000);
  }
  
- if (DEBUG.PERFORMANCE) {
+ if (DEBUG && DEBUG.PERFORMANCE) {
  console.log(`📦 Loaded in ${(performance.now() - appStartTime).toFixed(0)}ms`);
  }
  } catch (error) {
- console.error(' Failed to initialize Space Voyage:', error);
+ if (DEBUG && DEBUG.enabled) console.error(' Failed to initialize Space Voyage:', error);
  this.sceneManager?.showError('Failed to start Space Voyage. Please refresh the page.');
  }
  }
@@ -143,9 +142,6 @@ class App {
  this.setupMobileGestureHints();
  this.setupSoundToggle();
  this.setupButtonSounds();
- 
- // Initialize Earth zoom feature (OpenStreetMap integration)
- this.setupEarthZoom();
 
  // Pre-select Earth on first load for better first impression
  this.preSelectEarth();
@@ -166,15 +162,10 @@ class App {
  this.sceneManager.updateXRMovement();
  this.sceneManager.updateLaserPointers();
  
- // Update Solar System module every frame (pause when in Earth map view)
- if (this.solarSystemModule && !earthZoomManager.isMapVisible) {
+ // Update Solar System module every frame
+ if (this.solarSystemModule) {
  this.solarSystemModule.update(deltaTime, this.timeSpeed, 
  this.sceneManager.camera, this.sceneManager.controls);
- }
- 
- // Update Earth zoom manager for seamless transitions
- if (earthZoomManager.isInitialized) {
- earthZoomManager.update(deltaTime);
  }
  });
  }
@@ -823,25 +814,8 @@ class App {
  // Play selection sound
  audioManager.playSelect();
 
- // Check if Earth was clicked and Earth zoom is available
+ // Check if Earth was clicked
  const isEarth = target.userData?.name?.toLowerCase() === 'earth';
- 
- if (isEarth && earthZoomManager.isInitialized) {
- // Get full intersection data for coordinate calculation
- const intersection = this._getEarthIntersection(event);
- 
- // Handle double-click or Shift+click for Earth zoom
- const now = Date.now();
- const isDoubleClick = (now - (this._lastEarthClickTime || 0)) < 400;
- this._lastEarthClickTime = now;
- 
- if (isDoubleClick || event.shiftKey) {
- if (intersection) {
- earthZoomManager.handleEarthClick(intersection);
- return; // Don't show info panel on double-click zoom
- }
- }
- }
 
  const info = this.solarSystemModule.getObjectInfo(target);
  this.uiManager.updateInfoPanel(info);
@@ -1410,21 +1384,6 @@ class App {
  }
 
  /**
-  * Setup Earth zoom feature with OpenStreetMap/Leaflet integration
-  */
- setupEarthZoom() {
- // Get the Earth mesh from the solar system module
- const earthMesh = this.solarSystemModule?.planets?.earth;
- 
- if (!earthMesh) return; // Earth zoom requires the Earth mesh
-
- earthZoomManager.init({
- earthObject: earthMesh,
- camera: this.sceneManager.camera,
- controls: this.sceneManager.controls,
- scene: this.sceneManager.scene
- });
- }
 }
 
 // Start the application when DOM is ready

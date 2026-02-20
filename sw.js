@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.5.17 - Fix missing texture cache entries, luminance-based deep-sky blending
+// Version 2.5.41 - Fix missing texture cache entries, luminance-based deep-sky blending
 
-const CACHE_VERSION = '2.5.40';
+const CACHE_VERSION = '2.5.41';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -27,7 +27,6 @@ const STATIC_CACHE_FILES = [
   './src/modules/ServiceWorkerManager.js',
   './src/modules/LanguageManager.js',
   './src/modules/AudioManager.js',
-  './src/modules/EarthZoomManager.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
@@ -130,7 +129,7 @@ self.addEventListener('install', (event) => {
         // Force the waiting service worker to become active
         await self.skipWaiting();
       } catch (error) {
-        console.error('[SW] Installation failed:', error);
+        // console.error('[SW] Installation failed:', error);
       }
     })()
   );
@@ -246,7 +245,7 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         }
       } catch (error) {
-        console.error('[SW] Fetch failed:', error);
+        // console.error('[SW] Fetch failed:', error);
         
         // If offline and no cache, return offline page
         const cache = await caches.open(CACHE_NAME);

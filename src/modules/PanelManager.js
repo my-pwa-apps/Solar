@@ -1,3 +1,5 @@
+import { DEBUG } from './utils.js';
+
 /**
  * PanelManager - Handles draggable panel functionality
  * Manages panel positioning, drag events, localStorage persistence, and window resize handling
@@ -181,13 +183,13 @@ export class PanelManager {
                 callback(x, y);
             } else {
                 // Invalid saved position - clear and use CSS default
-                console.warn(`Invalid saved position for ${panelId} (x: ${x}, y: ${y}). Resetting.`);
+            if (DEBUG && DEBUG.enabled) console.warn(`Invalid saved position for ${panelId} (x: ${x}, y: ${y}). Resetting.`);
                 localStorage.removeItem(`panel-position-${panelId}`);
                 const position = this.applyCSSDefaults(panelElement);
                 callback(position.x, position.y);
             }
         } catch (e) {
-            console.warn(`Failed to restore position for ${panelId}:`, e.message);
+            if (DEBUG && DEBUG.enabled) console.warn(`Failed to restore position for ${panelId}:`, e.message);
             const position = this.applyCSSDefaults(panelElement);
             callback(position.x, position.y);
         }
@@ -235,7 +237,7 @@ export class PanelManager {
         try {
             localStorage.setItem(`panel-position-${panelId}`, JSON.stringify({ x, y }));
         } catch (e) {
-            console.warn(`Failed to save position for ${panelId}:`, e);
+            if (DEBUG && DEBUG.enabled) console.warn(`Failed to save position for ${panelId}:`, e);
         }
     }
 

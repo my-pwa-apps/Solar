@@ -2,6 +2,7 @@
  * ServiceWorkerManager - Handles service worker registration, updates, and messaging
  * Manages PWA caching and offline functionality
  */
+import { DEBUG } from './utils.js';
 
 export class ServiceWorkerManager {
     constructor() {
@@ -13,7 +14,7 @@ export class ServiceWorkerManager {
      */
     async init() {
         if (!('serviceWorker' in navigator)) {
-            console.warn('Service Workers not supported in this browser');
+            if (DEBUG && DEBUG.enabled) console.warn('Service Workers not supported in this browser');
             return;
         }
 
@@ -36,7 +37,7 @@ export class ServiceWorkerManager {
                 scope: './'
             });
             
-            console.log('Service Worker registered successfully:', this.registration.scope);
+            if (DEBUG && DEBUG.enabled) console.log('Service Worker registered successfully:', this.registration.scope);
             
             this.setupUpdateListener();
             this.setupControllerChangeListener();
@@ -55,7 +56,7 @@ export class ServiceWorkerManager {
 
         this.registration.addEventListener('updatefound', () => {
             const newWorker = this.registration.installing;
-            console.log('Service Worker update found');
+            if (DEBUG && DEBUG.enabled) console.log('Service Worker update found');
             
             newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
@@ -71,7 +72,7 @@ export class ServiceWorkerManager {
      */
     setupControllerChangeListener() {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('New Service Worker activated');
+            if (DEBUG && DEBUG.enabled) console.log('New Service Worker activated');
         });
     }
 
@@ -85,13 +86,13 @@ export class ServiceWorkerManager {
             
             switch (msg.type) {
                 case 'SW_INSTALLED':
-                    console.log('[SW] Installed version', msg.version);
+                    if (DEBUG && DEBUG.enabled) console.log('[SW] Installed version', msg.version);
                     break;
                 case 'SW_ACTIVATED':
-                    console.log('[SW] Activated version', msg.version);
+                    if (DEBUG && DEBUG.enabled) console.log('[SW] Activated version', msg.version);
                     break;
                 case 'SW_SKIP_WAITING_COMPLETE':
-                    console.log('[SW] Skip waiting complete; reloading');
+                    if (DEBUG && DEBUG.enabled) console.log('[SW] Skip waiting complete; reloading');
                     window.location.reload();
                     break;
             }

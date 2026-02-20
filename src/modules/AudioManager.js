@@ -2,6 +2,7 @@
 // AUDIO MANAGER - Procedural Sound Effects
 // Uses Web Audio API for synthesized sounds
 // ===========================
+import { DEBUG } from './utils.js';
 
 /**
  * Generates procedural audio effects for the Space Voyage application
@@ -34,10 +35,10 @@ class AudioManager {
             this.masterGain.connect(this.audioContext.destination);
             
             this.initialized = true;
-            console.log('🔊 AudioManager initialized');
+            if (DEBUG && DEBUG.enabled) console.log('🔊 AudioManager initialized');
             return true;
         } catch (e) {
-            console.warn('Web Audio API not supported:', e);
+            if (DEBUG && DEBUG.enabled) console.warn('Web Audio API not supported:', e);
             this.enabled = false;
             return false;
         }
@@ -54,7 +55,7 @@ class AudioManager {
             try {
                 await this.audioContext.resume();
             } catch (e) {
-                console.warn('Could not resume audio context:', e);
+                if (DEBUG && DEBUG.enabled) console.warn('Could not resume audio context:', e);
                 return false;
             }
         }

@@ -1,6 +1,8 @@
 ﻿// ===========================
 // UI MANAGER MODULE
 // ===========================
+import { DEBUG } from './utils.js';
+
 // i18n.js is loaded globally in index.html, access via window.t
 const t = window.t || ((key) => key);
 
@@ -31,7 +33,7 @@ export class UIManager {
  if (!element) missing.push(key);
  }
  if (missing.length > 0) {
- console.warn('Missing UI elements:', missing);
+ if (DEBUG && DEBUG.enabled) console.warn('Missing UI elements:', missing);
  }
  }
 

@@ -36,7 +36,7 @@ export class TextureCache {
  async get(key) {
  // Check memory cache first
  if (this.cache.has(key)) {
- if (DEBUG.PERFORMANCE) console.log(`🗄️ Cache HIT (memory): ${key}`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`🗄️ Cache HIT (memory): ${key}`);
  return this.cache.get(key);
  }
 
@@ -50,18 +50,18 @@ export class TextureCache {
  const request = store.get(key);
  request.onsuccess = () => {
  if (request.result) {
- if (DEBUG.PERFORMANCE) console.log(`🗄️ Cache HIT (IndexedDB): ${key}`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`🗄️ Cache HIT (IndexedDB): ${key}`);
  this.cache.set(key, request.result); // Promote to memory cache
  resolve(request.result);
  } else {
- if (DEBUG.PERFORMANCE) console.log(`❌ Cache MISS: ${key}`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`❌ Cache MISS: ${key}`);
  resolve(null);
  }
  };
  request.onerror = () => reject(request.error);
  });
  } catch (error) {
- console.warn('Cache read error:', error);
+ if (DEBUG && DEBUG.enabled) console.warn('Cache read error:', error);
  return null;
  }
  }
@@ -79,16 +79,16 @@ export class TextureCache {
  return new Promise((resolve, reject) => {
  const request = store.put(dataURL, key);
  request.onsuccess = () => {
- if (DEBUG.PERFORMANCE) console.log(`💾 Cache SET: ${key} (${(dataURL.length / 1024).toFixed(0)}KB)`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`💾 Cache SET: ${key} (${(dataURL.length / 1024).toFixed(0)}KB)`);
  resolve();
  };
  request.onerror = () => {
- console.warn('Cache write error:', request.error);
+ if (DEBUG && DEBUG.enabled) console.warn('Cache write error:', request.error);
  resolve(); // Don't reject, just continue
  };
  });
  } catch (error) {
- console.warn('Cache write error:', error);
+ if (DEBUG && DEBUG.enabled) console.warn('Cache write error:', error);
  }
  }
 
@@ -179,7 +179,7 @@ export async function cachedTextureGeneration(cacheKey, generatorFn) {
  const canvas = img;
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- if (DEBUG.PERFORMANCE) {
+ if (DEBUG && DEBUG.PERFORMANCE) {
  console.log(`⚡ Loaded ${cacheKey} from cache in ${(performance.now() - startTime).toFixed(0)}ms`);
  }
  resolve(texture);
@@ -194,11 +194,11 @@ export async function cachedTextureGeneration(cacheKey, generatorFn) {
  
  // Cache for future use
  const dataURL = canvas.toDataURL('image/png');
- TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => 
- console.warn('Failed to cache texture:', err)
- );
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => {
+ if (DEBUG && DEBUG.enabled) console.warn('Failed to cache texture:', err);
+ });
  
- if (DEBUG.PERFORMANCE) {
+ if (DEBUG && DEBUG.PERFORMANCE) {
  console.log(`🎨 Generated ${cacheKey} in ${(performance.now() - startTime).toFixed(0)}ms`);
  }
  

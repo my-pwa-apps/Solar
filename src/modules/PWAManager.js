@@ -2,6 +2,7 @@
  * PWAManager - Handles Progressive Web App functionality
  * Manages installation prompts, offline detection, shortcuts, and platform-specific behaviors
  */
+import { DEBUG } from './utils.js';
 
 export class PWAManager {
     constructor() {
@@ -64,18 +65,18 @@ export class PWAManager {
      */
     setupInstallPrompt() {
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('[PWA] beforeinstallprompt fired');
+            if (DEBUG && DEBUG.enabled) console.log('[PWA] beforeinstallprompt fired');
             e.preventDefault();
             this.deferredPrompt = e;
             
             if (this.isPWA()) {
-                console.log('[PWA] Already installed, skipping prompt');
+                if (DEBUG && DEBUG.enabled) console.log('[PWA] Already installed, skipping prompt');
                 return;
             }
             
             // iOS will never fire this event
             if (this.platform.isIOS) {
-                console.log('[PWA] iOS detected; using manual instructions');
+                if (DEBUG && DEBUG.enabled) console.log('[PWA] iOS detected; using manual instructions');
                 this.showIOSInstructions();
                 return;
             }
@@ -96,7 +97,7 @@ export class PWAManager {
 
         // Track installation
         window.addEventListener('appinstalled', () => {
-            console.log('PWA was installed successfully');
+            if (DEBUG && DEBUG.enabled) console.log('PWA was installed successfully');
             const promptElement = document.getElementById('install-prompt');
             if (promptElement) {
                 promptElement.classList.add('hidden');
@@ -148,7 +149,7 @@ export class PWAManager {
                 if (this.deferredPrompt) {
                     this.deferredPrompt.prompt();
                     const { outcome } = await this.deferredPrompt.userChoice;
-                    console.log('[PWA] UserChoice:', outcome);
+                    if (DEBUG && DEBUG.enabled) console.log('[PWA] UserChoice:', outcome);
                     this.deferredPrompt = null;
                 }
             }, { once: true });
@@ -202,12 +203,12 @@ export class PWAManager {
         
         if (params.has('planet')) {
             const planet = params.get('planet');
-            console.log(`Shortcut: Navigating to ${planet}`);
+            if (DEBUG && DEBUG.enabled) console.log(`Shortcut: Navigating to ${planet}`);
             window.startupPlanet = planet;
         }
         
         if (params.has('vr') && params.get('vr') === 'true') {
-            console.log('Shortcut: VR mode requested');
+            if (DEBUG && DEBUG.enabled) console.log('Shortcut: VR mode requested');
             window.startupVR = true;
         }
     }
@@ -217,7 +218,7 @@ export class PWAManager {
      */
     handlePWAMode() {
         if (this.isPWA()) {
-            console.log('Running as installed PWA');
+            if (DEBUG && DEBUG.enabled) console.log('Running as installed PWA');
             document.body.classList.add('pwa-mode');
             
             // Hide install prompt if somehow visible

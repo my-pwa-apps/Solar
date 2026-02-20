@@ -2,6 +2,7 @@
  * LanguageManager - Handles language detection and manifest switching
  * This module must load before other modules to set document.lang correctly
  */
+import { DEBUG } from './utils.js';
 
 class LanguageManager {
     constructor() {
@@ -64,7 +65,7 @@ class LanguageManager {
         
         // Log detection
         const source = storedLang ? 'Stored' : urlLang ? 'URL' : 'OS/Browser';
-        console.log('[Language] Detected:', this.languageNames[langCode] || langCode, '| Source:', source);
+        if (DEBUG && DEBUG.enabled) console.log('[Language] Detected:', this.languageNames[langCode] || langCode, '| Source:', source);
         
         return langCode;
     }
@@ -92,7 +93,7 @@ class LanguageManager {
      */
     setLanguage(langCode) {
         if (!this.supportedLanguages.includes(langCode)) {
-            console.warn('Unsupported language:', langCode);
+            if (DEBUG && DEBUG.enabled) console.warn('Unsupported language:', langCode);
             return false;
         }
         
@@ -100,7 +101,7 @@ class LanguageManager {
         document.documentElement.lang = langCode;
         this.setManifest(langCode);
         
-        console.log('[Language] Changed to:', this.languageNames[langCode]);
+        if (DEBUG && DEBUG.enabled) console.log('[Language] Changed to:', this.languageNames[langCode]);
         return true;
     }
 

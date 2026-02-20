@@ -162,7 +162,7 @@ export class SolarSystemModule {
  if (stepIndex >= loadingSteps.length) {
  // All steps complete
  const totalTime = performance.now() - initStartTime;
- if (DEBUG.PERFORMANCE) {
+ if (DEBUG && DEBUG.PERFORMANCE) {
  console.log(` Full initialization completed in ${totalTime.toFixed(0)}ms`);
  console.log(` Total objects: Planets=${Object.keys(this.planets).length}, Satellites=${this.satellites.length}, Spacecraft=${this.spacecraft.length}`);
  }
@@ -188,7 +188,7 @@ export class SolarSystemModule {
  try {
  await step.task();
  } catch (error) {
- console.error(` Error in loading step ${stepIndex}:`, error);
+ if (DEBUG && DEBUG.enabled) console.error(` Error in loading step ${stepIndex}:`, error);
  }
 
  // Move to next step
@@ -232,7 +232,9 @@ export class SolarSystemModule {
             description: t('descSun'),
             funFact: t('funFactSun'),
             realSize: '1,391,000 km diameter'
-        }; // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
+        };
+        
+        // Sun lighting - PointLight from center with NO DECAY for realistic solar system lighting
  // In space, light doesn't decay with distance (inverse square law applies but over HUGE distances)
  // BALANCED: Reduced intensity to prevent washing out textures on sunny side
  const sunLight = new THREE.PointLight(0xFFFAE8, 9, 0, 0); // Warm white, reduced intensity (10→9)
@@ -254,7 +256,7 @@ export class SolarSystemModule {
  ambientLight.name = 'ambientLight';
  scene.add(ambientLight);
 
- if (DEBUG.enabled) {
+ if (DEBUG && DEBUG.enabled) {
  console.log(' Lighting: Sun 9 (warm white), Ambient 0.4, Tone mapping 1.2');
  }
  
@@ -1076,7 +1078,7 @@ export class SolarSystemModule {
                 currentTimeout = setTimeout(() => {
                     loadTimedOut = true;
                     meta.timeouts++;
-                    console.warn(`?? ${planetName} primary source ${primaryIndex + 1} timed out after 10s: ${url}`);
+                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} primary source ${primaryIndex + 1} timed out after 10s: ${url}`);
                     meta.errors.push({ url, error: 'Timeout after 10s', phase: 'primary' });
                     primaryIndex++;
                     tryNext();
@@ -1097,8 +1099,10 @@ export class SolarSystemModule {
                             clearTimeout(currentTimeout);
                             currentTimeout = null;
                             const errorMsg = error?.message || error?.type || 'Network or CORS issue';
-                            console.warn(`?? ${planetName} primary source ${primaryIndex + 1} failed: ${url}`);
-                            console.warn(`   Error: ${errorMsg}`);
+                            if (DEBUG && DEBUG.TEXTURES) {
+                                console.warn(`?? ${planetName} primary source ${primaryIndex + 1} failed: ${url}`);
+                                console.warn(`   Error: ${errorMsg}`);
+                            }
                             meta.errors.push({ url, error: errorMsg, phase: 'primary' });
                             primaryIndex++;
                             tryNext();
@@ -1120,7 +1124,7 @@ export class SolarSystemModule {
                 currentTimeout = setTimeout(() => {
                     loadTimedOut = true;
                     meta.timeouts++;
-                    console.warn(`?? ${planetName} plugin source ${pluginIndex + 1} timed out after 10s: ${url}`);
+                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} plugin source ${pluginIndex + 1} timed out after 10s: ${url}`);
                     meta.errors.push({ url, error: 'Timeout after 10s', phase: 'plugin' });
                     pluginIndex++;
                     tryNext();
@@ -1141,8 +1145,10 @@ export class SolarSystemModule {
                             clearTimeout(currentTimeout);
                             currentTimeout = null;
                             const errorMsg = error?.message || error?.type || 'Network or CORS issue';
-                            console.warn(`?? ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
-                            console.warn(`   Error: ${errorMsg}`);
+                            if (DEBUG && DEBUG.TEXTURES) {
+                                console.warn(`?? ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
+                                console.warn(`   Error: ${errorMsg}`);
+                            }
                             meta.errors.push({ url, error: errorMsg, phase: 'plugin' });
                             pluginIndex++;
                             tryNext();
@@ -1155,8 +1161,10 @@ export class SolarSystemModule {
             phase = 'procedural';
         }
         if (phase === 'procedural') {
-            console.warn(`?? All remote texture sources for ${planetName} failed. Generating procedural texture...`);
-            console.warn(`   Total errors: ${meta.errors.length}, Timeouts: ${meta.timeouts}`);
+            if (DEBUG && DEBUG.TEXTURES) {
+                console.warn(`?? All remote texture sources for ${planetName} failed. Generating procedural texture...`);
+                console.warn(`   Total errors: ${meta.errors.length}, Timeouts: ${meta.timeouts}`);
+            }
             meta.phase = 'procedural';
             
             // Wrap procedural generation in try-catch for Quest safety
@@ -1164,19 +1172,19 @@ export class SolarSystemModule {
                 const maybePromise = proceduralFunction.call(this, size);
                 if (maybePromise && typeof maybePromise.then === 'function') {
                     maybePromise.then((tex) => {
-                        if (DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
+                        if (DEBUG && DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
                         this._applyProceduralPlanetTexture(planetName, tex);
                     }).catch((err) => {
-                        console.error(`? ${planetName} procedural texture generation failed:`, err);
+                        if (DEBUG && DEBUG.enabled) console.error(`? ${planetName} procedural texture generation failed:`, err);
                         meta.errors.push({ error: err.message, phase: 'procedural' });
                         // Keep placeholder texture as last resort
                     });
                 } else {
-                    if (DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
                     this._applyProceduralPlanetTexture(planetName, maybePromise);
                 }
             } catch (err) {
-                console.error(`? ${planetName} procedural texture generation failed:`, err);
+                if (DEBUG && DEBUG.enabled) console.error(`? ${planetName} procedural texture generation failed:`, err);
                 meta.errors.push({ error: err.message, phase: 'procedural' });
                 // Keep placeholder texture as last resort
             }
@@ -1209,8 +1217,8 @@ export class SolarSystemModule {
             TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
                 // Cache write failed - texture will be reloaded next time
             });
-            if (DEBUG.TEXTURES) {
-                console.log(`?? Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB`);
+            if (DEBUG && DEBUG.TEXTURES) {
+                if (DEBUG && DEBUG.TEXTURES) console.log(`?? Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB`);
             }
         }
         
@@ -1226,12 +1234,12 @@ export class SolarSystemModule {
         }
         
         if (!planet) {
-            console.warn(`?? ${planetName} object not found when applying texture`);
+            if (DEBUG && DEBUG.enabled) console.warn(`?? ${planetName} object not found when applying texture`);
             return;
         }
         
         if (!planet.material) {
-            console.warn(`?? ${planetName} has no material to apply texture to`);
+            if (DEBUG && DEBUG.enabled) console.warn(`?? ${planetName} has no material to apply texture to`);
             return;
         }
         
@@ -1254,7 +1262,7 @@ export class SolarSystemModule {
             meta.phase = 'done';
         }
     } catch (err) {
-        console.error(`? Error applying ${planetName} texture:`, err);
+        if (DEBUG && DEBUG.enabled) console.error(`? Error applying ${planetName} texture:`, err);
     }
  }
 
@@ -1265,7 +1273,7 @@ export class SolarSystemModule {
         const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
         
         if (!planet) {
-            console.warn(`?? ${planetName} object not found when applying procedural texture`);
+            if (DEBUG && DEBUG.enabled) console.warn(`?? ${planetName} object not found when applying procedural texture`);
             return;
         }
         
@@ -1290,7 +1298,7 @@ export class SolarSystemModule {
             meta.phase = 'proceduralApplied';
         }
     } catch (err) {
-        console.error(`? Error applying ${planetName} procedural texture:`, err);
+        if (DEBUG && DEBUG.enabled) console.error(`? Error applying ${planetName} procedural texture:`, err);
     }
  }
  
@@ -1716,12 +1724,12 @@ export class SolarSystemModule {
  const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
  const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
- if (DEBUG.TEXTURES) console.log(`✅ Earth bump map loaded from memory cache`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`✅ Earth bump map loaded from memory cache`);
  return texture;
  }
  
  // Generate texture (no cache hit)
- if (DEBUG.TEXTURES) console.log(`🎨 Generating Earth bump map (${size}x${size})...`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`🎨 Generating Earth bump map (${size}x${size})...`);
  const startTime = performance.now();
  const canvas = document.createElement('canvas');
  canvas.width = size;
@@ -1785,7 +1793,7 @@ export class SolarSystemModule {
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- if (DEBUG.TEXTURES) console.log(`⏱️ Earth bump map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`⏱️ Earth bump map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
  
@@ -1798,12 +1806,12 @@ export class SolarSystemModule {
  const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
  const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
- if (DEBUG.TEXTURES) console.log(`✅ Earth normal map loaded from memory cache`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`✅ Earth normal map loaded from memory cache`);
  return texture;
  }
  
  // Generate texture (no cache hit)
- if (DEBUG.TEXTURES) console.log(`🎨 Generating Earth normal map (${size}x${size})...`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`🎨 Generating Earth normal map (${size}x${size})...`);
  const startTime = performance.now();
  // Normal map for mountain ranges and ocean trenches
  const canvas = document.createElement('canvas');
@@ -1864,7 +1872,7 @@ export class SolarSystemModule {
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- if (DEBUG.TEXTURES) console.log(`⏱️ Earth normal map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`⏱️ Earth normal map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
  
@@ -1877,12 +1885,12 @@ export class SolarSystemModule {
  const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
  const texture = new THREE.CanvasTexture(cachedCanvas);
  texture.needsUpdate = true;
- if (DEBUG.TEXTURES) console.log(`✅ Earth specular map loaded from memory cache`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`✅ Earth specular map loaded from memory cache`);
  return texture;
  }
  
  // Generate texture (no cache hit)
- if (DEBUG.TEXTURES) console.log(`🎨 Generating Earth specular map (${size}x${size})...`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`🎨 Generating Earth specular map (${size}x${size})...`);
  const startTime = performance.now();
  // Oceans are shiny, land is rough
  const canvas = document.createElement('canvas');
@@ -1930,7 +1938,7 @@ export class SolarSystemModule {
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
- if (DEBUG.TEXTURES) console.log(`⏱️ Earth specular map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`⏱️ Earth specular map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
  return texture;
  }
 
@@ -2699,7 +2707,7 @@ export class SolarSystemModule {
  // Create HYPERREALISTIC materials with advanced texturing
  // Use config.id (language-independent) instead of config.name (translated)
  const id = (config.id || config.name).toLowerCase();
- if (DEBUG.TEXTURES) console.log(`?? Creating material for: "${id}" (name: "${config.name}")`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`?? Creating material for: "${id}" (name: "${config.name}")`);
 
  // Base material properties
  let materialProps = {
@@ -3067,7 +3075,7 @@ export class SolarSystemModule {
     // Verification utility: logs which solar system objects ended up with remote textures
     verifyTextureLoads(delayMs = 4000) {
         setTimeout(() => {
-         if (DEBUG.TEXTURES) {
+         if (DEBUG && DEBUG.TEXTURES) {
             console.group('?? Texture Load Verification');
             const summary = { remoteSuccess: 0, remoteFailed: 0, proceduralOnly: 0 };
             Object.entries(this.planets).forEach(([key, planet]) => {
@@ -3077,14 +3085,14 @@ export class SolarSystemModule {
                 if (ud.remoteTextureAttempted) {
                     if (hasRemote) {
                         summary.remoteSuccess++;
-                        console.log(`? ${name}: remote texture loaded (${ud.remoteTextureURL}) in ${ud.remoteTextureLoadMs?.toFixed(0)}ms`);
+                        if (DEBUG && DEBUG.TEXTURES) console.log(`? ${name}: remote texture loaded (${ud.remoteTextureURL}) in ${ud.remoteTextureLoadMs?.toFixed(0)}ms`);
                     } else {
                         summary.remoteFailed++;
-                        console.log(`?? ${name}: remote texture attempted but fell back to procedural (${ud.remoteTextureSources?.length} sources)`);
+                        if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${name}: remote texture attempted but fell back to procedural (${ud.remoteTextureSources?.length} sources)`);
                     }
                 } else {
                     summary.proceduralOnly++;
-                    console.log(`?? ${name}: procedural texture only (no remote attempt)`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${name}: procedural texture only (no remote attempt)`);
                 }
             });
             // Moons
@@ -3092,9 +3100,9 @@ export class SolarSystemModule {
                 const hasMap = !!moon.material?.map;
                 const src = hasMap && moon.material.map.image?.src;
                 if (src && typeof src === 'string' && /https?:\/\//.test(src)) {
-                    console.log(`?? ${moon.userData.name}: has (possibly remote) texture map -> ${src}`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${moon.userData.name}: has (possibly remote) texture map -> ${src}`);
                 } else {
-                    console.log(`?? ${moon.userData.name}: procedural/generated texture`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${moon.userData.name}: procedural/generated texture`);
                 }
             });
             console.log(`Summary: ${summary.remoteSuccess} remote loaded, ${summary.remoteFailed} remote failed, ${summary.proceduralOnly} procedural-only planets.`);
@@ -3140,7 +3148,7 @@ export class SolarSystemModule {
  roughness: 0.95,
  metalness: 0.05
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Created Phobos texture (1024x1024)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Created Phobos texture (1024x1024)`);
  } else if (moonId.includes('deimos')) {
  // Deimos: Lighter gray, smoother surface
  const deimosTexture = this.createDeimosTextureReal(1024);
@@ -3149,7 +3157,7 @@ export class SolarSystemModule {
  roughness: 0.92,
  metalness: 0.05
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Created Deimos texture (1024x1024)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Created Deimos texture (1024x1024)`);
  } else if (moonId.includes('io')) {
  // Io: NASA Galileo photorealistic volcanic surface - most volcanically active body
  const ioTexture = this.createIoTextureReal(2048);
@@ -3160,7 +3168,7 @@ export class SolarSystemModule {
  emissive: 0xff4400, // Subtle volcanic glow
  emissiveIntensity: 0.12 // Active volcanoes!
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Io photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Io photorealistic texture (2048)`);
  } else if (moonId.includes('europa')) {
  // Europa: NASA Galileo icy surface - smooth ice with reddish-brown cracks
  const europaTexture = this.createEuropaTextureReal(2048);
@@ -3171,7 +3179,7 @@ export class SolarSystemModule {
  emissive: 0xccddff,
  emissiveIntensity: 0.02 // Very subtle ice glow
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Europa photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Europa photorealistic texture (2048)`);
  } else if (moonId.includes('ganymede')) {
  // Ganymede: Largest moon in solar system, mix of old dark terrain and bright grooved terrain
  const ganymedeTexture = this.createGanymedeTextureReal(2048);
@@ -3180,7 +3188,7 @@ export class SolarSystemModule {
  roughness: 0.85,
  metalness: 0.05
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Ganymede photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Ganymede photorealistic texture (2048)`);
  } else if (moonId.includes('callisto')) {
  // Callisto: Ancient, heavily cratered surface - oldest terrain in solar system
  const callistoTexture = this.createCallistoTextureReal(2048);
@@ -3189,7 +3197,7 @@ export class SolarSystemModule {
  roughness: 0.92,
  metalness: 0.02
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Callisto photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Callisto photorealistic texture (2048)`);
  } else if (moonId.includes('titan')) {
  // Titan: Saturn's largest moon with thick orange atmosphere (Cassini-Huygens)
  const titanTexture = this.createTitanTextureReal(2048);
@@ -3200,7 +3208,7 @@ export class SolarSystemModule {
  emissive: 0xff8844,
  emissiveIntensity: 0.08 // Subtle atmospheric glow
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Titan photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Titan photorealistic texture (2048)`);
  } else if (moonId.includes('enceladus')) {
  // Enceladus: Bright icy moon with active geysers at south pole
  const enceladusTexture = this.createEnceladusTextureReal(2048);
@@ -3211,7 +3219,7 @@ export class SolarSystemModule {
  emissive: 0xeeffff,
  emissiveIntensity: 0.05 // Bright reflective ice
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Enceladus photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Enceladus photorealistic texture (2048)`);
  } else if (moonId.includes('rhea')) {
  // Rhea: Saturn's second-largest moon - heavily cratered icy surface (NASA Cassini)
  const rheaTexture = this.createRheaTextureReal(2048);
@@ -3222,7 +3230,7 @@ export class SolarSystemModule {
  emissive: 0xddddee,
  emissiveIntensity: 0.02
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Rhea photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Rhea photorealistic texture (2048)`);
  } else if (moonId.includes('triton')) {
  // Triton: Neptune's captured moon - pinkish nitrogen ice, cryovolcanism (NASA Voyager)
  const tritonTexture = this.createTritonTextureReal(2048);
@@ -3233,7 +3241,7 @@ export class SolarSystemModule {
  emissive: 0xffdddd,
  emissiveIntensity: 0.02
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Triton photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Triton photorealistic texture (2048)`);
  } else if (moonId.includes('titania')) {
  // Titania: Uranus's largest moon - cratered surface with canyons (NASA Voyager)
  const titaniaTexture = this.createTitaniaTextureReal(2048);
@@ -3242,7 +3250,7 @@ export class SolarSystemModule {
  roughness: 0.88,
  metalness: 0.05
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Titania photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Titania photorealistic texture (2048)`);
  } else if (moonId.includes('miranda')) {
  // Miranda: Uranus's smallest major moon - dramatic geological features (NASA Voyager)
  const mirandaTexture = this.createMirandaTextureReal(2048);
@@ -3251,7 +3259,7 @@ export class SolarSystemModule {
  roughness: 0.9,
  metalness: 0.05
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Miranda photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Miranda photorealistic texture (2048)`);
  } else if (moonId.includes('charon')) {
  // Charon: Pluto's largest moon - dark reddish north pole (NASA New Horizons)
  const charonTexture = this.createCharonTextureReal(2048);
@@ -3260,7 +3268,7 @@ export class SolarSystemModule {
  roughness: 0.9,
  metalness: 0.02
  });
- if (DEBUG.enabled) console.log(`[Moon Texture] Loading Charon photorealistic texture (2048)`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Charon photorealistic texture (2048)`);
  } else {
  // Default moon material
  moonMaterial = MaterialFactory.createColoredMaterial(config.color, {
@@ -7577,7 +7585,7 @@ createHyperrealisticHubble(satData) {
  
  // Safety check for angle increment
  if (isNaN(angleIncrement) || !isFinite(angleIncrement)) {
- console.error(' Invalid angleIncrement for', planet.userData.name, ':', angleIncrement);
+ if (DEBUG && DEBUG.enabled) console.error(' Invalid angleIncrement for', planet.userData.name, ':', angleIncrement);
  return;
  }
  
@@ -7586,7 +7594,7 @@ createHyperrealisticHubble(satData) {
  
  // Safety check for angle
  if (isNaN(planet.userData.angle) || !isFinite(planet.userData.angle)) {
- console.error(' Invalid angle for', planet.userData.name, '- resetting to 0');
+ if (DEBUG && DEBUG.enabled) console.error(' Invalid angle for', planet.userData.name, '- resetting to 0');
  planet.userData.angle = 0;
  }
  
