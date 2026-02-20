@@ -1,286 +1,186 @@
+```instructions
 # Space Voyage - AI Coding Agent Instructions
 
 ## Project Overview
 
 **Space Voyage** is an educational Progressive Web App providing an immersive 3D Solar System experience with VR/AR support. Built with vanilla ES6 modules and Three.js, it features 100+ celestial objects, scientifically accurate orbits, and complete offline functionality.
 
-**Key Stats:** ~9,000 LOC | 10+ Web APIs | PWA Score 100/100 | Zero build tools required
+**Key Stats:** ~12,000 LOC | 10+ Web APIs | PWA Score 100/100 | Zero build tools required
 
 ## Architecture Principles
 
 ### 1. Pure ES6 Modules (No Build Step)
 - **No bundlers:** Direct ES6 module imports, runs natively in browsers
-- **ImportMap:** Three.js loaded via CDN importmap in `index.html`
-- **Module structure:** Clear separation - each module is a singleton class
-- Cache busting via query params: `?v=2.2.4` on static imports
+- **ImportMap:** Three.js v0.160.0 loaded via CDN importmap in `index.html` — **do not upgrade**
+- **Module structure:** Each module is an exported singleton class
+- Cache busting via URL version params on static imports
 
-### 2. Modular Design Pattern
-All modules follow a consistent singleton pattern:
+### 2. Module Hierarchy
+- `main.js` → Entry point; creates `App` class; sets `window.app = this` for cross-module access
+- `SceneManager.js` (~2,277 lines) → Three.js scene/camera/renderer/OrbitControls/WebXR; all VR logic
+- `SolarSystemModule.js` (~8,900 lines) → All celestial objects, orbits, textures
+- `UIManager.js` → UI controls, info panels, loading screens
+- `TextureCache.js` → IndexedDB + memory cache for textures
+- `utils.js` → `DEBUG`, `CONFIG`, `IS_MOBILE`, `IS_LOW_POWER`, `MaterialFactory`, `GeometryFactory`
+- `AudioManager.js`, `PanelManager.js`, `PWAManager.js`, `ServiceWorkerManager.js`, `LanguageManager.js`
 
+All modules follow the same singleton pattern:
 ```javascript
 class MyModule {
-  constructor() { /* private initialization */ }
-  init() { /* public setup, called explicitly */ }
+  constructor() { /* init */ }
+  init()        { /* public setup */ }
 }
-export const myModule = new MyModule(); // singleton export
+export const myModule = new MyModule();
 ```
 
-**Module Hierarchy:**
-- `main.js` → Entry point, creates App class
-- `SceneManager.js` → Three.js scene/camera/renderer/controls/XR
-- `SolarSystemModule.js` → 8,874 lines - celestial objects, orbits, textures
-- `UIManager.js` → UI controls, info panels, loading screens
-- `TextureCache.js` → IndexedDB caching for textures
-- `utils.js` → Shared constants, geometry factories, material factories
-- `PanelManager.js` → Draggable panel logic
-- `PWAManager.js` → Install prompts, platform detection, offline mode
-- `ServiceWorkerManager.js` → SW registration, update detection
-- `LanguageManager.js` → i18n detection, manifest switching (6 languages)
-
-### 3. Texture Management Strategy
-**Critical for performance:** Textures use a 3-tier fallback system:
-1. **Self-hosted** (`./textures/planets/`) - Primary, cached by SW
-2. **Procedural generation** (`TextureGeneratorUtils`) - Fallback for missing textures
-3. **Cache-first:** IndexedDB + memory cache via `TextureCache.js`
-
-**Never add external CDN textures** - project migrated to self-hosted for reliability (see `TEXTURE_MIGRATION_COMPLETE.md`).
-
-### 4. Service Worker Caching (v2.2.6)
+### 3. Service Worker Caching (current: v2.6.3)
 - **Strategy:** Cache-first for static assets, network-first for HTML
-- **Version bumping:** Update `CACHE_VERSION` in `sw.js` when modifying cached files
-- **Critical files:** All modules, textures (12 planets/moons), icons, styles
-- **Testing:** Always test SW updates with hard refresh (Ctrl+Shift+R)
+- **Always bump `CACHE_VERSION` in `sw.js`** whenever ANY cached file is modified (modules, CSS, textures, icons)
+- Add new files to `STATIC_CACHE_FILES` array in `sw.js`
+- Verify with hard refresh → DevTools → Application → Service Workers
 
-## Development Workflows
+### 4. Texture Strategy (3-tier fallback)
+1. **Self-hosted** (`./textures/planets/`, `./textures/moons/`, etc.) — primary, SW-cached
+2. **Procedural** (`TextureGeneratorUtils` in `utils.js`) — fallback when file is missing
+3. **Never use external CDN textures** — project is fully self-hosted for offline reliability
 
-### Running Locally
-```powershell
-# Option 1: Python
-python -m http.server 8000
-
-# Option 2: Node.js
-npx http-server -p 8000
-
-# Option 3: VS Code Live Server extension
-# Right-click index.html → "Open with Live Server"
-```
-
-**HTTPS Required for:**
-- Service Workers
-- PWA install prompts
-- WebXR (VR/AR) features
-
-Use Netlify/Vercel for testing PWA features (configs included: `netlify.toml`, `vercel.json`).
-
-### Testing Checklist
-1. **Console:** Check for errors, verify SW version logs
-2. **Textures:** Inspect planets (Sun → Neptune) for texture loading
-3. **Offline:** Load page, disconnect network, hard refresh
-4. **Performance:** Enable FPS counter with `?debug-performance=true`
-5. **Mobile:** Test responsive UI, touch controls
-6. **VR:** Test in Meta Quest browser if available
-
-### Debug Modes (URL Parameters)
-- `?debug=true` - General debug logging
-- `?debug-vr=true` - VR/XR-specific logs
-- `?debug-textures=true` - Texture loading details
-- `?debug-performance=true` - Performance metrics, cache hits/misses
-
-### Documentation Pattern
-**Every significant change requires a markdown summary:**
-- Place in root directory with descriptive name (e.g., `TEXTURE_MIGRATION_COMPLETE.md`)
-- Include: Problem, Solution, Files Changed, Testing Steps, Before/After metrics
-- See existing docs as templates: `ASTRONOMICAL_ACCURACY_FIX.md`, `COMPLETE_MODULARIZATION_SUMMARY.md`
-
-## Code Conventions
-
-### Coordinate Systems
-1. **Cartesian (x, y, z):** Three.js 3D positions
-2. **Spherical (RA, Dec):** Astronomical coordinates for stars/constellations/nebulae
-   - RA (Right Ascension): 0-360°, eastward angle
-   - Dec (Declination): -90° to +90°, north/south angle
-   - Convert via `CoordinateUtils.sphericalToCartesian(ra, dec, distance)`
-
-**Example:**
-```javascript
-// Orion Nebula positioned in Orion's sword
-{ name: 'Orion Nebula', ra: 83.8, dec: -5.4, size: 400 }
-// Converted to 3D at CONSTELLATION.DISTANCE * 1.5
-```
-
-### Material & Geometry Factories
-**Always use factory functions from `utils.js`:**
-- `MaterialFactory.createEmissiveMaterial(color, emissiveIntensity)` - Stars, Sun
-- `MaterialFactory.createReflectiveMaterial(texture)` - Planets
-- `GeometryFactory.getSphereGeometry(radius, segments)` - Cached geometries
-
-**Why:** Prevents memory leaks through geometry/material reuse.
-
-### Astronomical Data Structure
-Planetary data uses real astronomical values:
-```javascript
-this.ASTRONOMICAL_DATA = {
-  earth: {
-    rotationPeriod: 23.93,  // hours (day length)
-    axialTilt: 23.44,       // degrees
-    retrograde: false,
-    orbitalPeriod: 365.25   // Earth days
-  }
-}
-```
-**Source accuracy matters** - verify against NASA JPL when adding objects.
-
-### i18n Pattern
-- Translations in `src/i18n.js` with 6 languages (en, nl, fr, de, es, pt)
-- HTML elements use `data-i18n="keyName"` attributes
-- JavaScript: `const t = window.t || ((key) => key);`
-- Language-specific manifests: `manifest.en.json`, `manifest.nl.json`, etc.
-
-## Common Tasks
-
-### Adding a New Celestial Object
-1. Add data to appropriate section in `SolarSystemModule.js` (planets/moons/dwarf planets)
-2. Create texture method: `createXTextureReal(size)` with self-hosted path
-3. Add procedural fallback in utils.js `TextureGeneratorUtils`
-4. Add to navigation dropdown in `index.html`
-5. Test texture loading and info panel display
-
-### Modifying Service Worker
-1. Update version: `const CACHE_VERSION = '2.2.7';`
-2. Add new files to `STATIC_CACHE_FILES` array
-3. Test: Hard refresh, check console for new version activation
-4. Verify: DevTools → Application → Service Workers
-
-### Performance Optimization
-- **Mobile detection:** `IS_MOBILE`, `IS_LOW_POWER` constants adjust quality
-- **Adaptive quality:** Lower texture sizes, geometry segments on mobile
-- **Geometry caching:** Use `this.geometryCache.get(key)` to reuse geometries
-- **Delta time clamping:** `Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime)` prevents spiral of death
-
-### VR/XR Features
-- XR setup in `SceneManager.js` via `setupWebXR()`
-- Controllers use factory models from Three.js
-- Movement via thumbsticks: forward/back/strafe/turn
-- Laser pointer raycasting for object selection
-- Test URL param: `?vr=true` for direct VR entry
-
-## Project-Specific Gotchas
-
-1. **Three.js version locked:** v0.160.0 - Don't upgrade without extensive testing
-2. **Windows PowerShell scripts:** `.ps1` files for texture downloads (e.g., `download-textures.ps1`)
-3. **Search engine blocking:** `<meta name="robots" content="noindex">` - Paid app in Microsoft Store
-4. **Favicon complexity:** Uses Windows 11 unplated icons for taskbar, multiple sizes for compatibility
-5. **Educational vs Realistic scale:** Two distance modes - toggle affects camera limits and object spacing
-6. **Procedural textures run on first frame:** Lazy generation via `cachedTextureGeneration(key, fn)`
-
-## File Change Impact Matrix
-
-| Change Type | Update Required |
-|-------------|-----------------|
-| Module code | Bump `sw.js` cache version |
-| Texture files | Add to `STATIC_CACHE_FILES` in `sw.js` |
-| New module | Import in `index.html`, add to SW cache |
-| CSS changes | Cache version bump in `sw.js` |
-| i18n updates | Update all 6 `manifest.*.json` files |
-| New icons | Update `browserconfig.xml` + manifests |
-
-## Examples from Codebase
-
-### Pattern: Astronomical Accuracy
-When positioning nebulae/stars, use real RA/Dec coordinates:
-```javascript
-// From ASTRONOMICAL_ACCURACY_FIX.md
-// Orion Nebula (M42) in Orion's sword
-{ name: 'Orion Nebula', ra: 83.8, dec: -5.4 }
-// Near Orion's belt stars (RA ~83-85°, Dec ~-1°)
-```
-
-### Pattern: Texture Loading with Fallback
 ```javascript
 createEarthTextureReal(size) {
-  const primary = ['./textures/planets/earth_1k.jpg'];
   return this.loadTextureWithFallback(
-    primary,
+    ['./textures/planets/earth_1k.jpg'],
     () => TextureGeneratorUtils.generateEarthTexture(size)
   );
 }
 ```
 
-### Pattern: Configuration Adaptation
+## VR/XR Architecture — Critical Rules
+
+### Dolly Pattern (MUST follow)
+The XR session **owns `camera.position` every frame** — any direct camera moves are silently overwritten.
+All VR movement and teleportation goes through the **dolly** (`this.dolly` in `SceneManager`, a `THREE.Group` at scene root; `this.camera` is a child of it):
+
 ```javascript
-export const CONFIG = {
-  QUALITY: {
-    textureSize: IS_MOBILE ? 1024 : 4096,
-    sphereSegments: IS_MOBILE ? 32 : 128,
-    particleCount: IS_MOBILE ? 1000 : 5000
-  }
-};
+// WRONG — overwritten by XR runtime each frame
+this.camera.position.set(x, y, z);
+
+// CORRECT — move the dolly; camera follows
+this.dolly.position.set(x, y, z);
+this.dolly.rotation.y = Math.atan2(dx, dz); // face target
 ```
 
-## Resources
+Navigation calls `teleportVRToObject(object)`, which applies per-type distance rules (moon, spacecraft, dwarf planet, constellation, etc.) and sets `dolly.position` + `dolly.rotation.y`.
 
-- **Three.js Docs:** https://threejs.org/docs/
-- **WebXR Spec:** https://immersiveweb.dev/
-- **PWA Checklist:** https://www.pwabuilder.com/
-- **NASA JPL Data:** https://ssd.jpl.nasa.gov/ (orbital elements)
-- **Astronomical Coords:** https://en.wikipedia.org/wiki/Equatorial_coordinate_system
+### VR UI Panel
+`vrUIPanel` is a `THREE.Mesh(PlaneGeometry, MeshBasicMaterial{DoubleSide})` child of `dolly`, driven by a 1400×1000 Canvas 2D texture. Pages: `'controls'`, `'navigate'`, `'info'`.
 
-## Encoding & Character Guidelines
+Key methods in `SceneManager`:
+- `_positionMenuAtEyeLevel()` — reads `camera.position.y` + HMD forward direction; no hardcoded y-offset
+- `_billboardVRPanel()` — `lookAt` + strip pitch/roll so panel stays vertical (yaw only)
+- `_showVRInfoOverlay()` — switch to info page, reposition panel to user's right side after nav
+- X-button toggle calls `_positionMenuAtEyeLevel()` (not a hardcoded position)
+- Right grip drags the panel (`vrPanelDrag` state); `updateXRMovement` moves panel while grip held; `onSqueezeEnd` re-billboards
 
-### File Encoding
-- **All files must be UTF-8 without BOM**
-- Use PowerShell to verify/fix: `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))`
+### VR Controller Layout (Meta Quest)
+- Left: btn0=trigger, btn1=grip, btn3=thumbstick, btn4=X, btn5=Y
+- Right: btn0=trigger, btn1=grip, btn3=thumbstick, btn4=A, btn5=B
+- **X button:** menu toggle | **Left grip:** grab-to-rotate scene | **Right grip:** drag UI panel (if visible)
 
-### i18n.js Special Characters
-The translation file (`src/i18n.js`) contains 6 languages with special characters. Watch for:
+### Hot-Path Performance
+Pre-allocated scratch vectors live in the `SceneManager` constructor — **never call `.clone()` inside the animate loop**:
+```javascript
+this._vrMoveScratch.copy(cameraForward).multiplyScalar(-stickY * speed);
+this.dolly.position.add(this._vrMoveScratch);
+```
+Controller mesh refs are stored in `controller.userData.laserMesh / pointerMesh / coneMesh` at init time — **never call `getObjectByName` in `updateLaserPointers`**. Use `_setLasersVisible(visible)` helper.
 
-**Garbled Character Patterns (encoding corruption):**
-| Corrupted | Correct | Description |
-|-----------|---------|-------------|
-| `â»×¹â´` | `⁻¹⁴` | Superscript -14 (scientific notation) |
-| `cÅ"ur` | `cœur` | French œ ligature (heart) |
-| `Å"il` | `œil` | French œ ligature (eye) |
-| `Ã©` | `é` | French/Spanish accented e |
-| `Ã¨` | `è` | French accented e |
-| `Ã¼` | `ü` | German umlaut |
-| `Ã¶` | `ö` | German umlaut |
-| `Ã¤` | `ä` | German umlaut |
-| `Ã±` | `ñ` | Spanish ñ |
-| `Ã§` | `ç` | French/Portuguese cedilla |
+### Render Loop Safety
+`animate(callback)` uses **three separate try/catch blocks** (controls update, callback, render) so `renderer.render()` always runs even if the callback throws. VR errors always log regardless of `DEBUG.enabled`.
 
-**JavaScript String Escaping:**
-- Always escape apostrophes in single-quoted strings: `l\'envers` not `l'envers`
-- French text is especially prone to this: `n\'a`, `l\'une`, `qu\'il`
+### Critical Gotchas
+- `logarithmicDepthBuffer` is **disabled on mobile/Quest** (see `CONFIG.RENDERER`) — `EXT_frag_depth` fails inside the WebXR framebuffer on Quest, making all objects render black
+- `previousButtonStates` resets at XR `sessionstart` (not per-frame) to handle hand-tracking adding >2 input sources mid-session
+- `focusOnObject()` in `SolarSystemModule` animates `camera.position` — in VR this is ignored; call `teleportVRToObject()` in addition
 
-**Verification Commands (PowerShell):**
+## Debug URL Parameters
+| Param | Effect |
+|---|---|
+| `?debug` | General verbose logging |
+| `?debug-vr` | VR event + locomotion logs; checked via `DEBUG.VR` |
+| `?debug-textures` | Texture load/fallback details |
+| `?debug-performance` | FPS counter, cache hit/miss stats |
+| `?emulate-vr` | Desktop VR emulation — camera at headset spawn, diagnostic HUD overlay |
+
+## Development Workflows
+
+### Running Locally
 ```powershell
-# Check for garbled patterns
-$content = [System.IO.File]::ReadAllText("src/i18n.js")
-$content.Contains("â»×¹â´")  # Should be False
-$content.Contains("Å""")     # Should be False
+python -m http.server 8000        # or: npx http-server -p 8000
+```
+HTTPS is required for Service Workers, PWA install prompts, and WebXR. Use Netlify/Vercel for full PWA+VR testing (configs: `netlify.toml`, `vercel.json`).
 
-# Fix garbled text (example)
-$content = $content.Replace("â»×¹â´", "⁻¹⁴")
-[System.IO.File]::WriteAllText("src/i18n.js", $content, [System.Text.UTF8Encoding]::new($false))
+### File Change Impact Matrix
+| Change Type | Required Action |
+|---|---|
+| Any `.js` / `.css` module | Bump `CACHE_VERSION` in `sw.js` |
+| New texture file | Add path to `STATIC_CACHE_FILES` in `sw.js` |
+| New JS module | Import in `index.html`, add to SW cache |
+| i18n text changes | Update all 6 `manifest.*.json` files |
+| New icons | Update `browserconfig.xml` + all manifests |
+
+## Code Conventions
+
+### Coordinate Systems
+- **Cartesian (x, y, z):** Three.js 3D space
+- **Spherical (RA, Dec):** Astronomical — RA 0–360° eastward, Dec −90° to +90°
+- Convert: `CoordinateUtils.sphericalToCartesian(ra, dec, distance)`
+
+### Astronomical Data
+Use real values from NASA JPL:
+```javascript
+earth: { rotationPeriod: 23.93, axialTilt: 23.44, orbitalPeriod: 365.25 }
 ```
 
-**Valid Special Characters in Project:**
-- `°` (degree symbol) - temperatures, coordinates
-- `œ` (French ligature) - cœur, œil
-- `⁻¹⁴` (superscript) - scientific notation
-- `×` (multiplication) - dimensions
-- `μ` (micro) - micrometers
-- `²` `³` (superscripts) - area, volume
+### Material & Geometry Factories (`utils.js`) — always use these, not raw constructors
+```javascript
+MaterialFactory.createEmissiveMaterial(color, intensity) // Stars, Sun
+MaterialFactory.createReflectiveMaterial(texture)        // Planets
+GeometryFactory.getSphereGeometry(radius, segments)      // Cached — prevents leaks
+```
 
-## Questions to Ask Before Coding
+### Mobile / Quality Adaptation
+```javascript
+CONFIG.QUALITY.textureSize    // IS_MOBILE ? 1024 : 4096
+CONFIG.QUALITY.sphereSegments // IS_MOBILE ? 32 : 128
+Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
+```
 
-1. **Does this change require a Service Worker version bump?** (Yes if modifying cached files)
-2. **Is this scientifically accurate?** (Check NASA JPL for orbital data)
-3. **Will this work offline?** (Textures must be self-hosted or procedural)
-4. **Does this work on mobile?** (Test touch controls, performance)
-5. **Is there existing documentation to update?** (Check root `.md` files)
-6. **Does i18n text contain special characters?** (Verify encoding, escape apostrophes)
+### i18n Pattern
+- Translations: `src/i18n.js` (6 languages: en, nl, fr, de, es, pt)
+- HTML: `data-i18n="keyName"` attributes
+- JS: `const t = window.t || ((key) => key);`
+- Escape apostrophes in single-quoted strings: `l\'envers`, `n\'a`, `qu\'il`
+
+## Adding a New Celestial Object
+1. Add orbital/physical data in `SolarSystemModule.js`
+2. Create `createXTextureReal(size)` using `loadTextureWithFallback`
+3. Add procedural fallback to `TextureGeneratorUtils` in `utils.js`
+4. Add to navigation dropdown in `index.html`
+5. Bump SW cache version in `sw.js`
+
+## Encoding Rules
+- **All files: UTF-8 without BOM**
+- PowerShell write: `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))`
+- Watch for garbled patterns in `src/i18n.js`: `Ã©`→`é`, `Ã¼`→`ü`, `cÅ"ur`→`cœur`, `â»×¹â´`→`⁻¹⁴`
+
+## Pre-Coding Checklist
+1. Touching a cached file? → bump `CACHE_VERSION` in `sw.js`
+2. VR movement/teleport? → use `dolly`, never `camera.position`
+3. In the animate hot path? → use pre-allocated scratch vectors, no `.clone()`
+4. New texture? → self-hosted + procedural fallback, never CDN
+5. Works on mobile/Quest? → check `IS_MOBILE`; avoid `logarithmicDepthBuffer` side-effects
+6. i18n text with special chars? → verify UTF-8, escape apostrophes
 
 ---
 
-**Last Updated:** January 16, 2026 | **Project Version:** 2.2.6 | **AI Agent:** GitHub Copilot
+**Last Updated:** February 20, 2026 | **SW Version:** 2.6.3 | **Three.js:** v0.160.0
+```

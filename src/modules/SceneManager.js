@@ -2107,6 +2107,8 @@ export class SceneManager {
  }
  }
  }
+ }
+ }
 
  onResize() {
  this.camera.aspect = window.innerWidth / window.innerHeight;
