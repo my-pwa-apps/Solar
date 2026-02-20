@@ -4313,16 +4313,23 @@ export class SolarSystemModule {
  this._loadDeepSkySprite(
  realTexturePath,
  (processedTex) => {
- const spriteMat = new THREE.SpriteMaterial({
+ // Use a plain Mesh so it sits statically in world space.
+ // THREE.Sprite auto-billboards every frame, making it appear
+ // to "float" as the VR user turns their head.
+ const nebMat = new THREE.MeshBasicMaterial({
  map: processedTex,
  transparent: true,
  opacity: 0.95,
  depthWrite: false,
- blending: THREE.AdditiveBlending
+ blending: THREE.AdditiveBlending,
+ side: THREE.DoubleSide
  });
- const sprite = new THREE.Sprite(spriteMat);
- sprite.scale.set(nebData.size * 2, nebData.size * 2, 1);
- group.add(sprite);
+ const geo = new THREE.PlaneGeometry(nebData.size * 2, nebData.size * 2);
+ const mesh = new THREE.Mesh(geo, nebMat);
+ group.add(mesh);
+ // Orient the plane toward the scene centre so it's visible from origin.
+ group.updateMatrixWorld(true);
+ mesh.lookAt(new THREE.Vector3(0, 0, 0));
  },
  () => { // onError: fall back to procedural
  this.createHyperrealisticNebula(group, nebData);
@@ -5172,16 +5179,24 @@ export class SolarSystemModule {
  this._loadDeepSkySprite(
  realTexturePath,
  (processedTex) => {
- const gMat = new THREE.SpriteMaterial({
+ // Use a plain Mesh so it sits statically in world space.
+ // THREE.Sprite auto-billboards every frame, making it appear
+ // to "float" as the VR user turns their head.
+ const gMat = new THREE.MeshBasicMaterial({
  map: processedTex,
  transparent: true,
  opacity: 0.95,
  depthWrite: false,
- blending: THREE.AdditiveBlending
+ blending: THREE.AdditiveBlending,
+ side: THREE.DoubleSide
  });
- const sprite = new THREE.Sprite(gMat);
- sprite.scale.set(galData.size * 2.5, galData.size * 2.5, 1);
- group.add(sprite);
+ const geo = new THREE.PlaneGeometry(galData.size * 2.5, galData.size * 2.5);
+ const mesh = new THREE.Mesh(geo, gMat);
+ group.add(mesh);
+ // Orient the plane toward the scene centre so it's visible from origin.
+ // Ensure the group's world matrix is current before calling lookAt.
+ group.updateMatrixWorld(true);
+ mesh.lookAt(new THREE.Vector3(0, 0, 0));
  },
  () => { // onError: fall back to procedural
  this._buildProceduralGalaxy(group, galData);

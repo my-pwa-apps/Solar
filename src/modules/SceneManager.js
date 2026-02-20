@@ -44,6 +44,7 @@ export class SceneManager {
  this._vrTempPosition = new THREE.Vector3();
  this._vrGrabDelta = new THREE.Vector3(); // For grab-to-rotate delta calc
  this._vrMoveScratch = new THREE.Vector3(); // For zero-alloc movement additions
+ this._vrTurnQuat = new THREE.Quaternion(); // For zero-alloc quaternion turning
 
  // Panel drag state — right grip moves the open menu panel
  this.vrPanelDrag = { active: false, controllerIndex: -1 };
@@ -2049,8 +2050,11 @@ export class SceneManager {
  const vertSpeed = 0.25 * sprintMultiplier;
  
  // TURN LEFT/RIGHT (only if NOT grab-rotating)
+ // Use quaternion premultiply around world-Y so Euler order never
+ // causes a direction flip after combined pitch+yaw accumulation.
  if (!this.grabRotateState.active && Math.abs(stickX) > deadzone) {
- this.dolly.rotation.y -= stickX * turnSpeed;
+ this._vrTurnQuat.setFromAxisAngle(this._vrUpVector, -stickX * turnSpeed);
+ this.dolly.quaternion.premultiply(this._vrTurnQuat);
  }
  
  // VERTICAL MOVEMENT (Up/Down in world space)
@@ -2087,16 +2091,13 @@ export class SceneManager {
  this.grabRotateState.lastPosition
  );
  
- // Convert controller movement to rotation
- // Horizontal movement (X) → Yaw rotation (Y-axis)
- // Vertical movement (Y) → Pitch rotation (X-axis) 
+ // Horizontal rotation only via quaternion — no pitch.
+ // Pitch (dolly.rotation.x) accumulated via Euler caused gimbal-lock
+ // that flipped the perceived forward/backward direction after a few
+ // combined grab-rotate + right-stick turn sequences.
  const rotationSensitivity = 2.5;
- this.dolly.rotation.y -= delta.x * rotationSensitivity;
- this.dolly.rotation.x -= delta.y * rotationSensitivity;
- 
- // Clamp X rotation to prevent flipping upside down
- const maxPitch = Math.PI / 3; // 60 degrees
- this.dolly.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, this.dolly.rotation.x));
+ this._vrTurnQuat.setFromAxisAngle(this._vrUpVector, -delta.x * rotationSensitivity);
+ this.dolly.quaternion.premultiply(this._vrTurnQuat);
  
  // Update last position for next frame
  this.grabRotateState.lastPosition.copy(currentPosition);
