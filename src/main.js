@@ -576,6 +576,9 @@ class App {
  'triton': () => this.solarSystemModule.moons.triton,
  'charon': () => this.solarSystemModule.moons.charon,
  
+ // Oort Cloud (structure object)
+ 'oort-cloud': () => this.solarSystemModule.oortCloud,
+
  // Dwarf Planets (stored in planets registry)
  'ceres': () => this.solarSystemModule.planets.ceres,
  'haumea': () => this.solarSystemModule.planets.haumea,

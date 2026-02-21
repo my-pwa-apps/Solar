@@ -1897,14 +1897,12 @@ export class SceneManager {
  
  const inputSources = session.inputSources;
  
- // FIX: Use CAMERA (HMD) direction for consistent movement, not dolly
- // This ensures "forward" always means "where you're looking"
- // even after grab-rotating the world
- const xrCamera = this.renderer.xr.getCamera();
- 
- // Get camera's forward direction (where user is looking) - reuse pre-allocated vectors
+ // Use this.camera.getWorldDirection() — in VR mode Three.js updates this camera's
+ // world pose from the HMD each frame, so it reliably reflects where the user looks.
+ // renderer.xr.getCamera() returns an ArrayCamera group whose getWorldDirection
+ // is less reliable (it's the combined stereo rig, not a single-eye pose).
  const cameraForward = this._vrCameraForward;
- xrCamera.getWorldDirection(cameraForward);
+ this.camera.getWorldDirection(cameraForward);
  cameraForward.y = 0; // Keep horizontal (no flying up/down when looking up/down)
  
  // Safety check: if looking straight up/down, use a default forward
@@ -2000,14 +1998,18 @@ export class SceneManager {
  sprintMultiplier = 3.0;
  }
  
- // Get thumbstick axes (Quest uses axes 2 & 3)
+ // Robustly read thumbstick axes — axis layout varies by Quest firmware / browser:
+ // Some builds put thumbstick on axes[0,1]; others on axes[2,3].
+ // When 4 axes are present, compare magnitudes and use whichever pair is active.
  let stickX = 0, stickY = 0;
- if (gamepad.axes.length >= 4) {
- stickX = gamepad.axes[2];
- stickY = gamepad.axes[3];
- } else if (gamepad.axes.length >= 2) {
- stickX = gamepad.axes[0];
- stickY = gamepad.axes[1];
+ const ax = gamepad.axes;
+ if (ax.length >= 4) {
+ const mag01 = Math.abs(ax[0]) + Math.abs(ax[1]);
+ const mag23 = Math.abs(ax[2]) + Math.abs(ax[3]);
+ if (mag23 >= mag01) { stickX = ax[2]; stickY = ax[3]; }
+ else { stickX = ax[0]; stickY = ax[1]; }
+ } else if (ax.length >= 2) {
+ stickX = ax[0]; stickY = ax[1];
  }
  
  const deadzone = 0.15;
@@ -2016,7 +2018,7 @@ export class SceneManager {
  // LEFT CONTROLLER: MOVEMENT (like FPS games)
  // ============================================
  if (handedness === 'left') {
- const baseSpeed = 0.25 * sprintMultiplier;
+ const baseSpeed = 0.40 * sprintMultiplier; // Increased from 0.25 for more responsive locomotion
  
  // Forward/Backward & Strafe (only if NOT grab-rotating)
  if (!this.grabRotateState.active &&
@@ -2207,6 +2209,8 @@ export class SceneManager {
  }
 
  try {
+ // CSS2D labels replaced with Sprite labels — labelRenderer kept for any
+ // remaining CSS2D objects but skipped in XR (DOM elements can't appear in headset)
  if (this.labelRenderer && !this.renderer.xr.isPresenting) {
  this.labelRenderer.render(this.scene, this.camera);
  }

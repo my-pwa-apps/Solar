@@ -2,7 +2,7 @@
 // SOLAR SYSTEM MODULE
 // ===========================
 import * as THREE from 'three';
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+// CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
 import { TEXTURE_CACHE, cachedTextureGeneration } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
 
@@ -21,6 +21,7 @@ export class SolarSystemModule {
  this.milkyWay = null;
  this.asteroidBelt = null;
  this.kuiperBelt = null;
+ this.oortCloud = null;
  this.orbits = [];
  this.focusedObject = null;
  this.distantStars = [];
@@ -7264,7 +7265,7 @@ createHyperrealisticHubble(satData) {
  distance: 55, // At Sun-Earth L2 Lagrange point, ~1.01 AU from Sun (1.5 million km beyond Earth at 51 units)
  angle: Math.PI * 0.15, // Positioned near Earth's L2 point
  speed: 0.0003, // Halo orbit around L2, period synced with Earth (1 year)
- size: 0.08,
+ size: 0.03,
  color: 0xFFD700,
  type: 'observatory',
  description: t('descJWST'),
@@ -8062,6 +8063,7 @@ createHyperrealisticHubble(satData) {
  this.milkyWay = null;
  this.asteroidBelt = null;
  this.kuiperBelt = null;
+ this.oortCloud = null;
  this.orbits = [];
  }
 
@@ -8689,6 +8691,10 @@ createHyperrealisticHubble(satData) {
  // At standard 5x multiplier they'd all hit the min=10 floor, way too far
  distance = Math.max(actualRadius * 3, 0.6);
  if (DEBUG.enabled) console.log(` [Dwarf Planet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (radius: ${actualRadius.toFixed(3)})`);
+ } else if (userData.type === 'oortCloud') {
+ // Oort Cloud: spherical shell — position camera just outside the outer edge
+ // so the full sphere is visible and particles surround the viewport
+ distance = actualRadius * 1.2;
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
@@ -9212,29 +9218,51 @@ createHyperrealisticHubble(satData) {
  // Create CSS2D labels for all major objects
  this.labels = [];
  
- // Helper function to create a label
+ // Helper function to create a sprite label (works in both desktop and VR/WebXR)
  const createLabel = (object, text) => {
  if (!object || !object.userData) return;
  
- const labelDiv = document.createElement('div');
- labelDiv.className = 'object-label';
- labelDiv.textContent = text || object.userData.name;
- labelDiv.style.color = 'white';
- labelDiv.style.fontSize = '14px';
- labelDiv.style.fontFamily = "'Poppins', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif";
- labelDiv.style.padding = '2px 6px';
- labelDiv.style.background = 'rgba(0, 0, 0, 0.7)';
- labelDiv.style.borderRadius = '4px';
- labelDiv.style.pointerEvents = 'none';
- labelDiv.style.userSelect = 'none';
+ const labelText = text || object.userData.name || '';
  
- const label = new CSS2DObject(labelDiv);
- label.position.set(0, object.userData.radius * 1.5 || 5, 0);
- label.visible = false; // Start hidden
- object.add(label);
+ // Render text onto a canvas → CanvasTexture → SpriteMaterial
+ // Sprites are rendered by the main WebGL renderer, so they appear in VR headsets
+ const canvas = document.createElement('canvas');
+ canvas.width = 512;
+ canvas.height = 64;
+ const ctx = canvas.getContext('2d');
  
- object.userData.label = label;
- this.labels.push(label);
+ ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+ ctx.beginPath();
+ if (ctx.roundRect) ctx.roundRect(2, 2, 508, 60, 7);
+ else ctx.rect(2, 2, 508, 60);
+ ctx.fill();
+ 
+ ctx.fillStyle = 'white';
+ ctx.font = 'bold 26px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(labelText, 256, 32);
+ 
+ const texture = new THREE.CanvasTexture(canvas);
+ const material = new THREE.SpriteMaterial({
+ map: texture,
+ transparent: true,
+ depthTest: false,
+ sizeAttenuation: true
+ });
+ const sprite = new THREE.Sprite(material);
+ 
+ // Scale in world units — clamp so Sun labels aren't enormous and craft labels aren't invisible
+ const r = object.userData.radius || 0.5;
+ const h = Math.min(Math.max(r * 0.6, 0.3), 6);
+ sprite.scale.set(h * 4.5, h, 1);
+ sprite.position.set(0, r * 1.5 + h * 0.5, 0);
+ sprite.visible = false;
+ sprite.renderOrder = 999; // Always draw on top
+ 
+ object.add(sprite);
+ object.userData.label = sprite;
+ this.labels.push(sprite);
  };
  
  // Add labels to Sun
@@ -9311,7 +9339,9 @@ createHyperrealisticHubble(satData) {
  this.labels.forEach((label, index) => {
  label.visible = newVisibility;
  if (index < 3 && DEBUG.enabled) {
- console.log(` Label ${index}: ${label.element?.textContent || 'no text'} -> visible=${newVisibility}`);
+ // Sprites don't have .element — access name via the parent object's userData
+ const name = label.parent?.userData?.name || 'unknown';
+ console.log(` Label ${index}: ${name} -> visible=${newVisibility}`);
  }
  });
  
