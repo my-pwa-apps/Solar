@@ -1509,6 +1509,10 @@ export class SceneManager {
  distance = 80;
  } else if (ud.isSpacecraft) {
  distance = Math.max(radius * 10, 3);
+ } else if (ud.type === 'asteroidBelt' || ud.type === 'kuiperBelt') {
+ distance = radius * 3;
+ } else if (ud.type === 'oortCloud') {
+ distance = radius * 1.2;
  } else {
  distance = Math.max(radius * 5, 10);
  }

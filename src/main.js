@@ -576,6 +576,10 @@ class App {
  'triton': () => this.solarSystemModule.moons.triton,
  'charon': () => this.solarSystemModule.moons.charon,
  
+ // Belts (structure objects)
+ 'asteroid-belt': () => this.solarSystemModule.asteroidBelt,
+ 'kuiper-belt': () => this.solarSystemModule.kuiperBelt,
+
  // Oort Cloud (structure object)
  'oort-cloud': () => this.solarSystemModule.oortCloud,
 

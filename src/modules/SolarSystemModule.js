@@ -8691,6 +8691,12 @@ createHyperrealisticHubble(satData) {
  // At standard 5x multiplier they'd all hit the min=10 floor, way too far
  distance = Math.max(actualRadius * 3, 0.6);
  if (DEBUG.enabled) console.log(` [Dwarf Planet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (radius: ${actualRadius.toFixed(3)})`);
+ } else if (userData.type === 'asteroidBelt') {
+ // Asteroid Belt: ring between Mars & Jupiter — overview from just inside the belt
+ distance = actualRadius * 3;
+ } else if (userData.type === 'kuiperBelt') {
+ // Kuiper Belt: wide ring beyond Neptune — step back enough to see the sweep
+ distance = actualRadius * 3;
  } else if (userData.type === 'oortCloud') {
  // Oort Cloud: spherical shell — position camera just outside the outer edge
  // so the full sphere is visible and particles surround the viewport
