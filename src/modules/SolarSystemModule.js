@@ -1205,18 +1205,31 @@ export class SolarSystemModule {
         // Don't include URL in cache key so texture persists across language changes
         const cacheKey = `${planetName.toLowerCase()}_texture_remote`;
         if (tex.image && tex.image instanceof HTMLImageElement && sourceType !== 'cached') {
-            // Convert image to data URL and cache it (skip if already from cache)
-            const canvas = document.createElement('canvas');
-            canvas.width = tex.image.width;
-            canvas.height = tex.image.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(tex.image, 0, 0);
-            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
-            TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
-                // Cache write failed - texture will be reloaded next time
-            });
-            if (DEBUG && DEBUG.TEXTURES) {
-                if (DEBUG && DEBUG.TEXTURES) console.log(`?? Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB`);
+            // Convert image to data URL and cache it (skip if already from cache).
+            // Wrapped in its own try-catch: on memory-limited mobile devices, allocating
+            // a second full-res canvas + toDataURL() can throw an OutOfMemoryError or
+            // QuotaExceededError. We must not let a caching failure prevent the texture
+            // from being applied to the material below.
+            // Also skip caching on mobile to avoid memory pressure (textures reload fast
+            // from the Service Worker cache anyway).
+            if (!IS_MOBILE) {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = tex.image.width;
+                    canvas.height = tex.image.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(tex.image, 0, 0);
+                    const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+                    TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
+                        // Cache write failed - texture will be reloaded next time
+                    });
+                    if (DEBUG && DEBUG.TEXTURES) {
+                        console.log(`?? Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB`);
+                    }
+                } catch (cacheErr) {
+                    // Out of memory, quota exceeded, or other — skip caching, texture still applies
+                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} texture cache skipped (${cacheErr.message})`);
+                }
             }
         }
         
