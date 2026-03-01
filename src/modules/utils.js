@@ -61,13 +61,13 @@ export const CONFIG = {
  CONSTELLATION: {
  // Constellation rendering constants
  DISTANCE: 10000, // Distance from origin for constellation stars
- STAR_BASE_SIZE: 25, // Base size multiplier for stars (increased from 15 for brightness)
- GLOW_MULTIPLIER: 3, // Glow size multiplier relative to star size (increased from 2x)
+ STAR_BASE_SIZE: 50, // Base size multiplier for stars (doubled from 25 for visibility)
+ GLOW_MULTIPLIER: 4, // Glow size multiplier relative to star size (increased from 3)
  STAR_OPACITY: 1.0, // Star core opacity (fully opaque)
- GLOW_OPACITY: 0.6, // Glow opacity (increased from 0.3 for brightness)
+ GLOW_OPACITY: 0.7, // Glow opacity (increased from 0.6 for brightness)
  LINE_COLOR: 0x6699FF, // Constellation line color (bright blue)
- LINE_OPACITY: 0.7, // Line opacity (increased from 0.4 for visibility)
- LINE_WIDTH: 3, // Line thickness (increased from 2)
+ LINE_OPACITY: 0.8, // Line opacity (increased from 0.7 for visibility)
+ LINE_WIDTH: 3, // Line thickness
  STAR_SEGMENTS: 16, // Sphere segments for stars
  GLOW_SEGMENTS: 16 // Sphere segments for glow
  }

@@ -57,6 +57,8 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Other constellations
         bigDipper: 'Big Dipper', littleDipper: 'Little Dipper', southernCross: 'Southern Cross',
+        orionsBelt: 'Orion\'s Belt', ursaMajor: 'Ursa Major',
+        canisMajor: 'Canis Major', aquila: 'Aquila', pegasus: 'Pegasus',
         // Spacecraft
         iss: 'ISS', hubble: 'Hubble',
         jwst: 'James Webb Space Telescope', gpsNavstar: 'GPS Satellite (NAVSTAR)',
@@ -388,9 +390,10 @@ const translations = {
         descPisces: ' Pisces shows two fish tied together! Represents Aphrodite and Eros who transformed into fish to escape the monster Typhon. Contains the vernal equinox point!',
         descOrion: ' Orion is one of the most recognizable constellations! Look for the three stars in a row forming Orion\'s Belt. The bright red star Betelgeuse marks his shoulder, and blue Rigel marks his foot.',
         descUrsaMajor: ' The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+        descUrsaMajorFull: ' Ursa Major (the Great Bear) is the third-largest constellation in the sky! It contains the famous Big Dipper asterism which forms the bear\'s back and tail. With 16 main stars tracing a bear shape including head, body and legs, it has been recognized by cultures worldwide for thousands of years. Dubhe and Merak are the "pointer stars" that lead to Polaris!',
         descUrsaMinor: ' The Little Dipper contains Polaris, the North Star! Polaris marks the end of the Little Dipper\'s handle and stays nearly fixed in the northern sky. Essential for celestial navigation!',
         descCrux: ' The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
-        descBigDipper: ' The Big Dipper is actually part of Ursa Major (Great Bear)! The two stars at the end of the "cup" point to Polaris, the North Star. Used for navigation for thousands of years!',
+        descBigDipper: ' The Big Dipper is the most recognized asterism in the northern sky! Seven bright stars form a ladle shape — the "pointer stars" Dubhe and Merak at the cup\'s end aim straight at Polaris, the North Star. Used for navigation for thousands of years!',
         descLittleDipper: ' The Little Dipper contains Polaris, the North Star! Polaris marks the end of the Little Dipper\'s handle and stays nearly fixed in the northern sky. Essential for celestial navigation!',
         descSouthernCross: ' The Southern Cross is the smallest constellation but one of the most famous in the Southern Hemisphere! Used for navigation, it points towards the South Celestial Pole.',
         descCassiopeia: ' Cassiopeia looks like a W or M depending on the season! In Greek mythology, Cassiopeia was a vain queen. The constellation is circumpolar in northern latitudes, meaning it never sets.',
@@ -398,6 +401,10 @@ const translations = {
         descLyra: ' Lyra represents the lyre of Orpheus! Contains Vega, the 5th brightest star in the night sky. Also home to the Ring Nebula, a famous planetary nebula!',
         descAndromedaConst: ' Andromeda was the princess chained to a rock and rescued by Perseus! This constellation contains the Andromeda Galaxy (M31), our nearest large galaxy neighbor!',
         descPerseus: ' Perseus the hero who slayed Medusa! Home to the bright star Mirfak and the famous variable star Algol ("Demon Star"). Contains the Double Cluster!',
+        descOrionsBelt: ' Orion\'s Belt is one of the most recognizable asterisms in the night sky! Three bright stars — Alnitak, Alnilam and Mintaka — form a nearly perfect line. Ancient Egyptians aligned the Great Pyramids of Giza to mirror these three stars!',
+        descCanisMajor: ' Canis Major is home to Sirius, the brightest star in the entire night sky! Known as the "Dog Star," Sirius has been important to civilizations throughout history. The ancient Egyptians based their calendar on its rising. The constellation represents one of Orion\'s hunting dogs.',
+        descAquila: ' Aquila the Eagle soars along the Milky Way! Its brightest star Altair completes the famous Summer Triangle with Vega (Lyra) and Deneb (Cygnus). Altair spins so fast it bulges at its equator! In mythology, Aquila carried Zeus\'s thunderbolts.',
+        descPegasus: ' Pegasus the Winged Horse features the Great Square of Pegasus — one of autumn\'s most recognizable star patterns! In Greek mythology, Pegasus sprang from Medusa when Perseus slayed her. The star Enif marks the horse\'s nose.',
 
         // Nearby star descriptions
         descSirius: ' Sirius is the brightest star in Earth\'s night sky! It\'s actually a binary system with two stars orbiting each other. Located 8.6 light-years away in the constellation Canis Major.',
@@ -536,6 +543,8 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Andere sterrenbeelden
         bigDipper: 'Grote Beer', littleDipper: 'Kleine Beer', southernCross: 'Zuiderkruis',
+        orionsBelt: 'Gordel van Orion', ursaMajor: 'Ursa Major',
+        canisMajor: 'Grote Hond', aquila: 'Adelaar', pegasus: 'Pegasus',
         // Ruimtevaartuigen
         iss: 'ISS', hubble: 'Hubble',
         jwst: 'James Webb-ruimtetelescoop', gpsNavstar: 'GPS-satelliet (NAVSTAR)',
@@ -860,9 +869,10 @@ const translations = {
         descPisces: ' Vissen toont twee vissen die aan elkaar vastgebonden zijn! Stelt Aphrodite en Eros voor die zich in vissen veranderden om het monster Typhon te ontvluchten. Bevat het lentepunt!',
         descOrion: ' Orion is een van de meest herkenbare sterrenbeelden! Zoek naar de drie sterren op een rij die de Gordel van Orion vormen. De heldere rode ster Betelgeuze markeert zijn schouder en blauwe Rigel zijn voet.',
         descUrsaMajor: ' De Grote Beer (Grote Steelpan) is een van de bekendste sterrenbeelden! De twee sterren aan het einde van de "bak" wijzen naar Polaris, de Poolster. Duizenden jaren gebruikt voor navigatie!',
+        descUrsaMajorFull: ' Ursa Major (de Grote Beer) is het derde grootste sterrenbeeld aan de hemel! Het bevat het beroemde Steelpannetje dat de rug en staart van de beer vormt. Met 16 hoofdsterren die een berenvorm tekenen inclusief kop, lichaam en poten, wordt het al duizenden jaren door culturen wereldwijd herkend. Dubhe en Merak zijn de "aanwijssterren" die naar Polaris leiden!',
         descUrsaMinor: ' De Kleine Beer bevat Polaris, de Poolster! Polaris markeert het uiteinde van de steel van de Kleine Beer en staat bijna vast aan de noordelijke hemel. Essentieel voor hemelnavigatie!',
         descCrux: ' Het Zuiderkruis is het kleinste sterrenbeeld maar een van de bekendste op het zuidelijk halfrond! Gebruikt voor navigatie, wijst het naar de Zuidelijke Hemelpool.',
-        descBigDipper: ' De Grote Beer (Grote Steelpan) is een van de bekendste sterrenbeelden! De twee sterren aan het einde van de "bak" wijzen naar Polaris, de Poolster. Duizenden jaren gebruikt voor navigatie!',
+        descBigDipper: ' De Grote Steelpan is het meest herkenbare asterisme aan de noordelijke hemel! Zeven heldere sterren vormen een steelpanvorm — de "aanwijssterren" Dubhe en Merak aan het uiteinde van de bak wijzen recht naar Polaris, de Poolster. Duizenden jaren gebruikt voor navigatie!',
         descLittleDipper: ' De Kleine Beer bevat Polaris, de Poolster! Polaris markeert het uiteinde van de steel van de Kleine Beer en staat bijna vast aan de noordelijke hemel. Essentieel voor hemelnavigatie!',
         descSouthernCross: ' Het Zuiderkruis is het kleinste sterrenbeeld maar een van de bekendste op het zuidelijk halfrond! Gebruikt voor navigatie, wijst het naar de Zuidelijke Hemelpool.',
         descCassiopeia: ' Cassiopeia lijkt op een W of M afhankelijk van het seizoen! In de Griekse mythologie was Cassiopeia een ijdele koningin. Het sterrenbeeld is circumpolair op noordelijke breedtegraden.',
@@ -870,6 +880,10 @@ const translations = {
         descLyra: ' Lyra stelt de lier van Orpheus voor! Bevat Vega, de 5e helderste ster aan de nachtelijke hemel. Ook de thuisbasis van de Ringnevel, een beroemde planetaire nevel!',
         descAndromedaConst: ' Andromeda was de prinses die aan een rots werd geketend en door Perseus werd gered! Dit sterrenbeeld bevat het Andromedastelsel (M31), ons dichtstbijzijnde grote buursterrenstelsel!',
         descPerseus: ' Perseus de held die Medusa versloeg! Thuisbasis van de heldere ster Mirfak en de beroemde veranderlijke ster Algol ("Duivelster"). Bevat de Dubbelcluster!',
+        descOrionsBelt: ' De Gordel van Orion is een van de meest herkenbare asterismen aan de nachtelijke hemel! Drie heldere sterren — Alnitak, Alnilam en Mintaka — vormen een bijna perfecte lijn. De oude Egyptenaren richtten de Grote Piramiden van Gizeh uit op deze drie sterren!',
+        descCanisMajor: ' De Grote Hond is de thuisbasis van Sirius, de helderste ster aan de gehele nachtelijke hemel! Bekend als de "Hondsster" is Sirius door de hele geschiedenis belangrijk geweest. De oude Egyptenaren baseerden hun kalender op de opkomst ervan. Het sterrenbeeld stelt een van Orions jachthonden voor.',
+        descAquila: ' Aquila de Adelaar zweeft langs de Melkweg! De helderste ster Altair voltooit de beroemde Zomerdriehoek samen met Vega (Lyra) en Deneb (Zwaan). Altair draait zo snel dat hij uitpuilt aan zijn evenaar! In de mythologie droeg Aquila de bliksemschichten van Zeus.',
+        descPegasus: ' Pegasus het Gevleugelde Paard bevat het Grote Vierkant van Pegasus — een van de meest herkenbare sterrenpatronen van de herfst! In de Griekse mythologie ontspronk Pegasus uit Medusa toen Perseus haar versloeg. De ster Enif markeert de neus van het paard.',
 
         // Nabije sterren
         descSirius: ' Sirius is de helderste ster aan de aardenachtelijke hemel! Het is eigenlijk een dubbelster. Op 8,6 lichtjaar in het sterrenbeeld Grote Hond.',
@@ -1007,6 +1021,8 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Autres constellations
         bigDipper: 'Grande Ourse', littleDipper: 'Petite Ourse', southernCross: 'Croix du Sud',
+        orionsBelt: 'Ceinture d\'Orion', ursaMajor: 'Ursa Major',
+        canisMajor: 'Grand Chien', aquila: 'Aigle', pegasus: 'Pégase',
         // Engins spatiaux
         iss: 'ISS', hubble: 'Hubble',
         jwst: 'Télescope spatial James-Webb', gpsNavstar: 'Satellite GPS (NAVSTAR)',
@@ -1320,9 +1336,10 @@ const translations = {
         descPisces: ' Les Poissons montrent deux poissons attachés ensemble! Représente Aphrodite et Éros qui se transformèrent en poissons pour échapper au monstre Typhon. Contient le point équinoxial vernal!',
         descOrion: ' Orion est l\'une des constellations les plus reconnaissables! Cherchez les trois étoiles en ligne formant la Ceinture d\'Orion. La brillante étoile rouge Bételgeuse marque son épaule, et le bleu Rigel marque son pied.',
         descUrsaMajor: ' La Grande Ourse (Grande Casserole) est l\'une des constellations les plus connues! Les deux étoiles au bout de la "tasse" pointent vers Polaris, l\'Étoile Polaire. Utilisée pour la navigation depuis des millénaires!',
+        descUrsaMajorFull: ' Ursa Major (la Grande Ourse) est la troisième plus grande constellation du ciel! Elle contient le célèbre astérisme de la Grande Casserole qui forme le dos et la queue de l\'ours. Avec 16 étoiles principales traçant une forme d\'ours incluant tête, corps et pattes, elle est reconnue par les cultures du monde entier depuis des millénaires. Dubhe et Merak sont les "étoiles pointeuses" qui mènent à Polaris!',
         descUrsaMinor: ' La Petite Ourse contient Polaris, l\'Étoile Polaire! Polaris marque l\'extrémité du manche de la Petite Ourse et reste presque fixe dans le ciel du nord. Essentielle pour la navigation céleste!',
         descCrux: ' La Croix du Sud est la plus petite constellation mais l\'une des plus célèbres dans l\'hémisphère sud! Utilisée pour la navigation, elle pointe vers le pôle céleste sud.',
-        descBigDipper: ' La Grande Ourse (Grande Casserole) est l\'une des constellations les plus connues! Les deux étoiles au bout de la "tasse" pointent vers Polaris, l\'Étoile Polaire. Utilisée pour la navigation depuis des millénaires!',
+        descBigDipper: ' La Grande Casserole est l\'astérisme le plus reconnu du ciel nord! Sept étoiles brillantes forment une louche — les "étoiles pointeuses" Dubhe et Merak au bout de la tasse visent droit vers Polaris, l\'Étoile Polaire. Utilisée pour la navigation depuis des millénaires!',
         descLittleDipper: ' La Petite Ourse contient Polaris, l\'Étoile Polaire! Polaris marque l\'extrémité du manche de la Petite Ourse et reste presque fixe dans le ciel du nord. Essentielle pour la navigation céleste!',
         descSouthernCross: ' La Croix du Sud est la plus petite constellation mais l\'une des plus célèbres dans l\'hémisphère sud! Utilisée pour la navigation, elle pointe vers le pôle céleste sud.',
         descCassiopeia: ' Cassiopée ressemble à un W ou M selon la saison! Dans la mythologie grecque, Cassiopée était une reine vaniteuse. La constellation est circumpolaire aux latitudes nord.',
@@ -1330,6 +1347,10 @@ const translations = {
         descLyra: ' La Lyre représente la lyre d\'Orphée! Contient Véga, la 5e étoile la plus brillante dans le ciel nocturne. Aussi demeure de la nébuleuse de l\'Anneau, une célèbre nébuleuse planétaire!',
         descAndromedaConst: ' Andromède était la princesse enchaînée à un rocher et sauvée par Persée! Cette constellation contient la galaxie d\'Andromède (M31), notre plus proche grande galaxie voisine!',
         descPerseus: ' Persée le héros qui tua Méduse! Demeure de l\'étoile brillante Mirfak et de la célèbre étoile variable Algol ("Étoile Démon"). Contient le Double Amas!',
+        descOrionsBelt: ' La Ceinture d\'Orion est l\'un des astérismes les plus reconnaissables du ciel nocturne! Trois étoiles brillantes — Alnitak, Alnilam et Mintaka — forment une ligne presque parfaite. Les anciens Égyptiens ont aligné les grandes pyramides de Gizeh pour refléter ces trois étoiles!',
+        descCanisMajor: ' Le Grand Chien abrite Sirius, l\'étoile la plus brillante du ciel nocturne! Connue comme l\'"Étoile du Chien," Sirius a été importante pour les civilisations à travers l\'histoire. Les anciens Égyptiens basèrent leur calendrier sur son lever. La constellation représente l\'un des chiens de chasse d\'Orion.',
+        descAquila: ' Aquila l\'Aigle plane le long de la Voie lactée! Son étoile la plus brillante Altaïr complète le fameux Triangle d\'été avec Véga (Lyre) et Deneb (Cygne). Altaïr tourne si vite qu\'elle se renfle à son équateur! Dans la mythologie, Aquila portait les foudres de Zeus.',
+        descPegasus: ' Pégase le Cheval Ailé arbore le Grand Carré de Pégase — l\'un des motifs stellaires les plus reconnaissables de l\'automne! Dans la mythologie grecque, Pégase jaillit de Méduse quand Persée la tua. L\'étoile Enif marque le nez du cheval.',
 
         // Étoiles proches
         descSirius: ' Sirius est l\'étoile la plus brillante du ciel nocturne terrestre! C\'est en fait un système binaire. Situé à 8,6 années-lumière dans la constellation du Grand Chien.',
@@ -1467,6 +1488,8 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Andere Sternbilder
         bigDipper: 'Großer Wagen', littleDipper: 'Kleiner Wagen', southernCross: 'Kreuz des Südens',
+        orionsBelt: 'Gürtel des Orion', ursaMajor: 'Ursa Major',
+        canisMajor: 'Großer Hund', aquila: 'Adler', pegasus: 'Pegasus',
         // Raumfahrzeuge
         iss: 'ISS', hubble: 'Hubble',
         jwst: 'James-Webb-Weltraumteleskop', gpsNavstar: 'GPS-Satellit (NAVSTAR)',
@@ -1780,9 +1803,10 @@ const translations = {
         descPisces: ' Fische zeigt zwei zusammengebundene Fische! Stellt Aphrodite und Eros dar, die sich in Fische verwandelten, um dem Monster Typhon zu entkommen. Enthält den Frühlingspunkt!',
         descOrion: ' Orion ist eines der bekanntesten Sternbilder! Achten Sie auf die drei in einer Reihe stehenden Sterne, die Orions Gürtel bilden. Der helle rote Stern Beteigeuze markiert seine Schulter und das blaue Rigel seinen Fuß.',
         descUrsaMajor: ' Der Große Bär (Großer Wagen) ist eines der bekanntesten Sternbilder! Die zwei Sterne am Ende der "Tasse" zeigen auf Polaris, den Nordstern. Jahrtausende lang zur Navigation verwendet!',
+        descUrsaMajorFull: ' Ursa Major (der Große Bär) ist das drittgrößte Sternbild am Himmel! Es enthält den berühmten Großen Wagen, der den Rücken und Schwanz des Bären bildet. Mit 16 Hauptsternen, die eine Bärenform mit Kopf, Körper und Beinen zeichnen, wird es seit Jahrtausenden von Kulturen weltweit erkannt. Dubhe und Merak sind die "Zeigersterne", die zu Polaris führen!',
         descUrsaMinor: ' Der Kleine Bär enthält Polaris, den Nordstern! Polaris markiert das Ende des Stiels des Kleinen Bären und bleibt am nördlichen Himmel nahezu fest. Unverzichtbar für die Himmelsnavigation!',
         descCrux: ' Das Kreuz des Südens ist das kleinste Sternbild, aber eines der bekanntesten auf der Südhalbkugel! Es wird zur Navigation verwendet und zeigt zum Südlichen Himmelspol.',
-        descBigDipper: ' Der Große Bär (Großer Wagen) ist eines der bekanntesten Sternbilder! Die zwei Sterne am Ende der "Tasse" zeigen auf Polaris, den Nordstern. Jahrtausende lang zur Navigation verwendet!',
+        descBigDipper: ' Der Große Wagen ist der bekannteste Asterismus am nördlichen Himmel! Sieben helle Sterne bilden eine Schöpfkellenform — die "Zeigersterne" Dubhe und Merak am Ende der Tasse zeigen direkt auf Polaris, den Nordstern. Jahrtausende lang zur Navigation verwendet!',
         descLittleDipper: ' Der Kleine Bär enthält Polaris, den Nordstern! Polaris markiert das Ende des Stiels des Kleinen Bären und bleibt am nördlichen Himmel nahezu fest. Unverzichtbar für die Himmelsnavigation!',
         descSouthernCross: ' Das Kreuz des Südens ist das kleinste Sternbild, aber eines der bekanntesten auf der Südhalbkugel! Es wird zur Navigation verwendet und zeigt zum Südlichen Himmelspol.',
         descCassiopeia: ' Kassiopeia sieht je nach Jahreszeit wie ein W oder M aus! In der griechischen Mythologie war Kassiopeia eine eitle Königin. Das Sternbild ist in nördlichen Breiten zirkumpolar.',
@@ -1790,6 +1814,10 @@ const translations = {
         descLyra: ' Leier stellt die Leier des Orpheus dar! Enthält Wega, den 5. hellsten Stern am Nachthimmel. Auch Heimat des Ringnebels, eines berühmten planetarischen Nebels!',
         descAndromedaConst: ' Andromeda war die Prinzessin, die an einen Felsen gekettet und von Perseus gerettet wurde! Dieses Sternbild enthält die Andromeda-Galaxie (M31), unsere nächste große Nachbargalaxie!',
         descPerseus: ' Perseus der Held, der Medusa erschlug! Heimat des hellen Sterns Mirfak und des berühmten veränderlichen Sterns Algol ("Dämonenstern"). Enthält den Doppelcluster!',
+        descOrionsBelt: ' Der Gürtel des Orion ist einer der bekanntesten Asterismen am Nachthimmel! Drei helle Sterne — Alnitak, Alnilam und Mintaka — bilden eine nahezu perfekte Linie. Die alten Ägypter richteten die Großen Pyramiden von Gizeh nach diesen drei Sternen aus!',
+        descCanisMajor: ' Der Große Hund beherbergt Sirius, den hellsten Stern am gesamten Nachthimmel! Bekannt als der "Hundsstern" war Sirius für Zivilisationen durch die Geschichte hindurch wichtig. Die alten Ägypter basierten ihren Kalender auf seinem Aufgang. Das Sternbild stellt einen von Orions Jagdhunden dar.',
+        descAquila: ' Aquila der Adler schwebt entlang der Milchstraße! Sein hellster Stern Altair vervollständigt das berühmte Sommerdreieck mit Wega (Leier) und Deneb (Schwan). Altair dreht sich so schnell, dass er sich an seinem Äquator ausbeult! In der Mythologie trug Aquila die Blitze des Zeus.',
+        descPegasus: ' Pegasus das geflügelte Pferd zeigt das Große Quadrat des Pegasus — eines der bekanntesten Sternmuster des Herbstes! In der griechischen Mythologie entsprang Pegasus der Medusa, als Perseus sie erschlug. Der Stern Enif markiert die Nase des Pferdes.',
 
         // Nahe Sterne
         descSirius: ' Sirius ist der hellste Stern am Erden-Nachthimmel! Es ist tatsächlich ein Doppelsternsystem. Befindet sich 8,6 Lichtjahre entfernt im Sternbild Großer Hund.',
@@ -1927,6 +1955,8 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Otras constelaciones
         bigDipper: 'Osa Mayor', littleDipper: 'Osa Menor', southernCross: 'Cruz del Sur',
+        orionsBelt: 'Cinturón de Orión', ursaMajor: 'Ursa Major',
+        canisMajor: 'Can Mayor', aquila: 'Águila', pegasus: 'Pegaso',
         // Naves espaciales
         iss: 'ISS', hubble: 'Hubble',
         jwst: 'Telescopio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)',
@@ -2240,9 +2270,10 @@ const translations = {
         descPisces: ' ¡Piscis muestra dos peces atados juntos! Representa a Afrodita y Eros que se transformaron en peces para escapar del monstruo Tifón. ¡Contiene el punto equinoccial vernal!',
         descOrion: ' ¡Orión es una de las constelaciones más reconocibles! Busca las tres estrellas en fila formando el Cinturón de Orión. La brillante estrella roja Betelgeuse marca su hombro y el azul Rigel su pie.',
         descUrsaMajor: ' ¡La Osa Mayor (Carro Mayor) es una de las constelaciones más conocidas! Las dos estrellas al final de la "taza" apuntan a Polaris, la Estrella Polar. ¡Usada para navegación durante miles de años!',
+        descUrsaMajorFull: ' ¡Ursa Major (la Osa Mayor) es la tercera constelación más grande del cielo! Contiene el famoso asterismo del Carro Mayor que forma el lomo y la cola del oso. Con 16 estrellas principales trazando una forma de oso incluyendo cabeza, cuerpo y patas, ha sido reconocida por culturas de todo el mundo durante miles de años. ¡Dubhe y Merak son las "estrellas apuntadoras" que guían hacia Polaris!',
         descUrsaMinor: ' ¡La Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. ¡Esencial para la navegación celeste!',
         descCrux: ' ¡La Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
-        descBigDipper: ' ¡La Osa Mayor (Carro Mayor) es una de las constelaciones más conocidas! Las dos estrellas al final de la "taza" apuntan a Polaris, la Estrella Polar. ¡Usada para navegación durante miles de años!',
+        descBigDipper: ' ¡El Carro Mayor es el asterismo más reconocido del cielo norte! Siete estrellas brillantes forman una forma de cazo — las "estrellas apuntadoras" Dubhe y Merak en el extremo de la taza apuntan directamente a Polaris, la Estrella Polar. ¡Usado para navegación durante miles de años!',
         descLittleDipper: ' ¡La Osa Menor contiene Polaris, la Estrella Polar! Polaris marca el extremo del mango de la Osa Menor y permanece casi fijo en el cielo norte. ¡Esencial para la navegación celeste!',
         descSouthernCross: ' ¡La Cruz del Sur es la constelación más pequeña pero una de las más famosas en el hemisferio sur! Usada para navegación, apunta hacia el Polo Celeste Sur.',
         descCassiopeia: ' ¡Casiopea parece una W o M según la estación! En la mitología griega, Casiopea era una reina vanidosa. La constelación es circumpolar en latitudes norteñas.',
@@ -2250,6 +2281,10 @@ const translations = {
         descLyra: ' ¡Lira representa la lira de Orfeo! Contiene Vega, la 5ª estrella más brillante en el cielo nocturno. ¡También hogar de la Nebulosa del Anillo, una famosa nebulosa planetaria!',
         descAndromedaConst: ' ¡Andrómeda era la princesa encadenada a una roca y rescatada por Perseo! Esta constelación contiene la Galaxia de Andrómeda (M31), nuestra gran galaxia vecina más cercana!',
         descPerseus: ' ¡Perseo el héroe que mató a Medusa! Hogar de la brillante estrella Mirfak y la famosa estrella variable Algol ("Estrella Demonio"). ¡Contiene el Doble Cúmulo!',
+        descOrionsBelt: ' ¡El Cinturón de Orión es uno de los asterismos más reconocibles del cielo nocturno! Tres estrellas brillantes — Alnitak, Alnilam y Mintaka — forman una línea casi perfecta. ¡Los antiguos egipcios alinearon las Grandes Pirámides de Guiza para reflejar estas tres estrellas!',
+        descCanisMajor: ' ¡Can Mayor alberga a Sirio, la estrella más brillante de todo el cielo nocturno! Conocida como la "Estrella del Perro," Sirio ha sido importante para las civilizaciones a lo largo de la historia. Los antiguos egipcios basaron su calendario en su aparición. ¡La constelación representa uno de los perros de caza de Orión!',
+        descAquila: ' ¡Aquila el Águila se eleva a lo largo de la Vía Láctea! Su estrella más brillante Altair completa el famoso Triángulo de Verano con Vega (Lira) y Deneb (Cisne). ¡Altair gira tan rápido que se abulta en su ecuador! En la mitología, Aquila llevaba los rayos de Zeus.',
+        descPegasus: ' ¡Pegaso el Caballo Alado presenta el Gran Cuadrado de Pegaso — uno de los patrones estelares más reconocibles del otoño! En la mitología griega, Pegaso surgió de Medusa cuando Perseo la mató. La estrella Enif marca la nariz del caballo.',
 
         // Estrellas cercanas
         descSirius: ' ¡Sirio es la estrella más brillante en el cielo nocturno de la Tierra! En realidad es un sistema binario de dos estrellas. Ubicada a 8,6 años luz en la constelación del Can Mayor.',
@@ -2387,6 +2422,8 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Outras constelações
         bigDipper: 'Ursa Maior', littleDipper: 'Ursa Menor', southernCross: 'Cruzeiro do Sul',
+        orionsBelt: 'Cinturão de Órion', ursaMajor: 'Ursa Major',
+        canisMajor: 'Cão Maior', aquila: 'Águia', pegasus: 'Pégaso',
         // Naves espaciais
         iss: 'ISS', hubble: 'Hubble',
         jwst: 'Telescópio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)',
@@ -2700,9 +2737,10 @@ const translations = {
         descPisces: ' Peixes mostra dois peixes amarrados juntos! Representa Afrodite e Eros que se transformaram em peixes para escapar do monstro Tifão. Contém o ponto vernal equinocial!',
         descOrion: ' Órion é uma das constelações mais reconhecíveis! Procure as três estrelas em fila formando o Cinturão de Órion. A brilhante estrela vermelha Betelgeuse marca seu ombro e o azul Rigel seu pé.',
         descUrsaMajor: ' A Ursa Maior (Grande Carro) é uma das constelações mais conhecidas! As duas estrelas no final da "taça" apontam para Polaris, a Estrela do Norte. Usada para navegação por milhares de anos!',
+        descUrsaMajorFull: ' Ursa Major (a Ursa Maior) é a terceira maior constelação do céu! Contém o famoso asterismo do Grande Carro que forma o dorso e a cauda do urso. Com 16 estrelas principais traçando uma forma de urso incluindo cabeça, corpo e patas, é reconhecida por culturas de todo o mundo há milhares de anos. Dubhe e Merak são as "estrelas apontadoras" que guiam até Polaris!',
         descUrsaMinor: ' A Ursa Menor contém Polaris, a Estrela do Norte! Polaris marca o extremo do cabo da Ursa Menor e permanece quase fixo no céu do norte. Essencial para a navegação celeste!',
         descCrux: ' O Cruzeiro do Sul é a menor constelação, mas uma das mais famosas no hemisfério sul! Usado para navegação, aponta para o Polo Celeste Sul.',
-        descBigDipper: ' A Ursa Maior (Grande Carro) é uma das constelações mais conhecidas! As duas estrelas no final da "taça" apontam para Polaris, a Estrela do Norte. Usada para navegação por milhares de anos!',
+        descBigDipper: ' O Grande Carro é o asterismo mais reconhecido do céu norte! Sete estrelas brilhantes formam uma concha — as "estrelas apontadoras" Dubhe e Merak na extremidade da taça apontam diretamente para Polaris, a Estrela do Norte. Usado para navegação por milhares de anos!',
         descLittleDipper: ' A Ursa Menor contém Polaris, a Estrela do Norte! Polaris marca o extremo do cabo da Ursa Menor e permanece quase fixo no céu do norte. Essencial para a navegação celeste!',
         descSouthernCross: ' O Cruzeiro do Sul é a menor constelação, mas uma das mais famosas no hemisfério sul! Usado para navegação, aponta para o Polo Celeste Sul.',
         descCassiopeia: ' Cassiopeia parece um W ou M dependendo da estação! Na mitologia grega, Cassiopeia era uma rainha vaidosa. A constelação é circumpolar em latitudes do norte.',
@@ -2710,6 +2748,10 @@ const translations = {
         descLyra: ' Lyra representa a lira de Orfeu! Contém Vega, a 5ª estrela mais brilhante no céu noturno. Também lar da Nebulosa do Anel, uma famosa nebulosa planetária!',
         descAndromedaConst: ' Andrômeda era a princesa acorrentada a uma rocha e resgatada por Perseu! Esta constelação contém a Galáxia de Andrômeda (M31), nossa grande galáxia vizinha mais próxima!',
         descPerseus: ' Perseu o herói que matou Medusa! Lar da estrela brilhante Mirfak e da famosa estrela variável Algol ("Estrela Demônio"). Contém o Aglomerado Duplo!',
+        descOrionsBelt: ' O Cinturão de Órion é um dos asterismos mais reconhecíveis do céu noturno! Três estrelas brilhantes — Alnitak, Alnilam e Mintaka — formam uma linha quase perfeita. Os antigos egípcios alinharam as Grandes Pirâmides de Gizé para espelhar essas três estrelas!',
+        descCanisMajor: ' O Cão Maior abriga Sírius, a estrela mais brilhante de todo o céu noturno! Conhecida como a "Estrela do Cão," Sírius tem sido importante para civilizações ao longo da história. Os antigos egípcios basearam seu calendário em seu nascer. A constelação representa um dos cães de caça de Órion.',
+        descAquila: ' Aquila a Águia voa ao longo da Via Láctea! Sua estrela mais brilhante Altair completa o famoso Triângulo de Verão com Vega (Lyra) e Deneb (Cisne). Altair gira tão rápido que se projeta em seu equador! Na mitologia, Aquila carregava os raios de Zeus.',
+        descPegasus: ' Pégaso o Cavalo Alado apresenta o Grande Quadrado de Pégaso — um dos padrões estelares mais reconhecíveis do outono! Na mitologia grega, Pégaso surgiu de Medusa quando Perseu a matou. A estrela Enif marca o nariz do cavalo.',
 
         // Estrelas próximas
         descSirius: ' Sírius é a estrela mais brilhante no céu noturno da Terra! Na verdade é um sistema binário de duas estrelas. Localizado a 8,6 anos-luz na constelação do Cão Maior.',

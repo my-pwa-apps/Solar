@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 // Import all modules
 import { DEBUG, CONFIG } from './modules/utils.js';
-import { TEXTURE_CACHE, warmupTextureCache } from './modules/TextureCache.js';
+import { warmupTextureCache } from './modules/TextureCache.js';
 import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
 import { SolarSystemModule } from './modules/SolarSystemModule.js';
@@ -18,6 +18,10 @@ window.audioManager = audioManager;
 // i18n.js is loaded globally in index.html. Use a late-binding wrapper so calls always use
 // the fully-initialised translation function rather than capturing window.t at import time.
 const t = (key) => (window.t || ((k) => k))(key);
+
+// Safe localStorage helpers — Safari private mode, quota exceeded, or disabled storage
+function safeGetItem(key) { try { return localStorage.getItem(key); } catch { return null; } }
+function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch { /* ignore */ } }
 
 // ===========================
 // CONSTANTS
@@ -211,7 +215,7 @@ class App {
   */
  _restoreToggleState(config) {
  const { storageKey, buttonId, toggleMethod, buttonClass = 'toggle-on', updateText } = config;
- const savedState = localStorage.getItem(storageKey);
+ const savedState = safeGetItem(storageKey);
  
  if (savedState !== null && this.solarSystemModule) {
  const value = savedState === 'true';
@@ -247,7 +251,7 @@ class App {
  });
  
  // Restore labels visibility (special case: needs sceneManager property update)
- const savedLabelsState = localStorage.getItem(STORAGE_KEYS.LABELS);
+ const savedLabelsState = safeGetItem(STORAGE_KEYS.LABELS);
  if (savedLabelsState !== null && this.solarSystemModule && this.sceneManager) {
  const labelsVisible = savedLabelsState === 'true';
  this.sceneManager.labelsVisible = labelsVisible;
@@ -255,7 +259,6 @@ class App {
  const labelsButton = document.getElementById(UI_ELEMENTS.LABELS_BUTTON);
  if (labelsButton) {
  labelsButton.classList.toggle('toggle-on', labelsVisible);
- const t = window.t || ((key) => key);
  const btnText = labelsButton.querySelector('.btn-text');
  if (btnText) {
  btnText.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
@@ -264,7 +267,7 @@ class App {
  }
  
  // Restore scale mode (special case: uses 'active' class and updates text)
- const savedScaleState = localStorage.getItem(STORAGE_KEYS.SCALE);
+ const savedScaleState = safeGetItem(STORAGE_KEYS.SCALE);
  if (savedScaleState !== null && this.solarSystemModule) {
  const realisticScale = savedScaleState === 'true';
  this.solarSystemModule.realisticScale = realisticScale;
@@ -272,7 +275,6 @@ class App {
  const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
  if (scaleButton) {
  scaleButton.classList.toggle('active', realisticScale);
- const t = window.t || ((key) => key);
  const btnText = scaleButton.querySelector('.btn-text');
  if (btnText) {
  btnText.textContent = realisticScale ? t('toggleScaleRealistic') : t('toggleScale');
@@ -407,7 +409,7 @@ class App {
  const visible = !this.solarSystemModule.orbitsVisible;
  this.solarSystemModule.toggleOrbits(visible);
  orbitsButton.classList.toggle('toggle-on', visible);
- localStorage.setItem(STORAGE_KEYS.ORBITS, visible.toString());
+ safeSetItem(STORAGE_KEYS.ORBITS, visible.toString());
  }
  });
  }
@@ -421,7 +423,7 @@ class App {
  const visible = !this.solarSystemModule.constellationsVisible;
  this.solarSystemModule.toggleConstellations(visible);
  constellationsButton.classList.toggle('toggle-on', visible);
- localStorage.setItem(STORAGE_KEYS.CONSTELLATIONS, visible.toString());
+ safeSetItem(STORAGE_KEYS.CONSTELLATIONS, visible.toString());
  }
  });
  }
@@ -432,7 +434,6 @@ class App {
  if (scaleButton) {
  scaleButton.addEventListener('click', () => {
  if (this.solarSystemModule) {
- const t = window.t || ((key) => key);
  this.solarSystemModule.realisticScale = !this.solarSystemModule.realisticScale;
  scaleButton.classList.toggle('active');
  const btnText = scaleButton.querySelector('.btn-text');
@@ -441,7 +442,7 @@ class App {
  t('toggleScaleRealistic') : t('toggleScale');
  }
  
- localStorage.setItem(STORAGE_KEYS.SCALE, this.solarSystemModule.realisticScale.toString());
+ safeSetItem(STORAGE_KEYS.SCALE, this.solarSystemModule.realisticScale.toString());
  
  // Recalculate positions with new scale
  this.solarSystemModule.updateScale();
@@ -454,8 +455,6 @@ class App {
  const labelsButton = document.getElementById(UI_ELEMENTS.LABELS_BUTTON);
  if (labelsButton) {
  labelsButton.addEventListener('click', () => {
- // Use translation function if available, otherwise fallback to English
- const t = window.t || ((key) => key);
  if (this.solarSystemModule && this.solarSystemModule.toggleLabels) {
  if (this.sceneManager) {
  this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
@@ -466,7 +465,7 @@ class App {
  btnText.textContent = this.sceneManager.labelsVisible ? 
  t('toggleLabelsOn') : t('toggleLabels');
  }
- localStorage.setItem(STORAGE_KEYS.LABELS, this.sceneManager.labelsVisible.toString());
+ safeSetItem(STORAGE_KEYS.LABELS, this.sceneManager.labelsVisible.toString());
  }
  }
  });
@@ -488,31 +487,36 @@ class App {
  this.handleCanvasClick(e);
  });
 
- // Canvas hover for object labels
+ // Canvas hover + drag detection (single listener for efficiency)
  this.sceneManager.renderer.domElement.addEventListener('mousemove', (e) => {
+ // Drag detection
+ if (this._mouseDownPos) {
+ const dx = e.clientX - this._mouseDownPos.x;
+ const dy = e.clientY - this._mouseDownPos.y;
+ if (dx * dx + dy * dy > 16) { // 4px threshold squared
+ this._isDragging = true;
+ this.hideHoverLabel();
+ return;
+ }
+ }
+ // Hover (skip during drag — handleCanvasHover has its own guard too)
+ if (!this._isDragging) {
  this.handleCanvasHover(e);
- });
+ }
+ }, { passive: true });
 
  // Hide tooltip when mouse leaves canvas
  this.sceneManager.renderer.domElement.addEventListener('mouseleave', () => {
  this.hideHoverLabel();
+ this._mouseDownPos = null;
+ this._isDragging = false;
  });
 
- // Track drag vs click — hide tooltip only on confirmed drag
+ // Track drag vs click
  this.sceneManager.renderer.domElement.addEventListener('mousedown', (e) => {
  this._mouseDownPos = { x: e.clientX, y: e.clientY };
  this._isDragging = false;
  });
- this.sceneManager.renderer.domElement.addEventListener('mousemove', (e) => {
- if (this._mouseDownPos) {
- const dx = e.clientX - this._mouseDownPos.x;
- const dy = e.clientY - this._mouseDownPos.y;
- if (Math.sqrt(dx * dx + dy * dy) > 4) {
- this._isDragging = true;
- this.hideHoverLabel();
- }
- }
- }, { capture: true, passive: true });
  this.sceneManager.renderer.domElement.addEventListener('mouseup', () => {
  this._mouseDownPos = null;
  });
@@ -604,7 +608,7 @@ class App {
  
  // Pattern-based lookups for arrays (stars, exoplanets, spacecraft, etc.)
  const searchPatterns = [
- { prefix: 'constellation-', array: 'constellations', exactMatch: false, patterns: {
+ { prefix: 'constellation-', array: 'constellations', exactMatch: 'exact', patterns: {
  'aries': ['aries'],
  'taurus': ['taurus'],
  'gemini': ['gemini'],
@@ -618,6 +622,8 @@ class App {
  'aquarius': ['aquarius'],
  'pisces': ['pisces'],
  'orion': ['orion'],
+ 'orions-belt': ['orionsBelt'],
+ 'ursa-major': ['ursaMajor'],
  'big-dipper': ['bigDipper'],
  'little-dipper': ['littleDipper'],
  'southern-cross': ['southernCross'],
@@ -626,6 +632,9 @@ class App {
  'lyra': ['lyra'],
  'andromeda': ['andromedaConst'], // Distinct from "andromeda galaxy"
  'perseus': ['perseus'],
+ 'canis-major': ['canisMajor'],
+ 'aquila': ['aquila'],
+ 'pegasus': ['pegasus'],
  }},
  { prefix: '', array: 'satellites', patterns: {
  'iss': ['ISS', 'International Space Station'],
@@ -646,17 +655,17 @@ class App {
  'pioneer-11': ['Pioneer 11'],
  'pioneer': ['Pioneer'],
  }},
- { prefix: '', array: 'nebulae', patterns: {
+ { prefix: '', array: 'nebulae', exactMatch: 'exact', patterns: {
  'orion-nebula': ['orionNebula'],
  'crab-nebula': ['crabNebula'],
  'ring-nebula': ['ringNebula'],
  }},
- { prefix: '', array: 'galaxies', patterns: {
+ { prefix: '', array: 'galaxies', exactMatch: 'exact', patterns: {
  'andromeda-galaxy': ['andromedaGalaxy'],
  'whirlpool-galaxy': ['whirlpoolGalaxy'],
  'sombrero-galaxy': ['sombreroGalaxy'],
  }},
- { prefix: '', array: 'objects', patterns: {
+ { prefix: '', array: 'objects', exactMatch: 'exact', patterns: {
  'alpha-centauri': ['alphaCentauriA'],
  'proxima-centauri': ['proximaCentauri'],
  'proxima-b': ['proximaCentauri'],
@@ -680,12 +689,14 @@ class App {
  const patterns = category.patterns[searchKey];
  
  if (patterns && this.solarSystemModule[category.array]) {
- // Search using exact or flexible matching based on category
- const found = category.exactMatch
- ? this.solarSystemModule[category.array].find(obj => 
- patterns.some(pattern => obj.userData.name.startsWith(pattern)))
- : this.solarSystemModule[category.array].find(obj => 
- patterns.some(pattern => obj.userData.name.includes(pattern)));
+ // Use exact equality for constellation/nebula/galaxy IDs, includes for display names
+ const matchFn = category.exactMatch === 'exact'
+ ? (name, pattern) => name === pattern
+ : category.exactMatch
+ ? (name, pattern) => name.startsWith(pattern)
+ : (name, pattern) => name.includes(pattern);
+ const found = this.solarSystemModule[category.array].find(obj => 
+ patterns.some(pattern => matchFn(obj.userData.name, pattern)));
  
  if (found) return found;
  }
@@ -741,8 +752,7 @@ class App {
  
  this.sceneManager.raycaster.setFromCamera(this._mouseVec, this.sceneManager.camera);
  
- // Ensure world matrices are up-to-date for child objects (moons are children of planets)
- this.sceneManager.scene.updateMatrixWorld(true);
+ // World matrices are already updated by renderer.render() each frame — no need to force update
  
  let intersects;
  if (recursiveFirst) {
@@ -873,6 +883,7 @@ class App {
 
  handleCanvasHover(event) {
  if (!this.solarSystemModule) return;
+ if (this._isDragging) return;
 
  // Throttle hover checks to avoid performance issues
  const now = Date.now();
@@ -894,7 +905,6 @@ class App {
  this._currentHoveredObject = target;
 
  // Translate object name (star meshes and constellation groups both have userData.name)
- const t = window.t || ((key) => key);
  const nameKey = target.userData.name?.replace(/\s+/g, '');
  const displayName = (nameKey && window.t && window.t(nameKey) !== nameKey)
  ? t(nameKey)
@@ -1064,16 +1074,18 @@ class App {
  
  preSelectEarth() {
  // Pre-select Earth on first visit to show users what to expect
- const isFirstVisit = !localStorage.getItem('space_voyage_visited');
+ const isFirstVisit = !safeGetItem('space_voyage_visited');
  
  if (isFirstVisit && this.solarSystemModule?.planets?.earth) {
  // Small delay to ensure everything is rendered
  setTimeout(() => {
+ // Skip if user already interacted with something
+ if (this.solarSystemModule.focusedObject) return;
  const earth = this.solarSystemModule.planets.earth;
  const info = this.solarSystemModule.getObjectInfo(earth);
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(earth, this.sceneManager.camera, this.sceneManager.controls);
- localStorage.setItem('space_voyage_visited', 'true');
+ safeSetItem('space_voyage_visited', 'true');
  }, 500);
  }
  }
@@ -1089,7 +1101,7 @@ class App {
  if (!overlay) return;
  
  // Check if first visit
- const hasSeenOnboarding = localStorage.getItem('space_voyage_onboarding_complete');
+ const hasSeenOnboarding = safeGetItem('space_voyage_onboarding_complete');
  
  if (!hasSeenOnboarding) {
  // Show onboarding after a brief delay
@@ -1126,7 +1138,7 @@ class App {
  
  const closeOnboarding = () => {
  overlay.classList.add('hidden');
- localStorage.setItem('space_voyage_onboarding_complete', 'true');
+ safeSetItem('space_voyage_onboarding_complete', 'true');
  };
  
  nextBtn?.addEventListener('click', () => {
@@ -1237,7 +1249,7 @@ class App {
  setupMobileGestureHints() {
  // Only show on touch devices
  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
- const hasSeenHints = localStorage.getItem('space_voyage_gesture_hints_seen');
+ const hasSeenHints = safeGetItem('space_voyage_gesture_hints_seen');
  
  if (!isTouchDevice || hasSeenHints) return;
  
@@ -1251,14 +1263,14 @@ class App {
  // Auto-hide after 5 seconds
  setTimeout(() => {
  hints.classList.add('hidden');
- localStorage.setItem('space_voyage_gesture_hints_seen', 'true');
+ safeSetItem('space_voyage_gesture_hints_seen', 'true');
  }, 5000);
  }, 2000);
- 
+
  // Hide immediately on any touch
  document.addEventListener('touchstart', () => {
  hints.classList.add('hidden');
- localStorage.setItem('space_voyage_gesture_hints_seen', 'true');
+ safeSetItem('space_voyage_gesture_hints_seen', 'true');
  }, { once: true, passive: true });
  }
  
@@ -1325,12 +1337,11 @@ class App {
  if (!soundToggle) return;
 
  // Load saved preference
- const soundEnabled = localStorage.getItem('space_voyage_sound') !== 'false';
+ const soundEnabled = safeGetItem('space_voyage_sound') !== 'false';
  audioManager.enabled = soundEnabled;
 
  // Update button appearance
  const updateSoundButton = () => {
- const t = window.t || ((key) => key);
  const icon = soundToggle.querySelector('.btn-icon');
  const btnText = soundToggle.querySelector('.btn-text');
  if (audioManager.enabled) {
@@ -1352,7 +1363,7 @@ class App {
 
  soundToggle.addEventListener('click', () => {
  audioManager.toggle();
- localStorage.setItem('space_voyage_sound', audioManager.enabled);
+ safeSetItem('space_voyage_sound', audioManager.enabled);
  updateSoundButton();
 
  // Play a click to confirm sound is on

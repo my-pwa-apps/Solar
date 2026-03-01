@@ -11,7 +11,7 @@
 
 ### 1. Pure ES6 Modules (No Build Step)
 - **No bundlers:** Direct ES6 module imports, runs natively in browsers
-- **ImportMap:** Three.js v0.160.0 loaded via CDN importmap in `index.html` — **do not upgrade**
+- **ImportMap:** Three.js v0.183.0 loaded via CDN importmap in `index.html`
 - **Module structure:** Each module is an exported singleton class
 - Cache busting via URL version params on static imports
 
@@ -182,5 +182,5 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 
 ---
 
-**Last Updated:** February 20, 2026 | **SW Version:** 2.6.3 | **Three.js:** v0.160.0
+**Last Updated:** February 20, 2026 | **SW Version:** 2.7.9 | **Three.js:** v0.183.0
 ```

@@ -119,6 +119,12 @@ export class SolarSystemModule {
  this._trackTargetPos = new THREE.Vector3();
  this._trackOffset    = new THREE.Vector3();
  this._satEarthPos    = new THREE.Vector3();
+ // Scratch vectors for updateCameraTracking() co-rotation mode
+ this._camRadial      = new THREE.Vector3();
+ this._camTangent     = new THREE.Vector3();
+ this._camUp          = new THREE.Vector3();
+ this._camPos         = new THREE.Vector3();
+ this._camCurrentTgt  = new THREE.Vector3();
 
  // Frame counters for throttled animations (initialised here, not lazily in update)
  this._sunFlareFrame    = 0;
@@ -4929,9 +4935,52 @@ export class SolarSystemModule {
  lines: [[2,0], [0,4], [4,1], [1,6], [6,5], [5,4], [4,3]] // Hourglass/bowtie shape with belt
  },
  {
+ name: 'Orion\'s Belt',
+ id: 'orionsBelt',
+ description: t('descOrionsBelt'),
+ stars: [
+ { name: 'Alnitak', ra: 85.2, dec: -1.9, mag: 1.8, color: 0xE0FFFF }, // ζ Ori - Eastern belt star
+ { name: 'Alnilam', ra: 84.1, dec: -1.2, mag: 1.7, color: 0xE0FFFF }, // ε Ori - Center belt star
+ { name: 'Mintaka', ra: 83.0, dec: -0.3, mag: 2.2, color: 0xE0FFFF }  // δ Ori - Western belt star
+ ],
+ lines: [[0,1], [1,2]] // Three stars in a row
+ },
+ {
+ name: 'Ursa Major (The Great Bear)',
+ id: 'ursaMajor',
+ description: t('descUrsaMajorFull'),
+ stars: [
+ { name: 'Muscida', ra: 127.6, dec: 60.7, mag: 3.4, color: 0xFFFFE0 },     // 0 - Nose
+ { name: '23 UMa', ra: 142.9, dec: 63.1, mag: 3.7, color: 0xFFFFF0 },       // 1 - Top of head
+ { name: 'Upsilon UMa', ra: 147.7, dec: 59.0, mag: 3.8, color: 0xFFFFF0 },  // 2 - Neck
+ { name: 'Theta UMa', ra: 143.1, dec: 51.7, mag: 3.2, color: 0xFFFFE0 },    // 3 - Front shoulder
+ { name: 'Talitha', ra: 134.8, dec: 48.0, mag: 3.1, color: 0xFFFFE0 },       // 4 - Front knee
+ { name: 'Kappa UMa', ra: 135.9, dec: 47.2, mag: 3.6, color: 0xFFFFF0 },    // 5 - Front paw
+ { name: 'Dubhe', ra: 165.9, dec: 61.8, mag: 1.8, color: 0xFFFFE0 },        // 6 - Bowl top-right (α)
+ { name: 'Merak', ra: 165.5, dec: 56.4, mag: 2.4, color: 0xFFFFF0 },        // 7 - Bowl bottom-right (β)
+ { name: 'Phecda', ra: 178.5, dec: 53.7, mag: 2.4, color: 0xFFFFF0 },       // 8 - Bowl bottom-left (γ)
+ { name: 'Megrez', ra: 183.9, dec: 57.0, mag: 3.3, color: 0xFFFFF0 },       // 9 - Bowl top-left (δ)
+ { name: 'Alioth', ra: 193.5, dec: 55.96, mag: 1.8, color: 0xFFFFE0 },      // 10 - Handle 1 (ε)
+ { name: 'Mizar', ra: 200.9, dec: 54.9, mag: 2.2, color: 0xFFFFF0 },        // 11 - Handle 2 (ζ)
+ { name: 'Alkaid', ra: 206.9, dec: 49.3, mag: 1.9, color: 0xFFFFE0 },       // 12 - Tail tip (η)
+ { name: 'Psi UMa', ra: 167.4, dec: 44.5, mag: 3.0, color: 0xFFFFF0 },     // 13 - Hind hip
+ { name: 'Tania Borealis', ra: 152.1, dec: 42.9, mag: 3.5, color: 0xFFFFF0 }, // 14 - Hind knee
+ { name: 'Tania Australis', ra: 155.6, dec: 41.5, mag: 3.1, color: 0xFFFFE0 } // 15 - Hind paw
+ ],
+ lines: [
+ [0,1], [1,2],          // Head & neck
+ [2,6], [2,3],          // Neck to body top & chest
+ [3,7],                 // Chest to body bottom
+ [3,4], [4,5],          // Front legs
+ [6,7], [7,8], [8,9],   // Bowl sides/bottom
+ [9,10], [10,11], [11,12], // Handle (tail)
+ [7,13], [13,14], [14,15]  // Hind legs
+ ]
+ },
+ {
  name: 'Big Dipper (Ursa Major)',
  id: 'bigDipper',
- description: t('descUrsaMajor'),
+ description: t('descBigDipper'),
  stars: [
  { name: 'Dubhe', ra: 165.9, dec: 61.8, mag: 1.8, color: 0xFFFFE0 },
  { name: 'Merak', ra: 165.5, dec: 56.4, mag: 2.4, color: 0xFFFFF0 },
@@ -4941,7 +4990,7 @@ export class SolarSystemModule {
  { name: 'Mizar', ra: 200.9, dec: 54.9, mag: 2.2, color: 0xFFFFF0 },
  { name: 'Alkaid', ra: 206.9, dec: 49.3, mag: 1.9, color: 0xFFFFE0 }
  ],
- lines: [[0,1], [1,2], [2,3], [3,4], [4,5], [5,6]] // Dipper shape
+ lines: [[0,1], [1,2], [2,3], [3,0], [3,4], [4,5], [5,6]] // Dipper shape (closed bowl + handle)
  },
  {
  name: 'Little Dipper (Ursa Minor)',
@@ -5032,6 +5081,51 @@ export class SolarSystemModule {
  { name: 'Epsilon Persei', ra: 59.0, dec: 40.0, mag: 2.9, color: 0xE0FFFF } // 5 - Sword tip
  ],
  lines: [[3,0], [0,4], [4,5], [5,2], [0,1]] // Hero with sword and Medusa's head
+ },
+ {
+ name: 'Canis Major (The Great Dog)',
+ id: 'canisMajor',
+ description: t('descCanisMajor'),
+ stars: [
+ { name: 'Sirius', ra: 101.3, dec: -16.7, mag: -1.5, color: 0xFFFFFF },   // 0 - Brightest star in the sky!
+ { name: 'Mirzam', ra: 95.7, dec: -17.9, mag: 2.0, color: 0xB0C4DE },     // 1 - β CMa
+ { name: 'Wezen', ra: 107.1, dec: -26.4, mag: 1.8, color: 0xFFFFE0 },     // 2 - δ CMa
+ { name: 'Adhara', ra: 104.7, dec: -28.9, mag: 1.5, color: 0xE0FFFF },    // 3 - ε CMa
+ { name: 'Aludra', ra: 111.0, dec: -29.3, mag: 2.4, color: 0xE0FFFF },    // 4 - η CMa
+ { name: 'Furud', ra: 95.1, dec: -30.1, mag: 3.0, color: 0xE0FFFF }       // 5 - ζ CMa
+ ],
+ lines: [[1,0], [0,2], [2,3], [3,5], [2,4]] // Dog body: head to tail
+ },
+ {
+ name: 'Aquila (The Eagle)',
+ id: 'aquila',
+ description: t('descAquila'),
+ stars: [
+ { name: 'Altair', ra: 297.7, dec: 8.9, mag: 0.8, color: 0xFFFFFF },      // 0 - Summer Triangle star!
+ { name: 'Tarazed', ra: 296.6, dec: 10.6, mag: 2.7, color: 0xFFA500 },    // 1 - γ Aql (orange giant)
+ { name: 'Alshain', ra: 298.8, dec: 6.4, mag: 3.7, color: 0xFFFFE0 },     // 2 - β Aql
+ { name: 'Theta Aquilae', ra: 302.8, dec: -0.8, mag: 3.2, color: 0xE0FFFF }, // 3 - θ Aql
+ { name: 'Delta Aquilae', ra: 291.4, dec: 3.1, mag: 3.4, color: 0xFFFFF0 }, // 4 - δ Aql
+ { name: 'Lambda Aquilae', ra: 286.6, dec: -4.9, mag: 3.4, color: 0xE0FFFF }, // 5 - λ Aql
+ { name: 'Zeta Aquilae', ra: 286.4, dec: 13.9, mag: 3.0, color: 0xFFFFE0 }  // 6 - ζ Aql (head)
+ ],
+ lines: [[6,1], [1,0], [0,2], [2,3], [4,0], [5,4]] // Eagle spread: head-body-tail, wings
+ },
+ {
+ name: 'Pegasus (The Winged Horse)',
+ id: 'pegasus',
+ description: t('descPegasus'),
+ stars: [
+ { name: 'Markab', ra: 346.2, dec: 15.2, mag: 2.5, color: 0xE0FFFF },      // 0 - α Peg (SW corner)
+ { name: 'Scheat', ra: 345.9, dec: 28.1, mag: 2.4, color: 0xFF6347 },      // 1 - β Peg (NW corner, red giant)
+ { name: 'Algenib', ra: 3.3, dec: 15.2, mag: 2.8, color: 0xE0FFFF },       // 2 - γ Peg (SE corner)
+ { name: 'Enif', ra: 326.0, dec: 9.9, mag: 2.4, color: 0xFFA500 },         // 3 - ε Peg (nose)
+ { name: 'Homam', ra: 340.4, dec: 10.8, mag: 3.4, color: 0xE0FFFF },       // 4 - ζ Peg
+ { name: 'Matar', ra: 340.7, dec: 30.2, mag: 2.9, color: 0xFFFFE0 },       // 5 - η Peg
+ { name: 'Biham', ra: 332.5, dec: 6.2, mag: 3.5, color: 0xFFFFE0 },         // 6 - θ Peg
+ { name: 'Alpheratz', ra: 2.1, dec: 29.1, mag: 2.1, color: 0xE0FFFF }        // 7 - α And (NE corner, shared with Andromeda)
+ ],
+ lines: [[0,1], [1,7], [7,2], [0,2], [1,5], [0,4], [4,3], [3,6]] // Great Square (complete) + neck/head
  }
  ];
  
@@ -7600,11 +7694,16 @@ createHyperrealisticHubble(satData) {
  // else 'none' - everything moves normally
  
  // Pre-calculate elapsed time for rotation (shared by all planets and moons)
- const elapsedMs = Date.now() - this.realTimeStart;
+ const now = Date.now();
+ const elapsedMs = now - this.realTimeStart;
  const elapsedHours = (elapsedMs / 1000 / 3600) * this.timeAcceleration;
  
- // Update all planets
- Object.values(this.planets).forEach(planet => {
+ // Update all planets (use cached array to avoid Object.values() allocation each frame)
+ if (!this._planetArray || this._planetArrayDirty) {
+ this._planetArray = Object.values(this.planets);
+ this._planetArrayDirty = false;
+ }
+ this._planetArray.forEach(planet => {
  if (planet && planet.userData) {
  // Calculate angle increment based on speed
  const angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
@@ -7737,7 +7836,7 @@ createHyperrealisticHubble(satData) {
  
  // Animate solar flares (optimized - update every 2 frames)
  if (this.sun.userData.flares && (this._sunFlareFrame || 0) % 2 === 0) {
- const time = Date.now() * 0.001;
+ const time = now * 0.001;
  const sizes = this.sun.userData.flares.geometry.attributes.size.array;
  const len = sizes.length;
  
@@ -7924,14 +8023,14 @@ createHyperrealisticHubble(satData) {
  // Debug: Log satellite positions (especially ISS)
  if (DEBUG.enabled && Math.random() < 0.001) {
  if (userData.name.includes('ISS')) {
- console.log(` ISS: Earth at (${earthPosition.x.toFixed(1)}, ${earthPosition.y.toFixed(1)}, ${earthPosition.z.toFixed(1)}), ISS at (${satellite.position.x.toFixed(1)}, ${satellite.position.y.toFixed(1)}, ${satellite.position.z.toFixed(1)}), distance=${userData.distance}, visible=${satellite.visible}, children=${satellite.children.length}`);
+ console.log(` ISS: Earth at (${this._satEarthPos.x.toFixed(1)}, ${this._satEarthPos.y.toFixed(1)}, ${this._satEarthPos.z.toFixed(1)}), ISS at (${satellite.position.x.toFixed(1)}, ${satellite.position.y.toFixed(1)}, ${satellite.position.z.toFixed(1)}), distance=${userData.distance}, visible=${satellite.visible}, children=${satellite.children.length}`);
  }
  }
  
  // ISS: Maintain stable orientation (no rotation)
  // All satellites should be tidally locked to Earth (always facing Earth)
  // This is realistic - ISS maintains nadir-pointing orientation
- satellite.lookAt(earthPosition);
+ satellite.lookAt(this._satEarthPos);
  }
  });
  }
@@ -7979,7 +8078,7 @@ createHyperrealisticHubble(satData) {
  // Rotate nebulae slowly (optimized - pre-calculate time)
  if (this.nebulae) {
  const effectiveTimeSpeed = timeSpeed;
- const time = Date.now() * 0.0005;
+ const time = now * 0.0005;
  const scale = 1 + Math.sin(time) * 0.05;
  
  this.nebulae.forEach(nebula => {
@@ -8654,7 +8753,8 @@ createHyperrealisticHubble(satData) {
  actualRadius = 1;
  } else if (userData.type === 'constellation') {
  // Constellations: use calculated radius (star pattern spread)
- actualRadius = userData.radius || 500;
+ // Ensure minimum radius for small asterisms (e.g., Orion's Belt = 3 close stars)
+ actualRadius = Math.max(userData.radius || 500, 300);
  } else if (userData.type === 'galaxy' || userData.type === 'nebula') {
  // Distant deep-sky objects
  actualRadius = userData.radius || 300;
@@ -8838,8 +8938,8 @@ createHyperrealisticHubble(satData) {
  let minDist, maxDist;
  
  if (userData.type === 'constellation') {
- // Constellations: large viewing range since they're at distance 10000
- minDist = 100; // Don't get too close or you'll be inside stars
+ // Constellations: allow getting very close to see individual stars
+ minDist = 20; // Allow close inspection of star pattern
  maxDist = 20000; // Allow zooming far out
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
  // ISS and orbital satellites: allow close inspection and wide zoom range
@@ -8902,16 +9002,14 @@ createHyperrealisticHubble(satData) {
      // Create a perpendicular vector (90 degrees from the origin-constellation line)
      const perpendicularVector = new THREE.Vector3(-directionFromOrigin.z, 0, directionFromOrigin.x).normalize();
      
-     // Calculate camera position:
-     // 1. Start at constellation center
-     // 2. Move perpendicular to avoid origin being in line of sight
-     // 3. Move slightly backward (toward origin direction) for better angle
-     const sideOffset = 1000; // Move 1000 units to the side
+     // Scale side offset proportionally to constellation size
+     // Small constellations (Orion's Belt radius ~200) get a smaller offset for closer viewing
+     const sideOffset = Math.max(actualRadius * 0.8, 200); // Proportional, min 200 (tighter framing)
      const backOffset = distance; // Viewing distance
      
      endPos = targetPosition.clone()
          .add(perpendicularVector.clone().multiplyScalar(sideOffset)) // Move to the side
-         .add(directionFromOrigin.clone().multiplyScalar(-backOffset * 0.5)); // Pull back slightly for viewing angle
+         .add(directionFromOrigin.clone().multiplyScalar(-backOffset * 0.3)); // Pull back slightly for viewing angle
      
      // Ensure camera is far from origin (outside solar system sphere of ~300 units)
      const distanceFromOrigin = endPos.length();
@@ -9167,7 +9265,7 @@ createHyperrealisticHubble(satData) {
  
  const object = this.focusedObject;
  const userData = object.userData;
- const targetPosition = new THREE.Vector3();
+ const targetPosition = this._trackTargetPos;
  object.getWorldPosition(targetPosition);
  
  if (this.cameraCoRotateMode && userData.orbitPlanet) {
@@ -9179,15 +9277,13 @@ createHyperrealisticHubble(satData) {
  const offsetDistance = this.focusedObjectDistance || 3;
  
  // Get vector from planet to ISS (radial direction)
- const radialDirection = targetPosition.clone().sub(parentPlanet.position);
+ const radialDirection = this._camRadial.copy(targetPosition).sub(parentPlanet.position);
  const orbitRadius = radialDirection.length();
  radialDirection.normalize();
  
  // Calculate tangent direction (perpendicular to radial, in orbital plane)
- // For a counter-clockwise orbit when viewed from above (standard), tangent is:
- // cross product of radial with up vector (0, 1, 0)
- const up = new THREE.Vector3(0, 1, 0);
- const tangentDirection = new THREE.Vector3().crossVectors(up, radialDirection).normalize();
+ const up = this._camUp.set(0, 1, 0);
+ const tangentDirection = this._camTangent.crossVectors(up, radialDirection).normalize();
  
  // If orbit is inclined significantly, use actual orbital motion
  if (userData.orbitalVelocity) {
@@ -9200,11 +9296,17 @@ createHyperrealisticHubble(satData) {
  const adjustedDistance = offsetDistance * (1.0 + breathingFactor);
  
  // ULTRA-CLOSE chase-cam: Position camera very close behind and slightly above ISS
- // This creates a dramatic view with Earth surface rushing by below
- const cameraPosition = targetPosition.clone()
- .add(tangentDirection.clone().multiplyScalar(-adjustedDistance * 0.4)) // Close behind (40% of distance)
- .add(radialDirection.clone().multiplyScalar(adjustedDistance * 0.15)) // Minimal outward (15%)
- .add(up.multiplyScalar(adjustedDistance * 0.25)); // Slightly above (25%)
+ const cameraPosition = this._camPos.copy(targetPosition);
+ // Behind (40% of distance along negative tangent)
+ cameraPosition.x += tangentDirection.x * (-adjustedDistance * 0.4);
+ cameraPosition.y += tangentDirection.y * (-adjustedDistance * 0.4);
+ cameraPosition.z += tangentDirection.z * (-adjustedDistance * 0.4);
+ // Outward (15% of distance along radial)
+ cameraPosition.x += radialDirection.x * (adjustedDistance * 0.15);
+ cameraPosition.y += radialDirection.y * (adjustedDistance * 0.15);
+ cameraPosition.z += radialDirection.z * (adjustedDistance * 0.15);
+ // Above (25% of distance along up)
+ cameraPosition.y += adjustedDistance * 0.25;
  
  camera.position.copy(cameraPosition);
  
@@ -9220,11 +9322,11 @@ createHyperrealisticHubble(satData) {
  const smoothFactor = isFastOrbiter ? 0.25 : 0.1;
  
  // Smoothly update controls target to follow the object
- const currentTarget = controls.target.clone();
+ const currentTarget = this._camCurrentTgt.copy(controls.target);
  controls.target.lerpVectors(currentTarget, targetPosition, smoothFactor);
  
  // Calculate offset from target to camera
- const offset = camera.position.clone().sub(currentTarget);
+ const offset = this._trackOffset.copy(camera.position).sub(currentTarget);
  
  // Move camera to maintain the same relative position
  camera.position.copy(targetPosition).add(offset);

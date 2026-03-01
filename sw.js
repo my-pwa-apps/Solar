@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.6.6
+// Version 2.8.2
 
-const CACHE_VERSION = '2.7.5';
+const CACHE_VERSION = '2.8.2';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -99,10 +99,10 @@ const STATIC_CACHE_FILES = [
 
 // CDN files to cache (Three.js and dependencies)
 const CDN_CACHE_FILES = [
-  'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
-  'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js',
-  'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js',
-  'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRControllerModelFactory.js'
+  'https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/controls/OrbitControls.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/renderers/CSS2DRenderer.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/webxr/XRControllerModelFactory.js'
 ];
 
 // Install event - cache static files

@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <!-- Search Engine Blocking - Prevent indexing (paid app in Windows Store) -->
@@ -20,6 +19,16 @@
     <meta name="facebot" content="noindex, nofollow">
     <meta name="ia_archiver" content="noindex, nofollow">
     
+    <!-- Import Map for Three.js from CDN (must appear before any module scripts) -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
+        }
+    }
+    </script>
+
     <!-- Language Detection - Must load first -->
     <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.6.0" crossorigin="use-credentials">
     <script type="module" src="./src/modules/LanguageManager.js"></script>
@@ -229,6 +238,8 @@
                     </optgroup>
                     <optgroup label="Constellations (Other)" data-i18n="constellationsOther">
                         <option value="constellation-orion" data-i18n="orion">Orion</option>
+                        <option value="constellation-orions-belt" data-i18n="orionsBelt">Orion's Belt</option>
+                        <option value="constellation-ursa-major" data-i18n="ursaMajor">Ursa Major</option>
                         <option value="constellation-big-dipper" data-i18n="bigDipper">Big Dipper</option>
                         <option value="constellation-little-dipper" data-i18n="littleDipper">Little Dipper</option>
                         <option value="constellation-southern-cross" data-i18n="southernCross">Southern Cross</option>
@@ -237,6 +248,9 @@
                         <option value="constellation-lyra" data-i18n="lyra">Lyra</option>
                         <option value="constellation-andromeda" data-i18n="andromeda">Andromeda</option>
                         <option value="constellation-perseus" data-i18n="perseus">Perseus</option>
+                        <option value="constellation-canis-major" data-i18n="canisMajor">Canis Major</option>
+                        <option value="constellation-aquila" data-i18n="aquila">Aquila</option>
+                        <option value="constellation-pegasus" data-i18n="pegasus">Pegasus</option>
                     </optgroup>
                     <optgroup label="Spacecraft & Probes" data-i18n="navSpacecraft">
                         <option value="iss" data-i18n="iss">ISS</option>
@@ -424,16 +438,6 @@
             <div id="help-content" role="document"></div>
         </div>
     </div>
-    <!-- Import Map for Three.js from CDN -->
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/"
-        }
-    }
-    </script>
-    
     <!-- Main Application Script with cache buster -->
     <script type="module" src="./src/main.js?v=2.6.0"></script>
     

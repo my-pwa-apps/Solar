@@ -808,11 +808,6 @@
     box-shadow: 0 6px 16px rgba(0, 120, 212, 0.4);
 }
 
-/* Legacy container support */
-#vr-ar-container {
-    display: none; /* Moved to footer */
-}
-
 /* Fluent Tooltip */
 [data-tooltip] {
     position: relative;
@@ -1109,20 +1104,12 @@ select {
     }
     
     .footer-controls button {
-        padding: 8px 4px;
-        font-size: 11px;
-        flex: 1 1 0;    /* Equal share, can shrink */
-        min-width: 0;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-    
-    .footer-controls button {
         padding: 6px 8px;
         font-size: 11px;
         flex: 1 1 auto;
         min-width: 40px;
         white-space: nowrap;
+        overflow: hidden;
     }
 
     .control-group {
@@ -1280,12 +1267,12 @@ select {
 }
 
 .btn-secondary {
-    background: rgba(0, 0, 0, 0.05);
-    color: #666;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--fluent-text-secondary, #C0C0C0);
 }
 
 .btn-secondary:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 @keyframes slideUpFade {
@@ -1325,7 +1312,7 @@ select {
     display: none;
     align-items: center;
     gap: 8px;
-    animation: slideDown 0.3s ease-out;
+    animation: slideDownCentered 0.3s ease-out;
 }
 
 #offline-indicator:not(.hidden) {
@@ -1342,7 +1329,7 @@ select {
     font-size: 14px;
 }
 
-@keyframes slideDown {
+@keyframes slideDownCentered {
     from {
         opacity: 0;
         transform: translateX(-50%) translateY(-20px);
@@ -1744,7 +1731,9 @@ select {
     font-size: 13px;
     color: var(--fluent-text-secondary);
     line-height: 1.5;
-g-overlay {
+}
+
+#onboarding-overlay {
     position: fixed;
     top: 0;
     left: 0;

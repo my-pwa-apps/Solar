@@ -715,6 +715,8 @@ export class SceneManager {
  ]},
  { id: 'constellations', label: '✨ Stars', items: [
  { id: 'constellation-orion', label: 'Orion' },
+ { id: 'constellation-orions-belt', label: 'Orion\'s Belt' },
+ { id: 'constellation-ursa-major', label: 'Ursa Major' },
  { id: 'constellation-big-dipper', label: 'Big Dipper' },
  { id: 'constellation-little-dipper', label: 'Little Dipper' },
  { id: 'constellation-southern-cross', label: 'Southern Cross' },
@@ -723,6 +725,9 @@ export class SceneManager {
  { id: 'constellation-lyra', label: 'Lyra' },
  { id: 'constellation-andromeda', label: 'Andromeda' },
  { id: 'constellation-perseus', label: 'Perseus' },
+ { id: 'constellation-canis-major', label: 'Canis Major' },
+ { id: 'constellation-aquila', label: 'Aquila' },
+ { id: 'constellation-pegasus', label: 'Pegasus' },
  { id: 'constellation-aries', label: 'Aries' },
  { id: 'constellation-taurus', label: 'Taurus' },
  { id: 'constellation-gemini', label: 'Gemini' },
