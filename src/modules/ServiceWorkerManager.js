@@ -108,10 +108,11 @@ export class ServiceWorkerManager {
         
         notification.classList.remove('hidden');
         
-        // Update button - request immediate activation
+        // Update button - request the waiting worker to activate
         document.getElementById('update-reload')?.addEventListener('click', () => {
-            if (navigator.serviceWorker?.controller) {
-                navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+            const waiting = this.registration?.waiting;
+            if (waiting) {
+                waiting.postMessage({ type: 'SKIP_WAITING' });
             } else {
                 window.location.reload();
             }

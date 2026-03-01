@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.8.2
+// Version 2.8.3
 
-const CACHE_VERSION = '2.8.2';
+const CACHE_VERSION = '2.8.3';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -126,8 +126,9 @@ self.addEventListener('install', (event) => {
         
         // Notify clients that a new SW is installed and waiting
         broadcastMessage({ type: 'SW_INSTALLED', version: CACHE_VERSION });
-        // Force the waiting service worker to become active
-        await self.skipWaiting();
+        // Do NOT call self.skipWaiting() here — let the client show the
+        // update notification first; skipWaiting is triggered via the
+        // SKIP_WAITING message when the user clicks "Update".
       } catch (error) {
         // console.error('[SW] Installation failed:', error);
       }
