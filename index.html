@@ -29,8 +29,17 @@
     }
     </script>
 
+    <!-- Capture beforeinstallprompt early, before heavy module scripts load -->
+    <script>
+        window.__deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__deferredInstallPrompt = e;
+        });
+    </script>
+
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.6.0" crossorigin="use-credentials">
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.8.6" crossorigin="use-credentials">
     <script type="module" src="./src/modules/LanguageManager.js"></script>
     
     <!-- Primary Meta Tags -->

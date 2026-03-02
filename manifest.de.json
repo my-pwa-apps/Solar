@@ -35,6 +35,13 @@
     {"name": "Erde Anzeigen", "short_name": "Erde", "description": "Direkt zur Erde springen", "url": "./?planet=earth&lang=de"},
     {"name": "Mars Anzeigen", "short_name": "Mars", "description": "Direkt zu Mars springen", "url": "./?planet=mars&lang=de"},
     {"name": "VR Modus Starten", "short_name": "VR", "description": "Im VR-Modus starten", "url": "./?vr=true&lang=de"}
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://my-pwa-apps.github.io/Solar/manifest.json"
+    }
   ]
 }
 

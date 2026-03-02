@@ -14,7 +14,8 @@ export const DEBUG = {
 };
 
 // Mobile & Performance Detection
-export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+ || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
 export const IS_LOW_POWER = navigator.hardwareConcurrency < 4;
 export const QUALITY_PRESET = (IS_MOBILE || IS_LOW_POWER) ? 'low' : 'high';
 
@@ -53,7 +54,6 @@ export const CONFIG = {
  // Adaptive quality based on device
  textureSize: IS_MOBILE ? 1024 : 4096,
  sphereSegments: IS_MOBILE ? 32 : 128,
- lowPowerSegments: 32,
  particleSize: 2,
  particleCount: IS_MOBILE ? 1000 : 5000,
  shadows: !IS_MOBILE // Disable shadows on mobile
@@ -185,9 +185,7 @@ export class TextureGeneratorUtils {
   * @returns {THREE.CanvasTexture} Three.js texture
   */
  static finalizeTexture(canvas) {
- // Import THREE dynamically (already available globally)
  const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
  return texture;
  }
  
@@ -241,9 +239,10 @@ export class MaterialFactory {
  material.bumpScale = config.bumpScale !== undefined ? config.bumpScale : 0.02;
  }
  if (config.normalMap) material.normalMap = config.normalMap;
- if (config.color) material.color = typeof config.color === 'number' ? config.color : parseInt(config.color.replace('#', '0x'));
+ if (config.color !== undefined) material.color = typeof config.color === 'number' ? config.color : new THREE.Color(config.color);
  if (config.opacity !== undefined) material.opacity = config.opacity;
  if (config.transparent) material.transparent = config.transparent;
+ if (config.side !== undefined) material.side = config.side;
  
  return new THREE.MeshStandardMaterial(material);
  }
@@ -255,17 +254,17 @@ export class MaterialFactory {
   * @param {number|string} config.color - Base color
   * @param {number} config.opacity - Opacity (default: 1.0)
   * @param {boolean} config.transparent - Transparent flag (default: false)
-  * @param {boolean} config.side - Side to render (default: THREE.FrontSide)
+  * @param {number} config.side - Side to render (THREE.FrontSide, THREE.BackSide, THREE.DoubleSide)
   * @returns {THREE.MeshBasicMaterial}
   */
  static createBasicMaterial(config = {}) {
  const material = {};
  
  if (config.map) material.map = config.map;
- if (config.color) material.color = typeof config.color === 'number' ? config.color : parseInt(config.color.replace('#', '0x'));
+ if (config.color !== undefined) material.color = typeof config.color === 'number' ? config.color : new THREE.Color(config.color);
  if (config.opacity !== undefined) material.opacity = config.opacity;
  if (config.transparent) material.transparent = config.transparent;
- if (config.side) material.side = config.side;
+ if (config.side !== undefined) material.side = config.side;
  
  return new THREE.MeshBasicMaterial(material);
  }

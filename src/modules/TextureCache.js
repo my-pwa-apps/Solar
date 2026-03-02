@@ -1,7 +1,6 @@
 // ===========================
 // TEXTURE CACHE SYSTEM
 // ===========================
-import * as THREE from 'three';
 import { DEBUG } from './utils.js';
 
 export class TextureCache {
@@ -43,6 +42,7 @@ export class TextureCache {
  // Check IndexedDB
  try {
  await this.initPromise;
+ if (!this.db) return null;
  const tx = this.db.transaction([this.storeName], 'readonly');
  const store = tx.objectStore(this.storeName);
  
@@ -73,6 +73,7 @@ export class TextureCache {
  // Set in IndexedDB for persistence
  try {
  await this.initPromise;
+ if (!this.db) return;
  const tx = this.db.transaction([this.storeName], 'readwrite');
  const store = tx.objectStore(this.storeName);
  
@@ -96,6 +97,7 @@ export class TextureCache {
  this.cache.clear();
  try {
  await this.initPromise;
+ if (!this.db) return;
  const tx = this.db.transaction([this.storeName], 'readwrite');
  const store = tx.objectStore(this.storeName);
  await new Promise((resolve, reject) => {
@@ -103,7 +105,7 @@ export class TextureCache {
  request.onsuccess = () => resolve();
  request.onerror = () => reject(request.error);
  });
- console.log('[Cache] Texture cache cleared');
+ if (DEBUG && DEBUG.enabled) console.log('[Cache] Texture cache cleared');
  } catch (error) {
  console.warn('Cache clear error:', error);
  }
@@ -165,42 +167,4 @@ export async function warmupTextureCache() {
  console.log(`🔥 Texture cache warmup: ${cached}/${essentialTextures.length} textures loaded into memory`);
  
  return cached === essentialTextures.length;
-}
-
-// Helper function to wrap texture generation with caching
-export async function cachedTextureGeneration(cacheKey, generatorFn) {
- // Try to load from cache
- const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
- if (cachedDataURL) {
- const startTime = performance.now();
- return new Promise((resolve) => {
- const img = new Image();
- img.onload = () => {
- const canvas = img;
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- if (DEBUG && DEBUG.PERFORMANCE) {
- console.log(`⚡ Loaded ${cacheKey} from cache in ${(performance.now() - startTime).toFixed(0)}ms`);
- }
- resolve(texture);
- };
- img.src = cachedDataURL;
- });
- }
- 
- // Generate texture if not cached
- const startTime = performance.now();
- const { canvas, texture } = await generatorFn();
- 
- // Cache for future use
- const dataURL = canvas.toDataURL('image/png');
- TEXTURE_CACHE.set(cacheKey, dataURL).catch(err => {
- if (DEBUG && DEBUG.enabled) console.warn('Failed to cache texture:', err);
- });
- 
- if (DEBUG && DEBUG.PERFORMANCE) {
- console.log(`🎨 Generated ${cacheKey} in ${(performance.now() - startTime).toFixed(0)}ms`);
- }
- 
- return texture;
 }

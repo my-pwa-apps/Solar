@@ -3,9 +3,6 @@
 // ===========================
 import { DEBUG } from './utils.js';
 
-// i18n.js is loaded globally in index.html, access via window.t
-const t = window.t || ((key) => key);
-
 export class UIManager {
  constructor() {
  // Cache DOM elements
@@ -205,7 +202,7 @@ export class UIManager {
  const speedCompactLabel = document.getElementById('speed-compact-label');
  
  if (!timeSpeedSlider || !timeSpeedLabel) {
- console.warn('Time speed controls not found');
+ if (DEBUG && DEBUG.enabled) console.warn('Time speed controls not found');
  return;
  }
  

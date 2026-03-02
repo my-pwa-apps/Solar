@@ -3,7 +3,7 @@
 // ===========================
 import * as THREE from 'three';
 // CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
-import { TEXTURE_CACHE, cachedTextureGeneration } from './TextureCache.js';
+import { TEXTURE_CACHE } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
 
 // i18n.js is loaded globally in index.html, access via window.t
@@ -5803,7 +5803,7 @@ export class SolarSystemModule {
 
  const exoplanetsData = [
  {
- name: ' Proxima Centauri b',
+ name: 'Proxima Centauri b',
  hostStarPosition: { x: 8500, y: 800, z: -6200 }, // Proxima Centauri
  orbitRadius: 28, // Visible orbit distance around host star
  orbitPeriodDays: 11.2, // 11.2-day year
@@ -5816,7 +5816,7 @@ export class SolarSystemModule {
  funFact: t('funFactProximaCentauriB')
  },
  {
- name: ' Kepler-452b',
+ name: 'Kepler-452b',
  hostStarPosition: { x: -9000, y: 2500, z: 8450 }, // Kepler-452
  orbitRadius: 45,
  orbitPeriodDays: 385, // 385-day year
@@ -5829,7 +5829,7 @@ export class SolarSystemModule {
  funFact: t('funFactKepler452b')
  },
  {
- name: ' TRAPPIST-1e',
+ name: 'TRAPPIST-1e',
  hostStarPosition: { x: 7000, y: -3000, z: -8950 }, // TRAPPIST-1
  orbitRadius: 35,
  orbitPeriodDays: 6.1, // 6.1-day year — very fast!
@@ -5842,7 +5842,7 @@ export class SolarSystemModule {
  funFact: t('funFactTrappist1e')
  },
  {
- name: ' Kepler-186f',
+ name: 'Kepler-186f',
  hostStarPosition: { x: -8000, y: -2000, z: 9450 }, // Kepler-186
  orbitRadius: 40,
  orbitPeriodDays: 130, // 130-day year
@@ -7813,15 +7813,14 @@ createHyperrealisticHubble(satData) {
  }
 
  // Rotate asteroid and Kuiper belts slowly
- const effectiveTimeSpeed = timeSpeed;
  if (this.asteroidBelt) {
- const rotationIncrement = 0.0001 * effectiveTimeSpeed;
+ const rotationIncrement = 0.0001 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.asteroidBelt.rotation.y += rotationIncrement;
  }
  }
  if (this.kuiperBelt) {
- const rotationIncrement = 0.00005 * effectiveTimeSpeed;
+ const rotationIncrement = 0.00005 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.kuiperBelt.rotation.y += rotationIncrement;
  }
@@ -7829,7 +7828,7 @@ createHyperrealisticHubble(satData) {
 
  // Rotate sun and animate surface activity
  if (this.sun) {
- const rotationIncrement = 0.001 * effectiveTimeSpeed;
+ const rotationIncrement = 0.001 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.sun.rotation.y += rotationIncrement;
  }
@@ -8037,15 +8036,12 @@ createHyperrealisticHubble(satData) {
  
  // Update spacecraft (Voyagers, probes, orbiters)
  if (this.spacecraft) {
- // Get numeric speed multiplier
- const effectiveTimeSpeed = timeSpeed;
- 
  this.spacecraft.forEach(craft => {
  const userData = craft.userData;
  
  // Deep space probes keep moving away
  if (!userData.orbitPlanet && userData.speed) {
- const angleIncrement = userData.speed * effectiveTimeSpeed * 0.001;
+ const angleIncrement = userData.speed * orbitalSpeed * 0.001;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  craft.position.x = userData.distance * Math.cos(userData.angle);
@@ -8055,7 +8051,7 @@ createHyperrealisticHubble(satData) {
  
  // Orbiters around planets (Juno, Cassini legacy, etc)
  if (userData.orbitPlanet && userData.speed && userData.type === 'orbiter') {
- const angleIncrement = userData.speed * effectiveTimeSpeed * 0.01;
+ const angleIncrement = userData.speed * orbitalSpeed * 0.01;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  const radius = userData.distance;
@@ -8067,7 +8063,7 @@ createHyperrealisticHubble(satData) {
  
  // Rotate spacecraft slowly
  if (userData.type === 'probe' || userData.type === 'orbiter') {
- const rotationIncrement = 0.002 * effectiveTimeSpeed;
+ const rotationIncrement = 0.002 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  craft.rotation.y += rotationIncrement;
  }
@@ -8077,12 +8073,11 @@ createHyperrealisticHubble(satData) {
  
  // Rotate nebulae slowly (optimized - pre-calculate time)
  if (this.nebulae) {
- const effectiveTimeSpeed = timeSpeed;
  const time = now * 0.0005;
  const scale = 1 + Math.sin(time) * 0.05;
  
  this.nebulae.forEach(nebula => {
- const rotationIncrement = 0.0001 * effectiveTimeSpeed;
+ const rotationIncrement = 0.0001 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  nebula.rotation.y += rotationIncrement;
  }
@@ -8093,9 +8088,8 @@ createHyperrealisticHubble(satData) {
  
  // Rotate galaxies
  if (this.galaxies) {
- const effectiveTimeSpeed = timeSpeed;
  this.galaxies.forEach(galaxy => {
- const rotationIncrement = 0.0002 * effectiveTimeSpeed;
+ const rotationIncrement = 0.0002 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  galaxy.rotation.y += rotationIncrement;
  }

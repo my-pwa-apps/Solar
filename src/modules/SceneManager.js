@@ -45,6 +45,9 @@ export class SceneManager {
  this._vrGrabDelta = new THREE.Vector3(); // For grab-to-rotate delta calc
  this._vrMoveScratch = new THREE.Vector3(); // For zero-alloc movement additions
  this._vrTurnQuat = new THREE.Quaternion(); // For zero-alloc quaternion turning
+ this._vrBillboardPos = new THREE.Vector3(); // For _billboardVRPanel (hot during panel drag)
+ this._vrForwardScratch = new THREE.Vector3(); // For _positionMenuAtEyeLevel / _showVRInfoOverlay
+ this._vrRightScratch = new THREE.Vector3(); // For _showVRInfoOverlay right-side offset
 
  // Panel drag state — right grip moves the open menu panel
  this.vrPanelDrag = { active: false, controllerIndex: -1 };
@@ -1311,7 +1314,7 @@ export class SceneManager {
  
  // Check which button was clicked
  let buttonFound = false;
- this.vrButtons.forEach(btn => {
+ for (const btn of this.vrButtons) {
  if (x >= btn.x && x <= btn.x + btn.w && 
  y >= btn.y && y <= btn.y + btn.h) {
  if (DEBUG.VR) console.log(`[VR] Button clicked: "${btn.label}" - Action: ${btn.action}`);
@@ -1319,8 +1322,9 @@ export class SceneManager {
  this.flashVRButton(btn);
  this.triggerVRHaptic(index, 0.4, 60); // Light haptic click
  buttonFound = true;
+ break;
  }
- });
+ }
  
  if (DEBUG.VR && !buttonFound) {
  console.log(`[VR] No button at (${Math.round(x)}, ${Math.round(y)})`);
@@ -1564,7 +1568,7 @@ export class SceneManager {
  // camera.position is dolly-local and reflects actual HMD position in VR
  const eyeY = this.camera.position.y;
  // Horizontal forward direction in dolly space
- const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+ const forward = this._vrForwardScratch.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
  forward.y = 0;
  if (forward.lengthSq() < 0.01) forward.set(0, 0, -1);
  forward.normalize();
@@ -1582,9 +1586,8 @@ export class SceneManager {
  */
  _billboardVRPanel() {
  if (!this.vrUIPanel) return;
- const camWorldPos = new THREE.Vector3();
- this.camera.getWorldPosition(camWorldPos);
- this.vrUIPanel.lookAt(camWorldPos);
+ this.camera.getWorldPosition(this._vrBillboardPos);
+ this.vrUIPanel.lookAt(this._vrBillboardPos);
  // Strip pitch/roll so panel stays vertical
  const yRot = this.vrUIPanel.rotation.y;
  this.vrUIPanel.rotation.set(0, yRot, 0);
@@ -1598,11 +1601,11 @@ export class SceneManager {
  if (!this.vrUIPanel) return;
  if (this.vrNavState) this.vrNavState.currentPage = 'info';
  // Place panel to the right of where the user is facing, slightly lower
- const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+ const forward = this._vrForwardScratch.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
  forward.y = 0;
  if (forward.lengthSq() < 0.01) forward.set(0, 0, -1);
  forward.normalize();
- const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+ const right = this._vrRightScratch.crossVectors(forward, this._vrUpVector).normalize();
  const dist = 2.0;
  this.vrUIPanel.position.set(
  this.camera.position.x + forward.x * dist + right.x * 1.2,
@@ -2140,10 +2143,16 @@ export class SceneManager {
  const objectsToRemove = [];
  const lightObjects = new Set(Object.values(this.lights));
  
+ // Build a set of dolly descendants to protect VR rig resources
+ const dollyDescendants = new Set();
+ if (this.dolly) {
+ this.dolly.traverse(child => dollyDescendants.add(child));
+ }
+ 
  this.scene.traverse((object) => {
- // Skip scene root, camera, dolly (VR rig), and lights
+ // Skip scene root, camera, dolly + all its children, and lights
  if (object === this.scene || object === this.camera || 
- object === this.dolly || lightObjects.has(object)) {
+ dollyDescendants.has(object) || lightObjects.has(object)) {
  return;
  }
  objectsToRemove.push(object);

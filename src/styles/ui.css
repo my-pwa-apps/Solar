@@ -10,7 +10,6 @@
     --fluent-text-secondary: #E0E0E0;
     --fluent-border: rgba(255, 255, 255, 0.08);
     --fluent-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    --fluent-reveal: radial-gradient(circle at var(--x) var(--y), rgba(255, 255, 255, 0.1) 0%, transparent 50%);
 }
 
 /* Fluent Header */
@@ -44,17 +43,6 @@
     overflow: hidden;
 }
 
-@keyframes slideDown {
-    from {
-        transform: translateY(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
 .logo {
     display: flex;
     align-items: center;
@@ -75,19 +63,6 @@
     color: var(--fluent-text-primary);
     margin: 0;
     letter-spacing: 0.02em;
-}
-
-.nav-select {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(20, 20, 40, 0.6);
-    border: 1px solid rgba(102, 126, 234, 0.35);
-    padding: 6px 10px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
 }
 
 .nav-dropdown,
@@ -643,9 +618,7 @@
 
 /* Fluent Buttons */
 .footer-controls button,
-.footer-controls select,
-#speed-value,
-#brightness-value {
+.footer-controls select {
     background: var(--fluent-bg-secondary);
     color: var(--fluent-text-primary);
     border: 1px solid var(--fluent-border);
@@ -733,16 +706,6 @@
     background-image: url('data:image/svg+xml;charset=UTF-8,<svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1.5L6 6.5L11 1.5" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     background-repeat: no-repeat;
     background-position: calc(100% - 12px) center;
-}
-
-#speed-value,
-#brightness-value {
-    background: rgba(255, 215, 0, 0.2);
-    color: #FFD700;
-    min-width: 50px;
-    text-align: center;
-    font-weight: 700;
-    padding: 8px 12px;
 }
 
 /* Fluent Floating XR Buttons */

@@ -330,7 +330,12 @@
     }
   },
   "prefer_related_applications": false,
-  "related_applications": [],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://my-pwa-apps.github.io/Solar/manifest.json"
+    }
+  ],
   "edge_side_panel": {
     "preferred_width": 400
   },

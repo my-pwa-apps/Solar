@@ -123,22 +123,6 @@ export class ServiceWorkerManager {
             notification.classList.add('hidden');
         }, { once: true });
     }
-
-    /**
-     * Send message to service worker
-     */
-    sendMessage(message) {
-        if (navigator.serviceWorker?.controller) {
-            navigator.serviceWorker.controller.postMessage(message);
-        }
-    }
-
-    /**
-     * Get registration object
-     */
-    getRegistration() {
-        return this.registration;
-    }
 }
 
 // Create singleton instance
