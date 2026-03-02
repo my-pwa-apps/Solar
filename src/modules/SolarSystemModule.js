@@ -3,7 +3,7 @@
 // ===========================
 import * as THREE from 'three';
 // CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
-import { TEXTURE_CACHE, cachedTextureGeneration } from './TextureCache.js';
+import { TEXTURE_CACHE } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
 
 // i18n.js is loaded globally in index.html, access via window.t
@@ -212,18 +212,11 @@ export class SolarSystemModule {
  
  // Load real NASA Sun texture (with procedural fallback)
  const sunTexture = this.createSunTextureReal(2048);
- const sunBumpMap = this.createSunBumpMap(2048);
  
- const sunMaterial = new THREE.MeshStandardMaterial({
+ // MeshBasicMaterial — the sun is self-luminous; it doesn't react to scene lights
+ const sunMaterial = new THREE.MeshBasicMaterial({
  map: sunTexture,
- bumpMap: sunBumpMap,
- bumpScale: 0.5,
- emissive: 0xff6600,
- emissiveMap: sunTexture,
- emissiveIntensity: 2.5,
- toneMapped: false,
- roughness: 1.0,
- metalness: 0.0
+ toneMapped: false
  });
  
  this.sun = new THREE.Mesh(sunGeometry, sunMaterial);
@@ -1042,6 +1035,9 @@ export class SolarSystemModule {
     let primaryIndex = 0;
     let pluginIndex = 0;
     let currentTimeout = null;
+    let retryCount = 0;
+    const MAX_RETRIES = 1;
+    const LOAD_TIMEOUT = IS_MOBILE ? 15000 : 10000;
     
     const tryNext = async () => {
         const meta = this._pendingTextureMeta[planetKey];
@@ -1058,18 +1054,20 @@ export class SolarSystemModule {
                 // Check cache first (cache by planet name only, not URL)
                 const cacheKey = `${planetName.toLowerCase()}_texture_remote`;
                 const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
+                if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: cache=${cachedDataURL ? 'HIT (' + cachedDataURL.length + ' chars)' : 'MISS'}, phase=${phase}, idx=${primaryIndex}`);
                 if (cachedDataURL) {
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
                     img.onload = () => {
+                        if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: cached image loaded OK`);
                         const tex = new THREE.Texture(img);
                         tex.needsUpdate = true;
                         this._onPlanetTextureSuccess(planetName, tex, url, 'cached');
                     };
                     img.onerror = () => {
-                        // Cached texture is corrupted, clear it and try loading fresh
+                        console.warn(`[TEX] ${planetName}: cached image CORRUPT, clearing & retrying`);
+                        // Cached texture is corrupted, clear it and retry the same URL from network
                         TEXTURE_CACHE.set(cacheKey, null).catch(() => {});
-                        primaryIndex++;
                         tryNext();
                     };
                     img.src = cachedDataURL;
@@ -1077,16 +1075,17 @@ export class SolarSystemModule {
                 }
                 meta.phase = 'primary';
                 
-                // Set timeout for Quest VR (10 seconds max per texture)
+                if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: loading from network: ${url}`);
+                // Timeout per texture load attempt (longer on mobile)
                 let loadTimedOut = false;
                 currentTimeout = setTimeout(() => {
                     loadTimedOut = true;
                     meta.timeouts++;
-                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} primary source ${primaryIndex + 1} timed out after 10s: ${url}`);
-                    meta.errors.push({ url, error: 'Timeout after 10s', phase: 'primary' });
+                    console.warn(`[TEX] ${planetName}: TIMEOUT after ${LOAD_TIMEOUT/1000}s: ${url}`);
+                    meta.errors.push({ url, error: `Timeout after ${LOAD_TIMEOUT/1000}s`, phase: 'primary' });
                     primaryIndex++;
                     tryNext();
-                }, 10000);
+                }, LOAD_TIMEOUT);
                 
                 loader.load(
                     url, 
@@ -1094,6 +1093,7 @@ export class SolarSystemModule {
                         if (!loadTimedOut) {
                             clearTimeout(currentTimeout);
                             currentTimeout = null;
+                            if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: network load SUCCESS: ${url}`);
                             this._onPlanetTextureSuccess(planetName, tex, url, 'primary');
                         }
                     }, 
@@ -1103,10 +1103,7 @@ export class SolarSystemModule {
                             clearTimeout(currentTimeout);
                             currentTimeout = null;
                             const errorMsg = error?.message || error?.type || 'Network or CORS issue';
-                            if (DEBUG && DEBUG.TEXTURES) {
-                                console.warn(`?? ${planetName} primary source ${primaryIndex + 1} failed: ${url}`);
-                                console.warn(`   Error: ${errorMsg}`);
-                            }
+                            console.warn(`[TEX] ${planetName}: network load FAILED: ${url} — ${errorMsg}`);
                             meta.errors.push({ url, error: errorMsg, phase: 'primary' });
                             primaryIndex++;
                             tryNext();
@@ -1123,16 +1120,15 @@ export class SolarSystemModule {
                 const url = pluginRepoURLs[pluginIndex];
                 meta.phase = 'plugin';
                 
-                // Set timeout for Quest VR (10 seconds max per texture)
                 let loadTimedOut = false;
                 currentTimeout = setTimeout(() => {
                     loadTimedOut = true;
                     meta.timeouts++;
-                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} plugin source ${pluginIndex + 1} timed out after 10s: ${url}`);
-                    meta.errors.push({ url, error: 'Timeout after 10s', phase: 'plugin' });
+                    if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} plugin source ${pluginIndex + 1} timed out after ${LOAD_TIMEOUT/1000}s: ${url}`);
+                    meta.errors.push({ url, error: `Timeout after ${LOAD_TIMEOUT/1000}s`, phase: 'plugin' });
                     pluginIndex++;
                     tryNext();
-                }, 10000);
+                }, LOAD_TIMEOUT);
                 
                 loader.load(
                     url, 
@@ -1161,14 +1157,22 @@ export class SolarSystemModule {
                 );
                 return;
             }
-            // All remote attempts failed ° generate procedural now
+            // All sources exhausted — retry once before falling to procedural
+            if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                primaryIndex = 0;
+                pluginIndex = 0;
+                phase = 'primary';
+                if (DEBUG && DEBUG.TEXTURES) console.log(`🔄 ${planetName} texture: retry ${retryCount}/${MAX_RETRIES}`);
+                if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: retrying (${retryCount}/${MAX_RETRIES})`);
+                // Brief delay before retry to let SW / network settle
+                setTimeout(() => tryNext(), 1000);
+                return;
+            }
             phase = 'procedural';
         }
         if (phase === 'procedural') {
-            if (DEBUG && DEBUG.TEXTURES) {
-                console.warn(`?? All remote texture sources for ${planetName} failed. Generating procedural texture...`);
-                console.warn(`   Total errors: ${meta.errors.length}, Timeouts: ${meta.timeouts}`);
-            }
+            console.warn(`[TEX] ${planetName}: ALL SOURCES FAILED → generating procedural. Errors:`, meta.errors);
             meta.phase = 'procedural';
             
             // Wrap procedural generation in try-catch for Quest safety
@@ -1216,26 +1220,27 @@ export class SolarSystemModule {
             // a second full-res canvas + toDataURL() can throw an OutOfMemoryError or
             // QuotaExceededError. We must not let a caching failure prevent the texture
             // from being applied to the material below.
-            // Also skip caching on mobile to avoid memory pressure (textures reload fast
-            // from the Service Worker cache anyway).
-            if (!IS_MOBILE) {
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = tex.image.width;
-                    canvas.height = tex.image.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(tex.image, 0, 0);
-                    const dataURL = canvas.toDataURL('image/jpeg', 0.95);
-                    TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
-                        // Cache write failed - texture will be reloaded next time
-                    });
-                    if (DEBUG && DEBUG.TEXTURES) {
-                        console.log(`?? Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB`);
-                    }
-                } catch (cacheErr) {
-                    // Out of memory, quota exceeded, or other — skip caching, texture still applies
-                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} texture cache skipped (${cacheErr.message})`);
+            // Cache to IndexedDB for faster subsequent loads.
+            // On mobile, use lower quality and capped resolution to reduce memory pressure.
+            try {
+                const maxDim = IS_MOBILE ? 1024 : tex.image.width;
+                const scale = Math.min(1, maxDim / Math.max(tex.image.width, tex.image.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(tex.image.width * scale);
+                canvas.height = Math.round(tex.image.height * scale);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(tex.image, 0, 0, canvas.width, canvas.height);
+                const quality = IS_MOBILE ? 0.7 : 0.95;
+                const dataURL = canvas.toDataURL('image/jpeg', quality);
+                TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
+                    // Cache write failed - texture will be reloaded next time
+                });
+                if (DEBUG && DEBUG.TEXTURES) {
+                    console.log(`💾 Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB (${canvas.width}x${canvas.height})`);
                 }
+            } catch (cacheErr) {
+                // Out of memory, quota exceeded, or other — skip caching, texture still applies
+                if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} texture cache skipped (${cacheErr.message})`);
             }
         }
         
@@ -1261,10 +1266,9 @@ export class SolarSystemModule {
         }
         
         planet.material.map = tex;
-        // Also update emissiveMap for the Sun to show the texture in its glow
-        if (planetName.toLowerCase() === 'sun') {
-            planet.material.emissiveMap = tex;
-        }
+        // Note: Sun uses MeshBasicMaterial (inherently unlit/fullbright) — do NOT set
+        // emissiveMap on it; MeshBasicMaterial has no emissiveMap uniform and Three.js
+        // will crash in refreshUniformsCommon with "Cannot set properties of undefined".
         planet.material.needsUpdate = true;
         planet.userData.remoteTextureLoaded = true;
         planet.userData.remoteTextureURL = url;
@@ -1300,10 +1304,9 @@ export class SolarSystemModule {
         }
         
         planet.material.map = tex;
-        // Also update emissiveMap for the Sun to show the texture in its glow
-        if (planetName.toLowerCase() === 'sun') {
-            planet.material.emissiveMap = tex;
-        }
+        // Note: Sun uses MeshBasicMaterial (inherently unlit/fullbright) — do NOT set
+        // emissiveMap on it; MeshBasicMaterial has no emissiveMap uniform and Three.js
+        // will crash in refreshUniformsCommon with "Cannot set properties of undefined".
         planet.material.needsUpdate = true;
         
         const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
@@ -2740,12 +2743,12 @@ export class SolarSystemModule {
  // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
  // Use quality-aware texture size: 1024 on mobile, 4096 on desktop
  const earthTexSize = CONFIG.QUALITY.textureSize;
- console.time('⏱️ Total Earth Material Creation');
+ if (DEBUG.enabled) console.time('Earth Material Creation');
  const earthTexture = this.createEarthTextureRealFixed(earthTexSize);
  const earthBump = this.createEarthBumpMap(earthTexSize);
  const earthSpecular = this.createEarthSpecularMap(earthTexSize);
  const earthNormal = this.createEarthNormalMap(earthTexSize);
- console.timeEnd('⏱️ Total Earth Material Creation');
+ if (DEBUG.enabled) console.timeEnd('Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
  // NO emissive - planets don't emit light, they only reflect it
@@ -3122,7 +3125,7 @@ export class SolarSystemModule {
                     if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${moon.userData.name}: procedural/generated texture`);
                 }
             });
-            console.log(`Summary: ${summary.remoteSuccess} remote loaded, ${summary.remoteFailed} remote failed, ${summary.proceduralOnly} procedural-only planets.`);
+            if (DEBUG && DEBUG.TEXTURES) console.log(`Summary: ${summary.remoteSuccess} remote loaded, ${summary.remoteFailed} remote failed, ${summary.proceduralOnly} procedural-only planets.`);
             console.groupEnd();
          }
         }, delayMs);
@@ -3299,7 +3302,7 @@ export class SolarSystemModule {
  moon.receiveShadow = true;
  
  // Verify texture is applied
- if (DEBUG.enabled && moonMaterial.map) {
+ if (DEBUG.enabled) {
  console.log(`[Moon Material] "${config.name}" has texture map: ${moonMaterial.map.isTexture ? 'YES' : 'NO'}`);
  }
 
@@ -4185,33 +4188,24 @@ export class SolarSystemModule {
  // Create recognizable star systems and bright stars
  this.distantStars = [];
  
+ // Visual sizes use cube-root scale of real solar radii so all stars remain visible
+ // Real radii: Betelgeuse ~764 R☉, Rigel ~78 R☉, Polaris ~46 R☉, Vega 2.4 R☉, Sirius 1.7 R☉
  const brightStars = [
- { name: 'Sirius', color: 0xFFFFFF, size: 8, distance: 8000, angle: 0, tilt: 0.5, description: t('descSirius') },
- { name: 'Betelgeuse', color: 0xFF4500, size: 12, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: t('descBetelgeuse') },
- { name: 'Rigel', color: 0x87CEEB, size: 10, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: t('descRigel') },
- { name: 'Vega', color: 0xF0F8FF, size: 7, distance: 7800, angle: Math.PI, tilt: 0.3, description: t('descVega') },
- { name: 'Polaris', color: 0xFFFACD, size: 6, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: t('descPolaris') }
+ { name: 'Sirius', color: 0xFFFFFF, size: 3, solarRadii: 1.7, distance: 8000, angle: 0, tilt: 0.5, description: t('descSirius') },
+ { name: 'Betelgeuse', color: 0xFF4500, size: 22, solarRadii: 764, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: t('descBetelgeuse') },
+ { name: 'Rigel', color: 0x87CEEB, size: 10, solarRadii: 78.9, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: t('descRigel') },
+ { name: 'Vega', color: 0xF0F8FF, size: 3.5, solarRadii: 2.4, distance: 7800, angle: Math.PI, tilt: 0.3, description: t('descVega') },
+ { name: 'Polaris', color: 0xFFFACD, size: 8.5, solarRadii: 46, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: t('descPolaris') }
  ];
 
- brightStars.forEach(async (starData) => {
+ brightStars.forEach((starData) => {
  const geometry = new THREE.SphereGeometry(starData.size, 32, 32);
  
- // Use texture if provided, otherwise use color
- let material;
- if (starData.texture) {
- const texture = await this.loadTextureWithFallback(starData.texture, `#${starData.color.toString(16).padStart(6, '0')}`);
- material = new THREE.MeshBasicMaterial({
- map: texture,
- transparent: true,
- opacity: 0.9
- });
- } else {
- material = new THREE.MeshBasicMaterial({
+ const material = new THREE.MeshBasicMaterial({
  color: starData.color,
  transparent: true,
  opacity: 0.9
  });
- }
  
  const star = new THREE.Mesh(geometry, material);
  const x = starData.distance * Math.cos(starData.angle);
@@ -4237,7 +4231,7 @@ export class SolarSystemModule {
  radius: starData.size,
  description: starData.description,
  distance: 'Light-years away',
- realSize: `${starData.size} solar radii`,
+ realSize: `${starData.solarRadii} solar radii`,
  funFact: starData.name === 'Betelgeuse' ? t('funFactBetelgeuse') :
  starData.name === 'Sirius' ? t('funFactSirius') :
  t('funFactDefaultStar')
@@ -5159,7 +5153,8 @@ export class SolarSystemModule {
  starMeshes.push(starMesh);
  
  // Add glow effect using factory (with geometry caching)
- const starSize = CONFIG.CONSTELLATION.STAR_BASE_SIZE * Math.pow(2.5, -star.mag);
+ const rawSize = CONFIG.CONSTELLATION.STAR_BASE_SIZE * Math.pow(1.5, -star.mag);
+ const starSize = Math.min(rawSize, CONFIG.CONSTELLATION.STAR_MAX_SIZE);
  const glow = ConstellationFactory.createGlow(star, starSize, this.geometryCache);
  starMesh.add(glow);
  });
@@ -5192,6 +5187,12 @@ export class SolarSystemModule {
  this.objects.push(group);
  this.constellations.push(group);
  });
+
+ // === POLARIS POINTER LINE ===
+ // Astronomers find Polaris by extending a line from Merak → Dubhe (the "pointer stars"
+ // on the outer edge of the Big Dipper's bowl) roughly 5× that gap northward.
+ // Add a dashed guide line from Dubhe to Polaris, hidden by default.
+ this._addPolarisPointerLine();
  
  if (DEBUG.enabled) console.log(`✓ Created ${this.constellations.length} constellations with star patterns!`);
  }
@@ -5200,6 +5201,8 @@ export class SolarSystemModule {
  // Show only the focused constellation; completely hide all others
  if (!this.constellations) return;
  this.focusedConstellation = focusedConstellation;
+
+ const isBigDipper = focusedConstellation?.userData?.name === 'bigDipper';
  
  this.constellations.forEach(constellation => {
  const isFocused = constellation === focusedConstellation;
@@ -5215,9 +5218,33 @@ export class SolarSystemModule {
  }
  });
  } else {
+ // Hide group AND all children so the raycaster skips them
+ // (Three.js raycaster recurses into children independently of parent visibility)
  constellation.visible = false;
+ constellation.traverse(child => {
+ child.visible = false;
+ });
+
+ // Special case: when focusing on Big Dipper, also show Polaris
+ // from the Little Dipper so the user can see the pointer-star relationship
+ if (isBigDipper && constellation.userData?.name === 'littleDipper') {
+ // Show the constellation group but only make Polaris (first star) visible
+ constellation.visible = true;
+ constellation.traverse(child => {
+ if (child.userData?.name === 'Polaris') {
+ child.visible = true;
+ // Also show its glow children
+ child.traverse(c => { c.visible = true; });
  }
  });
+ }
+ }
+ });
+
+ // Show / hide the pointer line from Dubhe → Polaris
+ if (this._polarisPointerLine) {
+ this._polarisPointerLine.visible = isBigDipper;
+ }
  }
  
  resetConstellationHighlight() {
@@ -5228,12 +5255,73 @@ export class SolarSystemModule {
  this.constellations.forEach(constellation => {
  constellation.visible = true;
  constellation.traverse(child => {
+ child.visible = true;
  if (child.material && child.material.userData?.originalOpacity !== undefined) {
  child.material.opacity = child.material.userData.originalOpacity;
- child.visible = true;
  }
  });
  });
+
+ // Hide the Polaris pointer line when no constellation is focused
+ if (this._polarisPointerLine) {
+ this._polarisPointerLine.visible = false;
+ }
+ }
+
+ /**
+  * Create a dashed pointer line from Dubhe (Big Dipper) to Polaris (Little Dipper).
+  * The line is added directly to the scene, hidden by default, and shown only when
+  * the Big Dipper is the focused constellation.
+  */
+ _addPolarisPointerLine() {
+ // Find Big Dipper and Little Dipper groups
+ const bigDipper = this.constellations.find(c => c.userData.name === 'bigDipper');
+ const littleDipper = this.constellations.find(c => c.userData.name === 'littleDipper');
+ if (!bigDipper || !littleDipper) return;
+
+ // Dubhe is star index 0 in Big Dipper (the outer-edge star closest to Polaris)
+ // Polaris is star index 0 in Little Dipper
+ let dubhePos = null;
+ let polarisPos = null;
+
+ bigDipper.traverse(child => {
+ if (child.userData?.name === 'Dubhe' && child.isMesh) {
+ dubhePos = child.position.clone();
+ }
+ });
+ littleDipper.traverse(child => {
+ if (child.userData?.name === 'Polaris' && child.isMesh) {
+ polarisPos = child.position.clone();
+ }
+ });
+
+ if (!dubhePos || !polarisPos) return;
+
+ // Build a dashed line from Dubhe to Polaris
+ const points = [dubhePos, polarisPos];
+ const geometry = new THREE.BufferGeometry().setFromPoints(points);
+ const material = new THREE.LineDashedMaterial({
+ color: 0xFFD700, // Gold — stands out as a guide, distinct from constellation lines
+ transparent: true,
+ opacity: 0.6,
+ dashSize: 40,
+ gapSize: 20,
+ linewidth: 2
+ });
+ material.userData = { originalOpacity: 0.6 };
+
+ const line = new THREE.Line(geometry, material);
+ line.computeLineDistances(); // Required for dashes to render
+ line.visible = false; // Hidden until Big Dipper is focused
+ line.userData = { isPolarisPointer: true };
+
+ // Add to scene at root level (not inside either constellation group, so it persists
+ // independently of group visibility toggling)
+ const scene = bigDipper.parent; // scene reference
+ if (scene) scene.add(line);
+ this._polarisPointerLine = line;
+
+ if (DEBUG.enabled) console.log(' ✓ Polaris pointer line added (Dubhe → Polaris)');
  }
 
  createGalaxies(scene) {
@@ -5803,7 +5891,7 @@ export class SolarSystemModule {
 
  const exoplanetsData = [
  {
- name: ' Proxima Centauri b',
+ name: 'Proxima Centauri b',
  hostStarPosition: { x: 8500, y: 800, z: -6200 }, // Proxima Centauri
  orbitRadius: 28, // Visible orbit distance around host star
  orbitPeriodDays: 11.2, // 11.2-day year
@@ -5816,7 +5904,7 @@ export class SolarSystemModule {
  funFact: t('funFactProximaCentauriB')
  },
  {
- name: ' Kepler-452b',
+ name: 'Kepler-452b',
  hostStarPosition: { x: -9000, y: 2500, z: 8450 }, // Kepler-452
  orbitRadius: 45,
  orbitPeriodDays: 385, // 385-day year
@@ -5829,7 +5917,7 @@ export class SolarSystemModule {
  funFact: t('funFactKepler452b')
  },
  {
- name: ' TRAPPIST-1e',
+ name: 'TRAPPIST-1e',
  hostStarPosition: { x: 7000, y: -3000, z: -8950 }, // TRAPPIST-1
  orbitRadius: 35,
  orbitPeriodDays: 6.1, // 6.1-day year — very fast!
@@ -5842,7 +5930,7 @@ export class SolarSystemModule {
  funFact: t('funFactTrappist1e')
  },
  {
- name: ' Kepler-186f',
+ name: 'Kepler-186f',
  hostStarPosition: { x: -8000, y: -2000, z: 9450 }, // Kepler-186
  orbitRadius: 40,
  orbitPeriodDays: 130, // 130-day year
@@ -5980,15 +6068,13 @@ export class SolarSystemModule {
  // Irregular, potato-shaped icy-rocky core with surface details
  const nucleusGeometry = new THREE.IcosahedronGeometry(cometData.size, 2);
  
- // Deform vertices for irregular shape
+ // Deform vertices for irregular shape (inline — avoids Vector3 allocations)
  const positions = nucleusGeometry.attributes.position.array;
  for (let i = 0; i < positions.length; i += 3) {
- const vertex = new THREE.Vector3(positions[i], positions[i + 1], positions[i + 2]);
- const distortion = 0.15 + Math.random() * 0.2; // Irregular shape
- vertex.multiplyScalar(distortion + 1.0);
- positions[i] = vertex.x;
- positions[i + 1] = vertex.y;
- positions[i + 2] = vertex.z;
+ const scale = 1.0 + 0.15 + Math.random() * 0.2;
+ positions[i] *= scale;
+ positions[i + 1] *= scale;
+ positions[i + 2] *= scale;
  }
  nucleusGeometry.attributes.position.needsUpdate = true;
  nucleusGeometry.computeVertexNormals();
@@ -6049,22 +6135,16 @@ export class SolarSystemModule {
  cometGroup.add(jet);
  }
  
- // HYPERREALISTIC COMA - Multi-layered glowing atmosphere
- const comaLayers = 6; // More layers for depth
+ // HYPERREALISTIC COMA - Multi-layered glowing atmosphere (optimized: 3 layers, 16 segments)
+ const comaLayers = 3;
+ const comaColors = [0xf0ffff, 0xaaddff, 0x88bbee];
  for (let layer = 0; layer < comaLayers; layer++) {
- const layerSize = cometData.size * (3 + layer * 2); // Larger, more dramatic coma
+ const layerSize = cometData.size * (3 + layer * 3);
  const layerOpacity = 0.3 * (1 - layer / comaLayers) * (0.8 + Math.random() * 0.4);
- const comaGeo = new THREE.SphereGeometry(layerSize, 32, 32);
- 
- // Color gradient: bright cyan-white ? blue ? cyan
- let comaColor;
- if (layer === 0) comaColor = 0xf0ffff; // Brightest white-cyan core
- else if (layer === 1) comaColor = 0xccf0ff;
- else if (layer === 2) comaColor = 0xaaddff;
- else comaColor = 0x88bbee; // Outer layers more blue
+ const comaGeo = new THREE.SphereGeometry(layerSize, 16, 16);
  
  const comaMat = new THREE.MeshBasicMaterial({
- color: comaColor,
+ color: comaColors[layer],
  transparent: true,
  opacity: layerOpacity,
  side: THREE.BackSide,
@@ -6076,7 +6156,7 @@ export class SolarSystemModule {
  }
  
  // Inner bright core (nucleus glow)
- const nucleusGlowGeo = new THREE.SphereGeometry(cometData.size * 1.5, 32, 32);
+ const nucleusGlowGeo = new THREE.SphereGeometry(cometData.size * 1.5, 16, 16);
  const nucleusGlowMat = new THREE.MeshBasicMaterial({
  color: 0xffffff,
  transparent: true,
@@ -6097,8 +6177,8 @@ export class SolarSystemModule {
  
  for (let i = 0; i < dustParticles; i++) {
  const t = i / dustParticles;
- const spread = t * 20; // Wider, more dramatic spread
- const curve = t * t * 25; // Longer, more curved tail
+ const spread = t * 1.0; // Proportional spread
+ const curve = t * t * 1.5; // Curved tail
  const turbulence = Math.sin(i * 0.5) * spread * 0.15; // Add turbulence
  
  dustTailPositions[i * 3] = curve + turbulence + (Math.random() - 0.5) * spread * 0.3;
@@ -6106,7 +6186,7 @@ export class SolarSystemModule {
  dustTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.8;
  
  // Size decreases with distance, with variation
- dustTailSizes[i] = (4 + Math.random() * 2) * (1 - t * 0.8);
+ dustTailSizes[i] = (0.2 + Math.random() * 0.1) * (1 - t * 0.8);
  
  // Gradient: bright white-yellow → orange-red → dark
  const brightness = 1 - t * 0.7;
@@ -6141,17 +6221,17 @@ export class SolarSystemModule {
  
  for (let i = 0; i < ionParticles; i++) {
  const t = i / ionParticles;
- const spread = t * 6; // Narrower than dust tail but with wisps
- const length = t * 35; // Longer, more dramatic ion tail
+ const spread = t * 0.3; // Narrower than dust tail but with wisps
+ const length = t * 2.0; // Longer, straight ion tail
  const wisp = Math.sin(i * 0.3) * spread * 0.2; // Wispy structure
  
- ionTailPositions[i * 3] = length + wisp + (Math.random() - 0.5) * 0.3;
+ ionTailPositions[i * 3] = length + wisp + (Math.random() - 0.5) * 0.015;
  ionTailPositions[i * 3 + 1] = (Math.random() - 0.5) * spread;
  ionTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.8;
  
  // Size variation with brilliant streaks
  const ionBrightness = Math.pow(1 - t, 0.4) * (0.8 + Math.random() * 0.4);
- ionTailSizes[i] = (3 + Math.random() * 3) * ionBrightness;
+ ionTailSizes[i] = (0.15 + Math.random() * 0.15) * ionBrightness;
  
  // Electric blue plasma gradient - brilliant cyan-blue
  const intensity = (1 - t * 0.5) * ionBrightness;
@@ -7667,9 +7747,6 @@ createHyperrealisticHubble(satData) {
  return;
  }
  
- // Update camera tracking for focused objects (before other updates)
- this.updateCameraTracking(camera, controls);
- 
  // Get pause mode from sceneManager
  const app = window.app || {};
  const sceneManager = app.sceneManager || {};
@@ -7787,9 +7864,8 @@ createHyperrealisticHubble(satData) {
  // Debug: Log moon position occasionally (Moon and Io)
  if (DEBUG.enabled && Math.random() < 0.001) {
  if (moon.userData.name.includes('Moon') || moon.userData.name.includes('Io')) {
- const worldPos = new THREE.Vector3();
- moon.getWorldPosition(worldPos);
- console.log(` ${moon.userData.name} orbiting ${planet.userData.name}: angle=${moon.userData.angle.toFixed(2)}, local=(${moon.position.x.toFixed(1)}, ${moon.position.y.toFixed(1)}, ${moon.position.z.toFixed(1)}), world=(${worldPos.x.toFixed(1)}, ${worldPos.y.toFixed(1)}, ${worldPos.z.toFixed(1)}), planet at=(${planet.position.x.toFixed(1)}, ${planet.position.y.toFixed(1)}, ${planet.position.z.toFixed(1)})`);
+ moon.getWorldPosition(this._trackTargetPos);
+ console.log(` ${moon.userData.name} orbiting ${planet.userData.name}: angle=${moon.userData.angle.toFixed(2)}, local=(${moon.position.x.toFixed(1)}, ${moon.position.y.toFixed(1)}, ${moon.position.z.toFixed(1)}), world=(${this._trackTargetPos.x.toFixed(1)}, ${this._trackTargetPos.y.toFixed(1)}, ${this._trackTargetPos.z.toFixed(1)}), planet at=(${planet.position.x.toFixed(1)}, ${planet.position.y.toFixed(1)}, ${planet.position.z.toFixed(1)})`);
  }
  }
  }
@@ -7798,30 +7874,22 @@ createHyperrealisticHubble(satData) {
  }
  });
  
- // Keep camera focused on selected object if it's moving (reuse scratch vectors — no per-frame GC)
- if (this.focusedObject && camera && controls) {
- this.focusedObject.getWorldPosition(this._trackTargetPos);
- 
- // Calculate the offset from target to camera
- this._trackOffset.subVectors(camera.position, controls.target);
- 
- // Update both target and camera position to maintain relative view
- controls.target.copy(this._trackTargetPos);
- camera.position.copy(this._trackTargetPos).add(this._trackOffset);
- 
- controls.update();
- }
+ // Camera tracking is handled by updateCameraTracking() called after all position updates.
+ // Do NOT duplicate tracking logic here — it would overwrite the co-rotation chase-cam
+ // and smooth tracking modes configured in focusOnObject().
+
+ // Update camera tracking AFTER all object positions have been updated this frame
+ this.updateCameraTracking(camera, controls);
 
  // Rotate asteroid and Kuiper belts slowly
- const effectiveTimeSpeed = timeSpeed;
  if (this.asteroidBelt) {
- const rotationIncrement = 0.0001 * effectiveTimeSpeed;
+ const rotationIncrement = 0.0001 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.asteroidBelt.rotation.y += rotationIncrement;
  }
  }
  if (this.kuiperBelt) {
- const rotationIncrement = 0.00005 * effectiveTimeSpeed;
+ const rotationIncrement = 0.00005 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.kuiperBelt.rotation.y += rotationIncrement;
  }
@@ -7829,7 +7897,7 @@ createHyperrealisticHubble(satData) {
 
  // Rotate sun and animate surface activity
  if (this.sun) {
- const rotationIncrement = 0.001 * effectiveTimeSpeed;
+ const rotationIncrement = 0.001 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.sun.rotation.y += rotationIncrement;
  }
@@ -7865,7 +7933,7 @@ createHyperrealisticHubble(satData) {
  if (this.comets) {
  this.comets.forEach(comet => {
  const userData = comet.userData;
- const angleIncrement = userData.speed * effectiveTimeSpeed;
+ const angleIncrement = userData.speed * orbitalSpeed * deltaTime;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  }
@@ -7938,9 +8006,9 @@ createHyperrealisticHubble(satData) {
  const dustSizes = userData.dustTail.geometry.attributes.size.array;
  
  const curveFactor = 0.3;
- for (let i = 0; i < 200; i++) {
- const t = i / 200;
- const length = 80 * t;
+ for (let i = 0; i < 800; i++) {
+ const t = i / 800;
+ const length = 4 * t;
  
  // Curve effect - pre-calculated
  const dirX = userData._sunDir.x + userData._velDir.x * curveFactor * t;
@@ -7949,15 +8017,15 @@ createHyperrealisticHubble(satData) {
  const normFactor = 1 / Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
  
  // Add spread
- const spread = (Math.random() - 0.5) * 15 * t;
- const spreadPerpendicular = (Math.random() - 0.5) * 8 * t;
+ const spread = (Math.random() - 0.5) * 0.8 * t;
+ const spreadPerpendicular = (Math.random() - 0.5) * 0.4 * t;
  
  dustPositions[i * 3] = dirX * normFactor * length + spread;
  dustPositions[i * 3 + 1] = dirY * normFactor * length + spreadPerpendicular;
  dustPositions[i * 3 + 2] = dirZ * normFactor * length + spread;
  
  // Vary size (less random() calls)
- dustSizes[i] = 3 * (1 - t * 0.7) * (0.9 + (i % 5) * 0.05);
+ dustSizes[i] = 0.15 * (1 - t * 0.7) * (0.9 + (i % 5) * 0.05);
  }
  userData.dustTail.geometry.attributes.position.needsUpdate = true;
  userData.dustTail.geometry.attributes.size.needsUpdate = true;
@@ -7970,10 +8038,10 @@ createHyperrealisticHubble(satData) {
  const sunDirY = userData._sunDir.y;
  const sunDirZ = userData._sunDir.z;
  
- for (let i = 0; i < 150; i++) {
- const t = i / 150;
- const length = 120 * t;
- const spread = (Math.random() - 0.5) * 3 * t;
+ for (let i = 0; i < 600; i++) {
+ const t = i / 600;
+ const length = 6 * t;
+ const spread = (Math.random() - 0.5) * 0.15 * t;
  
  ionPositions[i * 3] = sunDirX * length + spread;
  ionPositions[i * 3 + 1] = sunDirY * length + spread;
@@ -7991,7 +8059,7 @@ createHyperrealisticHubble(satData) {
  this.satellites.forEach(satellite => {
  const userData = satellite.userData;
  if (userData.planet) {
- const angleIncrement = userData.speed * effectiveTimeSpeed * 0.01; // Scale down for realistic orbit times
+ const angleIncrement = userData.speed * orbitalSpeed * 0.01; // Scale down for realistic orbit times
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  }
@@ -8037,15 +8105,12 @@ createHyperrealisticHubble(satData) {
  
  // Update spacecraft (Voyagers, probes, orbiters)
  if (this.spacecraft) {
- // Get numeric speed multiplier
- const effectiveTimeSpeed = timeSpeed;
- 
  this.spacecraft.forEach(craft => {
  const userData = craft.userData;
  
  // Deep space probes keep moving away
  if (!userData.orbitPlanet && userData.speed) {
- const angleIncrement = userData.speed * effectiveTimeSpeed * 0.001;
+ const angleIncrement = userData.speed * orbitalSpeed * 0.001;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  craft.position.x = userData.distance * Math.cos(userData.angle);
@@ -8055,7 +8120,7 @@ createHyperrealisticHubble(satData) {
  
  // Orbiters around planets (Juno, Cassini legacy, etc)
  if (userData.orbitPlanet && userData.speed && userData.type === 'orbiter') {
- const angleIncrement = userData.speed * effectiveTimeSpeed * 0.01;
+ const angleIncrement = userData.speed * orbitalSpeed * 0.01;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  const radius = userData.distance;
@@ -8067,7 +8132,7 @@ createHyperrealisticHubble(satData) {
  
  // Rotate spacecraft slowly
  if (userData.type === 'probe' || userData.type === 'orbiter') {
- const rotationIncrement = 0.002 * effectiveTimeSpeed;
+ const rotationIncrement = 0.002 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  craft.rotation.y += rotationIncrement;
  }
@@ -8077,12 +8142,11 @@ createHyperrealisticHubble(satData) {
  
  // Rotate nebulae slowly (optimized - pre-calculate time)
  if (this.nebulae) {
- const effectiveTimeSpeed = timeSpeed;
  const time = now * 0.0005;
  const scale = 1 + Math.sin(time) * 0.05;
  
  this.nebulae.forEach(nebula => {
- const rotationIncrement = 0.0001 * effectiveTimeSpeed;
+ const rotationIncrement = 0.0001 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  nebula.rotation.y += rotationIncrement;
  }
@@ -8093,9 +8157,8 @@ createHyperrealisticHubble(satData) {
  
  // Rotate galaxies
  if (this.galaxies) {
- const effectiveTimeSpeed = timeSpeed;
  this.galaxies.forEach(galaxy => {
- const rotationIncrement = 0.0002 * effectiveTimeSpeed;
+ const rotationIncrement = 0.0002 * rotationSpeed;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  galaxy.rotation.y += rotationIncrement;
  }
@@ -8126,15 +8189,18 @@ createHyperrealisticHubble(satData) {
  }
 
  cleanup(scene) {
- // Dispose materials only (geometries are cached and reused)
+ // Dispose materials and geometries for all objects (including group children)
  this.objects.forEach(obj => {
- if (obj.material) {
- if (Array.isArray(obj.material)) {
- obj.material.forEach(mat => mat.dispose());
+ obj.traverse(child => {
+ if (child.geometry) child.geometry.dispose();
+ if (child.material) {
+ if (Array.isArray(child.material)) {
+ child.material.forEach(mat => mat.dispose());
  } else {
- obj.material.dispose();
+ child.material.dispose();
  }
  }
+ });
  scene.remove(obj);
  });
  
@@ -8177,6 +8243,16 @@ createHyperrealisticHubble(satData) {
  this.kuiperBelt = null;
  this.oortCloud = null;
  this.orbits = [];
+ this.comets = [];
+ this.satellites = [];
+ this.spacecraft = [];
+ this.constellations = [];
+ this.distantStars = [];
+ this.nebulae = [];
+ this.galaxies = [];
+ this.nearbyStars = [];
+ this.exoplanets = [];
+ this.focusedComet = null;
  }
 
  getSelectableObjects() {
@@ -8193,13 +8269,26 @@ createHyperrealisticHubble(satData) {
  
  toggleConstellations(visible) {
  this.constellationsVisible = visible;
- this.constellations.forEach(constellation => {
- // When turning on: respect focus state — keep non-focused ones hidden
- if (visible && this.focusedConstellation && this.focusedConstellation !== constellation) {
- return;
+ if (visible) {
+ // Clear any highlight focus when toggling on, to restore all constellations
+ this.focusedConstellation = null;
  }
+ this.constellations.forEach(constellation => {
  constellation.visible = visible;
+ if (visible) {
+ // Restore visibility of all children (may have been hidden by highlightConstellation)
+ constellation.traverse(child => {
+ child.visible = true;
+ if (child.material && child.material.userData?.originalOpacity !== undefined) {
+ child.material.opacity = child.material.userData.originalOpacity;
+ }
  });
+ }
+ });
+ // Also hide the Polaris pointer line when constellations are toggled off
+ if (this._polarisPointerLine) {
+ this._polarisPointerLine.visible = false;
+ }
  if (DEBUG.enabled) console.log(` Constellations ${visible ? 'shown' : 'hidden'}`);
  }
  
@@ -8724,7 +8813,7 @@ createHyperrealisticHubble(satData) {
 
  focusOnObject(object, camera, controls) {
  if (!object || !object.userData) {
- console.warn(' Cannot focus on invalid object');
+ if (DEBUG.enabled) console.warn(' Cannot focus on invalid object');
  return;
  }
  
@@ -8940,7 +9029,13 @@ createHyperrealisticHubble(satData) {
  if (userData.type === 'constellation') {
  // Constellations: allow getting very close to see individual stars
  minDist = 20; // Allow close inspection of star pattern
- maxDist = 20000; // Allow zooming far out
+ maxDist = 20000; // Allow zooming far out to see whole pattern
+ } else if (userData.isConstellationStar) {
+ // Individual constellation star: allow zooming out far enough to see the full constellation
+ const parentGroup = object.parent;
+ const constellationRadius = (parentGroup && parentGroup.userData && parentGroup.userData.radius) || 500;
+ minDist = 5; // Close enough to inspect the star
+ maxDist = constellationRadius * 5; // Far enough to see entire constellation
  } else if (userData.isSpacecraft && userData.orbitPlanet) {
  // ISS and orbital satellites: allow close inspection and wide zoom range
  minDist = 0.2; // Get close to see module details
@@ -9231,8 +9326,8 @@ createHyperrealisticHubble(satData) {
  
  camera.position.lerpVectors(startPos, endPos, eased);
  
- // Always set target first, then update controls
- controls.target.copy(targetPosition);
+ // Smoothly interpolate controls target from start to current target position
+ controls.target.lerpVectors(startTarget, targetPosition, eased);
  
  // For constellations and distant objects, ensure camera orientation is maintained
  if (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula') {

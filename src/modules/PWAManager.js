@@ -8,7 +8,8 @@ export class PWAManager {
     constructor() {
         this.deferredPrompt = null;
         this.installPromptShown = false;
-        this.INSTALL_DELAY_MS = 30000; // 30s delay before auto showing prompt
+        this.INSTALL_DELAY_MS = 30000; // 30s delay before auto showing prompt (desktop)
+        this.INSTALL_DELAY_ANDROID_MS = 10000; // 10s delay for Android
         
         // Platform detection
         const ua = navigator.userAgent || navigator.vendor || window.opera;
@@ -57,47 +58,97 @@ export class PWAManager {
         
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-        window.addEventListener('load', updateOnlineStatus);
+        // Check initial status immediately if page already loaded, else wait for load
+        if (document.readyState === 'complete') {
+            updateOnlineStatus();
+        } else {
+            window.addEventListener('load', updateOnlineStatus);
+        }
     }
 
     /**
-     * Setup install prompt handling
+     * Check if app is already installed via getInstalledRelatedApps API.
+     * Detects Windows Store installs and PWA installs from Edge.
+     */
+    async isAppAlreadyInstalled() {
+        if (!('getInstalledRelatedApps' in navigator)) return false;
+        try {
+            const relatedApps = await navigator.getInstalledRelatedApps();
+            if (relatedApps.length > 0) {
+                if (DEBUG && DEBUG.enabled) {
+                    console.log('[PWA] Related apps found:', relatedApps.map(a => `${a.platform}:${a.id || a.url}`));
+                }
+                return true;
+            }
+        } catch (e) {
+            if (DEBUG && DEBUG.enabled) console.warn('[PWA] getInstalledRelatedApps() failed:', e);
+        }
+        return false;
+    }
+
+    /**
+     * Schedule the install prompt with platform-appropriate delay.
+     * Called when we have a valid deferred prompt and want to show it.
+     */
+    scheduleInstallPrompt() {
+        if (localStorage.getItem('installPromptDismissed')) return;
+        const delay = this.platform.isAndroid ? this.INSTALL_DELAY_ANDROID_MS : this.INSTALL_DELAY_MS;
+        if (DEBUG && DEBUG.enabled) console.log(`[PWA] Scheduling install prompt in ${delay}ms`);
+        setTimeout(() => this.showInstallPrompt(), delay);
+    }
+
+    /**
+     * Process a beforeinstallprompt event (whether captured early or via listener).
+     */
+    async processInstallPromptEvent(e) {
+        if (DEBUG && DEBUG.enabled) console.log('[PWA] Processing beforeinstallprompt event');
+        this.deferredPrompt = e;
+
+        if (this.isPWA()) {
+            if (DEBUG && DEBUG.enabled) console.log('[PWA] Already running as installed PWA, skipping prompt');
+            return;
+        }
+
+        // On Windows, check if app is already installed from the Windows Store
+        if (this.platform.isWindows || this.platform.isEdge) {
+            const alreadyInstalled = await this.isAppAlreadyInstalled();
+            if (alreadyInstalled) {
+                if (DEBUG && DEBUG.enabled) console.log('[PWA] App already installed (Windows Store/Edge PWA), skipping prompt');
+                return;
+            }
+        }
+
+        this.scheduleInstallPrompt();
+    }
+
+    /**
+     * Setup install prompt handling.
+     * Picks up early-captured event from index.html and listens for future events.
      */
     setupInstallPrompt() {
+        // Check if beforeinstallprompt was captured by the early inline script
+        // (fires before module scripts finish loading, especially on slow connections)
+        if (window.__deferredInstallPrompt) {
+            if (DEBUG && DEBUG.enabled) console.log('[PWA] Using early-captured beforeinstallprompt event');
+            this.processInstallPromptEvent(window.__deferredInstallPrompt);
+            window.__deferredInstallPrompt = null;
+        }
+
+        // Listen for future events (e.g. if user re-visits after dismissing)
         window.addEventListener('beforeinstallprompt', (e) => {
-            if (DEBUG && DEBUG.enabled) console.log('[PWA] beforeinstallprompt fired');
+            if (DEBUG && DEBUG.enabled) console.log('[PWA] beforeinstallprompt fired (listener)');
             e.preventDefault();
-            this.deferredPrompt = e;
-            
-            if (this.isPWA()) {
-                if (DEBUG && DEBUG.enabled) console.log('[PWA] Already installed, skipping prompt');
-                return;
-            }
-            
-            // iOS will never fire this event
-            if (this.platform.isIOS) {
-                if (DEBUG && DEBUG.enabled) console.log('[PWA] iOS detected; using manual instructions');
-                this.showIOSInstructions();
-                return;
-            }
-            
-            // Windows/Desktop Edge: show subtle hint after delay
-            if (this.platform.isWindows || this.platform.isEdge) {
-                if (!localStorage.getItem('installPromptDismissed')) {
-                    setTimeout(() => this.showInstallPrompt(), this.INSTALL_DELAY_MS);
-                }
-                return;
-            }
-            
-            // Android flow
-            if (this.platform.isAndroid && !localStorage.getItem('installPromptDismissed')) {
-                setTimeout(() => this.showInstallPrompt(), this.INSTALL_DELAY_MS);
-            }
+            this.processInstallPromptEvent(e);
         });
+
+        // Handle iOS manually (beforeinstallprompt never fires on iOS)
+        if (this.platform.isIOS && !this.isPWA() && !localStorage.getItem('installPromptDismissed')) {
+            setTimeout(() => this.showIOSInstructions(), this.INSTALL_DELAY_MS);
+        }
 
         // Track installation
         window.addEventListener('appinstalled', () => {
-            if (DEBUG && DEBUG.enabled) console.log('PWA was installed successfully');
+            if (DEBUG && DEBUG.enabled) console.log('[PWA] App was installed successfully');
             const promptElement = document.getElementById('install-prompt');
             if (promptElement) {
                 promptElement.classList.add('hidden');
@@ -128,8 +179,8 @@ export class PWAManager {
         
         if (this.installPromptShown || this.isPWA()) return;
         
-        // Ensure event available for platforms that support it
-        if (!this.deferredPrompt && !(this.platform.isWindows || this.platform.isEdge)) return;
+        // Must have a deferred prompt event to trigger native install
+        if (!this.deferredPrompt) return;
         
         const promptElement = document.getElementById('install-prompt');
         if (!promptElement) return;

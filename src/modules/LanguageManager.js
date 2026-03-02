@@ -77,42 +77,8 @@ class LanguageManager {
         const manifestLink = document.getElementById('pwa-manifest');
         if (manifestLink) {
             const manifestFile = this.manifestFiles[langCode] || './manifest.json';
-            manifestLink.href = manifestFile + '?v=2.6.0';
+            manifestLink.href = manifestFile + '?v=2.10.1';
         }
-    }
-
-    /**
-     * Get current language code
-     */
-    getCurrentLanguage() {
-        return localStorage.getItem('appLanguage') || 'en';
-    }
-
-    /**
-     * Set a new language
-     */
-    setLanguage(langCode) {
-        if (!this.supportedLanguages.includes(langCode)) {
-            if (DEBUG && DEBUG.enabled) console.warn('Unsupported language:', langCode);
-            return false;
-        }
-        
-        localStorage.setItem('appLanguage', langCode);
-        document.documentElement.lang = langCode;
-        this.setManifest(langCode);
-        
-        if (DEBUG && DEBUG.enabled) console.log('[Language] Changed to:', this.languageNames[langCode]);
-        return true;
-    }
-
-    /**
-     * Get list of supported languages
-     */
-    getSupportedLanguages() {
-        return this.supportedLanguages.map(code => ({
-            code,
-            name: this.languageNames[code]
-        }));
     }
 }
 

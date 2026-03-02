@@ -60,7 +60,6 @@ class App {
  this.solarSystemModule = null;
  this.lastTime = 0;
  this.timeSpeed = 1; // Default to 1x real-time
- this.brightness = 100; // Default brightness percentage
 
  // Pre-allocate reusable objects for raycast hot path (avoid per-hover GC)
  this._mouseVec = new THREE.Vector2();
@@ -76,8 +75,8 @@ class App {
  this._mouseDownPos = null;
 
  // Keyboard shortcut cycle indices
- this._voyagerIndex = 0;
- this._probeIndex = 0;
+ this._voyagerIndex = -1;
+ this._probeIndex = -1;
 
  // One-shot VR error log flags
  this._vrMoveErrLogged = false;
@@ -141,7 +140,7 @@ class App {
  startExperience() {
  // Called by SolarSystemModule after all assets are loaded
  // Setup UI for Solar System
- this.uiManager.setupSolarSystemUI(this.solarSystemModule, this.sceneManager);
+ this.uiManager.setupSolarSystemUI();
  
  // Setup controls
  this.setupControls();
@@ -206,6 +205,9 @@ class App {
  this.solarSystemModule.update(deltaTime, this.timeSpeed, 
  this.sceneManager.camera, this.sceneManager.controls);
  }
+
+ // Update FPS counter (driven by main render loop, not a separate rAF)
+ this.updateFPSCounter();
  });
  }
 
@@ -692,8 +694,6 @@ class App {
  // Use exact equality for constellation/nebula/galaxy IDs, includes for display names
  const matchFn = category.exactMatch === 'exact'
  ? (name, pattern) => name === pattern
- : category.exactMatch
- ? (name, pattern) => name.startsWith(pattern)
  : (name, pattern) => name.includes(pattern);
  const found = this.solarSystemModule[category.array].find(obj => 
  patterns.some(pattern => matchFn(obj.userData.name, pattern)));
@@ -739,6 +739,19 @@ class App {
  }
 
  /**
+  * Check if an object and all its ancestors are visible.
+  * Three.js raycaster does NOT check visibility, so we must filter manually.
+  */
+ _isVisibleInHierarchy(object) {
+ let current = object;
+ while (current) {
+ if (current.visible === false) return false;
+ current = current.parent;
+ }
+ return true;
+ }
+
+ /**
   * Perform raycasting and find the closest named object
   * @param {MouseEvent} event - The mouse event
   * @param {boolean} recursiveFirst - Whether to check recursively first
@@ -769,6 +782,10 @@ class App {
  const namedObjects = [];
  for (let i = 0; i < Math.min(intersects.length, 30); i++) {
  const candidate = intersects[i].object;
+
+ // Skip objects that are invisible or belong to a hidden parent group
+ // (Three.js raycaster does NOT check visibility — only the renderer does)
+ if (!this._isVisibleInHierarchy(candidate)) continue;
  
  if (candidate.userData && candidate.userData.name) {
  if (!namedObjects.some(n => n.object === candidate)) {
@@ -887,7 +904,6 @@ class App {
 
  // Throttle hover checks to avoid performance issues
  const now = Date.now();
- if (!this._lastHoverCheck) this._lastHoverCheck = 0;
  if (now - this._lastHoverCheck < 50) return; // Check max every 50ms (20fps)
  this._lastHoverCheck = now;
 
@@ -983,8 +999,7 @@ class App {
  this.uiManager.closeInfoPanel();
  this.uiManager.closeHelpModal();
  break;
- case ' ':
- case 'space': {
+ case ' ': {
  // SPACE = Toggle between Paused and Normal speed (50 = 1x)
  e.preventDefault();
  const spaceSpeedSlider = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
@@ -1031,41 +1046,37 @@ class App {
  }
  
  setupFPSCounter() {
- let frameCount = 0;
- let lastTime = performance.now();
- const fpsValue = document.getElementById('fps-value');
- const fpsCounter = document.getElementById('fps-counter');
- 
- const updateFPS = () => {
- frameCount++;
+ this._fpsFrameCount = 0;
+ this._fpsLastTime = performance.now();
+ this._fpsValueEl = document.getElementById('fps-value');
+ this._fpsCounterEl = document.getElementById('fps-counter');
+ }
+
+ updateFPSCounter() {
+ this._fpsFrameCount++;
  const currentTime = performance.now();
- 
- if (currentTime >= lastTime + 1000) {
- const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
- if (fpsValue) {
- fpsValue.textContent = fps;
+
+ if (currentTime >= this._fpsLastTime + 1000) {
+ const fps = Math.round((this._fpsFrameCount * 1000) / (currentTime - this._fpsLastTime));
+ if (this._fpsValueEl) {
+ this._fpsValueEl.textContent = fps;
  }
- 
+
  // Update color based on FPS
- if (fpsCounter) {
- fpsCounter.classList.remove('good', 'warning', 'bad');
+ if (this._fpsCounterEl) {
+ this._fpsCounterEl.classList.remove('good', 'warning', 'bad');
  if (fps >= 55) {
- fpsCounter.classList.add('good');
+ this._fpsCounterEl.classList.add('good');
  } else if (fps >= 30) {
- fpsCounter.classList.add('warning');
+ this._fpsCounterEl.classList.add('warning');
  } else {
- fpsCounter.classList.add('bad');
+ this._fpsCounterEl.classList.add('bad');
  }
  }
- 
- frameCount = 0;
- lastTime = currentTime;
+
+ this._fpsFrameCount = 0;
+ this._fpsLastTime = currentTime;
  }
- 
- requestAnimationFrame(updateFPS);
- };
- 
- updateFPS();
  }
  
  // ===========================

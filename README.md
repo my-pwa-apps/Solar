@@ -118,9 +118,7 @@ Visit [PWABuilder Image Generator](https://www.pwabuilder.com/imageGenerator), u
 
 ### 2. Deploy to HTTPS (Required)
 Deploy to any HTTPS-enabled host:
-- GitHub Pages (free)
-- Netlify (free)
-- Vercel (free)
+- GitHub Pages (free) ← **currently used**
 - Azure Static Web Apps (free tier)
 
 ### 3. Validate

@@ -106,6 +106,10 @@ export class ServiceWorkerManager {
         const notification = document.getElementById('update-notification');
         if (!notification) return;
         
+        // Guard against stacking listeners from repeated calls
+        if (this._updateNotificationShown) return;
+        this._updateNotificationShown = true;
+        
         notification.classList.remove('hidden');
         
         // Update button - request the waiting worker to activate
@@ -121,23 +125,8 @@ export class ServiceWorkerManager {
         // Dismiss button
         document.getElementById('update-dismiss')?.addEventListener('click', () => {
             notification.classList.add('hidden');
+            this._updateNotificationShown = false; // Allow showing again for future updates
         }, { once: true });
-    }
-
-    /**
-     * Send message to service worker
-     */
-    sendMessage(message) {
-        if (navigator.serviceWorker?.controller) {
-            navigator.serviceWorker.controller.postMessage(message);
-        }
-    }
-
-    /**
-     * Get registration object
-     */
-    getRegistration() {
-        return this.registration;
     }
 }
 

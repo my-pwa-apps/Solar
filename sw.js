@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.8.4
+// Version 2.10.1
 
-const CACHE_VERSION = '2.8.4';
+const CACHE_VERSION = '2.10.1';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -115,14 +115,8 @@ self.addEventListener('install', (event) => {
         // Cache static files
         await cache.addAll(STATIC_CACHE_FILES);
         
-        // Try to cache CDN files (don't fail if they're not available)
-        for (const url of CDN_CACHE_FILES) {
-          try {
-            await cache.add(url);
-          } catch (err) {
-            // Silently fail - CDN caching is optional
-          }
-        }
+        // Try to cache CDN files in parallel (don't fail if they're not available)
+        await Promise.allSettled(CDN_CACHE_FILES.map(url => cache.add(url)));
         
         // Notify clients that a new SW is installed and waiting
         broadcastMessage({ type: 'SW_INSTALLED', version: CACHE_VERSION });
@@ -210,7 +204,7 @@ self.addEventListener('fetch', (event) => {
             const networkResponse = await fetch(request);
             if (networkResponse && networkResponse.status === 200) {
               const cacheStorage = await caches.open(cache);
-              cacheStorage.put(request, networkResponse.clone());
+              await cacheStorage.put(request, networkResponse.clone());
             }
             return networkResponse;
           } catch (error) {
@@ -225,7 +219,11 @@ self.addEventListener('fetch', (event) => {
           const cachedResponse = await caches.match(request);
           if (cachedResponse) {
             // Return cached version and update in background
-            event.waitUntil(updateCache(request, cache));
+            // Skip revalidation for immutable CDN resources (versioned URLs can't change)
+            const reqUrl = new URL(request.url);
+            if (!reqUrl.hostname.includes('jsdelivr.net')) {
+              event.waitUntil(updateCache(request, cache));
+            }
             return cachedResponse;
           }
           
@@ -235,7 +233,7 @@ self.addEventListener('fetch', (event) => {
           // Cache successful responses
           if (networkResponse && networkResponse.status === 200) {
             const cacheStorage = await caches.open(cache);
-            cacheStorage.put(request, networkResponse.clone());
+            await cacheStorage.put(request, networkResponse.clone());
             
             // Enforce cache limits if specified
             if (limit) {
@@ -363,28 +361,6 @@ self.addEventListener('message', (event) => {
       })
     );
   }
-});
-
-// Push notifications support
-self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'New update available!',
-    icon: './icons/manifest-icon-192.maskable.png',
-    badge: './icons/windows11/Square44x44Logo.targetsize-48.png',
-    vibrate: [200, 100, 200],
-    tag: 'space-voyage-notification',
-    requireInteraction: false
-  };
-  
-  event.waitUntil(
-    self.registration.showNotification('Space Voyage', options)
-  );
-});
-
-// Notification click handler
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(clients.openWindow('./'));
 });
 
 // Broadcast helper to send messages to all window clients

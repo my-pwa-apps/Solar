@@ -48,8 +48,9 @@ class AudioManager {
      * Ensure audio context is running (browsers suspend it until user interaction)
      */
     async ensureResumed() {
-        if (!this.initialized) this.init();
-        if (!this.audioContext) return false;
+        // Don't call init() here — AudioContext requires a user gesture to resume.
+        // init() is called from user interaction listeners in main.js.
+        if (!this.initialized || !this.audioContext) return false;
         
         if (this.audioContext.state === 'suspended') {
             try {
@@ -130,34 +131,6 @@ class AudioManager {
         gain2.connect(this.masterGain);
         osc2.start(now);
         osc2.stop(now + 0.2);
-    }
-    
-    /**
-     * Play a "hover" sound - subtle and short
-     */
-    async playHover() {
-        if (!this.enabled) return;
-        if (!await this.ensureResumed()) return;
-        
-        const ctx = this.audioContext;
-        const now = ctx.currentTime;
-        
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        // Soft blip
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, now);
-        
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.08, now + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-        
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        
-        osc.start(now);
-        osc.stop(now + 0.08);
     }
     
     /**
@@ -284,38 +257,7 @@ class AudioManager {
             osc.stop(startTime + noteLength + 0.15);
         });
     }
-    
-    /**
-     * Play a subtle ambient "space" drone
-     * For background atmosphere - call once and let it fade
-     */
-    async playAmbientPulse() {
-        if (!this.enabled) return;
-        if (!await this.ensureResumed()) return;
-        
-        const ctx = this.audioContext;
-        const now = ctx.currentTime;
-        const duration = 2;
-        
-        // Deep bass drone
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.value = 60;
-        
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.05, now + 0.5);
-        gain.gain.linearRampToValueAtTime(0.05, now + duration - 0.5);
-        gain.gain.linearRampToValueAtTime(0, now + duration);
-        
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-        
-        osc.start(now);
-        osc.stop(now + duration);
-    }
-    
+
     /**
      * Play speed change tick sound
      */
@@ -396,40 +338,6 @@ class AudioManager {
         
         osc.start(now);
         osc.stop(now + 0.15);
-    }
-    
-    /**
-     * Play error/invalid action sound
-     */
-    async playError() {
-        if (!this.enabled) return;
-        if (!await this.ensureResumed()) return;
-        
-        const ctx = this.audioContext;
-        const now = ctx.currentTime;
-        
-        // Two descending notes (minor second = dissonant)
-        const osc1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        osc1.type = 'square';
-        osc1.frequency.value = 200;
-        gain1.gain.setValueAtTime(0.1, now);
-        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc1.connect(gain1);
-        gain1.connect(this.masterGain);
-        osc1.start(now);
-        osc1.stop(now + 0.2);
-        
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.type = 'square';
-        osc2.frequency.value = 180;
-        gain2.gain.setValueAtTime(0.1, now + 0.1);
-        gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-        osc2.connect(gain2);
-        gain2.connect(this.masterGain);
-        osc2.start(now + 0.1);
-        osc2.stop(now + 0.3);
     }
 }
 

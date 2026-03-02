@@ -14,7 +14,8 @@ export const DEBUG = {
 };
 
 // Mobile & Performance Detection
-export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+ || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
 export const IS_LOW_POWER = navigator.hardwareConcurrency < 4;
 export const QUALITY_PRESET = (IS_MOBILE || IS_LOW_POWER) ? 'low' : 'high';
 
@@ -53,7 +54,6 @@ export const CONFIG = {
  // Adaptive quality based on device
  textureSize: IS_MOBILE ? 1024 : 4096,
  sphereSegments: IS_MOBILE ? 32 : 128,
- lowPowerSegments: 32,
  particleSize: 2,
  particleCount: IS_MOBILE ? 1000 : 5000,
  shadows: !IS_MOBILE // Disable shadows on mobile
@@ -61,12 +61,13 @@ export const CONFIG = {
  CONSTELLATION: {
  // Constellation rendering constants
  DISTANCE: 10000, // Distance from origin for constellation stars
- STAR_BASE_SIZE: 50, // Base size multiplier for stars (doubled from 25 for visibility)
- GLOW_MULTIPLIER: 4, // Glow size multiplier relative to star size (increased from 3)
+ STAR_BASE_SIZE: 15, // Base size multiplier for stars
+ STAR_MAX_SIZE: 35, // Maximum star radius cap (prevents extremely bright stars from dominating)
+ GLOW_MULTIPLIER: 2.5, // Glow size multiplier relative to star size
  STAR_OPACITY: 1.0, // Star core opacity (fully opaque)
- GLOW_OPACITY: 0.7, // Glow opacity (increased from 0.6 for brightness)
+ GLOW_OPACITY: 0.4, // Glow opacity (soft halo)
  LINE_COLOR: 0x6699FF, // Constellation line color (bright blue)
- LINE_OPACITY: 0.8, // Line opacity (increased from 0.7 for visibility)
+ LINE_OPACITY: 0.8, // Line opacity
  LINE_WIDTH: 3, // Line thickness
  STAR_SEGMENTS: 16, // Sphere segments for stars
  GLOW_SEGMENTS: 16 // Sphere segments for glow
@@ -76,7 +77,8 @@ export const CONFIG = {
 // Suppress harmless WebGL shader validation warnings
 const originalWarn = console.warn;
 console.warn = function(...args) {
- const msg = args.join(' ');
+ // Only check string arguments to avoid [object Object] coercion breaking the filter
+ const msg = args.filter(a => typeof a === 'string').join(' ');
  // Filter out known harmless WebGL shader warnings
  if (msg.includes('THREE.WebGLProgram') && msg.includes('VALIDATE_STATUS')) {
  // Suppress - this is a harmless validation warning that doesn't affect functionality
@@ -160,34 +162,12 @@ export class TextureGeneratorUtils {
  }
  
  /**
-  * Turbulence pattern for chaotic effects
-  * @param {number} x - X coordinate
-  * @param {number} y - Y coordinate
-  * @param {number} size - Turbulence size
-  * @param {Function} noiseFunc - Noise function to use (default: TextureGeneratorUtils.noise)
-  * @returns {number} Turbulence value
-  */
- static turbulence(x, y, size, noiseFunc = TextureGeneratorUtils.noise) {
- let value = 0;
- let initialSize = size;
- 
- while (size >= 1) {
- value += noiseFunc(x / size, y / size) * size;
- size /= 2.0;
- }
- 
- return value / initialSize;
- }
- 
- /**
   * Finalize texture - convert canvas to THREE.CanvasTexture
   * @param {HTMLCanvasElement} canvas - Canvas element
   * @returns {THREE.CanvasTexture} Three.js texture
   */
  static finalizeTexture(canvas) {
- // Import THREE dynamically (already available globally)
  const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
  return texture;
  }
  
@@ -241,33 +221,12 @@ export class MaterialFactory {
  material.bumpScale = config.bumpScale !== undefined ? config.bumpScale : 0.02;
  }
  if (config.normalMap) material.normalMap = config.normalMap;
- if (config.color) material.color = typeof config.color === 'number' ? config.color : parseInt(config.color.replace('#', '0x'));
+ if (config.color !== undefined) material.color = typeof config.color === 'number' ? config.color : new THREE.Color(config.color);
  if (config.opacity !== undefined) material.opacity = config.opacity;
  if (config.transparent) material.transparent = config.transparent;
+ if (config.side !== undefined) material.side = config.side;
  
  return new THREE.MeshStandardMaterial(material);
- }
- 
- /**
-  * Create a MeshBasicMaterial (for emissive/unlit objects)
-  * @param {Object} config - Material configuration
-  * @param {THREE.Texture} config.map - Texture map
-  * @param {number|string} config.color - Base color
-  * @param {number} config.opacity - Opacity (default: 1.0)
-  * @param {boolean} config.transparent - Transparent flag (default: false)
-  * @param {boolean} config.side - Side to render (default: THREE.FrontSide)
-  * @returns {THREE.MeshBasicMaterial}
-  */
- static createBasicMaterial(config = {}) {
- const material = {};
- 
- if (config.map) material.map = config.map;
- if (config.color) material.color = typeof config.color === 'number' ? config.color : parseInt(config.color.replace('#', '0x'));
- if (config.opacity !== undefined) material.opacity = config.opacity;
- if (config.transparent) material.transparent = config.transparent;
- if (config.side) material.side = config.side;
- 
- return new THREE.MeshBasicMaterial(material);
  }
  
  /**
@@ -545,7 +504,9 @@ export class ConstellationFactory {
   * @returns {THREE.Mesh} Star mesh
   */
  static createStar(star, position, geometryCache = null) {
- const starSize = CONFIG.CONSTELLATION.STAR_BASE_SIZE * Math.pow(2.5, -star.mag);
+ // Gentler magnitude scaling (1.5 instead of 2.5) with a max cap
+ const rawSize = CONFIG.CONSTELLATION.STAR_BASE_SIZE * Math.pow(1.5, -star.mag);
+ const starSize = Math.min(rawSize, CONFIG.CONSTELLATION.STAR_MAX_SIZE);
  
  // Try to get cached geometry or create new one
  let starGeom;

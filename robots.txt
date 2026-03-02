@@ -1,21 +1,6 @@
 # robots.txt for Space Voyage
+# Paid app in Windows Store — prevent search engine indexing
+# (consistent with <meta name="robots" content="noindex, nofollow"> in index.html)
 
 User-agent: *
-Allow: /
-
-# Sitemaps
-Sitemap: https://my-pwa-apps.github.io/Solar/sitemap.xml
-
-# Disallow service worker and config files from indexing
-Disallow: /sw.js
-Disallow: /manifest.json
-Disallow: /manifest.nl.json
-Disallow: /browserconfig.xml
-Disallow: /netlify.toml
-Disallow: /vercel.json
-
-# Allow important pages
-Allow: /index.html
-Allow: /src/
-Allow: /icons/
-Allow: /screenshots/
+Disallow: /

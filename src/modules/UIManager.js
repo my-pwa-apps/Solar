@@ -3,9 +3,6 @@
 // ===========================
 import { DEBUG } from './utils.js';
 
-// i18n.js is loaded globally in index.html, access via window.t
-const t = window.t || ((key) => key);
-
 export class UIManager {
  constructor() {
  // Cache DOM elements
@@ -67,10 +64,6 @@ export class UIManager {
  if (this.elements.loading) {
  this.elements.loading.classList.add('hidden');
  }
- // Show info panel (explorer removed - using header dropdown instead)
- if (this.elements.infoPanel) {
- this.elements.infoPanel.classList.remove('hidden');
- }
  }
 
  updateInfoPanel(info) {
@@ -118,7 +111,7 @@ export class UIManager {
  }
  }
  
- setupSolarSystemUI(solarSystemModule, sceneManager) {
+ setupSolarSystemUI() {
  // Setup time speed control
  this.setupTimeSpeedControl();
  
@@ -171,6 +164,7 @@ export class UIManager {
   */
  speedToSlider(speed) {
  if (speed === 0) return 0;
+ if (speed <= 0.01) return 1; // Clamp tiny speeds to minimum slider position
  if (speed <= 0.5) {
  // Inverse of quadratic: t = sqrt((speed - 0.01) / 0.49)
  const t = Math.sqrt((speed - 0.01) / 0.49);
@@ -205,7 +199,7 @@ export class UIManager {
  const speedCompactLabel = document.getElementById('speed-compact-label');
  
  if (!timeSpeedSlider || !timeSpeedLabel) {
- console.warn('Time speed controls not found');
+ if (DEBUG && DEBUG.enabled) console.warn('Time speed controls not found');
  return;
  }
  
