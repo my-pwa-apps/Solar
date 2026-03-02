@@ -182,5 +182,5 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 
 ---
 
-**Last Updated:** March 2, 2026 | **SW Version:** 2.10.1 | **Three.js:** v0.183.0
+**Last Updated:** March 2, 2026 | **SW Version:** 2.10.3 | **Three.js:** v0.183.0
 ```
