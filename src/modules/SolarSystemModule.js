@@ -1042,6 +1042,9 @@ export class SolarSystemModule {
     let primaryIndex = 0;
     let pluginIndex = 0;
     let currentTimeout = null;
+    let retryCount = 0;
+    const MAX_RETRIES = 1;
+    const LOAD_TIMEOUT = IS_MOBILE ? 15000 : 10000;
     
     const tryNext = async () => {
         const meta = this._pendingTextureMeta[planetKey];
@@ -1077,16 +1080,16 @@ export class SolarSystemModule {
                 }
                 meta.phase = 'primary';
                 
-                // Set timeout for Quest VR (10 seconds max per texture)
+                // Timeout per texture load attempt (longer on mobile)
                 let loadTimedOut = false;
                 currentTimeout = setTimeout(() => {
                     loadTimedOut = true;
                     meta.timeouts++;
-                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} primary source ${primaryIndex + 1} timed out after 10s: ${url}`);
-                    meta.errors.push({ url, error: 'Timeout after 10s', phase: 'primary' });
+                    if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} primary source ${primaryIndex + 1} timed out after ${LOAD_TIMEOUT/1000}s: ${url}`);
+                    meta.errors.push({ url, error: `Timeout after ${LOAD_TIMEOUT/1000}s`, phase: 'primary' });
                     primaryIndex++;
                     tryNext();
-                }, 10000);
+                }, LOAD_TIMEOUT);
                 
                 loader.load(
                     url, 
@@ -1123,16 +1126,15 @@ export class SolarSystemModule {
                 const url = pluginRepoURLs[pluginIndex];
                 meta.phase = 'plugin';
                 
-                // Set timeout for Quest VR (10 seconds max per texture)
                 let loadTimedOut = false;
                 currentTimeout = setTimeout(() => {
                     loadTimedOut = true;
                     meta.timeouts++;
-                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} plugin source ${pluginIndex + 1} timed out after 10s: ${url}`);
-                    meta.errors.push({ url, error: 'Timeout after 10s', phase: 'plugin' });
+                    if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} plugin source ${pluginIndex + 1} timed out after ${LOAD_TIMEOUT/1000}s: ${url}`);
+                    meta.errors.push({ url, error: `Timeout after ${LOAD_TIMEOUT/1000}s`, phase: 'plugin' });
                     pluginIndex++;
                     tryNext();
-                }, 10000);
+                }, LOAD_TIMEOUT);
                 
                 loader.load(
                     url, 
@@ -1161,7 +1163,17 @@ export class SolarSystemModule {
                 );
                 return;
             }
-            // All remote attempts failed ° generate procedural now
+            // All sources exhausted — retry once before falling to procedural
+            if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                primaryIndex = 0;
+                pluginIndex = 0;
+                phase = 'primary';
+                if (DEBUG && DEBUG.TEXTURES) console.log(`🔄 ${planetName} texture: retry ${retryCount}/${MAX_RETRIES}`);
+                // Brief delay before retry to let SW / network settle
+                setTimeout(() => tryNext(), 1000);
+                return;
+            }
             phase = 'procedural';
         }
         if (phase === 'procedural') {
@@ -1216,26 +1228,27 @@ export class SolarSystemModule {
             // a second full-res canvas + toDataURL() can throw an OutOfMemoryError or
             // QuotaExceededError. We must not let a caching failure prevent the texture
             // from being applied to the material below.
-            // Also skip caching on mobile to avoid memory pressure (textures reload fast
-            // from the Service Worker cache anyway).
-            if (!IS_MOBILE) {
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = tex.image.width;
-                    canvas.height = tex.image.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(tex.image, 0, 0);
-                    const dataURL = canvas.toDataURL('image/jpeg', 0.95);
-                    TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
-                        // Cache write failed - texture will be reloaded next time
-                    });
-                    if (DEBUG && DEBUG.TEXTURES) {
-                        console.log(`?? Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB`);
-                    }
-                } catch (cacheErr) {
-                    // Out of memory, quota exceeded, or other — skip caching, texture still applies
-                    if (DEBUG && DEBUG.TEXTURES) console.warn(`?? ${planetName} texture cache skipped (${cacheErr.message})`);
+            // Cache to IndexedDB for faster subsequent loads.
+            // On mobile, use lower quality and capped resolution to reduce memory pressure.
+            try {
+                const maxDim = IS_MOBILE ? 1024 : tex.image.width;
+                const scale = Math.min(1, maxDim / Math.max(tex.image.width, tex.image.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(tex.image.width * scale);
+                canvas.height = Math.round(tex.image.height * scale);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(tex.image, 0, 0, canvas.width, canvas.height);
+                const quality = IS_MOBILE ? 0.7 : 0.95;
+                const dataURL = canvas.toDataURL('image/jpeg', quality);
+                TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
+                    // Cache write failed - texture will be reloaded next time
+                });
+                if (DEBUG && DEBUG.TEXTURES) {
+                    console.log(`💾 Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB (${canvas.width}x${canvas.height})`);
                 }
+            } catch (cacheErr) {
+                // Out of memory, quota exceeded, or other — skip caching, texture still applies
+                if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} texture cache skipped (${cacheErr.message})`);
             }
         }
         
