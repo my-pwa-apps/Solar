@@ -237,8 +237,12 @@ export class UIManager {
  
  if (!speedToggle || !speedPanelContent) return;
  
+ // Safe localStorage helpers — Safari private mode, quota exceeded, or disabled storage
+ const safeGet = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+ const safeSet = (key, value) => { try { localStorage.setItem(key, value); } catch { /* ignore */ } };
+ 
  // Load collapsed state from localStorage
- const isCollapsed = localStorage.getItem('speed_panel_collapsed') === 'true';
+ const isCollapsed = safeGet('speed_panel_collapsed') === 'true';
  if (isCollapsed) {
  speedPanelContent.classList.add('collapsed');
  speedControl?.classList.add('collapsed');
@@ -252,7 +256,7 @@ export class UIManager {
  speedToggle.setAttribute('aria-expanded', wasCollapsed ? 'true' : 'false');
  
  // Save state
- localStorage.setItem('speed_panel_collapsed', !wasCollapsed);
+ safeSet('speed_panel_collapsed', !wasCollapsed);
 
  // Play audio feedback
  if (window.audioManager) {

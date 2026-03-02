@@ -834,7 +834,7 @@
 #fps-counter {
     position: fixed;
     top: 80px;
-    right: 20px;
+    left: 20px;
     background: rgba(0, 0, 0, 0.7);
     color: #4FC3F7;
     padding: 8px 12px;

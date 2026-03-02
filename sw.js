@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.5
+// Version 2.10.6
 
-const CACHE_VERSION = '2.10.5';
+const CACHE_VERSION = '2.10.6';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -208,7 +208,7 @@ self.addEventListener('fetch', (event) => {
             }
             return networkResponse;
           } catch (error) {
-            const cachedResponse = await caches.match(request);
+            const cachedResponse = await caches.match(request, { ignoreSearch: true });
             if (cachedResponse) {
               return cachedResponse;
             }
@@ -216,7 +216,9 @@ self.addEventListener('fetch', (event) => {
           }
         } else {
           // Cache first strategy (default)
-          const cachedResponse = await caches.match(request);
+          // ignoreSearch: true allows versioned URLs (e.g. ?v=2.10.6) to match
+          // plain paths stored in the SW install cache, ensuring offline reliability
+          const cachedResponse = await caches.match(request, { ignoreSearch: true });
           if (cachedResponse) {
             // Return cached version and update in background
             // Skip revalidation for immutable CDN resources (versioned URLs can't change)
