@@ -4839,7 +4839,7 @@ export class SolarSystemModule {
  { name: 'Zubenelgenubi', ra: 222.7, dec: -16.0, mag: 2.8, color: 0xFFFFE0 }, // 1 - Southern scale
  { name: 'Brachium', ra: 233.9, dec: -25.3, mag: 3.3, color: 0xFFA500 }, // 2 - Scale base
  { name: 'Theta Librae', ra: 236.2, dec: -16.7, mag: 4.1, color: 0xFFFFF0 }, // 3 - Balance point
- { name: 'Upsilon Librae', ra: 243.6, dec: -28.1, mag: 3.6, color: 0xFFFFE0 } // 4 - Scale arm
+ { name: 'Upsilon Librae', ra: 234.3, dec: -28.1, mag: 3.6, color: 0xFFFFE0 } // 4 - Scale arm (υ Lib, RA 15h 37m = 234.3°)
  ],
  lines: [[0,1], [1,2], [0,3], [3,4]] // Scale balance with beam
  },
@@ -4908,13 +4908,13 @@ export class SolarSystemModule {
  name: 'Pisces (The Fish)',
  description: t('descPisces'),
  stars: [
- { name: 'Alpherg', ra: 25.7, dec: 15.3, mag: 3.6, color: 0xFFFFE0 }, // 0 - Eastern fish (η Psc)
+ { name: 'Alpherg', ra: 22.87, dec: 15.3, mag: 3.6, color: 0xFFFFE0 }, // 0 - Eastern fish (η Psc, RA 01h 31m)
  { name: 'Alrescha', ra: 30.9, dec: 2.8, mag: 3.8, color: 0xFFFFF0 }, // 1 - Knot (tie point, α Psc)
- { name: 'Fumalsamakah', ra: 351.1, dec: 3.8, mag: 4.5, color: 0xFFFFF0 }, // 2 - Western fish (β Psc)
- { name: 'Delta Piscium', ra: 357.5, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }, // 3 - Fish body
- { name: 'Omega Piscium', ra: 359.3, dec: 6.9, mag: 4.0, color: 0xFFFFF0 }, // 4 - Eastern fish body (ω Psc)
- { name: 'Gamma Piscium', ra: 352.5, dec: 3.2, mag: 3.7, color: 0xFFFFE0 }, // 5 - Western fish body
- { name: 'Kappa Piscium', ra: 347.5, dec: 1.2, mag: 4.9, color: 0xFFFFF0 } // 6 - Western fish tail
+ { name: 'Fumalsamakah', ra: 345.97, dec: 3.8, mag: 4.5, color: 0xFFFFF0 }, // 2 - Western fish (β Psc, RA 23h 03m)
+ { name: 'Delta Piscium', ra: 12.17, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }, // 3 - Eastern fish body (δ Psc, RA 00h 48m)
+ { name: 'Omega Piscium', ra: 359.3, dec: 6.9, mag: 4.0, color: 0xFFFFF0 }, // 4 - NE fish body (ω Psc, RA 23h 59m)
+ { name: 'Gamma Piscium', ra: 349.29, dec: 3.2, mag: 3.7, color: 0xFFFFE0 }, // 5 - Western fish body (γ Psc, RA 23h 17m)
+ { name: 'Kappa Piscium', ra: 351.73, dec: 1.2, mag: 4.9, color: 0xFFFFF0 } // 6 - Western fish tail (κ Psc, RA 23h 27m)
  ],
  lines: [[4,0], [0,1], [1,5], [5,2], [2,6], [5,3]] // Two fish with connecting cord
  },
