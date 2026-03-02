@@ -4861,29 +4861,30 @@ export class SolarSystemModule {
  name: 'Sagittarius (The Archer)',
  description: t('descSagittarius'),
  stars: [
- { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot base (spout bottom)
- { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Spout top
- { name: 'Ascella', ra: 291.0, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 2 - Spout tip (ζ Sgr)
- { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 }, // 3 - Bottom left
- { name: 'Kaus Borealis', ra: 277.0, dec: -25.4, mag: 2.8, color: 0xFFA500 }, // 4 - Top left (lid)
- { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Top right (lid)
- { name: 'Tau Sagittarii', ra: 290.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 6 - Handle top
- { name: 'Eta Sagittarii', ra: 274.8, dec: -36.8, mag: 3.1, color: 0xFFA500 } // 7 - Handle base (η Sgr)
+ { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot bottom (ε Sgr)
+ { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Handle top / lid (σ Sgr)
+ { name: 'Ascella', ra: 291.0, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 2 - Handle base (ζ Sgr)
+ { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 }, // 3 - Pot body left (δ Sgr)
+ { name: 'Kaus Borealis', ra: 277.0, dec: -25.4, mag: 2.8, color: 0xFFA500 }, // 4 - Lid point (λ Sgr)
+ { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Pot body right (φ Sgr)
+ { name: 'Tau Sagittarii', ra: 290.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 6 - Handle middle (τ Sgr)
+ { name: 'Alnasl', ra: 271.45, dec: -30.42, mag: 2.99, color: 0xFFA500 }  // 7 - Spout tip (γ² Sgr)
  ],
- lines: [[7,3], [3,0], [0,2], [2,6], [6,5], [5,4], [4,3]] // Teapot: base-spout-handle-lid
+ lines: [[7,3],[3,0],[0,2],[2,6],[6,5],[5,1],[1,4],[4,3]] // Teapot: Alnasl(spout)→δ→ε→ζ→τ→φ→Nunki→λ→δ; Nunki properly in lid top
  },
  {
  name: 'Capricornus (The Sea-Goat)',
  description: t('descCapricornus'),
  stars: [
- { name: 'Deneb Algedi', ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 }, // 0 - Tail tip
- { name: 'Dabih', ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 }, // 1 - Goat head
- { name: 'Nashira', ra: 325.0, dec: -16.7, mag: 3.7, color: 0xFFFFF0 }, // 2 - Body center
- { name: 'Algedi', ra: 304.5, dec: -12.5, mag: 3.6, color: 0xFFFFE0 }, // 3 - Horn
- { name: 'Iota Capricorni', ra: 328.5, dec: -16.8, mag: 4.3, color: 0xE0FFFF }, // 4 - Fish tail
- { name: 'Theta Capricorni', ra: 326.0, dec: -17.2, mag: 4.1, color: 0xFFFFE0 } // 5 - Tail curve
+ { name: 'Algedi',           ra: 304.5, dec: -12.5, mag: 3.6, color: 0xFFFFE0 }, // 0 - Western horn (α Cap)
+ { name: 'Dabih',            ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 }, // 1 - Western head (β Cap)
+ { name: 'Theta Capricorni', ra: 305.3, dec: -17.2, mag: 4.1, color: 0xFFFFE0 }, // 2 - Neck/shoulder (θ Cap) — western group, near α/β
+ { name: 'Omega Capricorni', ra: 312.9, dec: -26.9, mag: 4.1, color: 0xFFFFF0 }, // 3 - Fish body lower (ω Cap) — southern apex of kite
+ { name: 'Zeta Capricorni',  ra: 321.7, dec: -22.4, mag: 3.7, color: 0xFFFFF0 }, // 4 - Fish tail arc (ζ Cap)
+ { name: 'Nashira',          ra: 325.0, dec: -16.7, mag: 3.7, color: 0xFFFFF0 }, // 5 - Eastern body (γ Cap)
+ { name: 'Deneb Algedi',     ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 }, // 6 - Eastern tail tip (δ Cap, brightest)
  ],
- lines: [[1,3], [1,2], [2,5], [5,4], [4,0], [5,0]] // Sea-goat with fish tail
+ lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0]] // Closed kite/diamond — α→β→θ (down left), arc through ω/ζ (south), γ→δ (right), back to α
  },
  {
  name: 'Aquarius (The Water-Bearer)',
@@ -4893,8 +4894,8 @@ export class SolarSystemModule {
  { name: 'Sadalmelik', ra: 331.4, dec: -0.3, mag: 3.0, color: 0xFFFFE0 }, // 1 - Lucky star of the king
  { name: 'Skat', ra: 346.2, dec: -15.8, mag: 3.3, color: 0xFFFFF0 }, // 2 - Shin/leg
  { name: 'Albali', ra: 315.9, dec: -9.5, mag: 3.8, color: 0xFFFFF0 }, // 3 - The swallower
- { name: 'Lambda Aquarii', ra: 352.2, dec: -7.6, mag: 3.7, color: 0xFFFFE0 }, // 4 - Water jar
- { name: 'Phi Aquarii', ra: 353.7, dec: -6.0, mag: 4.2, color: 0xFFFFF0 } // 5 - Water stream
+ { name: 'Lambda Aquarii', ra: 343.2, dec: -7.6, mag: 3.7, color: 0xFFFFE0 }, // 4 - Water stream (λ Aqr, RA 22h 53m)
+ { name: 'Phi Aquarii', ra: 359.6, dec: -6.0, mag: 4.2, color: 0xFFFFF0 }   // 5 - Water stream end (φ Aqr, RA 23h 58m)
  ],
  lines: [[3,0], [0,1], [1,4], [4,5], [5,2]] // Water bearer with flowing water
  },
