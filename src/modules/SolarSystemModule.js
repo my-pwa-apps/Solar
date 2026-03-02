@@ -4839,7 +4839,7 @@ export class SolarSystemModule {
  { name: 'Zubenelgenubi', ra: 222.7, dec: -16.0, mag: 2.8, color: 0xFFFFE0 }, // 1 - Southern scale
  { name: 'Brachium', ra: 233.9, dec: -25.3, mag: 3.3, color: 0xFFA500 }, // 2 - Scale base
  { name: 'Theta Librae', ra: 236.2, dec: -16.7, mag: 4.1, color: 0xFFFFF0 }, // 3 - Balance point
- { name: 'Upsilon Librae', ra: 243.6, dec: -28.1, mag: 3.6, color: 0xFFFFE0 } // 4 - Scale arm
+ { name: 'Upsilon Librae', ra: 234.3, dec: -28.1, mag: 3.6, color: 0xFFFFE0 } // 4 - Scale arm (υ Lib, RA 15h 37m = 234.3°)
  ],
  lines: [[0,1], [1,2], [0,3], [3,4]] // Scale balance with beam
  },
@@ -4847,43 +4847,49 @@ export class SolarSystemModule {
  name: 'Scorpius (The Scorpion)',
  description: t('descScorpius'),
  stars: [
- { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 }, // 0 - Red supergiant (heart)
- { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF }, // 1 - Stinger
- { name: 'Sargas', ra: 264.3, dec: -43.0, mag: 1.9, color: 0xFFFFE0 }, // 2 - Stinger tip
- { name: 'Dschubba', ra: 240.1, dec: -22.6, mag: 2.3, color: 0xE0FFFF }, // 3 - Head
- { name: 'Graffias', ra: 241.4, dec: -19.8, mag: 2.6, color: 0xFFFFE0 }, // 4 - Claws
- { name: 'Lesath', ra: 262.7, dec: -37.3, mag: 2.7, color: 0xE0FFFF }, // 5 - Tail curve
- { name: 'Tau Scorpii', ra: 248.9, dec: -28.2, mag: 2.8, color: 0xE0FFFF } // 6 - Body
+ { name: 'Antares',       ra: 247.35, dec: -26.43, mag: 1.0, color: 0xFF4500 }, // 0 - Heart (α Sco)
+ { name: 'Graffias',      ra: 241.36, dec: -19.81, mag: 2.6, color: 0xFFFFE0 }, // 1 - Head top (β Sco)
+ { name: 'Dschubba',      ra: 240.08, dec: -22.62, mag: 2.3, color: 0xE0FFFF }, // 2 - Head (δ Sco)
+ { name: 'Tau Scorpii',   ra: 248.97, dec: -28.22, mag: 2.8, color: 0xE0FFFF }, // 3 - Upper body (τ Sco)
+ { name: 'Epsilon Sco',   ra: 252.54, dec: -34.29, mag: 2.3, color: 0xFFA500 }, // 4 - Upper tail (ε Sco / Larawag)
+ { name: 'Mu Scorpii',    ra: 252.97, dec: -37.99, mag: 3.0, color: 0xFFFFE0 }, // 5 - Mid tail (μ¹ Sco / Xamidimura)
+ { name: 'Eta Scorpii',   ra: 258.04, dec: -43.24, mag: 3.3, color: 0xFFFFF0 }, // 6 - Lower tail (η Sco)
+ { name: 'Sargas',        ra: 264.33, dec: -43.00, mag: 1.9, color: 0xFFFFE0 }, // 7 - Lower tail (θ Sco)
+ { name: 'Iota Scorpii',  ra: 266.90, dec: -40.13, mag: 3.0, color: 0xFFFFF0 }, // 8 - Tail curve (ι¹ Sco)
+ { name: 'Kappa Scorpii', ra: 265.62, dec: -39.03, mag: 2.4, color: 0xE0FFFF }, // 9 - Tail curve (κ Sco)
+ { name: 'Lesath',        ra: 262.69, dec: -37.30, mag: 2.7, color: 0xE0FFFF }, // 10 - Stinger (υ Sco)
+ { name: 'Shaula',        ra: 263.40, dec: -37.10, mag: 1.6, color: 0xE0FFFF }, // 11 - Stinger tip (λ Sco)
  ],
- lines: [[4,3], [3,0], [0,6], [6,5], [5,1], [1,2]] // Head-heart-body-curved tail-stinger
+ lines: [[1,2],[2,0],[0,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11]] // Head→heart→S-curve tail→stinger
  },
  {
  name: 'Sagittarius (The Archer)',
  description: t('descSagittarius'),
  stars: [
- { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot base (spout bottom)
- { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Spout top
- { name: 'Ascella', ra: 291.0, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 2 - Spout tip (ζ Sgr)
- { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 }, // 3 - Bottom left
- { name: 'Kaus Borealis', ra: 277.0, dec: -25.4, mag: 2.8, color: 0xFFA500 }, // 4 - Top left (lid)
- { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Top right (lid)
- { name: 'Tau Sagittarii', ra: 290.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 6 - Handle top
- { name: 'Eta Sagittarii', ra: 274.8, dec: -36.8, mag: 3.1, color: 0xFFA500 } // 7 - Handle base (η Sgr)
+ { name: 'Kaus Australis', ra: 276.0, dec: -34.4, mag: 1.8, color: 0xE0FFFF }, // 0 - Teapot bottom (ε Sgr)
+ { name: 'Nunki', ra: 283.8, dec: -26.3, mag: 2.0, color: 0xE0FFFF }, // 1 - Handle top / lid (σ Sgr)
+ { name: 'Ascella', ra: 291.0, dec: -29.9, mag: 2.6, color: 0xFFFFF0 }, // 2 - Handle base (ζ Sgr)
+ { name: 'Kaus Media', ra: 274.4, dec: -29.8, mag: 2.7, color: 0xFFA500 }, // 3 - Pot body left (δ Sgr)
+ { name: 'Kaus Borealis', ra: 277.0, dec: -25.4, mag: 2.8, color: 0xFFA500 }, // 4 - Lid point (λ Sgr)
+ { name: 'Phi Sagittarii', ra: 290.4, dec: -26.9, mag: 3.2, color: 0xFFFFF0 }, // 5 - Pot body right (φ Sgr)
+ { name: 'Tau Sagittarii', ra: 290.7, dec: -27.7, mag: 3.3, color: 0xFFFFE0 }, // 6 - Handle middle (τ Sgr)
+ { name: 'Alnasl', ra: 271.45, dec: -30.42, mag: 2.99, color: 0xFFA500 }  // 7 - Spout tip (γ² Sgr)
  ],
- lines: [[7,3], [3,0], [0,2], [2,6], [6,5], [5,4], [4,3]] // Teapot: base-spout-handle-lid
+ lines: [[7,3],[3,0],[0,2],[2,6],[6,5],[5,1],[1,4],[4,3]] // Teapot: Alnasl(spout)→δ→ε→ζ→τ→φ→Nunki→λ→δ; Nunki properly in lid top
  },
  {
  name: 'Capricornus (The Sea-Goat)',
  description: t('descCapricornus'),
  stars: [
- { name: 'Deneb Algedi', ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 }, // 0 - Tail tip
- { name: 'Dabih', ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 }, // 1 - Goat head
- { name: 'Nashira', ra: 325.0, dec: -16.7, mag: 3.7, color: 0xFFFFF0 }, // 2 - Body center
- { name: 'Algedi', ra: 304.5, dec: -12.5, mag: 3.6, color: 0xFFFFE0 }, // 3 - Horn
- { name: 'Iota Capricorni', ra: 328.5, dec: -16.8, mag: 4.3, color: 0xE0FFFF }, // 4 - Fish tail
- { name: 'Theta Capricorni', ra: 326.0, dec: -17.2, mag: 4.1, color: 0xFFFFE0 } // 5 - Tail curve
+ { name: 'Algedi',           ra: 304.5, dec: -12.5, mag: 3.6, color: 0xFFFFE0 }, // 0 - Western horn (α Cap)
+ { name: 'Dabih',            ra: 305.3, dec: -14.8, mag: 3.1, color: 0xFFA500 }, // 1 - Western head (β Cap)
+ { name: 'Theta Capricorni', ra: 305.3, dec: -17.2, mag: 4.1, color: 0xFFFFE0 }, // 2 - Neck/shoulder (θ Cap) — western group, near α/β
+ { name: 'Omega Capricorni', ra: 312.9, dec: -26.9, mag: 4.1, color: 0xFFFFF0 }, // 3 - Fish body lower (ω Cap) — southern apex of kite
+ { name: 'Zeta Capricorni',  ra: 321.7, dec: -22.4, mag: 3.7, color: 0xFFFFF0 }, // 4 - Fish tail arc (ζ Cap)
+ { name: 'Nashira',          ra: 325.0, dec: -16.7, mag: 3.7, color: 0xFFFFF0 }, // 5 - Eastern body (γ Cap)
+ { name: 'Deneb Algedi',     ra: 326.8, dec: -16.1, mag: 2.9, color: 0xFFFFF0 }, // 6 - Eastern tail tip (δ Cap, brightest)
  ],
- lines: [[1,3], [1,2], [2,5], [5,4], [4,0], [5,0]] // Sea-goat with fish tail
+ lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0]] // Closed kite/diamond — α→β→θ (down left), arc through ω/ζ (south), γ→δ (right), back to α
  },
  {
  name: 'Aquarius (The Water-Bearer)',
@@ -4893,8 +4899,8 @@ export class SolarSystemModule {
  { name: 'Sadalmelik', ra: 331.4, dec: -0.3, mag: 3.0, color: 0xFFFFE0 }, // 1 - Lucky star of the king
  { name: 'Skat', ra: 346.2, dec: -15.8, mag: 3.3, color: 0xFFFFF0 }, // 2 - Shin/leg
  { name: 'Albali', ra: 315.9, dec: -9.5, mag: 3.8, color: 0xFFFFF0 }, // 3 - The swallower
- { name: 'Lambda Aquarii', ra: 352.2, dec: -7.6, mag: 3.7, color: 0xFFFFE0 }, // 4 - Water jar
- { name: 'Phi Aquarii', ra: 353.7, dec: -6.0, mag: 4.2, color: 0xFFFFF0 } // 5 - Water stream
+ { name: 'Lambda Aquarii', ra: 343.2, dec: -7.6, mag: 3.7, color: 0xFFFFE0 }, // 4 - Water stream (λ Aqr, RA 22h 53m)
+ { name: 'Phi Aquarii', ra: 359.6, dec: -6.0, mag: 4.2, color: 0xFFFFF0 }   // 5 - Water stream end (φ Aqr, RA 23h 58m)
  ],
  lines: [[3,0], [0,1], [1,4], [4,5], [5,2]] // Water bearer with flowing water
  },
@@ -4902,13 +4908,13 @@ export class SolarSystemModule {
  name: 'Pisces (The Fish)',
  description: t('descPisces'),
  stars: [
- { name: 'Alpherg', ra: 25.7, dec: 15.3, mag: 3.6, color: 0xFFFFE0 }, // 0 - Eastern fish (η Psc)
+ { name: 'Alpherg', ra: 22.87, dec: 15.3, mag: 3.6, color: 0xFFFFE0 }, // 0 - Eastern fish (η Psc, RA 01h 31m)
  { name: 'Alrescha', ra: 30.9, dec: 2.8, mag: 3.8, color: 0xFFFFF0 }, // 1 - Knot (tie point, α Psc)
- { name: 'Fumalsamakah', ra: 351.1, dec: 3.8, mag: 4.5, color: 0xFFFFF0 }, // 2 - Western fish (β Psc)
- { name: 'Delta Piscium', ra: 357.5, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }, // 3 - Fish body
- { name: 'Omega Piscium', ra: 359.3, dec: 6.9, mag: 4.0, color: 0xFFFFF0 }, // 4 - Eastern fish body (ω Psc)
- { name: 'Gamma Piscium', ra: 352.5, dec: 3.2, mag: 3.7, color: 0xFFFFE0 }, // 5 - Western fish body
- { name: 'Kappa Piscium', ra: 347.5, dec: 1.2, mag: 4.9, color: 0xFFFFF0 } // 6 - Western fish tail
+ { name: 'Fumalsamakah', ra: 345.97, dec: 3.8, mag: 4.5, color: 0xFFFFF0 }, // 2 - Western fish (β Psc, RA 23h 03m)
+ { name: 'Delta Piscium', ra: 12.17, dec: 7.6, mag: 4.4, color: 0xFFFFF0 }, // 3 - Eastern fish body (δ Psc, RA 00h 48m)
+ { name: 'Omega Piscium', ra: 359.3, dec: 6.9, mag: 4.0, color: 0xFFFFF0 }, // 4 - NE fish body (ω Psc, RA 23h 59m)
+ { name: 'Gamma Piscium', ra: 349.29, dec: 3.2, mag: 3.7, color: 0xFFFFE0 }, // 5 - Western fish body (γ Psc, RA 23h 17m)
+ { name: 'Kappa Piscium', ra: 351.73, dec: 1.2, mag: 4.9, color: 0xFFFFF0 } // 6 - Western fish tail (κ Psc, RA 23h 27m)
  ],
  lines: [[4,0], [0,1], [1,5], [5,2], [2,6], [5,3]] // Two fish with connecting cord
  },

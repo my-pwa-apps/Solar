@@ -39,7 +39,7 @@
     </script>
 
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.1" crossorigin="use-credentials">
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.6" crossorigin="use-credentials">
     <script type="module" src="./src/modules/LanguageManager.js"></script>
     
     <!-- Primary Meta Tags -->
@@ -116,16 +116,16 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.10.1" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.10.1" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.10.1" as="style">
+    <link rel="preload" href="./src/i18n.js?v=2.10.6" as="script">
+    <link rel="preload" href="./src/styles/main.css?v=2.10.6" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.10.6" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.1">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.1">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.6">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.6">
     
     <!-- Load translations early -->
-    <script src="./src/i18n.js?v=2.10.1"></script>
+    <script src="./src/i18n.js?v=2.10.6"></script>
 </head>
 <body>
     <header id="main-header" role="banner">
@@ -307,7 +307,7 @@
     <aside id="info-panel" class="hidden draggable-panel" role="complementary" aria-labelledby="object-name" aria-hidden="true">
         <div class="panel-header">
             <h2 id="object-name" class="drag-handle" data-i18n="selectObject" title="Drag to move">Select an Object</h2>
-            <button class="close-btn" onclick="window.closeInfoPanel()" aria-label="Close information panel" tabindex="0">✕</button>
+            <button class="close-btn" aria-label="Close information panel" tabindex="0">✕</button>
         </div>
         <div class="info-content">
             <p><strong data-i18n="type">Type:</strong> <span id="object-type" aria-live="polite">-</span></p>
@@ -404,14 +404,6 @@
         </div>
     </div>
     
-    <!-- Tracking Mode Indicator - REMOVED (was distracting)
-    <div id="tracking-indicator" role="status" aria-live="polite">
-        <div class="tracking-icon"></div>
-        <span class="tracking-text">Tracking Object</span>
-        <button class="tracking-close" aria-label="Stop tracking" title="Stop tracking">✕</button>
-    </div>
-    -->
-    
     <!-- PWA Install Prompt -->
     <div id="install-prompt" class="hidden" role="dialog" aria-labelledby="install-title">
         <div class="install-content">
@@ -448,7 +440,7 @@
         </div>
     </div>
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=2.6.0"></script>
+    <script type="module" src="./src/main.js?v=2.10.6"></script>
     
     <!-- Initialize Modules -->
     <script type="module">
