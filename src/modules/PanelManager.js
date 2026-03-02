@@ -183,7 +183,7 @@ export class PanelManager {
                 callback(x, y);
             } else {
                 // Invalid saved position - clear and use CSS default
-            if (DEBUG && DEBUG.enabled) console.warn(`Invalid saved position for ${panelId} (x: ${x}, y: ${y}). Resetting.`);
+                if (DEBUG && DEBUG.enabled) console.warn(`Invalid saved position for ${panelId} (x: ${x}, y: ${y}). Resetting.`);
                 localStorage.removeItem(`panel-position-${panelId}`);
                 const position = this.applyCSSDefaults(panelElement);
                 callback(position.x, position.y);
@@ -247,8 +247,16 @@ export class PanelManager {
     resetPanelPosition(panelElement) {
         const panelId = panelElement.id;
         
-        // Don't reset if manually dragged
+        // For manually-dragged panels: don't reset to CSS defaults,
+        // but still apply constraints to keep them within the viewport
         if (this.manuallyDraggedPanels.has(panelId)) {
+            const rect = panelElement.getBoundingClientRect();
+            const constrained = this.applyConstraints(panelElement, rect.left, rect.top);
+            if (constrained.x !== rect.left || constrained.y !== rect.top) {
+                panelElement.style.left = constrained.x + 'px';
+                panelElement.style.top = constrained.y + 'px';
+                this.savePosition(panelId, constrained.x, constrained.y);
+            }
             return;
         }
         

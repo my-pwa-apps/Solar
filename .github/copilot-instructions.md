@@ -5,7 +5,7 @@
 
 **Space Voyage** is an educational Progressive Web App providing an immersive 3D Solar System experience with VR/AR support. Built with vanilla ES6 modules and Three.js, it features 100+ celestial objects, scientifically accurate orbits, and complete offline functionality.
 
-**Key Stats:** ~12,000 LOC | 10+ Web APIs | PWA Score 100/100 | Zero build tools required
+**Key Stats:** ~20,600 LOC | 10+ Web APIs | PWA Score 100/100 | Zero build tools required
 
 ## Architecture Principles
 
@@ -17,11 +17,11 @@
 
 ### 2. Module Hierarchy
 - `main.js` → Entry point; creates `App` class; sets `window.app = this` for cross-module access
-- `SceneManager.js` (~2,277 lines) → Three.js scene/camera/renderer/OrbitControls/WebXR; all VR logic
-- `SolarSystemModule.js` (~8,900 lines) → All celestial objects, orbits, textures
+- `SceneManager.js` (~2,344 lines) → Three.js scene/camera/renderer/OrbitControls/WebXR; all VR logic
+- `SolarSystemModule.js` (~9,600 lines) → All celestial objects, orbits, textures
 - `UIManager.js` → UI controls, info panels, loading screens
 - `TextureCache.js` → IndexedDB + memory cache for textures
-- `utils.js` → `DEBUG`, `CONFIG`, `IS_MOBILE`, `IS_LOW_POWER`, `MaterialFactory`, `GeometryFactory`
+- `utils.js` → `DEBUG`, `CONFIG`, `IS_MOBILE`, `IS_LOW_POWER`, `MaterialFactory`, `GeometryFactory`, `CoordinateUtils`, `ConstellationFactory`
 - `AudioManager.js`, `PanelManager.js`, `PWAManager.js`, `ServiceWorkerManager.js`, `LanguageManager.js`
 
 All modules follow the same singleton pattern:
@@ -33,7 +33,7 @@ class MyModule {
 export const myModule = new MyModule();
 ```
 
-### 3. Service Worker Caching (current: v2.6.3)
+### 3. Service Worker Caching (current: v2.10.1)
 - **Strategy:** Cache-first for static assets, network-first for HTML
 - **Always bump `CACHE_VERSION` in `sw.js`** whenever ANY cached file is modified (modules, CSS, textures, icons)
 - Add new files to `STATIC_CACHE_FILES` array in `sw.js`
@@ -116,7 +116,7 @@ Controller mesh refs are stored in `controller.userData.laserMesh / pointerMesh 
 ```powershell
 python -m http.server 8000        # or: npx http-server -p 8000
 ```
-HTTPS is required for Service Workers, PWA install prompts, and WebXR. Use Netlify/Vercel for full PWA+VR testing (configs: `netlify.toml`, `vercel.json`).
+HTTPS is required for Service Workers, PWA install prompts, and WebXR. The site is hosted on GitHub Pages (`https://my-pwa-apps.github.io/Solar/`).
 
 ### File Change Impact Matrix
 | Change Type | Required Action |
@@ -182,5 +182,5 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 
 ---
 
-**Last Updated:** February 20, 2026 | **SW Version:** 2.7.9 | **Three.js:** v0.183.0
+**Last Updated:** March 2, 2026 | **SW Version:** 2.10.1 | **Three.js:** v0.183.0
 ```

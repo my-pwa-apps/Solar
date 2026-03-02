@@ -58,7 +58,12 @@ export class PWAManager {
         
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-        window.addEventListener('load', updateOnlineStatus);
+        // Check initial status immediately if page already loaded, else wait for load
+        if (document.readyState === 'complete') {
+            updateOnlineStatus();
+        } else {
+            window.addEventListener('load', updateOnlineStatus);
+        }
     }
 
     /**

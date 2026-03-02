@@ -64,10 +64,6 @@ export class UIManager {
  if (this.elements.loading) {
  this.elements.loading.classList.add('hidden');
  }
- // Show info panel (explorer removed - using header dropdown instead)
- if (this.elements.infoPanel) {
- this.elements.infoPanel.classList.remove('hidden');
- }
  }
 
  updateInfoPanel(info) {
@@ -115,7 +111,7 @@ export class UIManager {
  }
  }
  
- setupSolarSystemUI(solarSystemModule, sceneManager) {
+ setupSolarSystemUI() {
  // Setup time speed control
  this.setupTimeSpeedControl();
  
@@ -168,6 +164,7 @@ export class UIManager {
   */
  speedToSlider(speed) {
  if (speed === 0) return 0;
+ if (speed <= 0.01) return 1; // Clamp tiny speeds to minimum slider position
  if (speed <= 0.5) {
  // Inverse of quadratic: t = sqrt((speed - 0.01) / 0.49)
  const t = Math.sqrt((speed - 0.01) / 0.49);

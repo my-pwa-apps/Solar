@@ -3,9 +3,14 @@
 // ===========================
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { CONFIG, DEBUG, IS_MOBILE } from './utils.js';
+
+// Properties that MeshBasicMaterial does NOT support as uniforms.
+// If any are truthy on a MeshBasicMaterial, Three.js refreshUniformsCommon crashes.
+const BASIC_MAT_BANNED_PROPS = ['emissive','emissiveMap','normalMap','bumpMap','displacementMap'];
+
 export class SceneManager {
  constructor() {
  this.scene = new THREE.Scene();
@@ -18,7 +23,6 @@ export class SceneManager {
  this.renderer = null;
  this.controls = null;
  this.raycaster = new THREE.Raycaster();
- this.mouse = new THREE.Vector2();
  this.lights = {};
  this.resizeTimeout = null;
  this.labelsVisible = false; // Initialize labels as hidden
@@ -95,7 +99,7 @@ export class SceneManager {
  this.renderer.toneMappingExposure = 1.2; // Increased to brighten dark areas
  
  // Performance optimizations
- this.renderer.sortObjects = false; // Skip sorting for better performance
+ this.renderer.sortObjects = true; // Required for correct transparent blending
  this.renderer.outputColorSpace = THREE.SRGBColorSpace;
  
  // Add WebGL context loss/restore handlers
@@ -381,7 +385,7 @@ export class SceneManager {
  this.renderer.xr.addEventListener('sessionstart', () => {
  try {
  const session = this.renderer.xr.getSession();
- console.log(`[XR] Session started: ${session.mode}`);
+ if (DEBUG.VR) console.log(`[XR] Session started: ${session.mode}`);
  
  // Save desktop camera state so we can restore it after the session ends.
  this._preVRCameraPosition = this.camera.position.clone();
@@ -402,8 +406,8 @@ export class SceneManager {
  this.camera.near = 1.0;
  this.camera.updateProjectionMatrix();
 
- console.log(`[XR] Dolly at (${this.dolly.position.x}, ${this.dolly.position.y}, ${this.dolly.position.z}), camera near=${this.camera.near}, far=${this.camera.far}`);
- console.log(`[XR] Scene children: ${this.scene.children.length}`);
+ if (DEBUG.enabled || DEBUG.VR) console.log(`[XR] Dolly at (${this.dolly.position.x}, ${this.dolly.position.y}, ${this.dolly.position.z}), camera near=${this.camera.near}, far=${this.camera.far}`);
+ if (DEBUG.enabled || DEBUG.VR) console.log(`[XR] Scene children: ${this.scene.children.length}`);
  
  // Set background based on session type
  if (session.mode === 'immersive-ar' ||
@@ -415,7 +419,7 @@ export class SceneManager {
  this.scene.background = new THREE.Color(0x000011);
  }
  
- console.log('[VR] Controls: LStick=move, RStick=turn/up-down, LTrigger=sprint, LGrip=rotate, X=menu, Trigger=select');
+ if (DEBUG.enabled || DEBUG.VR) console.log('[VR] Controls: LStick=move, RStick=turn/up-down, LTrigger=sprint, LGrip=rotate, X=menu, Trigger=select');
 
  // Re-init button-state map for however many input sources exist.
  // Done here (not per-frame) so the hot loop needs no guard.
@@ -423,8 +427,6 @@ export class SceneManager {
 
  // Clear per-session error-suppression flags so a new session
  // produces fresh diagnostics in the console.
- this._vrMoveErrLogged = false;
- this._vrLaserErrLogged = false;
 
  // Hide VR UI panel initially — user opens it with X button
  if (this.vrUIPanel) this.vrUIPanel.visible = false;
@@ -436,7 +438,7 @@ export class SceneManager {
 
  // Handle XR session end
  this.renderer.xr.addEventListener('sessionend', () => {
- console.log('[XR] Session ended');
+ if (DEBUG.enabled || DEBUG.VR) console.log('[XR] Session ended');
  
  // Return dolly to origin so desktop camera world == camera local
  this.dolly.position.set(0, 0, 0);
@@ -455,7 +457,7 @@ export class SceneManager {
  }
 
  // Restore desktop near value
- this.camera.near = 0.1;
+ this.camera.near = CONFIG.CAMERA.near;
  this.camera.updateProjectionMatrix();
  
  this.scene.background = new THREE.Color(0x000011); // Restore original space background
@@ -636,15 +638,6 @@ export class SceneManager {
  };
  }
 
- getVRQuickNavTargets() {
- const app = window.app || {};
- const module = app.solarSystemModule;
- if (module && typeof module.getQuickNavTargets === 'function') {
- return module.getQuickNavTargets();
- }
- return [];
- }
- 
  getVRNavCatalog() {
  return [
  { id: 'solar', label: '☀️ Solar', items: [
@@ -1798,10 +1791,6 @@ export class SceneManager {
  this.requestVRMenuRefresh();
  }
 
- updateVRUI() {
- this.requestVRMenuRefresh();
- }
-
  /** Show or hide laser visuals on all controllers using cached refs. */
  _setLasersVisible(visible) {
  this.lasersVisible = visible;
@@ -1900,8 +1889,8 @@ export class SceneManager {
  return;
  }
  
- // Grab-to-rotate removed - Left GRIP is now dedicated to menu toggle
- // Use right thumbstick X-axis for turning instead
+ // Left GRIP = grab-to-rotate scene, Right GRIP = drag VR panel
+ // Right thumbstick X-axis also provides turning
  
  // Get controller inputs for movement
  const session = this.renderer.xr.getSession();
@@ -2219,11 +2208,57 @@ export class SceneManager {
  }
  }
 
+ // ── 2b. First-frame material sanity check ────────────────
+ // Scan for the first several frames to catch late-added async objects.
+ if (frameCount < 120 && frameCount % 30 === 0) {
+ this.scene.traverse((obj) => {
+ if (!obj.isMesh && !obj.isSkinnedMesh) return;
+ const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+ mats.forEach((mat) => {
+ if (!mat || !mat.isMeshBasicMaterial) return;
+ BASIC_MAT_BANNED_PROPS.forEach((prop) => {
+ if (mat[prop]) {
+ console.warn(
+ `[MaterialFix] Removed .${prop} from MeshBasicMaterial on ` +
+ `"${obj.name || obj.userData?.name || '(unnamed)'}"`
+ );
+ delete mat[prop];
+ mat.needsUpdate = true;
+ }
+ });
+ });
+ });
+ }
+
  // ── 3. RENDER (must ALWAYS run, even if callback threw) ─────
  try {
  this.renderer.render(this.scene, this.camera);
  } catch (e) {
  console.error('[Scene] render() FAILED:', e);
+ // One-shot diagnostic: find the material causing the crash
+ if (!this._renderDiagRan) {
+ this._renderDiagRan = true;
+ // Properties that MeshBasicMaterial does NOT support as uniforms
+ // are listed in module-level BASIC_MAT_BANNED_PROPS.
+ const unsupported = BASIC_MAT_BANNED_PROPS;
+ this.scene.traverse((obj) => {
+ if (!obj.isMesh && !obj.isSkinnedMesh) return;
+ const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+ mats.forEach((mat) => {
+ if (!mat || !mat.isMeshBasicMaterial) return;
+ unsupported.forEach((prop) => {
+ if (mat[prop]) {
+ console.warn(
+ `[Diag] MeshBasicMaterial on "${obj.name || obj.userData?.name || '(unnamed)'}" ` +
+ `has unsupported .${prop}=${mat[prop]} — removing to fix crash`
+ );
+ delete mat[prop];
+ mat.needsUpdate = true;
+ }
+ });
+ });
+ });
+ }
  }
 
  try {

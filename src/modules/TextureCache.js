@@ -1,7 +1,7 @@
 // ===========================
 // TEXTURE CACHE SYSTEM
 // ===========================
-import { DEBUG } from './utils.js';
+import { DEBUG, CONFIG } from './utils.js';
 
 export class TextureCache {
  constructor() {
@@ -28,6 +28,10 @@ export class TextureCache {
  if (!db.objectStoreNames.contains(this.storeName)) {
  db.createObjectStore(this.storeName);
  }
+ };
+
+ request.onblocked = () => {
+ reject(new Error('IndexedDB blocked by another tab'));
  };
  });
  }
@@ -80,7 +84,7 @@ export class TextureCache {
  return new Promise((resolve, reject) => {
  const request = store.put(dataURL, key);
  request.onsuccess = () => {
- if (DEBUG && DEBUG.PERFORMANCE) console.log(`💾 Cache SET: ${key} (${(dataURL.length / 1024).toFixed(0)}KB)`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`💾 Cache SET: ${key} (${typeof dataURL === 'string' ? (dataURL.length / 1024).toFixed(0) + 'KB' : 'blob'})`);
  resolve();
  };
  request.onerror = () => {
@@ -118,23 +122,28 @@ export const TEXTURE_CACHE = new TextureCache();
 // Warm up cache with essential textures (run in background)
 // This preloads from IndexedDB into memory so synchronous lookups work
 export async function warmupTextureCache() {
+ // Build keys dynamically based on actual texture size config
+ // On mobile CONFIG.QUALITY.textureSize=1024, on desktop 4096
+ const textureSize = CONFIG.QUALITY?.textureSize || 4096;
+ const moonSize = Math.min(textureSize, 2048);
+
  const essentialTextures = [
- 'earth_texture_4096',
- 'earth_bump_4096',      // NEW: Earth bump map
- 'earth_normal_4096',    // NEW: Earth normal map
- 'earth_specular_4096',  // NEW: Earth specular map
- 'moon_texture_2048',
- 'mars_texture_2048'
+ `earth_texture_${textureSize}`,
+ `earth_bump_${textureSize}`,
+ `earth_normal_${textureSize}`,
+ `earth_specular_${textureSize}`,
+ `moon_texture_${moonSize}`,
+ `mars_texture_${moonSize}`
  ];
  
- console.log('🔥 Warming up texture cache from IndexedDB...');
+ if (DEBUG && DEBUG.PERFORMANCE) console.log('Warming up texture cache from IndexedDB...');
  let cached = 0;
  
  for (const key of essentialTextures) {
  const dataURL = await TEXTURE_CACHE.get(key);
  if (dataURL) {
  cached++;
- console.log(`  ✅ Loaded ${key} into memory`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`  Loaded ${key} into memory`);
  
  // For bump/normal/specular maps, also create and cache Canvas objects
  // This allows synchronous access in createEarthBumpMap/Normal/Specular
@@ -155,7 +164,7 @@ export async function warmupTextureCache() {
  
  // Store canvas in memory for synchronous access
  TEXTURE_CACHE.cache.set(canvasKey, canvas);
- console.log(`    📦 Canvas cached: ${canvasKey}`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`    Canvas cached: ${canvasKey}`);
  resolve();
  };
  img.onerror = () => resolve(); // Skip if error
@@ -164,7 +173,7 @@ export async function warmupTextureCache() {
  }
  }
  
- console.log(`🔥 Texture cache warmup: ${cached}/${essentialTextures.length} textures loaded into memory`);
+ if (DEBUG && DEBUG.PERFORMANCE) console.log(`Texture cache warmup: ${cached}/${essentialTextures.length} textures loaded into memory`);
  
  return cached === essentialTextures.length;
 }

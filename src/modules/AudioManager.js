@@ -48,8 +48,9 @@ class AudioManager {
      * Ensure audio context is running (browsers suspend it until user interaction)
      */
     async ensureResumed() {
-        if (!this.initialized) this.init();
-        if (!this.audioContext) return false;
+        // Don't call init() here — AudioContext requires a user gesture to resume.
+        // init() is called from user interaction listeners in main.js.
+        if (!this.initialized || !this.audioContext) return false;
         
         if (this.audioContext.state === 'suspended') {
             try {
