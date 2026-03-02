@@ -4847,15 +4847,20 @@ export class SolarSystemModule {
  name: 'Scorpius (The Scorpion)',
  description: t('descScorpius'),
  stars: [
- { name: 'Antares', ra: 247.4, dec: -26.4, mag: 1.0, color: 0xFF4500 }, // 0 - Red supergiant (heart)
- { name: 'Shaula', ra: 263.4, dec: -37.1, mag: 1.6, color: 0xE0FFFF }, // 1 - Stinger
- { name: 'Sargas', ra: 264.3, dec: -43.0, mag: 1.9, color: 0xFFFFE0 }, // 2 - Stinger tip
- { name: 'Dschubba', ra: 240.1, dec: -22.6, mag: 2.3, color: 0xE0FFFF }, // 3 - Head
- { name: 'Graffias', ra: 241.4, dec: -19.8, mag: 2.6, color: 0xFFFFE0 }, // 4 - Claws
- { name: 'Lesath', ra: 262.7, dec: -37.3, mag: 2.7, color: 0xE0FFFF }, // 5 - Tail curve
- { name: 'Tau Scorpii', ra: 248.9, dec: -28.2, mag: 2.8, color: 0xE0FFFF } // 6 - Body
+ { name: 'Antares',       ra: 247.35, dec: -26.43, mag: 1.0, color: 0xFF4500 }, // 0 - Heart (α Sco)
+ { name: 'Graffias',      ra: 241.36, dec: -19.81, mag: 2.6, color: 0xFFFFE0 }, // 1 - Head top (β Sco)
+ { name: 'Dschubba',      ra: 240.08, dec: -22.62, mag: 2.3, color: 0xE0FFFF }, // 2 - Head (δ Sco)
+ { name: 'Tau Scorpii',   ra: 248.97, dec: -28.22, mag: 2.8, color: 0xE0FFFF }, // 3 - Upper body (τ Sco)
+ { name: 'Epsilon Sco',   ra: 252.54, dec: -34.29, mag: 2.3, color: 0xFFA500 }, // 4 - Upper tail (ε Sco / Larawag)
+ { name: 'Mu Scorpii',    ra: 252.97, dec: -37.99, mag: 3.0, color: 0xFFFFE0 }, // 5 - Mid tail (μ¹ Sco / Xamidimura)
+ { name: 'Eta Scorpii',   ra: 258.04, dec: -43.24, mag: 3.3, color: 0xFFFFF0 }, // 6 - Lower tail (η Sco)
+ { name: 'Sargas',        ra: 264.33, dec: -43.00, mag: 1.9, color: 0xFFFFE0 }, // 7 - Lower tail (θ Sco)
+ { name: 'Iota Scorpii',  ra: 266.90, dec: -40.13, mag: 3.0, color: 0xFFFFF0 }, // 8 - Tail curve (ι¹ Sco)
+ { name: 'Kappa Scorpii', ra: 265.62, dec: -39.03, mag: 2.4, color: 0xE0FFFF }, // 9 - Tail curve (κ Sco)
+ { name: 'Lesath',        ra: 262.69, dec: -37.30, mag: 2.7, color: 0xE0FFFF }, // 10 - Stinger (υ Sco)
+ { name: 'Shaula',        ra: 263.40, dec: -37.10, mag: 1.6, color: 0xE0FFFF }, // 11 - Stinger tip (λ Sco)
  ],
- lines: [[4,3], [3,0], [0,6], [6,5], [5,1], [1,2]] // Head-heart-body-curved tail-stinger
+ lines: [[1,2],[2,0],[0,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11]] // Head→heart→S-curve tail→stinger
  },
  {
  name: 'Sagittarius (The Archer)',
