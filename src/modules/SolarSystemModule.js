@@ -9717,9 +9717,15 @@ createHyperrealisticHubble(satData) {
  }
  const offsetDistance = this.focusedObjectDistance || 3;
 
- // Preserve user panning as an offset from the tracked object so pan input doesn't
- // get overwritten when controls.target is re-anchored each frame.
- const panOffset = this._camCurrentTgt.copy(controls.target).sub(targetPosition);
+// Initialize last known target position if tracking just started
+                if (this._cameraFollowObject !== object) {
+                    this._cameraFollowLastTargetPos.copy(targetPosition);
+                }
+
+                // Preserve user panning as an offset from the tracked object so pan input doesn't
+                // get overwritten when controls.target is re-anchored each frame.
+                // IMPORTANT: Calculate offset relative to the LAST KNOWN position to avoid absorbing movement!
+                const panOffset = this._camCurrentTgt.copy(controls.target).sub(this._cameraFollowLastTargetPos);
  
  // Get vector from planet to ISS (radial direction)
  const radialDirection = this._camRadial.copy(targetPosition).sub(parentPlanet.position);
