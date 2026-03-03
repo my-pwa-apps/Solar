@@ -9467,6 +9467,24 @@ createHyperrealisticHubble(satData) {
  this._activeControls.autoRotate = false;
  }
  }
+
+ // Called when the user zooms via scroll wheel (distinct from drag/pan).
+ // Auto-orbit is kept running; we just cancel any in-flight fly-in and
+ // sync focusedObjectDistance to the new camera radius so co-rotation
+ // mode stays consistent with the zoomed position.
+ onControlsZoom() {
+ if (this._focusTransitionActive) {
+ this._focusTransitionCancelRequested = true;
+ }
+ // Keep autoRotate — OrbitControls naturally orbits at the new radius
+ // after a wheel zoom, so no extra work is needed here.
+ if (this._activeControls && this.focusedObject) {
+ // Update tracked distance so co-rotation frame is consistent
+ this.focusedObjectDistance = this._activeControls.object.position.distanceTo(
+ this._activeControls.target
+ );
+ }
+ }
  
  updateCameraTracking(camera, controls) {
  // TRACKING INDICATOR REMOVED - it was distracting
