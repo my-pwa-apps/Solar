@@ -113,7 +113,10 @@ export class SolarSystemModule {
  
  // Time acceleration factor (1 = real-time, higher = faster)
  this.timeAcceleration = 360; // 360x faster = 1 Earth day in 4 minutes
- this.realTimeStart = Date.now();
+ // Accumulated simulated hours — advanced each frame by deltaTime * timeAcceleration * rotationSpeed.
+ // Using this instead of a wall-clock anchor keeps planet self-rotation in sync with the
+ // speed slider so moons never appear to reverse when the slider is set very low.
+ this.simulatedHours = 0;
 
  // Pre-allocated scratch vectors for update() hot path — avoids per-frame GC pressure
  this._trackTargetPos = new THREE.Vector3();
@@ -7788,10 +7791,13 @@ createHyperrealisticHubble(satData) {
  }
  // else 'none' - everything moves normally
  
- // Pre-calculate elapsed time for rotation (shared by all planets and moons)
+ // Advance simulated time proportionally to rotationSpeed so that planet self-rotation
+ // always stays in sync with the speed slider (fixes moon apparent-reversal at low speed).
  const now = Date.now();
- const elapsedMs = now - this.realTimeStart;
- const elapsedHours = (elapsedMs / 1000 / 3600) * this.timeAcceleration;
+ if (rotationSpeed > 0) {
+ this.simulatedHours += (deltaTime / 3600) * this.timeAcceleration * rotationSpeed;
+ }
+ const elapsedHours = this.simulatedHours;
  
  // Update all planets (use cached array to avoid Object.values() allocation each frame)
  if (!this._planetArray || this._planetArrayDirty) {
