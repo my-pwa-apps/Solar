@@ -1361,10 +1361,12 @@ export class SolarSystemModule {
  
  // Earth real texture loader - Optimized with reliable fallback chain
  createEarthTextureRealFixed(size) {
- // Use local self-hosted textures
+ // Use local self-hosted textures.
+ // NOTE: earth_atmos_2k.jpg is the atmosphere/cloud overlay — do NOT use it
+ // as a color-map fallback; it would make Earth appear as an all-white cloud
+ // ball. If the surface texture fails, fall through to the procedural generator.
  const primary = [
- './textures/planets/earth_1k.jpg',
- './textures/planets/earth_atmos_2k.jpg'
+ './textures/planets/earth_1k.jpg'
  ];
  // No external fallbacks - use procedural if local fails
  const pluginFallbacks = [];
