@@ -106,7 +106,7 @@ export class SceneManager {
  this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
  this.renderer.shadowMap.type = IS_MOBILE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; // Soft shadows on desktop
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
- this.renderer.toneMappingExposure = 1.2; // Increased to brighten dark areas
+ this.renderer.toneMappingExposure = 1.35; // Slightly higher to compensate for darker ambient lights
  
  // Performance optimizations
  this.renderer.sortObjects = true; // Required for correct transparent blending
@@ -224,7 +224,7 @@ export class SceneManager {
  this.scene.add(this.camera);
  
  if (DEBUG && DEBUG.enabled) {
- console.log('[Lighting] Ambient lighting enhanced');
+ console.log('[Lighting] Scene lighting configured: low ambient fill + sun PointLight in SolarSystemModule');
  }
  }
 

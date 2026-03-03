@@ -339,7 +339,7 @@ export class SolarSystemModule {
  sunLight.shadow.camera.near = 1;
  sunLight.shadow.camera.far = 5000; // Increased for distant planets
  sunLight.shadow.bias = -0.0005; // Reduce shadow artifacts
- sunLight.shadow.radius = 2; // Softer shadows
+ sunLight.shadow.radius = 3; // Softer shadows (PCFSoftShadowMap benefits from higher radius)
  scene.add(sunLight);
  this.sun.userData.sunLight = sunLight;
  
@@ -3207,6 +3207,7 @@ export class SolarSystemModule {
  });
  const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
  atmosMesh.name = 'atmosphere';
+ atmosMesh.raycast = () => {}; // Never intercept pointer clicks — let the planet underneath receive them
  planet.add(atmosMesh);
  planet.userData.atmosphereMesh = atmosMesh;
  }
@@ -4253,7 +4254,8 @@ export class SolarSystemModule {
  scene.add(this.starfield);
 
  if (DEBUG.enabled) {
- console.log(' Starfield created with 8,000 stars based on H-R diagram stellar distribution');
+ const count = IS_MOBILE ? 4000 : 12000;
+ console.log(` Starfield created with ${count} stars based on H-R diagram stellar distribution`);
  }
  }
 

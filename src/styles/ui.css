@@ -833,6 +833,16 @@
     opacity: 0.95;
 }
 
+/* Random-discovery button spin animation */
+@keyframes btn-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+#random-discovery.spinning {
+    animation: btn-spin 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
 /* Performance indicator */
 #fps-counter {
     position: fixed;
