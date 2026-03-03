@@ -166,12 +166,28 @@ export class SceneManager {
  this.controls.rotateSpeed = 0.5;
  this.controls.update();
  
+ // Track the last wheel timestamp so we can distinguish a zoom-only
+ // interaction from a drag/pan — wheel zoom should keep auto-orbit running.
+ this._lastWheelTime = 0;
+ this.renderer.domElement.addEventListener('wheel', () => {
+ this._lastWheelTime = performance.now();
+ }, { passive: true });
+
  // Add event listeners to detect user interaction with controls
  // Note: Do not toggle follow/co-rotate modes on controls input here.
  // SolarSystemModule owns tracking policy based on focused object type.
  this.controls.addEventListener('start', () => {
- if (window.app && window.app.solarSystemModule && typeof window.app.solarSystemModule.onControlsInteractionStart === 'function') {
- window.app.solarSystemModule.onControlsInteractionStart();
+ const mod = window.app?.solarSystemModule;
+ if (mod) {
+ // If the OrbitControls 'start' fired within 50 ms of a wheel event it's
+ // a scroll-zoom. Notify via onControlsZoom so auto-orbit is preserved.
+ // Otherwise it's a drag or pan — let onControlsInteractionStart stop it.
+ const isWheelZoom = (performance.now() - this._lastWheelTime) < 50;
+ if (isWheelZoom) {
+ if (typeof mod.onControlsZoom === 'function') mod.onControlsZoom();
+ } else if (typeof mod.onControlsInteractionStart === 'function') {
+ mod.onControlsInteractionStart();
+ }
  }
  if (DEBUG && DEBUG.enabled) console.log('[Controls] User interaction started');
  });
