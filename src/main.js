@@ -231,6 +231,7 @@ class App {
  const button = document.getElementById(buttonId);
  if (button) {
  button.classList.toggle(buttonClass, value);
+ button.setAttribute('aria-pressed', value.toString());
  if (updateText) updateText(button, value);
  }
  }
@@ -263,6 +264,7 @@ class App {
  const labelsButton = document.getElementById(UI_ELEMENTS.LABELS_BUTTON);
  if (labelsButton) {
  labelsButton.classList.toggle('toggle-on', labelsVisible);
+ labelsButton.setAttribute('aria-pressed', labelsVisible.toString());
  const btnText = labelsButton.querySelector('.btn-text');
  if (btnText) {
  btnText.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
@@ -318,6 +320,7 @@ class App {
  const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
  if (scaleButton) {
  scaleButton.classList.toggle('active', realisticScale);
+ scaleButton.setAttribute('aria-pressed', realisticScale.toString());
  const btnText = scaleButton.querySelector('.btn-text');
  if (btnText) {
  btnText.textContent = this.getScaleModeLabel(normalizedMode);
@@ -463,6 +466,7 @@ class App {
  const visible = !this.solarSystemModule.orbitsVisible;
  this.solarSystemModule.toggleOrbits(visible);
  orbitsButton.classList.toggle('toggle-on', visible);
+ orbitsButton.setAttribute('aria-pressed', visible.toString());
  safeSetItem(STORAGE_KEYS.ORBITS, visible.toString());
  }
  });
@@ -477,6 +481,7 @@ class App {
  const visible = !this.solarSystemModule.constellationsVisible;
  this.solarSystemModule.toggleConstellations(visible);
  constellationsButton.classList.toggle('toggle-on', visible);
+ constellationsButton.setAttribute('aria-pressed', visible.toString());
  safeSetItem(STORAGE_KEYS.CONSTELLATIONS, visible.toString());
  }
  });
@@ -501,6 +506,7 @@ class App {
  this.sceneManager.labelsVisible = !this.sceneManager.labelsVisible;
  this.solarSystemModule.toggleLabels(this.sceneManager.labelsVisible);
  labelsButton.classList.toggle('toggle-on', this.sceneManager.labelsVisible);
+ labelsButton.setAttribute('aria-pressed', this.sceneManager.labelsVisible.toString());
  const btnText = labelsButton.querySelector('.btn-text');
  if (btnText) {
  btnText.textContent = this.sceneManager.labelsVisible ? 
@@ -967,8 +973,13 @@ class App {
 
  // Show hover label
  this._hoverLabel.textContent = displayName;
+ // Clamp tooltip to viewport so it never clips off the right or bottom edge
+ const labelW = this._hoverLabel.offsetWidth || 180;
+ const labelH = this._hoverLabel.offsetHeight || 36;
+ const tx = Math.min(event.clientX + 15, window.innerWidth  - labelW - 8);
+ const ty = Math.min(event.clientY + 15, window.innerHeight - labelH - 8);
  // Use transform:translate (GPU-composited, no layout) instead of left/top
- this._hoverLabel.style.transform = `translate(${event.clientX + 15}px, ${event.clientY + 15}px)`;
+ this._hoverLabel.style.transform = `translate(${tx}px, ${ty}px)`;
  this._hoverLabel.classList.add('visible');
  this.sceneManager.renderer.domElement.style.cursor = 'pointer';
  } else {
@@ -1229,10 +1240,8 @@ class App {
  
  if (targetObject) {
  // Add a fun spin animation before focusing
- randomBtn.style.transform = 'rotate(360deg)';
- setTimeout(() => {
- randomBtn.style.transform = '';
- }, 500);
+ randomBtn.classList.add('spinning');
+ setTimeout(() => randomBtn.classList.remove('spinning'), 500);
  
  const info = this.solarSystemModule.getObjectInfo(targetObject);
  this.uiManager.updateInfoPanel(info);
