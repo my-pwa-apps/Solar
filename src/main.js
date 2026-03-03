@@ -928,8 +928,8 @@ class App {
 
  // Show hover label
  this._hoverLabel.textContent = displayName;
- this._hoverLabel.style.left = `${event.clientX + 15}px`;
- this._hoverLabel.style.top = `${event.clientY + 15}px`;
+ // Use transform:translate (GPU-composited, no layout) instead of left/top
+ this._hoverLabel.style.transform = `translate(${event.clientX + 15}px, ${event.clientY + 15}px)`;
  this._hoverLabel.classList.add('visible');
  this.sceneManager.renderer.domElement.style.cursor = 'pointer';
  } else {

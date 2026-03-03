@@ -117,9 +117,7 @@ export class UIManager {
  
  // Setup speed panel collapse
  this.setupSpeedPanelToggle();
- 
- // Hide loading
- this.hideLoading();
+ // Note: loading screen is hidden by App.startExperience() after all setup is complete
  }
  
  /**

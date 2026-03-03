@@ -24,7 +24,7 @@ export const CONFIG = {
  antialias: !IS_MOBILE, // Disable AA on mobile for performance
  alpha: true,
  powerPreference: 'high-performance',
- maxPixelRatio: IS_MOBILE ? 1.5 : 2, // Lower on mobile
+ maxPixelRatio: IS_MOBILE ? 1.25 : (IS_LOW_POWER ? 1.5 : 2), // Lower on mobile/low-power devices
  // logarithmicDepthBuffer disabled on mobile/Quest: the EXT_frag_depth extension
  // fails inside the WebXR framebuffer on Quest browsers, rendering all objects black.
  // Desktop gets it for better depth precision; mobile/Quest does not need it.
@@ -52,11 +52,11 @@ export const CONFIG = {
  },
  QUALITY: {
  // Adaptive quality based on device
- textureSize: IS_MOBILE ? 1024 : 4096,
- sphereSegments: IS_MOBILE ? 32 : 128,
+ textureSize: (IS_MOBILE || IS_LOW_POWER) ? 1024 : 4096,
+ sphereSegments: IS_MOBILE ? 32 : (IS_LOW_POWER ? 64 : 128),
  particleSize: 2,
- particleCount: IS_MOBILE ? 1000 : 5000,
- shadows: !IS_MOBILE // Disable shadows on mobile
+ particleCount: IS_MOBILE ? 1000 : (IS_LOW_POWER ? 2500 : 5000),
+ shadows: !(IS_MOBILE || IS_LOW_POWER) // Disable shadows on mobile/low-power
  },
  CONSTELLATION: {
  // Constellation rendering constants
@@ -69,8 +69,8 @@ export const CONFIG = {
  LINE_COLOR: 0x6699FF, // Constellation line color (bright blue)
  LINE_OPACITY: 0.8, // Line opacity
  LINE_WIDTH: 3, // Line thickness
- STAR_SEGMENTS: 16, // Sphere segments for stars
- GLOW_SEGMENTS: 16 // Sphere segments for glow
+ STAR_SEGMENTS: IS_LOW_POWER ? 12 : 16, // Sphere segments for stars
+ GLOW_SEGMENTS: IS_LOW_POWER ? 12 : 16 // Sphere segments for glow
  }
 };
 

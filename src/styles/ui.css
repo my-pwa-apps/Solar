@@ -808,6 +808,9 @@
 /* Hover Label for 3D Objects */
 #hover-label {
     position: fixed;
+    left: 0;
+    top: 0;
+    will-change: transform;
     pointer-events: none;
     z-index: 10000;
     background: var(--fluent-bg-primary);
@@ -1319,7 +1322,7 @@ select {
     display: none;
     align-items: center;
     gap: 12px;
-    animation: slideInRight 0.3s ease-out;
+    animation: none;
 }
 
 #update-notification:not(.hidden) {
@@ -1328,7 +1331,7 @@ select {
 
 .update-icon {
     font-size: 20px;
-    animation: spin 2s linear infinite;
+    animation: none;
 }
 
 .update-text {
@@ -1349,7 +1352,7 @@ select {
     line-height: 1.2;
     position: relative;
     overflow: hidden;
-    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    transition: none;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     -webkit-user-select: none;
@@ -1362,27 +1365,15 @@ select {
     box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4);
 }
 
-.btn-update::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at var(--x,50%) var(--y,50%), rgba(255,255,255,0.25) 0%, transparent 60%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
-
-.btn-update:hover::before { opacity: 1; }
-
 .btn-update:hover {
-    background: var(--fluent-accent-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 120, 212, 0.5);
+    background: var(--fluent-accent);
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4);
 }
 
 .btn-update:active {
-    background: var(--fluent-accent-pressed);
-    transform: translateY(0);
+    background: var(--fluent-accent);
+    transform: none;
     box-shadow: 0 2px 6px rgba(0, 120, 212, 0.4);
 }
 
@@ -1404,7 +1395,7 @@ select {
 }
 
 .btn-dismiss:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 @keyframes slideInRight {
