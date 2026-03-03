@@ -9702,11 +9702,12 @@ createHyperrealisticHubble(satData) {
  const targetPosition = this._trackTargetPos;
  object.getWorldPosition(targetPosition);
  
- if (this.cameraCoRotateMode && userData.orbitPlanet) {
- // CO-ROTATION MODE: Camera orbits WITH the spacecraft (ISS, Hubble, etc.)
- // Camera maintains fixed relative position in the spacecraft's orbital frame
+ if (this.cameraCoRotateMode && (userData.orbitPlanet || userData.parentPlanet)) {
+ // CO-ROTATION MODE: Camera orbits WITH objects that orbit a parent planet
+ // (spacecraft, satellites, moons) while preserving user zoom and pan input.
  
- const parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
+ const parentKey = (userData.orbitPlanet || userData.parentPlanet || '').toLowerCase();
+ const parentPlanet = this.planets[parentKey];
  if (parentPlanet) {
  // Keep user zoom changes while in co-rotation by sampling current camera radius.
  // This prevents snap-back to a stale chase-cam distance after wheel/touch zoom.
@@ -9759,6 +9760,8 @@ createHyperrealisticHubble(satData) {
  
  // Keep looking at the ISS plus user pan offset.
  controls.target.copy(targetPosition).add(panOffset);
+ this._cameraFollowObject = object;
+ this._cameraFollowLastTargetPos.copy(targetPosition);
  controls.update();
  }
  } else {
