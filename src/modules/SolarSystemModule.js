@@ -208,6 +208,7 @@ export class SolarSystemModule {
  this._camTangent     = new THREE.Vector3();
  this._camUp          = new THREE.Vector3();
  this._camPos         = new THREE.Vector3();
+ this._camChaseDir    = new THREE.Vector3();
  this._camCurrentTgt  = new THREE.Vector3();
  // Track last focused-object world position for stable follow translation
  this._cameraFollowLastTargetPos = new THREE.Vector3();
@@ -9717,14 +9718,25 @@ createHyperrealisticHubble(satData) {
  }
  const offsetDistance = this.focusedObjectDistance || 3;
 
+ // Initialize last known target position if tracking just started
+ if (this._cameraFollowObject !== object) {
+ this._cameraFollowLastTargetPos.copy(targetPosition);
+ }
+
  // Preserve user panning as an offset from the tracked object so pan input doesn't
  // get overwritten when controls.target is re-anchored each frame.
- const panOffset = this._camCurrentTgt.copy(controls.target).sub(targetPosition);
+ // IMPORTANT: Calculate offset relative to the LAST KNOWN position to avoid absorbing movement!
+ const panOffset = this._camCurrentTgt.copy(controls.target).sub(this._cameraFollowLastTargetPos);
  
- // Get vector from planet to ISS (radial direction)
+ // Get vector from parent body to tracked object (radial direction)
  const radialDirection = this._camRadial.copy(targetPosition).sub(parentPlanet.position);
- const orbitRadius = radialDirection.length();
- radialDirection.normalize();
+ const radialLength = radialDirection.length();
+ if (radialLength < 1e-6) {
+ // Fallback if object is extremely close to parent center; avoid NaNs.
+ radialDirection.set(0, 1, 0);
+ } else {
+ radialDirection.multiplyScalar(1 / radialLength);
+ }
  
  // Calculate tangent direction (perpendicular to radial, in orbital plane)
  const up = this._camUp.set(0, 1, 0);
@@ -9735,23 +9747,21 @@ createHyperrealisticHubble(satData) {
  tangentDirection.copy(userData.orbitalVelocity).normalize();
  }
  
- // Cinematic co-rotation: Add subtle variation over time for more dynamic view
- const time = performance.now() * 0.0001; // Slow oscillation
- const breathingFactor = Math.sin(time) * 0.1; // ±10% distance variation
- const adjustedDistance = offsetDistance * (1.0 + breathingFactor);
- 
- // ULTRA-CLOSE chase-cam: Position camera very close behind and slightly above ISS
+ // Build a stable chase direction and keep camera distance EXACTLY at offsetDistance
+ // so wheel zoom remains responsive and predictable.
+ const chaseDirection = this._camChaseDir
+ .copy(tangentDirection)
+ .multiplyScalar(-0.8)
+ .addScaledVector(radialDirection, 0.3);
+ chaseDirection.y += 0.5;
+ if (chaseDirection.lengthSq() < 1e-9) {
+ chaseDirection.set(0, 0.4, 1);
+ }
+ chaseDirection.normalize();
+
+ // Stable chase-cam: keep exact distance from target object.
  const cameraPosition = this._camPos.copy(targetPosition);
- // Behind (40% of distance along negative tangent)
- cameraPosition.x += tangentDirection.x * (-adjustedDistance * 0.4);
- cameraPosition.y += tangentDirection.y * (-adjustedDistance * 0.4);
- cameraPosition.z += tangentDirection.z * (-adjustedDistance * 0.4);
- // Outward (15% of distance along radial)
- cameraPosition.x += radialDirection.x * (adjustedDistance * 0.15);
- cameraPosition.y += radialDirection.y * (adjustedDistance * 0.15);
- cameraPosition.z += radialDirection.z * (adjustedDistance * 0.15);
- // Above (25% of distance along up)
- cameraPosition.y += adjustedDistance * 0.25;
+ cameraPosition.addScaledVector(chaseDirection, offsetDistance);
 
  // Apply user pan offset in world space.
  cameraPosition.add(panOffset);
@@ -9762,7 +9772,12 @@ createHyperrealisticHubble(satData) {
  controls.target.copy(targetPosition).add(panOffset);
  this._cameraFollowObject = object;
  this._cameraFollowLastTargetPos.copy(targetPosition);
- controls.update();
+ // No controls.update() here; SceneManager.animate() calls it once per frame.
+ } else {
+ // Fallback if parent lookup fails: keep standard target tracking instead of freezing.
+ controls.target.copy(targetPosition);
+ this._cameraFollowObject = object;
+ this._cameraFollowLastTargetPos.copy(targetPosition);
  }
  } else {
  // TRADITIONAL TRACKING MODE: Only update controls.target to the planet's

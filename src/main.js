@@ -282,7 +282,7 @@ class App {
  } else {
  const savedScaleState = safeGetItem(STORAGE_KEYS.SCALE);
  if (savedScaleState !== null && this.solarSystemModule) {
- this.applyScaleMode(savedScaleState === 'true' ? 'realistic' : 'compact', { persist: false });
+ this.applyScaleMode(savedScaleState === 'true' ? 'scientific' : 'educational', { persist: false });
  }
  }
  }
@@ -290,21 +290,20 @@ class App {
 
  getScaleModeLabel(mode) {
  if (mode === 'scientific') return t('toggleScaleScientific');
- if (mode === 'realistic') return t('toggleScaleRealistic');
  return t('toggleScale');
  }
 
  getCurrentScaleMode() {
- if (!this.solarSystemModule) return 'compact';
+ if (!this.solarSystemModule) return 'educational';
  if (this.solarSystemModule.scientificMode) return 'scientific';
- return this.solarSystemModule.realisticScale ? 'realistic' : 'compact';
+ return 'educational';
  }
 
  applyScaleMode(mode, { persist = true } = {}) {
  if (!this.solarSystemModule) return;
 
- const normalizedMode = (mode === 'scientific' || mode === 'realistic' || mode === 'compact') ? mode : 'compact';
- const realisticScale = normalizedMode !== 'compact';
+ const normalizedMode = mode === 'scientific' ? 'scientific' : 'educational';
+ const realisticScale = normalizedMode === 'scientific';
  const scientificMode = normalizedMode === 'scientific';
 
  this.solarSystemModule.realisticScale = realisticScale;
@@ -334,11 +333,7 @@ class App {
 
  cycleScaleMode() {
  const currentMode = this.getCurrentScaleMode();
- const nextMode = currentMode === 'compact'
- ? 'realistic'
- : currentMode === 'realistic'
- ? 'scientific'
- : 'compact';
+ const nextMode = currentMode === 'scientific' ? 'educational' : 'scientific';
  this.applyScaleMode(nextMode);
  }
 
@@ -396,7 +391,7 @@ class App {
  <p>⌨️ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
  <p>⌨️ <span class="keyboard-shortcut">C</span> Toggle constellations & stars</p>
  <p>⌨️ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
- <p>⌨️ <span class="keyboard-shortcut">S</span> Cycle mode (compact → expanded → scientific)</p>
+ <p>⌨️ <span class="keyboard-shortcut">S</span> Toggle mode (educational ↔ scientific)</p>
  <p>⌨️ <span class="keyboard-shortcut">Space</span> Pause / resume animation</p>
  <p>⌨️ <span class="keyboard-shortcut">I</span> Jump to ISS</p>
  <p>⌨️ <span class="keyboard-shortcut">V</span> Cycle Voyager probes</p>

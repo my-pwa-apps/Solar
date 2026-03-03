@@ -5,6 +5,7 @@ import * as THREE from 'three';
 
 // Debug configuration - enable with URL parameters: ?debug=true&debug-vr=true&debug-textures=true
 const _urlParams = new URLSearchParams(window.location.search);
+export const PERFORMANCE_MODE = _urlParams.has('performance-mode');
 export const DEBUG = {
  enabled: _urlParams.has('debug'),
  VR: _urlParams.has('debug-vr'),
@@ -24,7 +25,7 @@ export const CONFIG = {
  antialias: !IS_MOBILE, // Disable AA on mobile for performance
  alpha: true,
  powerPreference: 'high-performance',
- maxPixelRatio: IS_MOBILE ? 1.25 : (IS_LOW_POWER ? 1.5 : 2), // Lower on mobile/low-power devices
+ maxPixelRatio: IS_MOBILE ? 1.25 : (IS_LOW_POWER ? 1.5 : (PERFORMANCE_MODE ? 1.5 : 2)), // Lower on mobile/low-power/perf-mode devices
  // logarithmicDepthBuffer disabled on mobile/Quest: the EXT_frag_depth extension
  // fails inside the WebXR framebuffer on Quest browsers, rendering all objects black.
  // Desktop gets it for better depth precision; mobile/Quest does not need it.
@@ -48,12 +49,20 @@ export const CONFIG = {
  PERFORMANCE: {
  targetFPS: 60,
  frameTime: 1000 / 60,
- maxDeltaTime: 0.1
+ maxDeltaTime: 0.1,
+ adaptivePixelRatio: !IS_MOBILE,
+ adaptivePixelRatioMin: IS_LOW_POWER ? 0.9 : 1.0,
+ adaptivePixelRatioMax: IS_MOBILE ? 1.25 : (IS_LOW_POWER ? 1.5 : (PERFORMANCE_MODE ? 1.5 : 2.0)),
+ adaptivePixelRatioStepDown: 0.1,
+ adaptivePixelRatioStepUp: 0.05,
+ adaptivePixelRatioFpsDownThreshold: 45,
+ adaptivePixelRatioFpsUpThreshold: 56,
+ adaptivePixelRatioSampleMs: 1200
  },
  QUALITY: {
  // Adaptive quality based on device
- textureSize: (IS_MOBILE || IS_LOW_POWER) ? 1024 : 4096,
- sphereSegments: IS_MOBILE ? 32 : (IS_LOW_POWER ? 64 : 128),
+ textureSize: (IS_MOBILE || IS_LOW_POWER) ? 1024 : (PERFORMANCE_MODE ? 2048 : 4096),
+ sphereSegments: IS_MOBILE ? 32 : (IS_LOW_POWER ? 64 : (PERFORMANCE_MODE ? 96 : 128)),
  particleSize: 2,
  particleCount: IS_MOBILE ? 1000 : (IS_LOW_POWER ? 2500 : 5000),
  shadows: !(IS_MOBILE || IS_LOW_POWER) // Disable shadows on mobile/low-power

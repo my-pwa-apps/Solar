@@ -58,6 +58,11 @@ export class SceneManager {
  this._vrLaserFrame = 0; // For throttling expensive laser raycasts
  this._vrIntersections = []; // Reused raycast results buffer (avoids per-frame array alloc)
 
+ // Adaptive pixel ratio runtime state
+ this._adaptivePixelRatio = Math.min(window.devicePixelRatio, CONFIG.RENDERER.maxPixelRatio);
+ this._adaptiveFpsFrameCount = 0;
+ this._adaptiveFpsSampleStart = performance.now();
+
  // Panel drag state — right grip moves the open menu panel
  this.vrPanelDrag = { active: false, controllerIndex: -1 };
  this._vrPanelDragOffset = new THREE.Vector3();
@@ -96,7 +101,7 @@ export class SceneManager {
  setupRenderer() {
  this.renderer = new THREE.WebGLRenderer(CONFIG.RENDERER);
  this.renderer.setSize(window.innerWidth, window.innerHeight);
- this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, CONFIG.RENDERER.maxPixelRatio));
+ this.renderer.setPixelRatio(this._adaptivePixelRatio);
  this.renderer.xr.enabled = true;
  this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
  this.renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -1735,10 +1740,8 @@ export class SceneManager {
  document.getElementById('toggle-scale')?.click();
  if (module?.scientificMode) {
  this.updateVRStatus('🧪 Scientific mode enabled');
- } else if (module?.realisticScale) {
- this.updateVRStatus('📏 Expanded scale enabled');
  } else {
- this.updateVRStatus('📏 Compact scale enabled');
+ this.updateVRStatus('📚 Educational mode enabled');
  }
  scheduleRefresh(120); break;
 
@@ -2167,6 +2170,7 @@ export class SceneManager {
  onResize() {
  this.camera.aspect = window.innerWidth / window.innerHeight;
  this.camera.updateProjectionMatrix();
+ this.renderer.setPixelRatio(this._adaptivePixelRatio);
  this.renderer.setSize(window.innerWidth, window.innerHeight);
  if (this.labelRenderer) {
  this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -2308,6 +2312,40 @@ export class SceneManager {
  });
  });
  });
+ }
+ }
+
+ // Adaptive DPR (desktop): lower DPR when FPS drops, raise when stable.
+ if (CONFIG.PERFORMANCE.adaptivePixelRatio && !this.renderer.xr.isPresenting) {
+ this._adaptiveFpsFrameCount++;
+ const now = performance.now();
+ const sampleElapsed = now - this._adaptiveFpsSampleStart;
+
+ if (sampleElapsed >= CONFIG.PERFORMANCE.adaptivePixelRatioSampleMs) {
+ const fps = (this._adaptiveFpsFrameCount * 1000) / sampleElapsed;
+ let nextRatio = this._adaptivePixelRatio;
+
+ if (fps < CONFIG.PERFORMANCE.adaptivePixelRatioFpsDownThreshold) {
+ nextRatio -= CONFIG.PERFORMANCE.adaptivePixelRatioStepDown;
+ } else if (fps > CONFIG.PERFORMANCE.adaptivePixelRatioFpsUpThreshold) {
+ nextRatio += CONFIG.PERFORMANCE.adaptivePixelRatioStepUp;
+ }
+
+ const minRatio = CONFIG.PERFORMANCE.adaptivePixelRatioMin;
+ const maxRatio = Math.min(window.devicePixelRatio, CONFIG.PERFORMANCE.adaptivePixelRatioMax);
+ nextRatio = Math.max(minRatio, Math.min(maxRatio, nextRatio));
+
+ if (Math.abs(nextRatio - this._adaptivePixelRatio) >= 0.049) {
+ this._adaptivePixelRatio = nextRatio;
+ this.renderer.setPixelRatio(this._adaptivePixelRatio);
+ this.renderer.setSize(window.innerWidth, window.innerHeight, false);
+ if (DEBUG.PERFORMANCE) {
+ console.log(`[Perf] Adaptive DPR -> ${this._adaptivePixelRatio.toFixed(2)} (fps ${fps.toFixed(1)})`);
+ }
+ }
+
+ this._adaptiveFpsFrameCount = 0;
+ this._adaptiveFpsSampleStart = now;
  }
  }
 
