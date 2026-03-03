@@ -8847,6 +8847,8 @@ createHyperrealisticHubble(satData) {
  }
 
  focusOnObject(object, camera, controls) {
+ // Store controls reference so onControlsInteractionStart can stop auto-orbit
+ this._activeControls = controls;
  // Start a new focus transition scope; this invalidates any previous in-flight
  // focus animation loop and allows clean user-interrupt handling.
  const transitionToken = ++this._focusTransitionToken;
@@ -9375,6 +9377,23 @@ createHyperrealisticHubble(satData) {
  this._cameraFollowObject = object;
  object.getWorldPosition(this._cameraFollowLastTargetPos);
  if (DEBUG.enabled) console.log(` Camera follow mode RESTORED: follow=${_desiredFollowMode}, coRotate=${_desiredCoRotateMode} for ${object.userData.name}`);
+
+ // Auto-orbit around the focused object so the user immediately sees it from
+ // all angles without needing to drag. Co-rotation mode drives camera.position
+ // manually every frame and must NOT combine with autoRotate. Distant static
+ // objects (constellations, galaxies, nebulae) are best viewed from a fixed
+ // angle, so skip auto-orbit for those too.
+ const isStaticOrCoRotate = _desiredCoRotateMode ||
+ userData.type === 'constellation' ||
+ userData.type === 'galaxy' ||
+ userData.type === 'nebula';
+ if (!isStaticOrCoRotate) {
+ controls.autoRotate = true;
+ // Slow gentle orbit — planets get 0.5 RPM, small/fast objects slightly faster
+ const isSmallFastObject = userData.type === 'moon' || userData.isComet || userData.type === 'DwarfPlanet';
+ controls.autoRotateSpeed = isSmallFastObject ? 1.0 : 0.5;
+ if (DEBUG.enabled) console.log(` [Auto-orbit] Enabled at ${controls.autoRotateSpeed} RPM for ${object.userData.name}`);
+ }
  };
  
  const animate = () => {
@@ -9442,6 +9461,10 @@ createHyperrealisticHubble(satData) {
  onControlsInteractionStart() {
  if (this._focusTransitionActive) {
  this._focusTransitionCancelRequested = true;
+ }
+ // User grabbed manual control — stop auto-orbit so camera doesn't fight the drag
+ if (this._activeControls) {
+ this._activeControls.autoRotate = false;
  }
  }
  
