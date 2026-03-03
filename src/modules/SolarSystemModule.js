@@ -9298,12 +9298,12 @@ createHyperrealisticHubble(satData) {
  // Configure controls based on object type
  controls.enableRotate = true;
  controls.enableZoom = true;
- // Disable panning for ISS/satellites to keep them centered (Earth stays in view)
- controls.enablePan = (userData.isSpacecraft && userData.orbitPlanet) ? false : true;
+ // Allow panning even for ISS/satellites; co-rotation path now preserves pan offset.
+ controls.enablePan = true;
  controls.autoRotate = false;
  
  if (userData.isSpacecraft && userData.orbitPlanet) {
- if (DEBUG.enabled) console.log(` [ISS Controls] Panning disabled to keep ISS centered and Earth in view`);
+ if (DEBUG.enabled) console.log(` [ISS Controls] Pan + zoom enabled while keeping orbital follow`);
  }
  
  // Smooth camera transition
@@ -9708,7 +9708,17 @@ createHyperrealisticHubble(satData) {
  
  const parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
  if (parentPlanet) {
+ // Keep user zoom changes while in co-rotation by sampling current camera radius.
+ // This prevents snap-back to a stale chase-cam distance after wheel/touch zoom.
+ const currentZoomDistance = camera.position.distanceTo(controls.target);
+ if (isFinite(currentZoomDistance) && currentZoomDistance > 0.05) {
+ this.focusedObjectDistance = currentZoomDistance;
+ }
  const offsetDistance = this.focusedObjectDistance || 3;
+
+ // Preserve user panning as an offset from the tracked object so pan input doesn't
+ // get overwritten when controls.target is re-anchored each frame.
+ const panOffset = this._camCurrentTgt.copy(controls.target).sub(targetPosition);
  
  // Get vector from planet to ISS (radial direction)
  const radialDirection = this._camRadial.copy(targetPosition).sub(parentPlanet.position);
@@ -9741,11 +9751,14 @@ createHyperrealisticHubble(satData) {
  cameraPosition.z += radialDirection.z * (adjustedDistance * 0.15);
  // Above (25% of distance along up)
  cameraPosition.y += adjustedDistance * 0.25;
+
+ // Apply user pan offset in world space.
+ cameraPosition.add(panOffset);
  
  camera.position.copy(cameraPosition);
  
- // Always look at ISS
- controls.target.copy(targetPosition);
+ // Keep looking at the ISS plus user pan offset.
+ controls.target.copy(targetPosition).add(panOffset);
  controls.update();
  }
  } else {
