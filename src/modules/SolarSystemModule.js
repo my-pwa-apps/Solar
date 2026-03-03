@@ -34,6 +34,10 @@ export class SolarSystemModule {
  
  // Scale mode: false = educational (compressed), true = realistic (vast)
  this.realisticScale = false;
+
+ // Scientific mode: use orbital speeds derived from real orbital periods
+ // instead of hand-tuned visual speeds.
+ this.scientificMode = false;
  
  // Comet tails visibility: false = hidden (better visual performance)
  this.cometTailsVisible = false;
@@ -109,6 +113,39 @@ export class SolarSystemModule {
  retrograde: false,
  orbitalPeriod: 27.3 // Earth days
  }
+ };
+
+ // Additional orbital periods (days) for objects not covered in ASTRONOMICAL_DATA
+ // or where we want explicit moon period data for scientific-mode speed derivation.
+ this.SCIENTIFIC_ORBITAL_PERIODS = {
+ ceres: 1680.0,
+ haumea: 103774.0,
+ makemake: 113201.0,
+ eris: 203830.0,
+ orcus: 90441.0,
+ quaoar: 104089.0,
+ gonggong: 202780.0,
+ sedna: 4163700.0,
+ salacia: 100684.0,
+ varda: 102250.0,
+ varuna: 102164.0
+ };
+
+ this.SCIENTIFIC_MOON_ORBITAL_PERIODS = {
+ moon: 27.321661,
+ phobos: 0.31891,
+ deimos: 1.26244,
+ io: 1.769137786,
+ europa: 3.551181,
+ ganymede: 7.154553,
+ callisto: 16.689018,
+ enceladus: 1.370218,
+ rhea: 4.518212,
+ titan: 15.945421,
+ titania: 8.706234,
+ miranda: 1.413479,
+ triton: 5.876854,
+ charon: 6.38723
  };
  
  // Time acceleration factor (1 = real-time, higher = faster)
@@ -207,6 +244,9 @@ export class SolarSystemModule {
  if (DEBUG && DEBUG.PERFORMANCE) {
  console.log(`[SolarSystem] Initialized in ${totalTime.toFixed(0)}ms — Planets: ${Object.keys(this.planets).length}, Satellites: ${this.satellites.length}, Spacecraft: ${this.spacecraft.length}`);
  }
+
+ // Ensure orbital speeds are aligned with the selected mode.
+ this.applyScientificModeSpeeds();
 
  // Signal that loading is complete
  if (window.app && typeof window.app.startExperience === 'function') {
@@ -2998,6 +3038,7 @@ export class SolarSystemModule {
  radius: config.radius,
  angle: Math.random() * Math.PI * 2,
  speed: config.speed,
+ visualBaseSpeed: config.speed,
  rotationSpeed: config.rotationSpeed,
  description: config.description,
  funFact: config.funFact,
@@ -3331,6 +3372,7 @@ export class SolarSystemModule {
  radius: config.radius,
  angle: Math.random() * Math.PI * 2,
  speed: config.speed,
+ visualBaseSpeed: config.speed,
  rotationSpeed: config.rotationSpeed || 0.001, // Add rotation
  description: config.description,
  
@@ -3355,6 +3397,67 @@ export class SolarSystemModule {
  planet.add(moon);
  
  if (DEBUG.enabled) console.log(`[Moon] Created "${config.name}" for ${planet.userData.name} at distance ${config.distance}, initial position (${moon.position.x.toFixed(2)}, ${moon.position.y.toFixed(2)}, ${moon.position.z.toFixed(2)})`);
+ }
+
+ setScientificMode(enabled) {
+ this.scientificMode = !!enabled;
+ this.applyScientificModeSpeeds();
+ }
+
+ applyScientificModeSpeeds() {
+ // Cache baseline visual speeds once, and restore them when scientific mode is off.
+ const earthVisualBase = this.planets?.earth?.userData?.visualBaseSpeed || 0.01;
+ const earthOrbitalPeriod = this.ASTRONOMICAL_DATA.earth?.orbitalPeriod || 365.25;
+
+ Object.values(this.planets).forEach((planet) => {
+ if (!planet?.userData) return;
+ const ud = planet.userData;
+ if (ud.visualBaseSpeed === undefined) ud.visualBaseSpeed = ud.speed;
+
+ if (!this.scientificMode) {
+ ud.speed = ud.visualBaseSpeed;
+ return;
+ }
+
+ const key = (ud.id || ud.name || '').toLowerCase();
+ const period = this.SCIENTIFIC_ORBITAL_PERIODS[key] || this.ASTRONOMICAL_DATA[key]?.orbitalPeriod;
+ if (!period || period <= 0) {
+ ud.speed = ud.visualBaseSpeed;
+ return;
+ }
+
+ ud.speed = earthVisualBase * (earthOrbitalPeriod / period);
+ });
+
+ Object.values(this.moons).forEach((moon) => {
+ if (!moon?.userData) return;
+ const ud = moon.userData;
+ if (ud.visualBaseSpeed === undefined) ud.visualBaseSpeed = ud.speed;
+
+ if (!this.scientificMode) {
+ ud.speed = ud.visualBaseSpeed;
+ return;
+ }
+
+ const moonKey = (ud.id || ud.name || '').toLowerCase();
+ const moonPeriod = this.SCIENTIFIC_MOON_ORBITAL_PERIODS[moonKey] || this.ASTRONOMICAL_DATA[moonKey]?.orbitalPeriod;
+ const parent = moon.parent;
+ const parentKey = parent?.userData?.id?.toLowerCase() || parent?.userData?.name?.toLowerCase();
+ const parentPeriod = parentKey ? (this.SCIENTIFIC_ORBITAL_PERIODS[parentKey] || this.ASTRONOMICAL_DATA[parentKey]?.orbitalPeriod) : null;
+ const parentSpeed = parent?.userData?.speed;
+
+ if (!moonPeriod || !parentPeriod || !parentSpeed) {
+ ud.speed = ud.visualBaseSpeed;
+ return;
+ }
+
+ const direction = ud.visualBaseSpeed < 0 ? -1 : 1;
+ ud.speed = direction * Math.abs(parentSpeed) * (parentPeriod / moonPeriod);
+ });
+
+ if (DEBUG && DEBUG.enabled) {
+ console.log(`[Scientific Mode] ${this.scientificMode ? 'ON' : 'OFF'} — orbital speeds ${this.scientificMode ? 'derived from orbital periods' : 'restored to visual tuning'}`);
+ }
  }
 
  createAsteroidBelt(scene) {

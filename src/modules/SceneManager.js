@@ -646,6 +646,7 @@ export class SceneManager {
  orbitsVisible: module?.orbitsVisible ?? true,
  labelsVisible: this.labelsVisible,
  realisticScale: module?.realisticScale ?? false,
+ scientificMode: module?.scientificMode ?? false,
  constellationsVisible: module?.constellationsVisible ?? true,
  lasersVisible: this.lasersVisible,
  focusedObject: module?.focusedObject || null,
@@ -1732,7 +1733,13 @@ export class SceneManager {
 
  case 'scale':
  document.getElementById('toggle-scale')?.click();
- this.updateVRStatus('📏 Scale mode switched');
+ if (module?.scientificMode) {
+ this.updateVRStatus('🧪 Scientific mode enabled');
+ } else if (module?.realisticScale) {
+ this.updateVRStatus('📏 Expanded scale enabled');
+ } else {
+ this.updateVRStatus('📏 Compact scale enabled');
+ }
  scheduleRefresh(120); break;
 
  case 'sound': {

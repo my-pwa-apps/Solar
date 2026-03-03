@@ -46,7 +46,9 @@ const STORAGE_KEYS = {
  ORBITS: 'orbitsVisible',
  CONSTELLATIONS: 'constellationsVisible',
  LABELS: 'labelsVisible',
- SCALE: 'realisticScale'
+ SCALE: 'realisticScale',
+ SCALE_MODE: 'scaleMode',
+ SCIENTIFIC: 'scientificMode'
 };
 
 // ===========================
@@ -269,20 +271,75 @@ class App {
  }
  
  // Restore scale mode (special case: uses 'active' class and updates text)
+ const savedScaleMode = safeGetItem(STORAGE_KEYS.SCALE_MODE);
+ if (savedScaleMode && this.solarSystemModule) {
+ this.applyScaleMode(savedScaleMode, { persist: false });
+ } else {
+ // Backward compatibility with previous two-state storage.
+ const savedScientificState = safeGetItem(STORAGE_KEYS.SCIENTIFIC);
+ if (savedScientificState === 'true') {
+ this.applyScaleMode('scientific', { persist: false });
+ } else {
  const savedScaleState = safeGetItem(STORAGE_KEYS.SCALE);
  if (savedScaleState !== null && this.solarSystemModule) {
- const realisticScale = savedScaleState === 'true';
+ this.applyScaleMode(savedScaleState === 'true' ? 'realistic' : 'compact', { persist: false });
+ }
+ }
+ }
+ }
+
+ getScaleModeLabel(mode) {
+ if (mode === 'scientific') return t('toggleScaleScientific');
+ if (mode === 'realistic') return t('toggleScaleRealistic');
+ return t('toggleScale');
+ }
+
+ getCurrentScaleMode() {
+ if (!this.solarSystemModule) return 'compact';
+ if (this.solarSystemModule.scientificMode) return 'scientific';
+ return this.solarSystemModule.realisticScale ? 'realistic' : 'compact';
+ }
+
+ applyScaleMode(mode, { persist = true } = {}) {
+ if (!this.solarSystemModule) return;
+
+ const normalizedMode = (mode === 'scientific' || mode === 'realistic' || mode === 'compact') ? mode : 'compact';
+ const realisticScale = normalizedMode !== 'compact';
+ const scientificMode = normalizedMode === 'scientific';
+
  this.solarSystemModule.realisticScale = realisticScale;
+ if (typeof this.solarSystemModule.setScientificMode === 'function') {
+ this.solarSystemModule.setScientificMode(scientificMode);
+ } else {
+ this.solarSystemModule.scientificMode = scientificMode;
+ }
+
  this.solarSystemModule.updateScale();
+
  const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
  if (scaleButton) {
  scaleButton.classList.toggle('active', realisticScale);
  const btnText = scaleButton.querySelector('.btn-text');
  if (btnText) {
- btnText.textContent = realisticScale ? t('toggleScaleRealistic') : t('toggleScale');
+ btnText.textContent = this.getScaleModeLabel(normalizedMode);
  }
  }
+
+ if (persist) {
+ safeSetItem(STORAGE_KEYS.SCALE_MODE, normalizedMode);
+ safeSetItem(STORAGE_KEYS.SCALE, realisticScale.toString());
+ safeSetItem(STORAGE_KEYS.SCIENTIFIC, scientificMode.toString());
  }
+ }
+
+ cycleScaleMode() {
+ const currentMode = this.getCurrentScaleMode();
+ const nextMode = currentMode === 'compact'
+ ? 'realistic'
+ : currentMode === 'realistic'
+ ? 'scientific'
+ : 'compact';
+ this.applyScaleMode(nextMode);
  }
 
  setupGlobalFunctions() {
@@ -339,7 +396,7 @@ class App {
  <p>⌨️ <span class="keyboard-shortcut">O</span> Toggle orbital paths</p>
  <p>⌨️ <span class="keyboard-shortcut">C</span> Toggle constellations & stars</p>
  <p>⌨️ <span class="keyboard-shortcut">D</span> Toggle object labels</p>
- <p>⌨️ <span class="keyboard-shortcut">S</span> Toggle scale (compact/expanded)</p>
+ <p>⌨️ <span class="keyboard-shortcut">S</span> Cycle mode (compact → expanded → scientific)</p>
  <p>⌨️ <span class="keyboard-shortcut">Space</span> Pause / resume animation</p>
  <p>⌨️ <span class="keyboard-shortcut">I</span> Jump to ISS</p>
  <p>⌨️ <span class="keyboard-shortcut">V</span> Cycle Voyager probes</p>
@@ -435,20 +492,7 @@ class App {
  const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
  if (scaleButton) {
  scaleButton.addEventListener('click', () => {
- if (this.solarSystemModule) {
- this.solarSystemModule.realisticScale = !this.solarSystemModule.realisticScale;
- scaleButton.classList.toggle('active');
- const btnText = scaleButton.querySelector('.btn-text');
- if (btnText) {
- btnText.textContent = this.solarSystemModule.realisticScale ? 
- t('toggleScaleRealistic') : t('toggleScale');
- }
- 
- safeSetItem(STORAGE_KEYS.SCALE, this.solarSystemModule.realisticScale.toString());
- 
- // Recalculate positions with new scale
- this.solarSystemModule.updateScale();
- }
+ this.cycleScaleMode();
  });
  }
  
