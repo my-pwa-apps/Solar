@@ -111,7 +111,7 @@ export class TextureCache {
  });
  if (DEBUG && DEBUG.enabled) console.log('[Cache] Texture cache cleared');
  } catch (error) {
- console.warn('Cache clear error:', error);
+ if (DEBUG && DEBUG.enabled) console.warn('[Cache] Cache clear error:', error);
  }
  }
 }

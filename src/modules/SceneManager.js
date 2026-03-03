@@ -52,6 +52,11 @@ export class SceneManager {
  this._vrBillboardPos = new THREE.Vector3(); // For _billboardVRPanel (hot during panel drag)
  this._vrForwardScratch = new THREE.Vector3(); // For _positionMenuAtEyeLevel / _showVRInfoOverlay
  this._vrRightScratch = new THREE.Vector3(); // For _showVRInfoOverlay right-side offset
+ this._vrTargetPos = new THREE.Vector3(); // For zoomToObject / teleportVRToObject
+ this._vrDirScratch = new THREE.Vector3(); // For zoomToObject / teleportVRToObject
+ this._vrPosScratch = new THREE.Vector3(); // For zoomToObject / teleportVRToObject
+ this._vrLaserFrame = 0; // For throttling expensive laser raycasts
+ this._vrIntersections = []; // Reused raycast results buffer (avoids per-frame array alloc)
 
  // Panel drag state — right grip moves the open menu panel
  this.vrPanelDrag = { active: false, controllerIndex: -1 };
@@ -162,13 +167,13 @@ export class SceneManager {
  this.controls.update();
  
  // Add event listeners to detect user interaction with controls
- // When user manually controls camera, disable follow mode
+ // Note: Do not toggle follow/co-rotate modes on controls input here.
+ // SolarSystemModule owns tracking policy based on focused object type.
  this.controls.addEventListener('start', () => {
- if (window.app && window.app.solarSystemModule) {
- window.app.solarSystemModule.cameraFollowMode = false;
- window.app.solarSystemModule.cameraCoRotateMode = false;
- if (DEBUG && DEBUG.enabled) console.log('[Controls] User interaction: follow and co-rotate modes disabled');
+ if (window.app && window.app.solarSystemModule && typeof window.app.solarSystemModule.onControlsInteractionStart === 'function') {
+ window.app.solarSystemModule.onControlsInteractionStart();
  }
+ if (DEBUG && DEBUG.enabled) console.log('[Controls] User interaction started');
  });
  }
 
@@ -1438,7 +1443,7 @@ export class SceneManager {
  // VR zoom function - moves dolly close to object
  if (!this.dolly || !object) return;
  
- const targetPosition = new THREE.Vector3();
+ const targetPosition = this._vrTargetPos;
  object.getWorldPosition(targetPosition);
  
  // Calculate distance based on object size and zoom level
@@ -1471,11 +1476,11 @@ export class SceneManager {
  
  // Get camera direction
  const xrCamera = this.renderer.xr.getCamera();
- const cameraDirection = new THREE.Vector3();
+ const cameraDirection = this._vrDirScratch;
  xrCamera.getWorldDirection(cameraDirection);
  
  // Move dolly to position behind object (from camera perspective)
- const newPosition = targetPosition.clone().sub(
+ const newPosition = this._vrPosScratch.copy(targetPosition).sub(
  cameraDirection.multiplyScalar(distance)
  );
  
@@ -1493,7 +1498,7 @@ export class SceneManager {
  if (!this.dolly || !object) return;
 
  const ud = object.userData || {};
- const targetPos = new THREE.Vector3();
+ const targetPos = this._vrTargetPos;
  object.getWorldPosition(targetPos);
 
  // Mirror the distance logic from SolarSystemModule.focusOnObject
@@ -1522,7 +1527,7 @@ export class SceneManager {
  // Direction from origin → target (planets orbit sun at origin, so this
  // places the user "outside" the object with origin/sun behind them).
  // For objects near origin (sun) use a default approach vector.
- const approachDir = new THREE.Vector3();
+ const approachDir = this._vrDirScratch;
  const flatDist = Math.sqrt(targetPos.x * targetPos.x + targetPos.z * targetPos.z);
  if (flatDist > 1) {
  approachDir.set(targetPos.x / flatDist, 0, targetPos.z / flatDist);
@@ -1531,7 +1536,7 @@ export class SceneManager {
  }
 
  // Position dolly behind/slightly above the object
- const newDollyPos = new THREE.Vector3(
+ const newDollyPos = this._vrPosScratch.set(
  targetPos.x + approachDir.x * distance,
  targetPos.y + distance * 0.3,
  targetPos.z + approachDir.z * distance
@@ -1835,6 +1840,11 @@ export class SceneManager {
  // Skip entirely when lasers are hidden — avoids expensive per-frame raycasting
  if (!this.renderer.xr.isPresenting || !this.controllers || !this.lasersVisible) return;
 
+ // Keep full-rate raycasts while VR panel is open for responsive UI interaction;
+ // otherwise raycast every other frame to reduce CPU/GC pressure on Quest/mobile.
+ const uiOpen = !!(this.vrUIPanel && this.vrUIPanel.visible);
+ const shouldRaycastThisFrame = uiOpen || ((this._vrLaserFrame++ & 1) === 0);
+
  // Detect sprint (trigger held on any controller)
  let sprintActive = false;
  const session = this.renderer.xr.getSession();
@@ -1855,14 +1865,27 @@ export class SceneManager {
 
  if (!laser?.visible) continue;
 
+ // Fallback state for frames where we intentionally skip raycasts
+ if (controller.userData._laserVisualDist === undefined) {
+ controller.userData._laserVisualDist = LASER_DEFAULT_LENGTH;
+ controller.userData._laserHasHit = false;
+ }
+
  // Aim raycaster along controller forward (reuse pre-allocated objects)
  this._vrTempMatrix.identity().extractRotation(controller.matrixWorld);
  this._vrRaycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
  this._vrRaycaster.ray.direction.set(0, 0, -1).applyMatrix4(this._vrTempMatrix);
 
- const intersects = this._vrRaycaster.intersectObjects(this.scene.children, true);
- const hasHit = intersects.length > 0;
- const visualDist = hasHit ? Math.min(intersects[0].distance, LASER_DEFAULT_LENGTH) : LASER_DEFAULT_LENGTH;
+ let hasHit = controller.userData._laserHasHit;
+ let visualDist = controller.userData._laserVisualDist;
+ if (shouldRaycastThisFrame) {
+ this._vrIntersections.length = 0;
+ this._vrRaycaster.intersectObjects(this.scene.children, true, this._vrIntersections);
+ hasHit = this._vrIntersections.length > 0;
+ visualDist = hasHit ? Math.min(this._vrIntersections[0].distance, LASER_DEFAULT_LENGTH) : LASER_DEFAULT_LENGTH;
+ controller.userData._laserHasHit = hasHit;
+ controller.userData._laserVisualDist = visualDist;
+ }
 
  // Colour: orange = sprint, green = hit, cyan = idle
  const col = sprintActive ? 0xff6600 : hasHit ? 0x00ff00 : 0x00ffff;
@@ -2179,19 +2202,11 @@ export class SceneManager {
  let vrErrorCount = 0;
  const VR_ERROR_LOG_LIMIT = 10; // Don't spam console after N errors
  this.renderer.setAnimationLoop(() => {
- // ── 1. Controls ─────────────────────────────────
- try {
- // Skip OrbitControls while XR is presenting - the XR session owns the
- // camera pose; running controls.update() would fight the headset tracking.
- // In emulate-vr mode, keep controls so user can look around from VR pos.
- if (!this.renderer.xr.isPresenting) {
- this.controls.update();
- }
- } catch (e) {
- if (DEBUG.enabled || DEBUG.VR) console.error('[Scene] controls.update error:', e);
- }
-
- // ── 2. App callback (update logic) ──────────────
+ // ── 1. App callback (update logic) ──────────────
+ // Run callback FIRST so updateCameraTracking() can set controls.target
+ // to the planet's current world position BEFORE controls.update() reads it.
+ // This ensures zoom/rotate always operate relative to the planet's
+ // current orbital position, not last frame's position.
  try {
  callback();
  } catch (e) {
@@ -2208,6 +2223,18 @@ export class SceneManager {
  }
  }
 
+ // ── 2. Controls (after tracking so target is already at planet) ───────
+ try {
+ // Skip OrbitControls while XR is presenting - the XR session owns the
+ // camera pose; running controls.update() would fight the headset tracking.
+ // In emulate-vr mode, keep controls so user can look around from VR pos.
+ if (!this.renderer.xr.isPresenting) {
+ this.controls.update();
+ }
+ } catch (e) {
+ if (DEBUG.enabled || DEBUG.VR) console.error('[Scene] controls.update error:', e);
+ }
+
  // ── 2b. First-frame material sanity check ────────────────
  // Scan for the first several frames to catch late-added async objects.
  if (frameCount < 120 && frameCount % 30 === 0) {
@@ -2218,7 +2245,7 @@ export class SceneManager {
  if (!mat || !mat.isMeshBasicMaterial) return;
  BASIC_MAT_BANNED_PROPS.forEach((prop) => {
  if (mat[prop]) {
- console.warn(
+ if (DEBUG && DEBUG.enabled) console.warn(
  `[MaterialFix] Removed .${prop} from MeshBasicMaterial on ` +
  `"${obj.name || obj.userData?.name || '(unnamed)'}"`
  );

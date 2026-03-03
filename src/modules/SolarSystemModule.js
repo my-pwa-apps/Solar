@@ -125,6 +125,14 @@ export class SolarSystemModule {
  this._camUp          = new THREE.Vector3();
  this._camPos         = new THREE.Vector3();
  this._camCurrentTgt  = new THREE.Vector3();
+ // Track last focused-object world position for stable follow translation
+ this._cameraFollowLastTargetPos = new THREE.Vector3();
+ this._cameraFollowObject = null;
+ // Focus transition state (fly-to animation) so user input can cleanly interrupt
+ // and hand control back to stable follow tracking.
+ this._focusTransitionToken = 0;
+ this._focusTransitionActive = false;
+ this._focusTransitionCancelRequested = false;
 
  // Frame counters for throttled animations (initialised here, not lazily in update)
  this._sunFlareFrame    = 0;
@@ -1146,7 +1154,7 @@ export class SolarSystemModule {
                             currentTimeout = null;
                             const errorMsg = error?.message || error?.type || 'Network or CORS issue';
                             if (DEBUG && DEBUG.TEXTURES) {
-                                console.warn(`?? ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
+                                console.warn(`[TEX] ${planetName} plugin source ${pluginIndex + 1} failed: ${url}`);
                                 console.warn(`   Error: ${errorMsg}`);
                             }
                             meta.errors.push({ url, error: errorMsg, phase: 'plugin' });
@@ -1180,19 +1188,19 @@ export class SolarSystemModule {
                 const maybePromise = proceduralFunction.call(this, size);
                 if (maybePromise && typeof maybePromise.then === 'function') {
                     maybePromise.then((tex) => {
-                        if (DEBUG && DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
+                        if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName} procedural texture generated successfully`);
                         this._applyProceduralPlanetTexture(planetName, tex);
                     }).catch((err) => {
-                        if (DEBUG && DEBUG.enabled) console.error(`? ${planetName} procedural texture generation failed:`, err);
+                        if (DEBUG && DEBUG.enabled) console.error(`[TEX] ${planetName} procedural texture generation failed:`, err);
                         meta.errors.push({ error: err.message, phase: 'procedural' });
                         // Keep placeholder texture as last resort
                     });
                 } else {
-                    if (DEBUG && DEBUG.TEXTURES) console.log(`? ${planetName} procedural texture generated successfully`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName} procedural texture generated successfully`);
                     this._applyProceduralPlanetTexture(planetName, maybePromise);
                 }
             } catch (err) {
-                if (DEBUG && DEBUG.enabled) console.error(`? ${planetName} procedural texture generation failed:`, err);
+                if (DEBUG && DEBUG.enabled) console.error(`[TEX] ${planetName} procedural texture generation failed:`, err);
                 meta.errors.push({ error: err.message, phase: 'procedural' });
                 // Keep placeholder texture as last resort
             }
@@ -1256,12 +1264,12 @@ export class SolarSystemModule {
         }
         
         if (!planet) {
-            if (DEBUG && DEBUG.enabled) console.warn(`?? ${planetName} object not found when applying texture`);
+            if (DEBUG && DEBUG.enabled) console.warn(`[TEX] ${planetName} object not found when applying texture`);
             return;
         }
         
         if (!planet.material) {
-            if (DEBUG && DEBUG.enabled) console.warn(`?? ${planetName} has no material to apply texture to`);
+            if (DEBUG && DEBUG.enabled) console.warn(`[TEX] ${planetName} has no material to apply texture to`);
             return;
         }
         
@@ -1283,7 +1291,7 @@ export class SolarSystemModule {
             meta.phase = 'done';
         }
     } catch (err) {
-        if (DEBUG && DEBUG.enabled) console.error(`? Error applying ${planetName} texture:`, err);
+        if (DEBUG && DEBUG.enabled) console.error(`[TEX] Error applying ${planetName} texture:`, err);
     }
  }
 
@@ -1294,7 +1302,7 @@ export class SolarSystemModule {
         const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
         
         if (!planet) {
-            if (DEBUG && DEBUG.enabled) console.warn(`?? ${planetName} object not found when applying procedural texture`);
+            if (DEBUG && DEBUG.enabled) console.warn(`[TEX] ${planetName} object not found when applying procedural texture`);
             return;
         }
         
@@ -1318,7 +1326,7 @@ export class SolarSystemModule {
             meta.phase = 'proceduralApplied';
         }
     } catch (err) {
-        if (DEBUG && DEBUG.enabled) console.error(`? Error applying ${planetName} procedural texture:`, err);
+        if (DEBUG && DEBUG.enabled) console.error(`[TEX] Error applying ${planetName} procedural texture:`, err);
     }
  }
  
@@ -2727,7 +2735,7 @@ export class SolarSystemModule {
  // Create HYPERREALISTIC materials with advanced texturing
  // Use config.id (language-independent) instead of config.name (translated)
  const id = (config.id || config.name).toLowerCase();
- if (DEBUG && DEBUG.TEXTURES) console.log(`?? Creating material for: "${id}" (name: "${config.name}")`);
+ if (DEBUG && DEBUG.TEXTURES) console.log(`[MAT] Creating material for: "${id}" (name: "${config.name}")`);
 
  // Base material properties
  let materialProps = {
@@ -2951,7 +2959,7 @@ export class SolarSystemModule {
  emissiveIntensity: 0
  });
  }
- console.warn(`?? DEFAULT MATERIAL for "${id}" - color: 0x${config.color?.toString(16)}`);
+ if (DEBUG && DEBUG.enabled) console.warn(`[MAT] DEFAULT MATERIAL for "${id}" - color: 0x${config.color?.toString(16)}`);
  return new THREE.MeshStandardMaterial({
  color: config.color,
  ...materialProps
@@ -2980,7 +2988,7 @@ export class SolarSystemModule {
  planet.userData = {
  id: config.id || config.name.toLowerCase(), // English key for lookups
  name: config.id || config.name, // English name for internal lookups; UI translates via t(name.toLowerCase())
- type: config.dwarf ? 'DwarfPlanet' : 'Planet',
+ type: config.dwarf ? 'DwarfPlanet' : 'planet',
  distance: config.distance,
  radius: config.radius,
  angle: Math.random() * Math.PI * 2,
@@ -3096,7 +3104,7 @@ export class SolarSystemModule {
     verifyTextureLoads(delayMs = 4000) {
         setTimeout(() => {
          if (DEBUG && DEBUG.TEXTURES) {
-            console.group('?? Texture Load Verification');
+            console.group('[TEX] Texture Load Verification');
             const summary = { remoteSuccess: 0, remoteFailed: 0, proceduralOnly: 0 };
             Object.entries(this.planets).forEach(([key, planet]) => {
                 const ud = planet.userData;
@@ -3105,14 +3113,14 @@ export class SolarSystemModule {
                 if (ud.remoteTextureAttempted) {
                     if (hasRemote) {
                         summary.remoteSuccess++;
-                        if (DEBUG && DEBUG.TEXTURES) console.log(`? ${name}: remote texture loaded (${ud.remoteTextureURL}) in ${ud.remoteTextureLoadMs?.toFixed(0)}ms`);
+                        if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${name}: remote texture loaded (${ud.remoteTextureURL}) in ${ud.remoteTextureLoadMs?.toFixed(0)}ms`);
                     } else {
                         summary.remoteFailed++;
-                        if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${name}: remote texture attempted but fell back to procedural (${ud.remoteTextureSources?.length} sources)`);
+                        if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${name}: remote texture attempted but fell back to procedural (${ud.remoteTextureSources?.length} sources)`);
                     }
                 } else {
                     summary.proceduralOnly++;
-                    if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${name}: procedural texture only (no remote attempt)`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${name}: procedural texture only (no remote attempt)`);
                 }
             });
             // Moons
@@ -3120,9 +3128,9 @@ export class SolarSystemModule {
                 const hasMap = !!moon.material?.map;
                 const src = hasMap && moon.material.map.image?.src;
                 if (src && typeof src === 'string' && /https?:\/\//.test(src)) {
-                    if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${moon.userData.name}: has (possibly remote) texture map -> ${src}`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${moon.userData.name}: has (possibly remote) texture map -> ${src}`);
                 } else {
-                    if (DEBUG && DEBUG.TEXTURES) console.log(`?? ${moon.userData.name}: procedural/generated texture`);
+                    if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${moon.userData.name}: procedural/generated texture`);
                 }
             });
             if (DEBUG && DEBUG.TEXTURES) console.log(`Summary: ${summary.remoteSuccess} remote loaded, ${summary.remoteFailed} remote failed, ${summary.proceduralOnly} procedural-only planets.`);
@@ -3855,7 +3863,7 @@ export class SolarSystemModule {
  this.oortCloud = oortCloudGroup;
  this.objects.push(oortCloudGroup);
  
- if (DEBUG.enabled) console.log(`?? Oort Cloud: ${innerOortCount + outerOortCount + cometaryCount} objects (${this.realisticScale ? 'Realistic' : 'Educational'} scale)`);
+ if (DEBUG.enabled) console.log(`[OORT] ${innerOortCount + outerOortCount + cometaryCount} objects (${this.realisticScale ? 'Realistic' : 'Educational'} scale)`);
  }
 
  createOrbitalPaths(scene) {
@@ -5254,14 +5262,14 @@ export class SolarSystemModule {
  }
  
  resetConstellationHighlight() {
- // Restore all constellations to full visibility
+ // Restore all constellations to the user's chosen visibility state
  if (!this.constellations) return;
  this.focusedConstellation = null;
  
  this.constellations.forEach(constellation => {
- constellation.visible = true;
+ constellation.visible = this.constellationsVisible;
  constellation.traverse(child => {
- child.visible = true;
+ child.visible = this.constellationsVisible;
  if (child.material && child.material.userData?.originalOpacity !== undefined) {
  child.material.opacity = child.material.userData.originalOpacity;
  }
@@ -6410,9 +6418,13 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticJWST(satData) {
-        if (DEBUG.enabled) console.log('?? Creating hyperrealistic James Webb Space Telescope');
+        if (DEBUG.enabled) console.log('[MODEL] Creating hyperrealistic James Webb Space Telescope');
         const jwst = new THREE.Group();
-        const scale = satData.size || 0.04;
+        // JWST geometry below uses many real-meter constants (e.g. 21.2m sunshield width).
+        // Normalize those dimensions to the scene scale so JWST is not oversized
+        // compared to other spacecraft models.
+        const displaySize = satData.size || 0.03;
+        const scale = displaySize / 21.2;
 
         const goldMat = MaterialFactory.createSpacecraftMaterial('goldBright');
         const shieldMat = MaterialFactory.createSpacecraftMaterial('shield');
@@ -6544,7 +6556,7 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticPioneer(satData) {
-        if (DEBUG.enabled) console.log('?? Creating hyperrealistic Pioneer probe');
+        if (DEBUG.enabled) console.log('[MODEL] Creating hyperrealistic Pioneer probe');
         const pioneer = new THREE.Group();
         // Scale based on the spacecraft's display size
         const scale = satData.size || 0.07;
@@ -6623,7 +6635,7 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticVoyager(satData) {
-        if (DEBUG.enabled) console.log('?? Creating hyperrealistic Voyager probe');
+        if (DEBUG.enabled) console.log('[MODEL] Creating hyperrealistic Voyager probe');
         const voyager = new THREE.Group();
         // Scale based on the spacecraft's display size
         const scale = satData.size || 0.08;
@@ -6789,7 +6801,7 @@ createHyperrealisticHubble(satData) {
     }
 
     createHyperrealisticJuno(satData) {
-        if (DEBUG.enabled) console.log('?? Creating hyperrealistic Juno spacecraft');
+        if (DEBUG.enabled) console.log('[MODEL] Creating hyperrealistic Juno spacecraft');
         const juno = new THREE.Group();
         // Scale based on the spacecraft's display size (for orbiters, size from data)
         const scale = satData.size || 0.04;
@@ -7958,12 +7970,11 @@ createHyperrealisticHubble(satData) {
  
  // Check if this comet is in "detail view" mode (when focused)
  if (userData.detailView) {
- // Store the real orbital position
- userData.orbitPosition = {
- x: r * cosAngle,
- y: Math.sin(angle * 0.5) * 20,
- z: r * sinAngle
- };
+ // Store the real orbital position — reuse cached object to avoid per-frame heap allocation
+ if (!userData.orbitPosition) userData.orbitPosition = { x: 0, y: 0, z: 0 };
+ userData.orbitPosition.x = r * cosAngle;
+ userData.orbitPosition.y = Math.sin(angle * 0.5) * 20;
+ userData.orbitPosition.z = r * sinAngle;
  // Position at viewable distance from sun (200 units)
  const detailDistance = 200;
  const orbitDirection = Math.sqrt(
@@ -8073,11 +8084,17 @@ createHyperrealisticHubble(satData) {
  // Get Earth's current world position (reuse pre-allocated scratch vector)
  userData.planet.getWorldPosition(this._satEarthPos);
  
+ // Cache inclination trig once (inclination is static per satellite)
+ if (userData._sinIncl === undefined || userData._cosIncl === undefined) {
+ userData._cosIncl = Math.cos(userData.inclination);
+ userData._sinIncl = Math.sin(userData.inclination);
+ }
+
  // Calculate satellite position relative to Earth with inclination
  const cosAngle = Math.cos(userData.angle);
  const sinAngle = Math.sin(userData.angle);
- const cosIncl = Math.cos(userData.inclination);
- const sinIncl = Math.sin(userData.inclination);
+ const cosIncl = userData._cosIncl;
+ const sinIncl = userData._sinIncl;
  
  satellite.position.x = this._satEarthPos.x + userData.distance * cosAngle;
  satellite.position.y = this._satEarthPos.y + userData.distance * sinAngle * sinIncl;
@@ -8185,12 +8202,16 @@ createHyperrealisticHubble(satData) {
  
  // Twinkle distant stars
  if (this.distantStars) {
+ this._starTwinkleFrame = (this._starTwinkleFrame + 1) % 3;
+ // Update twinkle every 3rd frame to reduce hot-path CPU work
+ if (this._starTwinkleFrame === 0) {
  this.distantStars.forEach(star => {
  if (Math.random() < 0.01) {
  const scale = 0.9 + Math.random() * 0.2;
  star.scale.setScalar(scale);
  }
  });
+ }
  }
  }
 
@@ -8616,7 +8637,7 @@ createHyperrealisticHubble(satData) {
  });
  }
  
- if (DEBUG.enabled) console.log(`?? Belts updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
+ if (DEBUG.enabled) console.log(`[SCALE] Belts updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
  }
  
  updateSpacecraftPositions() {
@@ -8818,6 +8839,12 @@ createHyperrealisticHubble(satData) {
  }
 
  focusOnObject(object, camera, controls) {
+ // Start a new focus transition scope; this invalidates any previous in-flight
+ // focus animation loop and allows clean user-interrupt handling.
+ const transitionToken = ++this._focusTransitionToken;
+ this._focusTransitionActive = true;
+ this._focusTransitionCancelRequested = false;
+
  if (!object || !object.userData) {
  if (DEBUG.enabled) console.warn(' Cannot focus on invalid object');
  return;
@@ -9003,8 +9030,14 @@ createHyperrealisticHubble(satData) {
      this.cameraCoRotateMode = true; // Chase-cam mode: camera orbits WITH object
      const objectType = userData.isSpacecraft ? 'spacecraft' : userData.type || 'orbiter';
      if (DEBUG.enabled) console.log(` Chase-cam co-rotation enabled for ${object.userData.name} (${objectType})`);
+ } else if (userData.type === 'planet' || userData.isPlanet) {
+     // Planets orbiting the sun: traditional follow (no orbitPlanet field set, so
+     // isOrbiter is false — handle explicitly so camera tracks the orbit)
+     this.cameraFollowMode = true;
+     this.cameraCoRotateMode = false;
+     if (DEBUG.enabled) console.log(` Traditional tracking enabled for planet ${object.userData.name}`);
  } else if (isOrbiter) {
-     // Other orbiters (planets around sun, comets): traditional tracking
+     // Other orbiters (comets, etc.): traditional tracking
      this.cameraFollowMode = true;
      this.cameraCoRotateMode = false;
      if (DEBUG.enabled) console.log(` Traditional tracking enabled for ${object.userData.name}`);
@@ -9047,6 +9080,10 @@ createHyperrealisticHubble(satData) {
  minDist = 0.2; // Get close to see module details
  maxDist = 100; // Zoom out to see Earth + satellite in context
  if (DEBUG.enabled) console.log(` [ISS/Satellite Zoom] min: ${minDist}, max: ${maxDist}`);
+ } else if (userData.type === 'planet' || userData.isPlanet) {
+ // Planets: allow very close surface inspection (just above the surface)
+ minDist = actualRadius * 0.15; // ~15% of radius — tight orbit view
+ maxDist = Math.max(actualRadius * 100, 1000);
  } else {
  // Scale floor proportionally so small objects (Enceladus r=0.04) are reachable
  // Large objects keep the 0.5 floor; small moons get a floor of ~3× their radius
@@ -9304,10 +9341,49 @@ createHyperrealisticHubble(satData) {
      if (DEBUG.enabled) console.log(` [${userData.type}] Pre-animation: Camera oriented to look at target`);
  }
  
+ // Snapshot desired follow-mode; disable tracking during fly-in so updateCameraTracking
+ // doesn't fight the lerp animation (re-enabled on completion).
+ const _desiredFollowMode = this.cameraFollowMode;
+ const _desiredCoRotateMode = this.cameraCoRotateMode;
+ this.cameraFollowMode = false;
+ this.cameraCoRotateMode = false;
+
+ // For moving objects: capture the camera-end offset once so we can update endPos every
+ // frame as the object moves, preventing a stale landing position.
+ const isStaticTarget = (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula');
+ const endOffset = isStaticTarget ? null : endPos.clone().sub(targetPosition);
+
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
  const startTime = performance.now();
+
+ const finalizeFocusTransition = () => {
+ if (this._focusTransitionToken !== transitionToken) return;
+ this._focusTransitionActive = false;
+ this._focusTransitionCancelRequested = false;
+ // Transition complete — restore the desired follow/co-rotate modes now that
+ // updateCameraTracking can take over cleanly from a well-placed camera.
+ this.cameraFollowMode = _desiredFollowMode;
+ this.cameraCoRotateMode = _desiredCoRotateMode;
+ this._cameraFollowObject = object;
+ object.getWorldPosition(this._cameraFollowLastTargetPos);
+ if (DEBUG.enabled) console.log(` Camera follow mode RESTORED: follow=${_desiredFollowMode}, coRotate=${_desiredCoRotateMode} for ${object.userData.name}`);
+ };
  
  const animate = () => {
+ if (this._focusTransitionToken !== transitionToken) return;
+
+ // If user interacts (zoom/rotate/pan) during fly-to, immediately re-anchor
+ // the current camera offset to the object's latest world position and hand
+ // control to steady follow tracking. This prevents zoom detach.
+ if (this._focusTransitionCancelRequested) {
+ object.getWorldPosition(targetPosition);
+ const userOffset = this._trackOffset.copy(camera.position).sub(controls.target);
+ controls.target.copy(targetPosition);
+ camera.position.copy(targetPosition).add(userOffset);
+ finalizeFocusTransition();
+ return;
+ }
+
  const elapsed = performance.now() - startTime;
  const progress = Math.min(elapsed / duration, 1);
  const eased = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
@@ -9328,6 +9404,9 @@ createHyperrealisticHubble(satData) {
  } else if (progress < 1) {
  // For regular objects or final frame: use actual position
  object.getWorldPosition(targetPosition);
+ // Keep endPos tracking the object so the camera lands at the RIGHT spot
+ // even when the object has moved since the navigation was triggered
+ if (endOffset) endPos.copy(targetPosition).add(endOffset);
  }
  
  camera.position.lerpVectors(startPos, endPos, eased);
@@ -9345,22 +9424,36 @@ createHyperrealisticHubble(satData) {
  if (progress < 1) {
  requestAnimationFrame(animate);
  } else {
- // Transition complete - enable smooth following
- if (isOrbiter) {
- this.cameraFollowMode = true;
- if (DEBUG.enabled) console.log(` Camera follow mode ENABLED for ${object.userData.name}`);
- }
+ finalizeFocusTransition();
  }
  };
  
  animate();
  }
+
+ onControlsInteractionStart() {
+ if (this._focusTransitionActive) {
+ this._focusTransitionCancelRequested = true;
+ }
+ }
  
  updateCameraTracking(camera, controls) {
  // TRACKING INDICATOR REMOVED - it was distracting
+
+ // Defensive: if a planet is focused, always keep follow enabled so zooming
+ // and other controls interactions cannot accidentally detach tracking.
+ if (this.focusedObject) {
+ const focusedData = this.focusedObject.userData || {};
+ const focusedIsPlanet = focusedData.type === 'planet' || focusedData.isPlanet;
+ if (focusedIsPlanet && !this.cameraFollowMode) {
+ this.cameraFollowMode = true;
+ this.cameraCoRotateMode = false;
+ }
+ }
  
  // Exit if no focused object or tracking disabled
  if (!this.focusedObject || !this.cameraFollowMode) {
+ this._cameraFollowObject = null;
  return;
  }
  
@@ -9416,23 +9509,15 @@ createHyperrealisticHubble(satData) {
  controls.update();
  }
  } else {
- // TRADITIONAL TRACKING MODE: Camera follows but doesn't co-rotate
- 
- // Determine smooth factor based on object speed
- const isFastOrbiter = userData.orbitPlanet && userData.speed && userData.speed > 0.5;
- const smoothFactor = isFastOrbiter ? 0.25 : 0.1;
- 
- // Smoothly update controls target to follow the object
- const currentTarget = this._camCurrentTgt.copy(controls.target);
- controls.target.lerpVectors(currentTarget, targetPosition, smoothFactor);
- 
- // Calculate offset from target to camera
- const offset = this._trackOffset.copy(camera.position).sub(currentTarget);
- 
- // Move camera to maintain the same relative position
- camera.position.copy(targetPosition).add(offset);
- 
- controls.update();
+ // TRADITIONAL TRACKING MODE: Only update controls.target to the planet's
+ // current world position. controls.update() runs AFTER this callback
+ // (see SceneManager.animate) and will position the camera using its
+ // internal spherical coordinates (zoom/tilt/angle) relative to this target.
+ // This is the correct way to keep zoom stable as the planet orbits.
+ controls.target.copy(targetPosition);
+ this._cameraFollowObject = object;
+ this._cameraFollowLastTargetPos.copy(targetPosition);
+ // No controls.update() here; SceneManager.animate() calls it after callback.
  }
  }
 
@@ -9550,7 +9635,7 @@ createHyperrealisticHubble(satData) {
  if (DEBUG.enabled) console.log(` toggleLabels called with visible=${visible}, labels.length=${this.labels?.length || 0}`);
  
  if (!this.labels || this.labels.length === 0) {
- console.warn(' No labels to toggle - labels array is empty or undefined');
+ if (DEBUG && DEBUG.enabled) console.warn(' No labels to toggle - labels array is empty or undefined');
  if (DEBUG.enabled) console.log(' this.labels:', this.labels);
  return;
  }
