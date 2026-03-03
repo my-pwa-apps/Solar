@@ -147,6 +147,50 @@ export class SolarSystemModule {
  triton: 5.876854,
  charon: 6.38723
  };
+
+ // Orbital elements used in scientific mode for non-circular / inclined orbits.
+ // Angles are in degrees. We use a lightweight Keplerian approximation:
+ // - true anomaly ≈ simulated angle
+ // - static elements (no secular precession)
+ this.SCIENTIFIC_ORBITAL_ELEMENTS = {
+ mercury: { eccentricity: 0.20563, inclinationDeg: 7.00, periapsisDeg: 29.1 },
+ venus: { eccentricity: 0.00677, inclinationDeg: 3.39, periapsisDeg: 54.9 },
+ earth: { eccentricity: 0.01671, inclinationDeg: 0.00, periapsisDeg: 102.9 },
+ mars: { eccentricity: 0.09339, inclinationDeg: 1.85, periapsisDeg: 286.5 },
+ jupiter: { eccentricity: 0.04839, inclinationDeg: 1.30, periapsisDeg: 273.9 },
+ saturn: { eccentricity: 0.05415, inclinationDeg: 2.49, periapsisDeg: 339.4 },
+ uranus: { eccentricity: 0.04717, inclinationDeg: 0.77, periapsisDeg: 96.7 },
+ neptune: { eccentricity: 0.00859, inclinationDeg: 1.77, periapsisDeg: 273.2 },
+ pluto: { eccentricity: 0.24881, inclinationDeg: 17.16, periapsisDeg: 113.8 },
+ ceres: { eccentricity: 0.07582, inclinationDeg: 10.59, periapsisDeg: 73.6 },
+ haumea: { eccentricity: 0.18874, inclinationDeg: 28.19, periapsisDeg: 240.6 },
+ makemake: { eccentricity: 0.15900, inclinationDeg: 29.00, periapsisDeg: 296.3 },
+ eris: { eccentricity: 0.44068, inclinationDeg: 44.04, periapsisDeg: 151.6 },
+ orcus: { eccentricity: 0.22700, inclinationDeg: 20.57, periapsisDeg: 73.1 },
+ quaoar: { eccentricity: 0.03900, inclinationDeg: 8.00, periapsisDeg: 147.5 },
+ gonggong: { eccentricity: 0.49900, inclinationDeg: 30.70, periapsisDeg: 207.7 },
+ sedna: { eccentricity: 0.85491, inclinationDeg: 11.93, periapsisDeg: 311.3 },
+ salacia: { eccentricity: 0.10600, inclinationDeg: 23.92, periapsisDeg: 278.3 },
+ varda: { eccentricity: 0.14000, inclinationDeg: 21.50, periapsisDeg: 104.7 },
+ varuna: { eccentricity: 0.05100, inclinationDeg: 17.20, periapsisDeg: 97.4 }
+ };
+
+ this.SCIENTIFIC_MOON_ORBITAL_ELEMENTS = {
+ moon: { eccentricity: 0.05490, inclinationDeg: 5.15, periapsisDeg: 0.0 },
+ phobos: { eccentricity: 0.01510, inclinationDeg: 1.09, periapsisDeg: 0.0 },
+ deimos: { eccentricity: 0.00020, inclinationDeg: 1.79, periapsisDeg: 0.0 },
+ io: { eccentricity: 0.00410, inclinationDeg: 0.04, periapsisDeg: 0.0 },
+ europa: { eccentricity: 0.00940, inclinationDeg: 0.47, periapsisDeg: 0.0 },
+ ganymede: { eccentricity: 0.00130, inclinationDeg: 0.20, periapsisDeg: 0.0 },
+ callisto: { eccentricity: 0.00740, inclinationDeg: 0.28, periapsisDeg: 0.0 },
+ enceladus: { eccentricity: 0.00470, inclinationDeg: 0.00, periapsisDeg: 0.0 },
+ rhea: { eccentricity: 0.00100, inclinationDeg: 0.35, periapsisDeg: 0.0 },
+ titan: { eccentricity: 0.02880, inclinationDeg: 0.35, periapsisDeg: 0.0 },
+ titania: { eccentricity: 0.00110, inclinationDeg: 0.08, periapsisDeg: 0.0 },
+ miranda: { eccentricity: 0.00130, inclinationDeg: 4.34, periapsisDeg: 0.0 },
+ triton: { eccentricity: 0.00002, inclinationDeg: 156.90, periapsisDeg: 0.0 },
+ charon: { eccentricity: 0.00020, inclinationDeg: 0.00, periapsisDeg: 0.0 }
+ };
  
  // Time acceleration factor (1 = real-time, higher = faster)
  this.timeAcceleration = 360; // 360x faster = 1 Earth day in 4 minutes
@@ -3053,6 +3097,11 @@ export class SolarSystemModule {
  rotationPhase: Math.random() * Math.PI * 2 // starting rotation angle
  };
 
+ const orbitalElements = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetKey] || { eccentricity: 0, inclinationDeg: 0, periapsisDeg: 0 };
+ planet.userData.orbitalEccentricity = orbitalElements.eccentricity || 0;
+ planet.userData.orbitalInclination = (orbitalElements.inclinationDeg || 0) * Math.PI / 180;
+ planet.userData.orbitalPeriapsis = (orbitalElements.periapsisDeg || 0) * Math.PI / 180;
+
  // Cloud layer disabled — real NASA Earth texture already includes visible
  // cloud patterns; a separate cloud mesh caused a blue-tint artefact.
 
@@ -3382,6 +3431,13 @@ export class SolarSystemModule {
  retrograde: astroData.retrograde || false,
  rotationPhase: Math.random() * Math.PI * 2
  };
+
+ moon.userData.parentPlanet = planet.userData?.id || planet.userData?.name || null;
+ const moonKey = (config.id || config.name).toLowerCase();
+ const moonElements = this.SCIENTIFIC_MOON_ORBITAL_ELEMENTS[moonKey] || { eccentricity: 0, inclinationDeg: 0, periapsisDeg: 0 };
+ moon.userData.orbitalEccentricity = moonElements.eccentricity || 0;
+ moon.userData.orbitalInclination = (moonElements.inclinationDeg || 0) * Math.PI / 180;
+ moon.userData.orbitalPeriapsis = (moonElements.periapsisDeg || 0) * Math.PI / 180;
 
  // Store moon reference using id (language-independent)
  const moonStorageKey = (config.id || config.name).trim().toLowerCase();
@@ -7929,8 +7985,24 @@ createHyperrealisticHubble(satData) {
  planet.userData.angle = 0;
  }
  
+ if (this.scientificMode) {
+ const e = planet.userData.orbitalEccentricity || 0;
+ const i = planet.userData.orbitalInclination || 0;
+ const w = planet.userData.orbitalPeriapsis || 0;
+ const a = planet.userData.distance;
+ const theta = planet.userData.angle + w;
+ const cosTheta = Math.cos(theta);
+ const sinTheta = Math.sin(theta);
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * cosTheta)) : a;
+ const xOrb = r * cosTheta;
+ const zOrb = r * sinTheta;
+ planet.position.x = xOrb;
+ planet.position.y = zOrb * Math.sin(i);
+ planet.position.z = zOrb * Math.cos(i);
+ } else {
  planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
  planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
+ }
  
  // REALISTIC PLANET ROTATION based on real astronomical data
  if (planet.userData.realRotationPeriod && rotationSpeed > 0) {
@@ -7968,9 +8040,25 @@ createHyperrealisticHubble(satData) {
  // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
  // these positions are RELATIVE to the planet's position, not world coordinates!
  // This keeps the moon orbiting around its parent planet correctly.
+ if (this.scientificMode) {
+ const e = moon.userData.orbitalEccentricity || 0;
+ const i = moon.userData.orbitalInclination || 0;
+ const w = moon.userData.orbitalPeriapsis || 0;
+ const a = moon.userData.distance;
+ const theta = moon.userData.angle + w;
+ const cosTheta = Math.cos(theta);
+ const sinTheta = Math.sin(theta);
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * cosTheta)) : a;
+ const xOrb = r * cosTheta;
+ const zOrb = r * sinTheta;
+ moon.position.x = xOrb;
+ moon.position.y = zOrb * Math.sin(i);
+ moon.position.z = zOrb * Math.cos(i);
+ } else {
  moon.position.x = moon.userData.distance * Math.cos(moon.userData.angle);
  moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
  moon.position.y = 0; // Keep moons in planet's equatorial plane
+ }
  
  // REALISTIC MOON ROTATION based on real astronomical data
  if (moon.userData.realRotationPeriod && rotationSpeed > 0) {
