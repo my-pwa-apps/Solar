@@ -353,12 +353,14 @@ export class SolarSystemModule {
  console.log(' Lighting: Sun 9 (warm white), Ambient 0.4, Tone mapping 1.2');
  }
  
- // Multi-layer corona for realistic glow
+ // Multi-layer corona for realistic glow — inner bright core fading to a wispy outer halo
  const coronaLayers = [
  { size: 11.5, color: 0xffdd88, opacity: 0.25 },
  { size: 13, color: 0xffaa44, opacity: 0.18 },
  { size: 15, color: 0xff8822, opacity: 0.12 },
- { size: 18, color: 0xff6600, opacity: 0.06 }
+ { size: 18, color: 0xff6600, opacity: 0.07 },
+ { size: 23, color: 0xff4400, opacity: 0.03 }, // Extended mid corona
+ { size: 30, color: 0xff2200, opacity: 0.012 } // Faint outer solar wind glow
  ];
  
  coronaLayers.forEach(layer => {
@@ -450,7 +452,10 @@ export class SolarSystemModule {
             realSize: '12,104 km diameter',
             moons: 0,
             emissive: 0xFFC649,
-            emissiveIntensity: 0.3
+            emissiveIntensity: 0.3,
+            atmosphere: true,
+            atmosphereColor: 0xffcc44, // Thick sulphuric-acid haze, warm yellow
+            atmosphereOpacity: 0.22
         }); // Earth: BASE = 1.0 (12,742 km) - Most complex texture generation
  if (this.uiManager) this.uiManager.updateLoadingProgress(21, t('creatingEarth'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -468,7 +473,9 @@ export class SolarSystemModule {
             funFact: t('funFactEarth'),
             realSize: '12,742 km diameter',
             moons: 1,
-            atmosphere: true
+            atmosphere: true,
+            atmosphereColor: 0x4466ff, // Blue Rayleigh-scattering glow
+            atmosphereOpacity: 0.18
         });        // Moon: 3,474 km / 12,742 km = 0.273
         // Real distance: 384,400 km / Earth radius (6,371 km) = ~60 Earth radii
         // Real orbital period: 27.32 days vs Earth's 365.25 days = 13.37x faster
@@ -498,7 +505,10 @@ export class SolarSystemModule {
             description: t('descMars'),
             funFact: t('funFactMars'),
             realSize: '6,779 km diameter',
-            moons: 2
+            moons: 2,
+            atmosphere: true,
+            atmosphereColor: 0xff6633, // Thin CO₂ dust haze, reddish-orange
+            atmosphereOpacity: 0.05
         });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny in reality, scaled up for visibility)
         // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
         this.createMoon(this.planets.mars, {
@@ -3180,6 +3190,27 @@ export class SolarSystemModule {
  planet.add(rings);
  }
 
+ // Atmosphere glow — thin transparent sphere around planets with appreciable atmospheres.
+ // BackSide rendering: the inward-facing surface creates a limb glow visible from space.
+ if (config.atmosphere) {
+ const atmosRadius = config.radius * 1.06;
+ const atmosGeo = new THREE.SphereGeometry(atmosRadius, 48, 48);
+ const atmosColor = config.atmosphereColor !== undefined ? config.atmosphereColor : 0x4466ff;
+ const atmosOpacity = config.atmosphereOpacity !== undefined ? config.atmosphereOpacity : 0.15;
+ const atmosMat = new THREE.MeshBasicMaterial({
+ color: atmosColor,
+ transparent: true,
+ opacity: atmosOpacity,
+ side: THREE.BackSide,
+ blending: THREE.AdditiveBlending,
+ depthWrite: false
+ });
+ const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
+ atmosMesh.name = 'atmosphere';
+ planet.add(atmosMesh);
+ planet.userData.atmosphereMesh = atmosMesh;
+ }
+
  scene.add(planet);
  this.objects.push(planet);
 
@@ -4111,7 +4142,7 @@ export class SolarSystemModule {
  // Enhanced starfield based on real astronomical data
  // Uses Hertzsprung-Russell diagram for realistic stellar populations
  const starGeometry = new THREE.BufferGeometry();
- const starCount = 8000; // Increased for richer sky
+ const starCount = IS_MOBILE ? 4000 : 12000; // Richer sky on desktop; lighter on mobile
  const positions = new Float32Array(starCount * 3);
  const colors = new Float32Array(starCount * 3);
  const sizes = new Float32Array(starCount);

@@ -104,7 +104,7 @@ export class SceneManager {
  this.renderer.setPixelRatio(this._adaptivePixelRatio);
  this.renderer.xr.enabled = true;
  this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
- this.renderer.shadowMap.type = THREE.PCFShadowMap;
+ this.renderer.shadowMap.type = IS_MOBILE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; // Soft shadows on desktop
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
  this.renderer.toneMappingExposure = 1.2; // Increased to brighten dark areas
  
@@ -209,16 +209,17 @@ export class SceneManager {
  // Set scene background to dark space color
  this.scene.background = new THREE.Color(0x000011);
  
- // Ambient light - provides base illumination so dark sides are visible
- this.lights.ambient = new THREE.AmbientLight(0x444466, 0.6);
+ // Ambient light - minimal fill so dark sides retain a hint of reflected starlight.
+ // SolarSystemModule.createSun() adds its own ambient (0x404050, 0.4) on top of this.
+ this.lights.ambient = new THREE.AmbientLight(0x222244, 0.2);
  this.scene.add(this.lights.ambient);
 
- // Hemisphere light for space lighting (starlight from above/below)
- this.lights.hemisphere = new THREE.HemisphereLight(0x5555aa, 0x222244, 0.4);
+ // Hemisphere light - very subtle top/bottom fill (stars above, deep space below)
+ this.lights.hemisphere = new THREE.HemisphereLight(0x446688, 0x111133, 0.15);
  this.scene.add(this.lights.hemisphere);
 
- // Camera light - helps viewing dark sides without overpowering
- this.lights.camera = new THREE.PointLight(0x8899dd, 0.8, 600, 1);
+ // Camera fill - faint; prevents totally-black dark sides during close-up inspections
+ this.lights.camera = new THREE.PointLight(0x8899dd, 0.2, 1000, 2);
  this.camera.add(this.lights.camera);
  this.scene.add(this.camera);
  
@@ -2370,13 +2371,13 @@ export class SceneManager {
 
  updateBrightness(multiplier) {
  if (this.lights.ambient) {
- this.lights.ambient.intensity = 0.3 + (multiplier * 1.5);
+ this.lights.ambient.intensity = 0.05 + (multiplier * 0.5); // max ~0.55 at full brightness
  }
  if (this.lights.hemisphere) {
- this.lights.hemisphere.intensity = 0.2 + (multiplier * 0.8);
+ this.lights.hemisphere.intensity = 0.05 + (multiplier * 0.3); // max ~0.35 at full brightness
  }
  if (this.lights.camera) {
- this.lights.camera.intensity = multiplier * 2;
+ this.lights.camera.intensity = multiplier * 0.6; // max 0.6 at full brightness
  }
  }
 
