@@ -44,14 +44,18 @@ export class UIManager {
  }
 
  updateLoadingProgress(progress, message = null) {
+ const pct = Math.min(100, Math.max(0, progress));
  // Update progress bar (0-100)
  if (this.elements.loadingProgressBar) {
- this.elements.loadingProgressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+ this.elements.loadingProgressBar.style.width = `${pct}%`;
+ // Update ARIA progressbar value on container
+ const progressContainer = this.elements.loadingProgressBar.parentElement;
+ if (progressContainer) progressContainer.setAttribute('aria-valuenow', Math.round(pct));
  }
  
  // Update percentage text
  if (this.elements.loadingPercentage) {
- this.elements.loadingPercentage.textContent = `${Math.round(progress)}%`;
+ this.elements.loadingPercentage.textContent = `${Math.round(pct)}%`;
  }
  
  // Update message if provided

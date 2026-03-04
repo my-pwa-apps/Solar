@@ -394,7 +394,7 @@ class App {
  this.applyOrbitMode(this._orbitModeNext(current));
  }
 
-
+ setupGlobalFunctions() {
  // Close info panel
  window.closeInfoPanel = () => {
  this.uiManager.closeInfoPanel();
@@ -1462,7 +1462,8 @@ class App {
 
  // Strip leading date prefix "Apr 08, 2024 — " so toast shows only the event name
  const eventLabel = rawLabel.includes(' — ') ? rawLabel.split(' — ').slice(1).join(' — ') : rawLabel;
- const eventDate = new Date(val + 'T12:00:00Z');
+ const eventTimestamp = selectedOption.dataset.utc || `${val}T12:00:00Z`;
+ const eventDate = new Date(eventTimestamp);
  if (!isNaN(eventDate.getTime())) {
  ssm.seekToDate(eventDate);
  }

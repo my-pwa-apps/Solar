@@ -3345,27 +3345,31 @@ export class SolarSystemModule {
  
  // Verify texture is applied
  if (DEBUG.enabled) {
- console.log(`[Moon Material] "${config.name}" has texture map: ${moonMaterial.map.isTexture ? 'YES' : 'NO'}`);
+ console.log(`[Moon Material] "${config.name}" has texture map: ${moonMaterial.map?.isTexture ? 'YES' : 'NO'}`);
  }
 
  // Get real astronomical data for this moon (use id if available, otherwise name)
  const astroDataKey = (config.id || config.name).toLowerCase();
  const astroData = this.ASTRONOMICAL_DATA[astroDataKey] || {};
  
+ // Real astronomical data for day/night cycle
+ // Most moons are tidally locked — rotation period ≈ orbital period
+ const moonOrbitalPeriodHours = (this.SCIENTIFIC_MOON_ORBITAL_PERIODS[astroDataKey] || 0) * 24;
+
  moon.userData = {
  id: config.id || config.name.toLowerCase(), // English key for lookups
  name: config.id || config.name, // English name for internal lookups; UI translates via t(name.toLowerCase())
  type: 'moon',
  distance: config.distance,
  radius: config.radius,
- angle: Math.random() * Math.PI * 2,
+ angle: 0,
  speed: config.speed,
  visualBaseSpeed: config.speed,
  rotationSpeed: config.rotationSpeed || 0.001, // Add rotation
  description: config.description,
  
- // Real astronomical data for day/night cycle
- realRotationPeriod: astroData.rotationPeriod || 655.7, // hours (default: Moon's period)
+ // Tidally locked default: use orbital period; fallback to Earth Moon's 655.7h
+ realRotationPeriod: astroData.rotationPeriod || moonOrbitalPeriodHours || 655.7, // hours
  axialTilt: astroData.axialTilt || 0,
  retrograde: astroData.retrograde || false,
  rotationPhase: Math.random() * Math.PI * 2
@@ -3489,7 +3493,10 @@ export class SolarSystemModule {
  + (date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds()) / 86400;
  const A = Math.floor(m <= 2 ? y - 1 : y);
  const B = m <= 2 ? m + 12 : m;
- return Math.floor(365.25 * (A + 4716)) + Math.floor(30.6001 * (B + 1)) + d - 1524.5;
+ // Gregorian calendar correction (Meeus algorithm)
+ // Without this, JD is off by ~13 days for modern dates
+ const C = 2 - Math.floor(A / 100) + Math.floor(Math.floor(A / 100) / 4);
+ return Math.floor(365.25 * (A + 4716)) + Math.floor(30.6001 * (B + 1)) + d + C - 1524.5;
  }
 
  /** Solve Kepler's equation M = E - e·sin(E) via Newton-Raphson iteration. */
@@ -3522,6 +3529,8 @@ export class SolarSystemModule {
  initPositionsToDate(date) {
  const jd = this.toJulianDate(date);
  const daysSinceJ2000 = jd - 2451545.0;
+ const TWO_PI = Math.PI * 2;
+ const normalizeAngle = (angle) => ((angle % TWO_PI) + TWO_PI) % TWO_PI;
  this.simulatedJD = jd;
  // Seed rotation clock from the same epoch
  this.simulatedHours = daysSinceJ2000 * 24;
@@ -3557,6 +3566,60 @@ export class SolarSystemModule {
  planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
  }
  });
+
+ // Date-seed moon orbital phases (deterministic by JD, not random startup state)
+ Object.values(this.moons).forEach((moon) => {
+ if (!moon?.userData) return;
+
+ const moonKey = (moon.userData.id || moon.userData.name || '').toLowerCase();
+ const orbitalPeriodDays = this.SCIENTIFIC_MOON_ORBITAL_PERIODS[moonKey] || this.ASTRONOMICAL_DATA[moonKey]?.orbitalPeriod;
+ if (!orbitalPeriodDays || orbitalPeriodDays <= 0) return;
+
+ const meanAnomaly = normalizeAngle((daysSinceJ2000 / orbitalPeriodDays) * TWO_PI);
+ moon.userData.angle = meanAnomaly;
+
+ if (this.scientificMode) {
+ const e = moon.userData.orbitalEccentricity || 0;
+ const i = moon.userData.orbitalInclination || 0;
+ const w = moon.userData.orbitalPeriapsis || 0;
+ const a = moon.userData.distance;
+ const nu = moon.userData.angle;
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
+ const theta = nu + w;
+ const xOrb = r * Math.cos(theta);
+ const zOrb = r * Math.sin(theta);
+ moon.position.x = xOrb;
+ moon.position.y = zOrb * Math.sin(i);
+ moon.position.z = zOrb * Math.cos(i);
+ } else {
+ moon.position.x = moon.userData.distance * Math.cos(moon.userData.angle);
+ moon.position.y = 0;
+ moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
+ }
+ });
+
+ // Date-seed comet orbital phases (deterministic by JD, not random startup state)
+ if (this.comets) {
+ this.comets.forEach((comet) => {
+ const userData = comet?.userData;
+ if (!userData) return;
+
+ const orbitalPeriodDays = userData.orbitalPeriod;
+ if (!orbitalPeriodDays || orbitalPeriodDays <= 0) return;
+
+ // Seed mean anomaly linearly from JD; derive true anomaly via Kepler solver
+ const meanAnomaly = normalizeAngle((daysSinceJ2000 / orbitalPeriodDays) * TWO_PI);
+ userData.meanAnomaly = meanAnomaly;
+ const e = userData.eccentricity || 0;
+ userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(meanAnomaly, e) : meanAnomaly;
+
+ const a = userData.distance;
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(userData.angle))) : a;
+ comet.position.x = r * Math.cos(userData.angle);
+ comet.position.y = Math.sin(userData.angle) * 15;
+ comet.position.z = r * Math.sin(userData.angle);
+ });
+ }
 
  // Notify UI immediately
  window.dispatchEvent(new CustomEvent('simulatedDateChanged', { detail: { jd } }));
@@ -6525,7 +6588,8 @@ export class SolarSystemModule {
  actualSize: cometData.size, // True nucleus size
  visualRadius: visualRadius,
  distance: cometData.distance,
- angle: Math.random() * Math.PI * 2,
+ angle: 0, // true anomaly (derived from meanAnomaly via Kepler solver)
+ meanAnomaly: 0, // mean anomaly (advanced linearly with time)
  speed: cometData.speed,
  eccentricity: safeEccentricity, // Clamped to keep perihelion outside sun
  originalEccentricity: cometData.eccentricity, // Stored for reclamping after scale changes
@@ -6563,6 +6627,10 @@ export class SolarSystemModule {
  const cometOrbitLine = new THREE.Line(cometOrbitGeo, cometOrbitMat);
  cometOrbitLine.visible = this.cometOrbitsVisible;
  cometOrbitLine.renderOrder = 1;
+ // Disable frustum culling: highly eccentric orbits have a bounding sphere
+ // centered far from the origin (focus), so Three.js incorrectly culls the
+ // near-perihelion arc even when it is inside the camera frustum.
+ cometOrbitLine.frustumCulled = false;
  cometOrbitLine.userData = { type: 'orbit', comet: cometData.name };
  scene.add(cometOrbitLine);
  this.cometOrbits.push(cometOrbitLine);
@@ -8273,18 +8341,22 @@ createHyperrealisticHubble(satData) {
  }
  this._starTwinkleFrame += 1;
  
- // Update comets with elliptical orbits (optimized)
+ // Update comets with elliptical orbits — Kepler's 2nd law
  if (this.comets) {
  this.comets.forEach(comet => {
  const userData = comet.userData;
  const cometMotionMultiplier = this.scientificMode ? 1 : 18; // Educational mode boost so motion is visible
- const angleIncrement = userData.speed * orbitalSpeed * deltaTime * cometMotionMultiplier;
- if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
- userData.angle += angleIncrement;
+ const meanAnomalyIncrement = userData.speed * orbitalSpeed * deltaTime * cometMotionMultiplier;
+ if (!isNaN(meanAnomalyIncrement) && isFinite(meanAnomalyIncrement)) {
+ userData.meanAnomaly = (userData.meanAnomaly || 0) + meanAnomalyIncrement;
  }
  
- // Elliptical orbit calculation
+ // Convert mean anomaly → true anomaly via Kepler solver
+ // This ensures comets spend more time near aphelion and whip through perihelion (Kepler's 2nd law)
  const e = userData.eccentricity;
+ const M = userData.meanAnomaly || 0;
+ userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(M, e) : M;
+ 
  const a = userData.distance;
  const angle = userData.angle;
  
@@ -8295,38 +8367,13 @@ createHyperrealisticHubble(satData) {
  // Simplified elliptical orbit
  const r = a * (1 - e * e) / (1 + e * cosAngle);
  
- // Check if this comet is in "detail view" mode (when focused)
- if (userData.detailView) {
- // Store the real orbital position — reuse cached object to avoid per-frame heap allocation
- if (!userData.orbitPosition) userData.orbitPosition = { x: 0, y: 0, z: 0 };
- userData.orbitPosition.x = r * cosAngle;
- userData.orbitPosition.y = Math.sin(angle) * 15;
- userData.orbitPosition.z = r * sinAngle;
- // Position at viewable distance from sun (200 units)
- const detailDistance = 200;
- const orbitDirection = Math.sqrt(
- userData.orbitPosition.x ** 2 + 
- userData.orbitPosition.z ** 2
- );
- if (orbitDirection > 0) {
- comet.position.x = (userData.orbitPosition.x / orbitDirection) * detailDistance;
- comet.position.z = (userData.orbitPosition.z / orbitDirection) * detailDistance;
- } else {
- comet.position.x = detailDistance;
- comet.position.z = 0;
- }
- comet.position.y = userData.orbitPosition.y;
- } else {
- // Normal orbital position
+ // Always use actual orbital position
  comet.position.x = r * cosAngle;
  comet.position.z = r * sinAngle;
  comet.position.y = Math.sin(angle) * 15;
- }
 
- // Keep orbit-line visibility consistent with detail-view mode:
- // in detail view the comet is intentionally moved to a near-camera showcase position.
  if (userData.orbitLine) {
- userData.orbitLine.visible = this.cometOrbitsVisible && !userData.detailView;
+ userData.orbitLine.visible = this.cometOrbitsVisible;
  }
  
  // Show/hide comet tails based on toggle
@@ -8376,10 +8423,12 @@ createHyperrealisticHubble(satData) {
  const t = (tBase + dustFlow) % 1.0; // flowing position along tail
  const length = dustTailLen * t;
  
- // Curve effect - pre-calculated
- const dirX = userData._sunDir.x + userData._velDir.x * curveFactor * t;
- const dirY = userData._sunDir.y + userData._velDir.y * curveFactor * t;
- const dirZ = userData._sunDir.z + userData._velDir.z * curveFactor * t;
+ // Dust tail curves BACKWARD (retrograde): dust shed at earlier positions
+ // has different orbital velocity and lags behind the comet. Subtracting
+ // _velDir (prograde direction) gives the correct rearward sweep.
+ const dirX = userData._sunDir.x - userData._velDir.x * curveFactor * t;
+ const dirY = userData._sunDir.y - userData._velDir.y * curveFactor * t;
+ const dirZ = userData._sunDir.z - userData._velDir.z * curveFactor * t;
  const normFactor = 1 / Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
  
  const jitterA = userData.dustJitterA ? userData.dustJitterA[i] : (Math.random() - 0.5);
@@ -8439,7 +8488,7 @@ createHyperrealisticHubble(satData) {
  this.satellites.forEach(satellite => {
  const userData = satellite.userData;
  if (userData.planet) {
- const angleIncrement = userData.speed * orbitalSpeed * 0.01; // Scale down for realistic orbit times
+ const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.01; // Scale down for realistic orbit times
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  }
@@ -8496,7 +8545,7 @@ createHyperrealisticHubble(satData) {
  
  // Deep space probes keep moving away
  if (!userData.orbitPlanet && userData.speed) {
- const angleIncrement = userData.speed * orbitalSpeed * 0.001;
+ const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.001;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  craft.position.x = userData.distance * Math.cos(userData.angle);
@@ -8506,7 +8555,7 @@ createHyperrealisticHubble(satData) {
  
  // Orbiters around planets (Juno, Cassini legacy, etc)
  if (userData.orbitPlanet && userData.speed && userData.type === 'orbiter') {
- const angleIncrement = userData.speed * orbitalSpeed * 0.01;
+ const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.01;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  const radius = userData.distance;
@@ -8675,7 +8724,7 @@ createHyperrealisticHubble(satData) {
  if (this.comets) {
  this.comets.forEach(comet => {
  const orbitLine = comet?.userData?.orbitLine;
- if (orbitLine) orbitLine.visible = showComets && !comet.userData.detailView;
+ if (orbitLine) orbitLine.visible = showComets;
  });
  }
  if (DEBUG.enabled) console.log(` Orbit mode: ${mode}`);
@@ -9169,7 +9218,7 @@ createHyperrealisticHubble(satData) {
 
  orbitLine.geometry.setFromPoints(points);
  orbitLine.geometry.computeBoundingSphere();
- orbitLine.visible = this.cometOrbitsVisible && !userData.detailView;
+ orbitLine.visible = this.cometOrbitsVisible;
  });
  }
  
@@ -9232,7 +9281,11 @@ createHyperrealisticHubble(satData) {
  const translatedParent = (parentKey && window.t && window.t(parentKey) !== parentKey) ? t(parentKey) : userData.parentPlanet;
  distanceText = `${t('orbitsParent')} ${translatedParent}`;
  } else if (typeof userData.distance === 'number') {
+ if (this.realisticScale) {
  distanceText = `${userData.distance.toFixed(1)} ${t('millionKmFromSun')}`;
+ } else {
+ distanceText = `${userData.distance.toFixed(1)} ${t('scaledUnitsFromSun')}`;
+ }
  } else {
  distanceText = t('distanceVaries');
  }
@@ -9295,15 +9348,7 @@ createHyperrealisticHubble(satData) {
  // Determine actual object size (not inflated glow size)
  const userData = object.userData;
  
- // Disable detail view for previously focused comet when focusing on non-comet
- if (!userData.isComet && this.focusedComet) {
- this.focusedComet.userData.detailView = false;
- this.focusedComet.scale.set(1, 1, 1); // Reset scale
- this.focusedComet.rotation.y = 0; // Reset rotation
- this.focusedComet = null;
- if (DEBUG.enabled) console.log(' [Detail View] Disabled - focusing on non-comet object');
- }
- let actualRadius;
+let actualRadius;
  
  if (userData.isSpacecraft || userData.isComet) {
  // Use actual size for spacecraft and comets, not glow/tail size
@@ -9380,49 +9425,7 @@ createHyperrealisticHubble(satData) {
  }
  
  const targetPosition = new THREE.Vector3();
- 
- // Special handling for comets - move to detail view position FIRST
- if (userData.isComet) {
- // Enable "detail view" mode to bring comet to viewable distance
- if (this.focusedComet && this.focusedComet !== object) {
- // Disable detail view for previously focused comet
- this.focusedComet.userData.detailView = false;
- }
- this.focusedComet = object;
- object.userData.detailView = true;
- 
- if (DEBUG.enabled) console.log(` [Comet Detail View] Enabling for ${userData.name} - bringing to viewable distance`);
- 
- // IMMEDIATELY move comet to detail view position
- const detailDistance = 200;
- const currentPos = object.position.clone();
- const orbitDirection = Math.sqrt(currentPos.x ** 2 + currentPos.z ** 2);
- if (orbitDirection > 0) {
- object.position.x = (currentPos.x / orbitDirection) * detailDistance;
- object.position.z = (currentPos.z / orbitDirection) * detailDistance;
- // Keep Y position (vertical wobble)
- }
- 
- // Orient comet so tails point away from sun
- // Tails are built along positive X axis, so rotate to point away from sun
- const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
- const cometToSun = sunPosition.clone().sub(object.position);
- const angleToSun = Math.atan2(cometToSun.z, cometToSun.x);
- object.rotation.y = angleToSun + Math.PI; // Rotate so +X points away from sun
- 
- // Scale up comet to be visible (nucleus is tiny - only 0.002-0.005 units!)
- // With enhanced tails (25-35 units), scale of 15x gives perfect visibility
- const detailViewScale = 1.0; // Coma already scaled to solar-system proportions; no extra inflate needed
- object.scale.set(detailViewScale, detailViewScale, detailViewScale);
- 
- if (DEBUG.enabled) {
- console.log(`   Moved from distance ${orbitDirection.toFixed(1)} to ${detailDistance} units`);
- console.log(`   New position: (${object.position.x.toFixed(1)}, ${object.position.y.toFixed(1)}, ${object.position.z.toFixed(1)})`);
- console.log(`   Tail rotation: ${(object.rotation.y * 180 / Math.PI).toFixed(1)}° (pointing away from sun)`);
- console.log(`   Scale: ${detailViewScale}x for visibility`);
- }
- }
- 
+
  // Special handling for constellations - use center of star pattern
  if (userData.type === 'constellation' && userData.centerPosition) {
  targetPosition.set(

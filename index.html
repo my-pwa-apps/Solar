@@ -294,10 +294,10 @@
         </div>
         <div class="loading-spinner"></div>
         <p id="loading-text" data-i18n="initializing">Initializing...</p>
-        <div id="loading-progress">
+        <div id="loading-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Loading progress">
             <div id="loading-progress-bar"></div>
         </div>
-        <p id="loading-percentage">0%</p>
+        <p id="loading-percentage" aria-live="polite">0%</p>
         <div id="loading-fact" class="space-fact">
             <span class="fact-icon">💡</span>
             <span id="fact-text">The Sun contains 99.86% of the Solar System's mass!</span>
@@ -352,26 +352,26 @@
                         <option value="">🌟 Notable Events…</option>
 
                         <optgroup label="🌑 Solar Eclipses">
-                            <option value="2024-04-08" data-focus="moon">Apr 08, 2024 — Total Solar Eclipse (North America)</option>
-                            <option value="2025-03-29" data-focus="moon">Mar 29, 2025 — Total Solar Eclipse (N Europe / Greenland)</option>
-                            <option value="2026-02-17" data-focus="moon">Feb 17, 2026 — Annular Solar Eclipse (Antarctica / Patagonia)</option>
-                            <option value="2026-08-12" data-focus="moon">Aug 12, 2026 — Total Solar Eclipse (Spain / Iceland)</option>
-                            <option value="2027-08-02" data-focus="moon">Aug 02, 2027 — Total Solar Eclipse (N Africa / Arabia)</option>
-                            <option value="2028-07-22" data-focus="moon">Jul 22, 2028 — Total Solar Eclipse (Australia / NZ)</option>
-                            <option value="2030-06-01" data-focus="moon">Jun 01, 2030 — Annular Solar Eclipse (S Europe / N Africa)</option>
-                            <option value="2030-11-25" data-focus="moon">Nov 25, 2030 — Total Solar Eclipse (Southern Africa)</option>
-                            <option value="2033-03-30" data-focus="moon">Mar 30, 2033 — Total Solar Eclipse (Alaska / Siberia)</option>
-                            <option value="2035-09-02" data-focus="moon">Sep 02, 2035 — Total Solar Eclipse (China / Korea / Japan)</option>
+                            <option value="2024-04-08" data-utc="2024-04-08T18:18:29Z" data-focus="moon">Apr 08, 2024 — Total Solar Eclipse (North America)</option>
+                            <option value="2025-03-29" data-utc="2025-03-29T10:48:36Z" data-focus="moon">Mar 29, 2025 — Partial Solar Eclipse (N Atlantic / Europe)</option>
+                            <option value="2026-02-17" data-utc="2026-02-17T12:13:06Z" data-focus="moon">Feb 17, 2026 — Annular Solar Eclipse (Antarctica / Patagonia)</option>
+                            <option value="2026-08-12" data-utc="2026-08-12T17:47:06Z" data-focus="moon">Aug 12, 2026 — Total Solar Eclipse (Spain / Iceland)</option>
+                            <option value="2027-08-02" data-utc="2027-08-02T10:07:50Z" data-focus="moon">Aug 02, 2027 — Total Solar Eclipse (N Africa / Arabia)</option>
+                            <option value="2028-07-22" data-utc="2028-07-22T02:56:40Z" data-focus="moon">Jul 22, 2028 — Total Solar Eclipse (Australia / NZ)</option>
+                            <option value="2030-06-01" data-utc="2030-06-01T06:29:13Z" data-focus="moon">Jun 01, 2030 — Annular Solar Eclipse (S Europe / N Africa)</option>
+                            <option value="2030-11-25" data-utc="2030-11-25T06:51:37Z" data-focus="moon">Nov 25, 2030 — Total Solar Eclipse (Southern Africa)</option>
+                            <option value="2033-03-30" data-utc="2033-03-30T18:02:36Z" data-focus="moon">Mar 30, 2033 — Total Solar Eclipse (Alaska / Siberia)</option>
+                            <option value="2035-09-02" data-utc="2035-09-02T01:56:46Z" data-focus="moon">Sep 02, 2035 — Total Solar Eclipse (China / Korea / Japan)</option>
                         </optgroup>
 
                         <optgroup label="🌕 Lunar Eclipses (Blood Moons)">
-                            <option value="2025-03-13" data-focus="moon">Mar 13, 2025 — Total Lunar Eclipse (Blood Moon)</option>
-                            <option value="2025-09-07" data-focus="moon">Sep 07, 2025 — Total Lunar Eclipse (Blood Moon)</option>
-                            <option value="2026-03-03" data-focus="moon">Mar 03, 2026 — Total Lunar Eclipse</option>
-                            <option value="2028-01-12" data-focus="moon">Jan 12, 2028 — Total Lunar Eclipse (Blood Moon)</option>
-                            <option value="2029-06-26" data-focus="moon">Jun 26, 2029 — Total Lunar Eclipse</option>
-                            <option value="2029-12-20" data-focus="moon">Dec 20, 2029 — Total Lunar Eclipse</option>
-                            <option value="2032-04-25" data-focus="moon">Apr 25, 2032 — Total Lunar Eclipse (Blood Moon)</option>
+                            <option value="2025-03-14" data-utc="2025-03-14T06:59:56Z" data-focus="moon">Mar 14, 2025 — Total Lunar Eclipse (Blood Moon)</option>
+                            <option value="2025-09-07" data-utc="2025-09-07T18:12:58Z" data-focus="moon">Sep 07, 2025 — Total Lunar Eclipse (Blood Moon)</option>
+                            <option value="2026-03-03" data-utc="2026-03-03T11:34:52Z" data-focus="moon">Mar 03, 2026 — Total Lunar Eclipse</option>
+                            <option value="2028-01-12" data-utc="2028-01-12T04:14:13Z" data-focus="moon">Jan 12, 2028 — Partial Lunar Eclipse</option>
+                            <option value="2029-06-26" data-utc="2029-06-26T03:23:22Z" data-focus="moon">Jun 26, 2029 — Total Lunar Eclipse</option>
+                            <option value="2029-12-20" data-utc="2029-12-20T22:43:12Z" data-focus="moon">Dec 20, 2029 — Total Lunar Eclipse</option>
+                            <option value="2032-04-25" data-utc="2032-04-25T15:14:51Z" data-focus="moon">Apr 25, 2032 — Total Lunar Eclipse (Blood Moon)</option>
                         </optgroup>
 
                         <optgroup label="🔴 Mars Oppositions">
@@ -551,7 +551,7 @@
     </div>
     
     <!-- PWA Install Prompt -->
-    <div id="install-prompt" class="hidden" role="dialog" aria-labelledby="install-title">
+    <div id="install-prompt" class="hidden" role="dialog" aria-labelledby="install-title" aria-modal="true">
         <div class="install-content">
             <div class="install-icon">📲</div>
             <h3 id="install-title" data-i18n="installTitle">Install Space Voyage</h3>

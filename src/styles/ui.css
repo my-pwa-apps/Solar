@@ -997,7 +997,23 @@
     color: var(--fluent-text-primary);
 }
 
-/* Mobile: hide decade buttons to save space */
+/* ── Mobile: streamlined Time Machine ──────────────────────────────── */
+/* On touch/mobile devices hide the advanced time-machine controls that
+   don't fit in the narrow speed panel. Users still see the date display,
+   Now button and speed slider. Desktop keeps the full feature set. */
+@media (max-width: 768px) {
+    .tm-step-row,
+    .tm-seek-row,
+    .tm-events-row {
+        display: none !important;
+    }
+
+    /* FPS counter is a debug aid — hide on mobile */
+    #fps-counter {
+        display: none !important;
+    }
+}
+
 @media (max-width: 480px) {
     #time-step-back-decade, #time-step-fwd-decade {
         display: none;
@@ -1277,10 +1293,10 @@ select {
     }
     
     #speed-control {
-        right: 15px; /* Tighter spacing on mobile to stay on screen */
-        top: 80px;
-        min-width: 50px;
-        max-width: 70px; /* Prevent overflow on narrow screens */
+        right: 10px; /* Tighter spacing on mobile to stay on screen */
+        top: 70px;
+        min-width: 90px;  /* Wide enough for date display + Now button */
+        max-width: 110px;
     }
     
     #speed-control.collapsed {
@@ -1293,7 +1309,7 @@ select {
     }
     
     #speed-panel-content {
-        max-height: 180px;
+        max-height: 200px; /* Date row needs a bit more room */
     }
     
     .speed-compact-label {
