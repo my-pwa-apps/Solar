@@ -2038,3 +2038,34 @@ select {
         display: none;
     }
 }
+
+/* ── Event Toast Notification ─────────────────────────────────────────── */
+.event-toast {
+    position: fixed;
+    top: 72px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-16px);
+    background: rgba(8, 18, 38, 0.93);
+    border: 1px solid rgba(80, 160, 255, 0.45);
+    color: #d8eeff;
+    padding: 9px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    max-width: 400px;
+    text-align: center;
+    z-index: 9500;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.event-toast--visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}

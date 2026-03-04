@@ -1355,10 +1355,28 @@ class App {
  eventsSelect.addEventListener('change', (e) => {
  const val = e.target.value;
  if (!val) return;
+ const label = e.target.options[e.target.selectedIndex].text;
  ssm.seekToDate(new Date(val + 'T12:00:00Z'));
+ this.showEventToast(label);
  e.target.value = ''; // reset so same event can be selected again
  });
  }
+ }
+
+ showEventToast(text) {
+ const existing = document.getElementById('event-toast');
+ if (existing) existing.remove();
+ const toast = document.createElement('div');
+ toast.id = 'event-toast';
+ toast.className = 'event-toast';
+ toast.textContent = text;
+ document.body.appendChild(toast);
+ requestAnimationFrame(() => toast.classList.add('event-toast--visible'));
+ clearTimeout(this._toastTimer);
+ this._toastTimer = setTimeout(() => {
+ toast.classList.remove('event-toast--visible');
+ setTimeout(() => toast.remove(), 400);
+ }, 3500);
  }
 
  setupNavigationSearch() {
