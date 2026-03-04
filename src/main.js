@@ -41,6 +41,11 @@ const UI_ELEMENTS = {
  SPEED_SLIDER: 'time-speed'
 };
 
+// Utility: Julian Date → JavaScript Date
+function jdToDate(jd) {
+ return new Date((jd - 2440587.5) * 86400000);
+}
+
 // LocalStorage Keys
 const STORAGE_KEYS = {
  ORBITS: 'orbitsVisible',
@@ -62,6 +67,7 @@ class App {
  this.solarSystemModule = null;
  this.lastTime = 0;
  this.timeSpeed = 1; // Default to 1x real-time
+ this.isTimeReversed = false; // Time Machine: reverse playback flag
 
  // Pre-allocate reusable objects for raycast hot path (avoid per-hover GC)
  this._mouseVec = new THREE.Vector2();
@@ -167,6 +173,7 @@ class App {
  this.setupMobileGestureHints();
  this.setupSoundToggle();
  this.setupButtonSounds();
+ this.setupTimeMachine();
 
  // Pre-select Earth on first load for better first impression
  this.preSelectEarth();
@@ -204,7 +211,8 @@ class App {
  
  // Update Solar System module every frame
  if (this.solarSystemModule) {
- this.solarSystemModule.update(deltaTime, this.timeSpeed, 
+ const effectiveSpeed = this.isTimeReversed ? -this.timeSpeed : this.timeSpeed;
+ this.solarSystemModule.update(deltaTime, effectiveSpeed,
  this.sceneManager.camera, this.sceneManager.controls);
  }
 
@@ -997,6 +1005,10 @@ class App {
  case 'h':
  document.getElementById(UI_ELEMENTS.HELP_BUTTON)?.click();
  break;
+ case 'n':
+ // N = jump to Now (today's real date)
+ document.getElementById('time-now')?.click();
+ break;
  case 'r':
  document.getElementById(UI_ELEMENTS.RESET_VIEW)?.click();
  break;
@@ -1252,7 +1264,103 @@ class App {
  }
  });
  }
- 
+
+ setupTimeMachine() {
+ const ssm = this.solarSystemModule;
+ if (!ssm) return;
+
+ const dateDisplay = document.getElementById('sim-date-display');
+ const reverseBtn = document.getElementById('time-reverse');
+ const nowBtn = document.getElementById('time-now');
+ const seekInput = document.getElementById('time-seek-input');
+ const eventsSelect = document.getElementById('notable-events');
+
+ // ── Date display updater ──────────────────────────────────────────────
+ const updateDateDisplay = (jd) => {
+ if (!dateDisplay) return;
+ const d = jdToDate(jd);
+ dateDisplay.textContent = d.toLocaleDateString('en-US', {
+ year: 'numeric', month: 'short', day: 'numeric',
+ timeZone: 'UTC'
+ });
+ // Keep the date picker in sync (value must be YYYY-MM-DD)
+ if (seekInput) {
+ const iso = d.toISOString().slice(0, 10);
+ // Only update if the user isn't actively editing the input
+ if (document.activeElement !== seekInput) seekInput.value = iso;
+ }
+ };
+
+ // Listen for the date-changed event emitted by SolarSystemModule
+ window.addEventListener('simulatedDateChanged', (e) => {
+ updateDateDisplay(e.detail.jd);
+ });
+ // Trigger once immediately so the display isn't blank
+ updateDateDisplay(ssm.simulatedJD);
+
+ // ── Step helper ───────────────────────────────────────────────────────
+ const stepDate = (years, months, days) => {
+ const current = jdToDate(ssm.simulatedJD);
+ if (years) current.setUTCFullYear(current.getUTCFullYear() + years);
+ if (months) current.setUTCMonth(current.getUTCMonth() + months);
+ if (days) current.setUTCDate(current.getUTCDate() + days);
+ ssm.seekToDate(current);
+ };
+
+ // ── Step buttons ──────────────────────────────────────────────────────
+ const steps = [
+ ['time-step-back-decade', -10, 0, 0],
+ ['time-step-back-year', -1, 0, 0],
+ ['time-step-back-month', 0, -1, 0],
+ ['time-step-fwd-month', 0, 1, 0],
+ ['time-step-fwd-year', 0, 0, 0, 1],
+ ['time-step-fwd-decade', 0, 0, 0, 10],
+ ];
+ steps.forEach(([id, y, mo, d, y2 = 0]) => {
+ const btn = document.getElementById(id);
+ if (!btn) return;
+ btn.addEventListener('click', () => stepDate(y + y2, mo, d));
+ });
+
+ // ── Reverse toggle ────────────────────────────────────────────────────
+ if (reverseBtn) {
+ reverseBtn.addEventListener('click', () => {
+ this.isTimeReversed = !this.isTimeReversed;
+ reverseBtn.setAttribute('aria-pressed', this.isTimeReversed.toString());
+ reverseBtn.classList.toggle('active', this.isTimeReversed);
+ });
+ }
+
+ // ── Now button ────────────────────────────────────────────────────────
+ if (nowBtn) {
+ nowBtn.addEventListener('click', () => {
+ this.isTimeReversed = false;
+ if (reverseBtn) {
+ reverseBtn.setAttribute('aria-pressed', 'false');
+ reverseBtn.classList.remove('active');
+ }
+ ssm.seekToDate(new Date());
+ });
+ }
+
+ // ── Date picker ───────────────────────────────────────────────────────
+ if (seekInput) {
+ seekInput.addEventListener('change', (e) => {
+ if (e.target.value) ssm.seekToDate(new Date(e.target.value + 'T12:00:00Z'));
+ });
+ }
+
+ // ── Notable-events dropdown ───────────────────────────────────────────
+ if (eventsSelect) {
+ eventsSelect.addEventListener('change', (e) => {
+ const val = e.target.value;
+ if (!val) return;
+ ssm.seekToDate(new Date(val + 'T12:00:00Z'));
+ e.target.value = ''; // reset so same event can be selected again
+ });
+ }
+ }
+
  setupNavigationSearch() {
  const searchInput = document.getElementById('nav-search');
  const dropdown = document.getElementById('object-dropdown');

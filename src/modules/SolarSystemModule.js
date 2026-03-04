@@ -191,7 +191,39 @@ export class SolarSystemModule {
  triton: { eccentricity: 0.00002, inclinationDeg: 156.90, periapsisDeg: 0.0 },
  charon: { eccentricity: 0.00020, inclinationDeg: 0.00, periapsisDeg: 0.0 }
  };
- 
+
+ // J2000.0 mean elements for accurate initial orbital positioning.
+ // M0: mean anomaly at J2000 epoch (degrees); n: mean motion (degrees/day).
+ // Source: Standish et al. 1992 / JPL approximate solar system ephemeris.
+ this.PLANET_ELEMENTS_J2000 = {
+ mercury: { M0: 174.7943, n: 4.09233445 },
+ venus: { M0: 50.4161, n: 1.60213034 },
+ earth: { M0: 357.5291, n: 0.98560028 },
+ mars: { M0: 19.3451, n: 0.52402068 },
+ jupiter: { M0: 19.5976, n: 0.08308530 },
+ saturn: { M0: 317.6459, n: 0.03344428 },
+ uranus: { M0: 141.6220, n: 0.01172584 },
+ neptune: { M0: 257.6634, n: 0.00598103 },
+ pluto: { M0: 14.8740, n: 0.003975 },
+ ceres: { M0: 95.9891, n: 0.21408 },
+ haumea: { M0: 198.0, n: 0.00347 },
+ makemake: { M0: 37.0, n: 0.00318 },
+ eris: { M0: 208.0, n: 0.00176 },
+ orcus: { M0: 112.0, n: 0.00398 },
+ quaoar: { M0: 147.0, n: 0.00346 },
+ gonggong: { M0: 207.0, n: 0.00177 },
+ sedna: { M0: 358.0, n: 0.0000861 },
+ salacia: { M0: 280.0, n: 0.00357 },
+ varda: { M0: 104.0, n: 0.00352 },
+ varuna: { M0: 97.0, n: 0.00352 }
+ };
+
+ // Current simulated Julian Date — drives the date display and seekToDate().
+ // Initialised to J2000 epoch; updated to today inside initPositionsToDate().
+ this.simulatedJD = 2451545.0;
+ // Wall-clock timestamp of last simulatedDateChanged event dispatch (throttle)
+ this._lastDateEventWall = 0;
+
  // Time acceleration factor (1 = real-time, higher = faster)
  this.timeAcceleration = 360; // 360x faster = 1 Earth day in 4 minutes
  // Accumulated simulated hours — advanced each frame by deltaTime * timeAcceleration * rotationSpeed.
@@ -292,6 +324,9 @@ export class SolarSystemModule {
 
  // Ensure orbital speeds are aligned with the selected mode.
  this.applyScientificModeSpeeds();
+
+ // Seed all planet positions from today's real astronomical positions.
+ this.initPositionsToDate(new Date());
 
  // Signal that loading is complete
  if (window.app && typeof window.app.startExperience === 'function') {
@@ -3550,6 +3585,83 @@ export class SolarSystemModule {
  if (DEBUG && DEBUG.enabled) {
  console.log(`[Scientific Mode] ${this.scientificMode ? 'ON' : 'OFF'} — orbital speeds ${this.scientificMode ? 'derived from orbital periods' : 'restored to visual tuning'}`);
  }
+ }
+
+ // ─────────────────────────────────────────────────────────────────────────────
+ // TIME MACHINE: date ↔ orbit position utilities
+ // ─────────────────────────────────────────────────────────────────────────────
+
+ /** Convert a JavaScript Date to a Julian Date number. */
+ toJulianDate(date) {
+ const y = date.getUTCFullYear();
+ const m = date.getUTCMonth() + 1;
+ const d = date.getUTCDate()
+ + (date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds()) / 86400;
+ const A = Math.floor(m <= 2 ? y - 1 : y);
+ const B = m <= 2 ? m + 12 : m;
+ return Math.floor(365.25 * (A + 4716)) + Math.floor(30.6001 * (B + 1)) + d - 1524.5;
+ }
+
+ /** Solve Kepler's equation M = E - e·sin(E) via Newton-Raphson iteration. */
+ _solveKepler(M_rad, e) {
+ let E = M_rad + e * Math.sin(M_rad);
+ for (let i = 0; i < 12; i++) {
+ const dE = (M_rad - E + e * Math.sin(E)) / (1 - e * Math.cos(E));
+ E += dE;
+ if (Math.abs(dE) < 1e-10) break;
+ }
+ return E;
+ }
+
+ /** Mean anomaly (radians) → true anomaly (radians). */
+ _meanToTrueAnomaly(M_rad, e) {
+ if (e < 1e-6) return M_rad; // circular — skip Kepler solver
+ const E = this._solveKepler(M_rad, e);
+ return 2 * Math.atan2(
+ Math.sqrt(1 + e) * Math.sin(E / 2),
+ Math.sqrt(1 - e) * Math.cos(E / 2)
+ );
+ }
+
+ /**
+ * Seek all planet positions to those matching the given JavaScript Date.
+ * Works in both educational (circle) and scientific (Keplerian ellipse) modes.
+ * Also seeds simulatedHours so planet self-rotations are consistent.
+ * @param {Date} date
+ */
+ initPositionsToDate(date) {
+ const jd = this.toJulianDate(date);
+ const daysSinceJ2000 = jd - 2451545.0;
+ this.simulatedJD = jd;
+ // Seed rotation clock from the same epoch
+ this.simulatedHours = daysSinceJ2000 * 24;
+
+ Object.entries(this.planets).forEach(([key, planet]) => {
+ if (!planet?.userData) return;
+ const el = this.PLANET_ELEMENTS_J2000[key];
+ if (!el) return;
+
+ // Mean anomaly at target date
+ const M_deg = ((el.M0 + el.n * daysSinceJ2000) % 360 + 360) % 360;
+ const M_rad = M_deg * Math.PI / 180;
+ const e = planet.userData.orbitalEccentricity || 0;
+
+ // True anomaly (= userData.angle the update loop uses as orbital phase)
+ planet.userData.angle = this._meanToTrueAnomaly(M_rad, e);
+ });
+
+ // Notify UI immediately
+ window.dispatchEvent(new CustomEvent('simulatedDateChanged', { detail: { jd } }));
+
+ if (DEBUG.enabled) console.log(`[TimeMachine] Seeked to ${date.toUTCString().slice(0, 16)} (JD ${jd.toFixed(1)})`);
+ }
+
+ /**
+ * Public shorthand: seek to a Date object or ISO-8601 string.
+ * @param {Date|string} input
+ */
+ seekToDate(input) {
+ this.initPositionsToDate(input instanceof Date ? input : new Date(input));
  }
 
  createAsteroidBelt(scene) {
@@ -7989,11 +8101,16 @@ createHyperrealisticHubble(satData) {
  }
  // else 'none' - everything moves normally
  
- // Advance simulated time proportionally to rotationSpeed so that planet self-rotation
- // always stays in sync with the speed slider (fixes moon apparent-reversal at low speed).
- const now = Date.now();
- if (rotationSpeed > 0) {
+ // Advance simulated time. Allow negative speeds so rewinding works correctly.
  this.simulatedHours += (deltaTime / 3600) * this.timeAcceleration * rotationSpeed;
+
+ // Advance Julian Date for date display and seekToDate()
+ this.simulatedJD += (deltaTime * this.timeAcceleration * orbitalSpeed) / 86400;
+ // Throttled date-changed event (max once per 200 ms wall-clock)
+ const _wallNow = Date.now();
+ if (_wallNow - this._lastDateEventWall >= 200) {
+ this._lastDateEventWall = _wallNow;
+ window.dispatchEvent(new CustomEvent('simulatedDateChanged', { detail: { jd: this.simulatedJD } }));
  }
  const elapsedHours = this.simulatedHours;
  
@@ -8027,10 +8144,12 @@ createHyperrealisticHubble(satData) {
  const i = planet.userData.orbitalInclination || 0;
  const w = planet.userData.orbitalPeriapsis || 0;
  const a = planet.userData.distance;
- const theta = planet.userData.angle + w;
+ // angle = true anomaly ν; use ν for correct Keplerian r, then rotate by periapsis ω
+ const nu = planet.userData.angle;
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
+ const theta = nu + w;
  const cosTheta = Math.cos(theta);
  const sinTheta = Math.sin(theta);
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * cosTheta)) : a;
  const xOrb = r * cosTheta;
  const zOrb = r * sinTheta;
  planet.position.x = xOrb;
@@ -8042,7 +8161,7 @@ createHyperrealisticHubble(satData) {
  }
  
  // REALISTIC PLANET ROTATION based on real astronomical data
- if (planet.userData.realRotationPeriod && rotationSpeed > 0) {
+ if (planet.userData.realRotationPeriod && rotationSpeed !== 0) {
  // Calculate elapsed real time in hours (use shared value from outer scope)
  const rotationsComplete = elapsedHours / planet.userData.realRotationPeriod;
  let rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
@@ -8060,7 +8179,7 @@ createHyperrealisticHubble(satData) {
  }
  
  // Rotate clouds slightly faster than planet for Earth
- if (planet.userData.clouds && rotationSpeed > 0) {
+ if (planet.userData.clouds && rotationSpeed !== 0) {
  planet.userData.clouds.rotation.y = planet.rotation.y * 1.05; // 5% faster
  }
 
@@ -8082,10 +8201,11 @@ createHyperrealisticHubble(satData) {
  const i = moon.userData.orbitalInclination || 0;
  const w = moon.userData.orbitalPeriapsis || 0;
  const a = moon.userData.distance;
- const theta = moon.userData.angle + w;
+ const nu = moon.userData.angle;
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
+ const theta = nu + w;
  const cosTheta = Math.cos(theta);
  const sinTheta = Math.sin(theta);
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * cosTheta)) : a;
  const xOrb = r * cosTheta;
  const zOrb = r * sinTheta;
  moon.position.x = xOrb;
@@ -8094,11 +8214,11 @@ createHyperrealisticHubble(satData) {
  } else {
  moon.position.x = moon.userData.distance * Math.cos(moon.userData.angle);
  moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
- moon.position.y = 0; // Keep moons in planet's equatorial plane
+ moon.position.y = 0;
  }
  
  // REALISTIC MOON ROTATION based on real astronomical data
- if (moon.userData.realRotationPeriod && rotationSpeed > 0) {
+ if (moon.userData.realRotationPeriod && rotationSpeed !== 0) {
  // Calculate rotation angle based on real rotation period (use shared value from outer scope)
  const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
  let rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;

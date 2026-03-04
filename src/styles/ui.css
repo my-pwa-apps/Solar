@@ -303,7 +303,7 @@
 #speed-control {
     top: 80px;
     right: clamp(10px, 3vw, 30px); /* Responsive right spacing */
-    min-width: 60px;
+    min-width: 200px;      /* Wide enough for the time machine */
     max-width: calc(100vw - 20px); /* Prevent off-screen on small viewports */
     transition: all 0.3s ease;
 }
@@ -425,20 +425,20 @@
 
 /* Vertical Range Slider - Modern approach without deprecated slider-vertical */
 #speed-control input[type="range"] {
-    writing-mode: vertical-lr; /* Modern standard for vertical orientation */
-    direction: rtl; /* Reverses direction so max is at top */
-    width: 6px;
-    height: 150px;
+    writing-mode: horizontal-tb;
+    direction: ltr;
+    width: 100%;
+    height: 6px;
     padding: 0;
     margin: 0;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     outline: none;
-    -webkit-appearance: none; /* Remove default styling */
+    -webkit-appearance: none;
     appearance: none;
 }
 
-/* Webkit (Chrome, Safari, Edge) - Vertical */
+/* Webkit (Chrome, Safari, Edge) */
 #speed-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -455,7 +455,7 @@
     transform: scale(1.2);
 }
 
-/* Firefox - Vertical */
+/* Firefox */
 #speed-control input[type="range"]::-moz-range-thumb {
     width: 18px;
     height: 18px;
@@ -471,7 +471,7 @@
     transform: scale(1.2);
 }
 
-/* Firefox - Vertical track */
+/* Firefox track */
 #speed-control input[type="range"]::-moz-range-track {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
@@ -482,7 +482,6 @@
     font-weight: 600;
     color: var(--fluent-accent);
     text-align: center;
-    order: -1; /* Display label above slider */
 }
 
 .close-btn {
@@ -841,6 +840,161 @@
 
 #random-discovery.spinning {
     animation: btn-spin 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* ─────────────────────────────────────────────────────
+   Time Machine panel
+───────────────────────────────────────────────────── */
+.time-machine {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--fluent-border);
+    padding-top: 12px;
+    margin-top: 4px;
+}
+
+/* Date display row */
+.tm-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.tm-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fluent-accent);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: 0.02em;
+    flex: 1;
+    text-align: center;
+}
+
+/* Step buttons row */
+.tm-step-row {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    flex-wrap: nowrap;
+}
+
+/* Small compact time-step buttons */
+.tm-step, .tm-reverse, .tm-now-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--fluent-border);
+    border-radius: 5px;
+    color: var(--fluent-text-primary);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 5px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.tm-step:hover, .tm-reverse:hover, .tm-now-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: var(--fluent-accent);
+}
+
+.tm-reverse {
+    font-size: 12px;
+    padding: 4px 6px;
+}
+
+.tm-reverse.active,
+.tm-reverse[aria-pressed="true"] {
+    background: rgba(0, 120, 212, 0.35);
+    border-color: var(--fluent-accent);
+    color: var(--fluent-accent);
+    box-shadow: 0 0 8px rgba(0, 120, 212, 0.4);
+}
+
+.tm-now-btn {
+    font-size: 10px;
+    padding: 3px 8px;
+    background: rgba(0, 120, 212, 0.2);
+    border-color: rgba(0, 120, 212, 0.5);
+    color: var(--fluent-accent);
+    flex-shrink: 0;
+}
+
+.tm-now-btn:hover {
+    background: rgba(0, 120, 212, 0.4);
+}
+
+/* Seek input row */
+.tm-seek-row {
+    width: 100%;
+}
+
+.tm-seek-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--fluent-border);
+    border-radius: 5px;
+    color: var(--fluent-text-primary);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 11px;
+    padding: 5px 8px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+    color-scheme: dark;
+}
+
+.tm-seek-input:hover,
+.tm-seek-input:focus {
+    border-color: var(--fluent-accent);
+    outline: none;
+}
+
+/* Notable events dropdown */
+.tm-events-row {
+    width: 100%;
+}
+
+.tm-events-select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--fluent-border);
+    border-radius: 5px;
+    color: var(--fluent-text-primary);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 11px;
+    padding: 5px 6px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease;
+    color-scheme: dark;
+}
+
+.tm-events-select:hover,
+.tm-events-select:focus {
+    border-color: var(--fluent-accent);
+    outline: none;
+}
+
+.tm-events-select optgroup {
+    color: var(--fluent-text-secondary, #aaa);
+    font-weight: 600;
+}
+
+.tm-events-select option {
+    background: #1a1a2e;
+    color: var(--fluent-text-primary);
+}
+
+/* Mobile: hide decade buttons to save space */
+@media (max-width: 480px) {
+    #time-step-back-decade, #time-step-fwd-decade {
+        display: none;
+    }
 }
 
 /* Performance indicator */

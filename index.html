@@ -39,7 +39,7 @@
     </script>
 
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.40" crossorigin="use-credentials">
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.41" crossorigin="use-credentials">
     <script type="module" src="./src/modules/LanguageManager.js"></script>
     
     <!-- Primary Meta Tags -->
@@ -115,16 +115,16 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.10.40" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.10.40" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.10.40" as="style">
+    <link rel="preload" href="./src/i18n.js?v=2.10.41" as="script">
+    <link rel="preload" href="./src/styles/main.css?v=2.10.41" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.10.41" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.40">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.40">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.41">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.41">
     
     <!-- Load translations early -->
-    <script src="./src/i18n.js?v=2.10.40"></script>
+    <script src="./src/i18n.js?v=2.10.41"></script>
 </head>
 <body>
     <header id="main-header" role="banner">
@@ -329,6 +329,62 @@
         <div id="speed-panel-content" class="panel-content">
             <input type="range" id="time-speed" min="0" max="100" value="50" step="1" aria-label="Animation speed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" />
             <span id="time-speed-label" data-i18n="realTime" aria-live="polite">1x</span>
+            <!-- Time Machine -->
+            <div id="time-machine" class="time-machine" role="region" aria-label="Time machine controls">
+                <div class="tm-date-row">
+                    <span id="sim-date-display" class="tm-date" aria-live="polite" title="Current simulated date">—</span>
+                    <button id="time-now" class="tm-now-btn" title="Jump to today (N)" aria-label="Jump to today">Now</button>
+                </div>
+                <div class="tm-step-row" role="group" aria-label="Time step controls">
+                    <button class="tm-step" id="time-step-back-decade" title="Back 10 years" aria-label="Back 10 years">−10y</button>
+                    <button class="tm-step" id="time-step-back-year"   title="Back 1 year"  aria-label="Back 1 year">−1y</button>
+                    <button class="tm-step" id="time-step-back-month"  title="Back 1 month" aria-label="Back 1 month">−1m</button>
+                    <button class="tm-reverse" id="time-reverse" aria-pressed="false" title="Play in reverse" aria-label="Reverse time">⏪</button>
+                    <button class="tm-step" id="time-step-fwd-month"   title="Forward 1 month" aria-label="Forward 1 month">+1m</button>
+                    <button class="tm-step" id="time-step-fwd-year"    title="Forward 1 year"  aria-label="Forward 1 year">+1y</button>
+                    <button class="tm-step" id="time-step-fwd-decade"  title="Forward 10 years" aria-label="Forward 10 years">+10y</button>
+                </div>
+                <div class="tm-seek-row">
+                    <input type="date" id="time-seek-input" class="tm-seek-input" aria-label="Jump to specific date" />
+                </div>
+                <div class="tm-events-row">
+                    <select id="notable-events" class="tm-events-select" aria-label="Jump to notable celestial event">
+                        <option value="">🌟 Notable Events…</option>
+                        <optgroup label="Solar Eclipses">
+                            <option value="2024-04-08">Apr 08, 2024 — Total Solar Eclipse (North America)</option>
+                            <option value="2026-08-12">Aug 12, 2026 — Total Solar Eclipse (Spain/Arctic)</option>
+                            <option value="2027-08-02">Aug 02, 2027 — Total Solar Eclipse (Africa/Arabia)</option>
+                            <option value="2028-07-22">Jul 22, 2028 — Total Solar Eclipse (Australia)</option>
+                            <option value="2030-11-25">Nov 25, 2030 — Total Solar Eclipse (Southern Africa)</option>
+                        </optgroup>
+                        <optgroup label="Planetary Oppositions">
+                            <option value="2025-01-16">Jan 16, 2025 — Mars at Opposition</option>
+                            <option value="2027-02-19">Feb 19, 2027 — Mars at Opposition</option>
+                            <option value="2029-03-29">Mar 29, 2029 — Mars at Opposition</option>
+                            <option value="2025-11-05">Nov 05, 2025 — Jupiter at Opposition</option>
+                            <option value="2026-12-20">Dec 20, 2026 — Saturn at Opposition</option>
+                        </optgroup>
+                        <optgroup label="Great Conjunctions &amp; Alignments">
+                            <option value="2020-12-21">Dec 21, 2020 — Great Jupiter–Saturn Conjunction</option>
+                            <option value="2040-11-01">Nov 01, 2040 — Next Jupiter–Saturn Conjunction</option>
+                            <option value="2022-06-24">Jun 24, 2022 — 5-Planet Alignment</option>
+                        </optgroup>
+                        <optgroup label="Equinoxes &amp; Solstices (2026)">
+                            <option value="2026-03-20">Mar 20, 2026 — Vernal Equinox</option>
+                            <option value="2026-06-21">Jun 21, 2026 — Summer Solstice</option>
+                            <option value="2026-09-22">Sep 22, 2026 — Autumnal Equinox</option>
+                            <option value="2026-12-22">Dec 22, 2026 — Winter Solstice</option>
+                        </optgroup>
+                        <optgroup label="Rare &amp; Historic Events">
+                            <option value="1066-04-24">Apr 24, 1066 — Halley's Comet (Battle of Hastings)</option>
+                            <option value="1610-01-07">Jan 07, 1610 — Galileo discovers Jupiter's moons</option>
+                            <option value="1846-09-23">Sep 23, 1846 — Discovery of Neptune</option>
+                            <option value="2061-07-28">Jul 28, 2061 — Halley's Comet Perihelion</option>
+                            <option value="2117-12-10">Dec 10, 2117 — Venus Transit</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
     <!-- Bottom Bar -->
@@ -439,7 +495,7 @@
         </div>
     </div>
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=2.10.40"></script>
+    <script type="module" src="./src/main.js?v=2.10.41"></script>
     
     <!-- Initialize Modules -->
     <script type="module">
