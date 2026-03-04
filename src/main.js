@@ -249,12 +249,14 @@ class App {
  // Apply saved toggle states after solar system is fully initialized
  // This ensures toggleLabels(), toggleOrbits(), etc. can actually work
  
- // Restore orbits visibility
- this._restoreToggleState({
- storageKey: STORAGE_KEYS.ORBITS,
- buttonId: UI_ELEMENTS.ORBITS_BUTTON,
- toggleMethod: this.solarSystemModule.toggleOrbits
- });
+ // Restore orbit mode (supports legacy 'true'/'false' values and new mode strings)
+ const savedOrbitMode = safeGetItem(STORAGE_KEYS.ORBITS);
+ if (savedOrbitMode !== null && this.solarSystemModule) {
+ this.applyOrbitMode(savedOrbitMode, { persist: false });
+ } else {
+ // Default on first load: show all orbits
+ this._updateOrbitButton('all');
+ }
  
  // Restore constellations visibility
  this._restoreToggleState({
@@ -348,7 +350,51 @@ class App {
  this.applyScaleMode(nextMode);
  }
 
- setupGlobalFunctions() {
+ // Orbit mode cycling: 'all' → 'planets' → 'comets' → 'none' → 'all'
+ _orbitModeNext(current) {
+ const cycle = { 'all': 'planets', 'planets': 'comets', 'comets': 'none', 'none': 'all' };
+ return cycle[current] || 'all';
+ }
+
+ _orbitModeLabel(mode) {
+ const t = window.t || (k => k);
+ const labels = {
+ 'all': t('orbitModeAll') || 'All Orbits',
+ 'planets': t('orbitModePlanets') || 'Planets',
+ 'comets': t('orbitModeComets') || 'Comets',
+ 'none': t('orbitModeNone') || 'Orbits'
+ };
+ return labels[mode] || 'Orbits';
+ }
+
+ _updateOrbitButton(mode) {
+ const orbitsButton = document.getElementById(UI_ELEMENTS.ORBITS_BUTTON);
+ if (!orbitsButton) return;
+ const active = (mode !== 'none');
+ orbitsButton.classList.toggle('toggle-on', active);
+ orbitsButton.setAttribute('aria-pressed', active.toString());
+ const btnText = orbitsButton.querySelector('.btn-text');
+ if (btnText) btnText.textContent = this._orbitModeLabel(mode);
+ }
+
+ applyOrbitMode(mode, { persist = true } = {}) {
+ if (!this.solarSystemModule) return;
+ // Map legacy boolean strings to mode names
+ if (mode === 'true') mode = 'all';
+ if (mode === 'false') mode = 'none';
+ const validModes = ['all', 'planets', 'comets', 'none'];
+ if (!validModes.includes(mode)) mode = 'all';
+ this.solarSystemModule.setOrbitMode(mode);
+ this._updateOrbitButton(mode);
+ if (persist) safeSetItem(STORAGE_KEYS.ORBITS, mode);
+ }
+
+ cycleOrbitMode() {
+ const current = this.solarSystemModule?.orbitMode || 'all';
+ this.applyOrbitMode(this._orbitModeNext(current));
+ }
+
+
  // Close info panel
  window.closeInfoPanel = () => {
  this.uiManager.closeInfoPanel();
@@ -410,6 +456,8 @@ class App {
  <p>⌨️ <span class="keyboard-shortcut">L</span> Toggle VR laser pointers (in VR)</p>
  <p>⌨️ <span class="keyboard-shortcut">F</span> Toggle FPS counter</p>
  <p>⌨️ <span class="keyboard-shortcut">+/-</span> Speed up/slow down time</p>
+ <p>⌨️ <span class="keyboard-shortcut">N</span> Jump Time Machine to today</p>
+ <p>⌨️ <span class="keyboard-shortcut">[</span> / <span class="keyboard-shortcut">]</span> Step Time Machine ±1 month</p>
  <p>⌨️ <span class="keyboard-shortcut">ESC</span> Close panels</p>
  
  <h3>🔍 Object Inspection</h3>
@@ -465,18 +513,11 @@ class App {
  // Time speed control is handled by UIManager
  // App.timeSpeed is updated by UIManager's updateSpeed function via window.app
  
- // Orbit toggle button
- // Note: Initial state is restored in restoreSavedToggleStates() after solar system is ready
+ // Orbit mode cycle button: planets+moons → comets → all → none → ...
  const orbitsButton = document.getElementById(UI_ELEMENTS.ORBITS_BUTTON);
  if (orbitsButton) {
  orbitsButton.addEventListener('click', () => {
- if (this.solarSystemModule) {
- const visible = !this.solarSystemModule.orbitsVisible;
- this.solarSystemModule.toggleOrbits(visible);
- orbitsButton.classList.toggle('toggle-on', visible);
- orbitsButton.setAttribute('aria-pressed', visible.toString());
- safeSetItem(STORAGE_KEYS.ORBITS, visible.toString());
- }
+ if (this.solarSystemModule) this.cycleOrbitMode();
  });
  }
  
@@ -1057,6 +1098,28 @@ class App {
  }
  break;
  }
+ case '[': {
+ // Step Time Machine back 1 month
+ const ssmBack = this.solarSystemModule;
+ if (ssmBack) {
+ const d = jdToDate(ssmBack.simulatedJD);
+ d.setUTCMonth(d.getUTCMonth() - 1);
+ ssmBack.seekToDate(d);
+ audioManager.playSpeedTick();
+ }
+ break;
+ }
+ case ']': {
+ // Step Time Machine forward 1 month
+ const ssmFwd = this.solarSystemModule;
+ if (ssmFwd) {
+ const d = jdToDate(ssmFwd.simulatedJD);
+ d.setUTCMonth(d.getUTCMonth() + 1);
+ ssmFwd.seekToDate(d);
+ audioManager.playSpeedTick();
+ }
+ break;
+ }
  case 'escape':
  this.uiManager.closeInfoPanel();
  this.uiManager.closeHelpModal();
@@ -1275,36 +1338,64 @@ class App {
  const seekInput = document.getElementById('time-seek-input');
  const eventsSelect = document.getElementById('notable-events');
 
+ // Prevent duplicate listeners if setup is ever invoked more than once
+ if (this._onSimulatedDateChanged) {
+ window.removeEventListener('simulatedDateChanged', this._onSimulatedDateChanged);
+ this._onSimulatedDateChanged = null;
+ }
+
+ // Formatter rebuilt lazily whenever <html lang> changes (language switch mid-session)
+ let _fmtLocale = '';
+ let _fmtObj = null;
+ let lastIsoDate = '';
+ const _getDateFormatter = () => {
+ const locale = document.documentElement?.lang || navigator.language || 'en-US';
+ if (locale !== _fmtLocale) {
+ _fmtLocale = locale;
+ _fmtObj = new Intl.DateTimeFormat(locale, {
+ year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC'
+ });
+ lastIsoDate = ''; // force re-render with new locale even if date unchanged
+ }
+ return _fmtObj;
+ };
+
  // ── Date display updater ──────────────────────────────────────────────
  const updateDateDisplay = (jd) => {
  if (!dateDisplay) return;
  const d = jdToDate(jd);
- dateDisplay.textContent = d.toLocaleDateString('en-US', {
- year: 'numeric', month: 'short', day: 'numeric',
- timeZone: 'UTC'
- });
+ const iso = d.toISOString().slice(0, 10);
+ if (iso === lastIsoDate) return;
+ lastIsoDate = iso;
+
+ dateDisplay.textContent = _getDateFormatter().format(d);
  // Keep the date picker in sync (value must be YYYY-MM-DD)
  if (seekInput) {
- const iso = d.toISOString().slice(0, 10);
  // Only update if the user isn't actively editing the input
  if (document.activeElement !== seekInput) seekInput.value = iso;
  }
  };
 
  // Listen for the date-changed event emitted by SolarSystemModule
- window.addEventListener('simulatedDateChanged', (e) => {
- updateDateDisplay(e.detail.jd);
- });
+ this._onSimulatedDateChanged = (e) => {
+ const jd = e?.detail?.jd;
+ if (typeof jd !== 'number' || !Number.isFinite(jd)) return;
+ updateDateDisplay(jd);
+ };
+ window.addEventListener('simulatedDateChanged', this._onSimulatedDateChanged);
  // Trigger once immediately so the display isn't blank
  updateDateDisplay(ssm.simulatedJD);
 
  // ── Step helper ───────────────────────────────────────────────────────
+ // Steps always match button labels: −10y always goes 10 yrs back.
+ // isTimeReversed only affects auto-play direction, not manual jumps.
  const stepDate = (years, months, days) => {
  const current = jdToDate(ssm.simulatedJD);
  if (years) current.setUTCFullYear(current.getUTCFullYear() + years);
  if (months) current.setUTCMonth(current.getUTCMonth() + months);
  if (days) current.setUTCDate(current.getUTCDate() + days);
  ssm.seekToDate(current);
+ audioManager.playClick();
  };
 
  // ── Step buttons ──────────────────────────────────────────────────────
@@ -1313,13 +1404,13 @@ class App {
  ['time-step-back-year', -1, 0, 0],
  ['time-step-back-month', 0, -1, 0],
  ['time-step-fwd-month', 0, 1, 0],
- ['time-step-fwd-year', 0, 0, 0, 1],
- ['time-step-fwd-decade', 0, 0, 0, 10],
+ ['time-step-fwd-year', 1, 0, 0],
+ ['time-step-fwd-decade', 10, 0, 0],
  ];
- steps.forEach(([id, y, mo, d, y2 = 0]) => {
+ steps.forEach(([id, y, mo, d]) => {
  const btn = document.getElementById(id);
  if (!btn) return;
- btn.addEventListener('click', () => stepDate(y + y2, mo, d));
+ btn.addEventListener('click', () => stepDate(y, mo, d));
  });
 
  // ── Reverse toggle ────────────────────────────────────────────────────
@@ -1328,6 +1419,7 @@ class App {
  this.isTimeReversed = !this.isTimeReversed;
  reverseBtn.setAttribute('aria-pressed', this.isTimeReversed.toString());
  reverseBtn.classList.toggle('active', this.isTimeReversed);
+ audioManager.playSpeedTick();
  });
  }
 
@@ -1345,8 +1437,18 @@ class App {
 
  // ── Date picker ───────────────────────────────────────────────────────
  if (seekInput) {
+ // Add logical min/max to prevent insane date strings
+ seekInput.setAttribute('min', '1000-01-01');
+ seekInput.setAttribute('max', '4000-12-31');
+ 
  seekInput.addEventListener('change', (e) => {
- if (e.target.value) ssm.seekToDate(new Date(e.target.value + 'T12:00:00Z'));
+ const val = e.target.value;
+ if (!val) return;
+ 
+ const parsedDate = new Date(val + 'T12:00:00Z');
+ if (!isNaN(parsedDate.getTime())) {
+ ssm.seekToDate(parsedDate);
+ }
  });
  }
 
@@ -1355,9 +1457,43 @@ class App {
  eventsSelect.addEventListener('change', (e) => {
  const val = e.target.value;
  if (!val) return;
- const label = e.target.options[e.target.selectedIndex].text;
- ssm.seekToDate(new Date(val + 'T12:00:00Z'));
- this.showEventToast(label);
+ const selectedOption = e.target.options[e.target.selectedIndex];
+ const rawLabel = selectedOption.text;
+
+ // Strip leading date prefix "Apr 08, 2024 — " so toast shows only the event name
+ const eventLabel = rawLabel.includes(' — ') ? rawLabel.split(' — ').slice(1).join(' — ') : rawLabel;
+ const eventDate = new Date(val + 'T12:00:00Z');
+ if (!isNaN(eventDate.getTime())) {
+ ssm.seekToDate(eventDate);
+ }
+
+ // Pause so the user can study the event, rewind, or fast-forward from this point.
+ // We deliberately pause *after* seekToDate so the planet positions are already set
+ // at the event date before the animation freezes.
+ const speedSlider = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
+ if (speedSlider && this.timeSpeed !== 0) {
+ speedSlider.value = '0';
+ speedSlider.dispatchEvent(new Event('input')); // triggers UIManager to sync labels + reset reverse flag
+ }
+
+ // Move camera to the relevant body for this event (data-focus="earth" etc.)
+ // initPositionsToDate now updates planet.position directly, so world positions
+ // are correct immediately — no setTimeout needed.
+ const focusKey = selectedOption.dataset.focus;
+ if (focusKey) {
+ const focusTarget = this.findObjectByNavigationValue(focusKey);
+ if (focusTarget) {
+ this.solarSystemModule.focusOnObject(
+ focusTarget,
+ this.sceneManager.camera,
+ this.sceneManager.controls
+ );
+ const info = this.solarSystemModule.getObjectInfo(focusTarget);
+ if (info) this.uiManager.updateInfoPanel(info);
+ }
+ }
+
+ this.showEventToast(`⏸ ${eventLabel}`);
  e.target.value = ''; // reset so same event can be selected again
  });
  }

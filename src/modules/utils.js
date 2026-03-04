@@ -50,7 +50,7 @@ export const CONFIG = {
  targetFPS: 60,
  frameTime: 1000 / 60,
  maxDeltaTime: 0.1,
- adaptivePixelRatio: !IS_MOBILE,
+ adaptivePixelRatio: false,
  adaptivePixelRatioMin: IS_LOW_POWER ? 0.9 : 1.0,
  adaptivePixelRatioMax: IS_MOBILE ? 1.25 : (IS_LOW_POWER ? 1.5 : (PERFORMANCE_MODE ? 1.5 : 2.0)),
  adaptivePixelRatioStepDown: 0.1,

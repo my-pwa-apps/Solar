@@ -28,6 +28,7 @@ export class SolarSystemModule {
  this.nebulae = [];
  this.galaxies = [];
  this.comets = [];
+ this.cometOrbits = [];
  this.satellites = [];
  this.spacecraft = [];
  this.constellations = [];
@@ -39,11 +40,13 @@ export class SolarSystemModule {
  // instead of hand-tuned visual speeds.
  this.scientificMode = false;
  
- // Comet tails visibility: false = hidden (better visual performance)
- this.cometTailsVisible = false;
+ // Comet tails visibility: shown by default
+ this.cometTailsVisible = true;
  
  // Orbits visibility: true = visible by default
- this.orbitsVisible = true;
+ this.orbitMode = 'all'; // 'all' | 'planets' | 'comets' | 'none'
+ this.orbitsVisible = true; // planet+moon orbits visible (derived from orbitMode)
+ this.cometOrbitsVisible = true; // comet orbits visible (derived from orbitMode)
  
  // Constellations visibility: true = visible by default
  this.constellationsVisible = true;
@@ -1002,146 +1005,23 @@ export class SolarSystemModule {
  
  // ===== HYPERREALISTIC TEXTURE GENERATORS =====
  
- createSunTexture(size) {
- const { canvas, ctx } = TextureGeneratorUtils.createCanvas(size);
- const cx = size / 2, cy = size / 2, R = size / 2;
-
- // ── 1. Photosphere base gradient (white-hot core → dark red limb) ──────
- const photosphere = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
- photosphere.addColorStop(0.00, '#FFF9EB');   // white-hot core
- photosphere.addColorStop(0.15, '#FFF4C7');   // pale yellow
- photosphere.addColorStop(0.38, '#FFE162');   // bright golden
- photosphere.addColorStop(0.60, '#FFAE14');   // warm orange
- photosphere.addColorStop(0.78, '#F27004');   // deep orange
- photosphere.addColorStop(0.88, '#C73D02');   // orange-red
- photosphere.addColorStop(0.95, '#8C1900');   // dark red
- photosphere.addColorStop(1.00, '#3F0600');   // near-black edge
- ctx.fillStyle = photosphere;
- ctx.fillRect(0, 0, size, size);
-
- // ── 2. Limb darkening overlay (multiply-like dark ring) ─────────────────
- const limbDark = ctx.createRadialGradient(cx, cy, R * 0.55, cx, cy, R * 1.02);
- limbDark.addColorStop(0,    'rgba(0,0,0,0)');
- limbDark.addColorStop(0.55, 'rgba(0,0,0,0)');
- limbDark.addColorStop(0.82, 'rgba(0,0,0,0.18)');
- limbDark.addColorStop(0.95, 'rgba(0,0,0,0.52)');
- limbDark.addColorStop(1.00, 'rgba(0,0,0,0.80)');
- ctx.fillStyle = limbDark;
- ctx.fillRect(0, 0, size, size);
-
- // ── 3. Supergranulation (large convection cells, ~2-4 % of image) ──────
- const cellCountLg = Math.floor(size / 512 * 260);
- for (let i = 0; i < cellCountLg; i++) {
- const x = Math.random() * size;
- const y = Math.random() * size;
- const radius = size / 512 * (8 + Math.random() * 14);
- const bright = 0.55 + Math.random() * 0.45;  // centre brighter
- const gCell = ctx.createRadialGradient(x, y, 0, x, y, radius);
- gCell.addColorStop(0,   `rgba(255,230,150,${(bright * 0.14).toFixed(3)})`);
- gCell.addColorStop(0.6, `rgba(220,120, 30,${(bright * 0.07).toFixed(3)})`);
- gCell.addColorStop(1,   'rgba(0,0,0,0)');
- ctx.fillStyle = gCell;
- ctx.beginPath();
- ctx.arc(x, y, radius, 0, Math.PI * 2);
- ctx.fill();
+ createSunTextureReal(size) {
+ // Request sun.jpg - use a transparent tiny texture if it fails
+ const primary = [
+ './textures/planets/sun.jpg'
+ ];
+ return this.loadPlanetTextureReal('Sun', primary, () => {
+ const canvas = document.createElement('canvas');
+ canvas.width = 2;
+ canvas.height = 2;
+ const ctx = canvas.getContext('2d');
+ ctx.fillStyle = '#FFAE14';
+ ctx.fillRect(0, 0, 2, 2);
+ const texture = new THREE.CanvasTexture(canvas);
+ return texture;
+ }, size, []);
  }
 
- // ── 4. Fine granulation (small high-frequency texture) ──────────────────
- const cellCountSm = Math.floor(size / 512 * 4500);
- for (let i = 0; i < cellCountSm; i++) {
- const x = Math.random() * size;
- const y = Math.random() * size;
- const radius = size / 512 * (1.0 + Math.random() * 2.4);
- const bright = Math.random();
- // Mix bright granule cores and dark intergranular lanes
- if (bright > 0.35) {
- ctx.fillStyle = `rgba(255,220,100,${(0.06 + bright * 0.10).toFixed(3)})`;
- } else {
- ctx.fillStyle = `rgba(30,8,0,${(0.04 + (0.35 - bright) * 0.12).toFixed(3)})`;
- }
- ctx.beginPath();
- ctx.arc(x, y, radius, 0, Math.PI * 2);
- ctx.fill();
- }
-
- // ── 5. Sunspots – umbra + penumbra, equatorial band ─────────────────────
- const spotCount = 8 + Math.floor(Math.random() * 7);
- for (let i = 0; i < spotCount; i++) {
- const sx = cx + (Math.random() - 0.5) * size * 1.7;
- const sy = cy + (Math.random() - 0.5) * size * 0.30;  // equatorial bias
- const sr = size / 512 * (14 + Math.random() * 22);
- // Skip if too close to limb
- const nr = Math.sqrt(((sx - cx) / R) ** 2 + ((sy - cy) / R) ** 2);
- if (nr > 0.83) continue;
- // Penumbra
- const penG = ctx.createRadialGradient(sx, sy, sr * 0.38, sx, sy, sr);
- penG.addColorStop(0,    'rgba(20, 6, 0, 0.95)');
- penG.addColorStop(0.42, 'rgba(40,12, 0, 0.75)');
- penG.addColorStop(0.72, 'rgba(80,28, 0, 0.45)');
- penG.addColorStop(1.00, 'rgba(0,  0, 0, 0)');
- ctx.fillStyle = penG;
- ctx.beginPath();
- ctx.arc(sx, sy, sr, 0, Math.PI * 2);
- ctx.fill();
- // Umbra
- const umbG = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 0.40);
- umbG.addColorStop(0,    'rgba(4,  1, 0, 0.97)');
- umbG.addColorStop(0.65, 'rgba(15, 4, 0, 0.90)');
- umbG.addColorStop(1.00, 'rgba(25, 8, 0, 0.00)');
- ctx.fillStyle = umbG;
- ctx.beginPath();
- ctx.arc(sx, sy, sr * 0.42, 0, Math.PI * 2);
- ctx.fill();
- }
-
- // ── 6. Solar faculae – bright patches near active regions ───────────────
- for (let i = 0; i < 50; i++) {
- const fx = cx + (Math.random() - 0.5) * size * 1.5;
- const fy = cy + (Math.random() - 0.5) * size * 0.38;
- const fr = size / 512 * (5 + Math.random() * 12);
- const fi = 0.04 + Math.random() * 0.10;
- const nr = Math.sqrt(((fx - cx) / R) ** 2 + ((fy - cy) / R) ** 2);
- if (nr > 0.80) continue;
- const facG = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
- facG.addColorStop(0,   `rgba(255,245,200,${fi.toFixed(3)})`);
- facG.addColorStop(0.5, `rgba(255,220,120,${(fi * 0.5).toFixed(3)})`);
- facG.addColorStop(1,   'rgba(0,0,0,0)');
- ctx.fillStyle = facG;
- ctx.beginPath();
- ctx.arc(fx, fy, fr, 0, Math.PI * 2);
- ctx.fill();
- }
-
- return TextureGeneratorUtils.finalizeTexture(canvas);
- }
- 
- createSunBumpMap(size) {
- // Use reusable utilities
- const { canvas, ctx } = TextureGeneratorUtils.createCanvas(size);
- 
- // Base gray
- ctx.fillStyle = '#808080';
- ctx.fillRect(0, 0, size, size);
- 
- // Add granulation bumps
- for (let i = 0; i < 3000; i++) {
- const x = Math.random() * size;
- const y = Math.random() * size;
- const radius = 2 + Math.random() * 3;
- const height = Math.random();
- 
- const gray = Math.floor(128 + height * 80);
- ctx.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
- ctx.beginPath();
- ctx.arc(x, y, radius, 0, Math.PI * 2);
- ctx.fill();
- }
- 
- return TextureGeneratorUtils.finalizeTexture(canvas);
- }
- 
- // REMOVED: createEarthNightLights() - was 105 lines of unused city lights code
- 
  // Advanced texture loader: attempts high-res sources, then plugin repo sources, then procedural generation.
  // Returns a placeholder texture immediately; replaces with remote if successful; generates procedural only if all remote fail.
  loadPlanetTextureReal(planetName, primaryTextureURLs, proceduralFunction, size = 2048, pluginRepoURLs = []) {
@@ -1461,15 +1341,6 @@ export class SolarSystemModule {
     } catch (err) {
         if (DEBUG && DEBUG.enabled) console.error(`[TEX] Error applying ${planetName} procedural texture:`, err);
     }
- }
- 
- // Sun real texture loader
- createSunTextureReal(size) {
- const primary = [
- './textures/planets/sun.jpg'
- ];
- const pluginFallbacks = []; // already using plugin as primary
- return this.loadPlanetTextureReal('Sun', primary, this.createSunTexture, size, pluginFallbacks);
  }
  
  // Mercury real texture loader
@@ -3582,6 +3453,25 @@ export class SolarSystemModule {
  ud.speed = direction * Math.abs(parentSpeed) * (parentPeriod / moonPeriod);
  });
 
+ if (this.comets) {
+ this.comets.forEach(comet => {
+ if (!comet?.userData) return;
+ const ud = comet.userData;
+ if (ud.visualBaseSpeed === undefined) ud.visualBaseSpeed = ud.speed;
+
+ if (!this.scientificMode) {
+ ud.speed = ud.visualBaseSpeed;
+ return;
+ }
+
+ if (ud.orbitalPeriod) {
+ ud.speed = earthVisualBase * (earthOrbitalPeriod / ud.orbitalPeriod);
+ } else {
+ ud.speed = ud.visualBaseSpeed;
+ }
+ });
+ }
+
  if (DEBUG && DEBUG.enabled) {
  console.log(`[Scientific Mode] ${this.scientificMode ? 'ON' : 'OFF'} — orbital speeds ${this.scientificMode ? 'derived from orbital periods' : 'restored to visual tuning'}`);
  }
@@ -3648,6 +3538,24 @@ export class SolarSystemModule {
 
  // True anomaly (= userData.angle the update loop uses as orbital phase)
  planet.userData.angle = this._meanToTrueAnomaly(M_rad, e);
+
+ // Also update planet.position immediately so focusOnObject / getWorldPosition
+ // returns the correct epoch position without waiting for the next update() frame.
+ if (this.scientificMode) {
+ const i = planet.userData.orbitalInclination || 0;
+ const w = planet.userData.orbitalPeriapsis || 0;
+ const a = planet.userData.distance;
+ const nu = planet.userData.angle;
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
+ const theta = nu + w;
+ planet.position.x = r * Math.cos(theta);
+ planet.position.y = r * Math.sin(theta) * Math.sin(i);
+ planet.position.z = r * Math.sin(theta) * Math.cos(i);
+ } else {
+ planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
+ planet.position.y = 0;
+ planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
+ }
  });
 
  // Notify UI immediately
@@ -3658,10 +3566,16 @@ export class SolarSystemModule {
 
  /**
  * Public shorthand: seek to a Date object or ISO-8601 string.
+ * Silently ignores invalid date inputs to prevent orbital solver corruption.
  * @param {Date|string} input
  */
  seekToDate(input) {
- this.initPositionsToDate(input instanceof Date ? input : new Date(input));
+ const date = input instanceof Date ? input : new Date(input);
+ if (isNaN(date.getTime())) {
+ if (DEBUG.enabled) console.warn('[TimeMachine] seekToDate: ignored invalid date input', input);
+ return;
+ }
+ this.initPositionsToDate(date);
  }
 
  createAsteroidBelt(scene) {
@@ -4179,79 +4093,57 @@ export class SolarSystemModule {
  }
 
  createOrbitalPaths(scene) {
- // Planet orbital paths around the Sun
- const orbitalData = [
- { distance: 20, color: 0x6688AA }, // Mercury
- { distance: 37, color: 0x6688AA }, // Venus (educational scale)
- { distance: 51, color: 0x6688AA }, // Earth (educational scale)
- { distance: 78, color: 0x6688AA }, // Mars (educational scale)
- { distance: 266, color: 0x6688AA }, // Jupiter (educational scale)
- { distance: 490, color: 0x6688AA }, // Saturn (educational scale)
- { distance: 984, color: 0x6688AA }, // Uranus (educational scale)
- { distance: 1542, color: 0x6688AA }, // Neptune (educational scale)
- { distance: 2024, color: 0x6688AA } // Pluto (educational scale)
- ];
-
- orbitalData.forEach(orbit => {
- const curve = new THREE.EllipseCurve(
- 0, 0,
- orbit.distance, orbit.distance,
- 0, 2 * Math.PI,
- false,
- 0
- );
-
- const points = curve.getPoints(128);
- const geometry = new THREE.BufferGeometry().setFromPoints(points);
+ this.orbitsVisible = true; // Default
+ this.cometOrbitsVisible = true; // Default
+ this.orbits = [];
+ 
+ const planetsToOrbit = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+ 
+ // Create empty line objects, we will update their geometry in updateOrbitalPaths()
+ planetsToOrbit.forEach(planetName => {
+ const planet = this.planets[planetName];
+ if (planet && planet.userData) {
+ const geometry = new THREE.BufferGeometry();
  const material = new THREE.LineBasicMaterial({
- color: orbit.color,
+ color: 0x6688AA,
  transparent: true,
- opacity: 0.5 // Increased from 0.2 for better visibility
+ opacity: 0.5,
+ depthWrite: false
+ });
+ 
+ const orbitLine = new THREE.Line(geometry, material);
+ orbitLine.visible = this.orbitsVisible;
+ orbitLine.renderOrder = 1; // Prevent z-fighting with transparent rings/glows
+ orbitLine.userData = { type: 'orbit', planet: planetName };
+ scene.add(orbitLine);
+ this.orbits.push(orbitLine);
+ }
+ });
+ 
+ // Moon orbital paths around their planets
+ Object.values(this.planets).forEach(planet => {
+ if (planet.userData.moons && planet.userData.moons.length > 0) {
+ planet.userData.moons.forEach(moon => {
+ const geometry = new THREE.BufferGeometry();
+ const material = new THREE.LineBasicMaterial({
+ color: 0xAADDFF,
+ transparent: true,
+ opacity: 0.5,
+ depthWrite: false
  });
 
  const orbitLine = new THREE.Line(geometry, material);
- orbitLine.rotation.x = Math.PI / 2;
- orbitLine.visible = this.orbitsVisible; // Respect initial visibility setting
- scene.add(orbitLine);
+ orbitLine.visible = this.orbitsVisible;
+ orbitLine.renderOrder = 1;
+ orbitLine.userData = { type: 'moonOrbit', moon: moon.userData.name, planet: planet.userData.name };
+ planet.add(orbitLine);
  this.orbits.push(orbitLine);
- });
- 
-        // Moon orbital paths around their planets
-        Object.values(this.planets).forEach(planet => {
-            if (planet.userData.moons && planet.userData.moons.length > 0) {
-                if (DEBUG.enabled) console.log(`Creating orbital paths for ${planet.userData.moons.length} moon(s) of ${planet.userData.name}`);
-                planet.userData.moons.forEach(moon => {
-                    const moonDistance = moon.userData.distance;
-                    if (DEBUG.enabled) console.log(`  - Creating orbit for ${moon.userData.name} at distance ${moonDistance}`);
-                    
-                    const curve = new THREE.EllipseCurve(
-                        0, 0,
-                        moonDistance, moonDistance,
-                        0, 2 * Math.PI,
-                        false,
-                        0
-                    );
-
-                    const points = curve.getPoints(128); // More points for smoother orbits
-                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const material = new THREE.LineBasicMaterial({
-                        color: 0xAADDFF, // Brighter cyan for better visibility
-                        transparent: true,
-                        opacity: 0.7, // Increased from 0.4 for better visibility
-                        linewidth: 2, // Thicker lines (note: may not work on all platforms)
-                        depthTest: true,
-                        depthWrite: false // Prevent z-fighting
-                    });
-
-                    const orbitLine = new THREE.Line(geometry, material);
-                    orbitLine.rotation.x = Math.PI / 2;
-                    orbitLine.visible = this.orbitsVisible; // Respect initial visibility setting
-                    orbitLine.renderOrder = 1; // Render after planets to prevent z-fighting
-                    planet.add(orbitLine); // Add to planet so it moves with the planet
-                    this.orbits.push(orbitLine);
  });
  }
  });
+
+ // Fill the geometry using the unified tracing logic
+ this.updateOrbitalPaths();
  }
 
  createStarfield(scene) {
@@ -6375,22 +6267,52 @@ export class SolarSystemModule {
  
  const cometsData = [
  // Halley: 15 km nucleus, 35 AU orbit
- { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.001, size: 0.002, description: t('descHalley') },
+ { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.02, size: 0.002, description: t('descHalley'), orbitalPeriod: 27511 },
  // Hale-Bopp: 60 km nucleus (massive!), ~250 AU orbit
- { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.0008, size: 0.005, description: t('descHaleBopp') },
+ { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.015, size: 0.005, description: t('descHaleBopp'), orbitalPeriod: 925188 },
  // Hyakutake: 4 km nucleus, spectacular in 1996
- { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, speed: 0.0011, size: 0.0015, description: t('descHyakutake') },
+ { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, speed: 0.022, size: 0.0015, description: t('descHyakutake'), orbitalPeriod: 25567500 },
  // Lovejoy: ~500m nucleus, Kreutz sungrazer
- { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, speed: 0.0015, size: 0.0008, description: t('descLovejoy') },
+ { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, speed: 0.04, size: 0.0008, description: t('descLovejoy'), orbitalPeriod: 227185 },
  // Encke: 4.8 km nucleus, shortest period (3.3 years)
- { name: 'Comet Encke', distance: 385, eccentricity: 0.847, speed: 0.002, size: 0.0018, description: t('descEncke') },
+ { name: 'Comet Encke', distance: 385, eccentricity: 0.847, speed: 0.035, size: 0.0018, description: t('descEncke'), orbitalPeriod: 1205 },
  // Swift-Tuttle: 26 km nucleus, source of Perseid meteor shower
- { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, speed: 0.0009, size: 0.003, description: t('descSwiftTuttle') }
+ { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, speed: 0.018, size: 0.003, description: t('descSwiftTuttle'), orbitalPeriod: 48680 }
  ];
+
+ // Shared coma textures — created once, reused for all comets.
+ // Canvas radial gradients give a smooth circular halo with zero polygon edges.
+ const _makeComaTexture = (canvasSize, colorStops) => {
+ const canvas = document.createElement('canvas');
+ canvas.width = canvasSize; canvas.height = canvasSize;
+ const ctx = canvas.getContext('2d');
+ const c = canvasSize / 2;
+ const grad = ctx.createRadialGradient(c, c, 0, c, c, c);
+ colorStops.forEach(([pos, r, g, b, a]) => grad.addColorStop(pos, `rgba(${r},${g},${b},${a})`));
+ ctx.fillStyle = grad;
+ ctx.fillRect(0, 0, canvasSize, canvasSize);
+ return new THREE.CanvasTexture(canvas);
+ };
+ // Inner bright coma: warm white-blue core fading outward
+ const _innerComaTex = _makeComaTexture(128, [
+ [0.00, 255, 252, 240, 1.00],
+ [0.12, 210, 240, 255, 0.90],
+ [0.30, 140, 210, 255, 0.55],
+ [0.55, 80, 170, 255, 0.20],
+ [0.80, 50, 140, 255, 0.06],
+ [1.00, 30, 120, 255, 0.00],
+ ]);
+ // Outer diffuse halo: large, faint greenish-blue (coma scatters sunlight)
+ const _outerComaTex = _makeComaTexture(64, [
+ [0.00, 160, 220, 200, 0.22],
+ [0.30, 120, 200, 180, 0.12],
+ [0.65, 80, 170, 160, 0.04],
+ [1.00, 60, 150, 140, 0.00],
+ ]);
 
  cometsData.forEach((cometData, index) => {
  const cometGroup = new THREE.Group();
- 
+
  // ===== HYPER-REALISTIC NUCLEUS =====
  // Irregular, potato-shaped icy-rocky core with surface details
  const nucleusGeometry = new THREE.IcosahedronGeometry(cometData.size, 2);
@@ -6410,8 +6332,8 @@ export class SolarSystemModule {
  color: 0x3a3a3a, // Dark gray-black (dirty ice + rock)
  roughness: 0.95,
  metalness: 0.05,
- emissive: 0x1a1a1a,
- emissiveIntensity: 0.1
+ emissive: 0x6688aa, // Faint blue outgassing glow, visible when zoomed in
+ emissiveIntensity: 0.45
  });
  
  const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
@@ -6462,41 +6384,35 @@ export class SolarSystemModule {
  cometGroup.add(jet);
  }
  
- // HYPERREALISTIC COMA - Multi-layered glowing atmosphere (optimized: 3 layers, 16 segments)
- const comaLayers = 3;
- const comaColors = [0xf0ffff, 0xaaddff, 0x88bbee];
- for (let layer = 0; layer < comaLayers; layer++) {
- const layerSize = cometData.size * (3 + layer * 3);
- const layerOpacity = 0.3 * (1 - layer / comaLayers) * (0.8 + Math.random() * 0.4);
- const comaGeo = new THREE.SphereGeometry(layerSize, 16, 16);
- 
- const comaMat = new THREE.MeshBasicMaterial({
- color: comaColors[layer],
+ // Visual radius: large enough to see in the solar-system overview (real coma ~100,000 km)
+ const visualRadius = Math.max(cometData.size * 800, 2.0);
+
+ // ===== REALISTIC COMA: layered smooth sprite halos =====
+ // Sprites always face the camera (no polygon edges) and use pre-built
+ // canvas radial gradients so the coma looks like a soft circular glow.
+ const innerComa = new THREE.Sprite(new THREE.SpriteMaterial({
+ map: _innerComaTex,
  transparent: true,
- opacity: layerOpacity,
- side: THREE.BackSide,
  blending: THREE.AdditiveBlending,
- depthWrite: false
- });
- const coma = new THREE.Mesh(comaGeo, comaMat);
- cometGroup.add(coma);
- }
- 
- // Inner bright core (nucleus glow)
- const nucleusGlowGeo = new THREE.SphereGeometry(cometData.size * 1.5, 16, 16);
- const nucleusGlowMat = new THREE.MeshBasicMaterial({
- color: 0xffffff,
+ depthWrite: false,
+ opacity: 0.92
+ }));
+ innerComa.scale.set(visualRadius * 1.4, visualRadius * 1.4, 1);
+ cometGroup.add(innerComa);
+
+ const outerComa = new THREE.Sprite(new THREE.SpriteMaterial({
+ map: _outerComaTex,
  transparent: true,
- opacity: 0.6,
  blending: THREE.AdditiveBlending,
- depthWrite: false
- });
- const nucleusGlow = new THREE.Mesh(nucleusGlowGeo, nucleusGlowMat);
- cometGroup.add(nucleusGlow);
+ depthWrite: false,
+ opacity: 0.70
+ }));
+ outerComa.scale.set(visualRadius * 5, visualRadius * 5, 1);
+ cometGroup.add(outerComa);
  
  // ===== SPECTACULAR DUST TAIL =====
  // Curved, broad, golden-yellow with turbulent structure
- const dustParticles = 800; // More particles for density
+ const dustParticles = 280; // Further reduced particle count for subtler tails
  const dustTailGeometry = new THREE.BufferGeometry();
  const dustTailPositions = new Float32Array(dustParticles * 3);
  const dustTailColors = new Float32Array(dustParticles * 3);
@@ -6504,8 +6420,8 @@ export class SolarSystemModule {
  
  for (let i = 0; i < dustParticles; i++) {
  const t = i / dustParticles;
- const spread = t * 1.0; // Proportional spread
- const curve = t * t * 1.5; // Curved tail
+ const spread = t * 0.7; // Proportional spread
+ const curve = t * t * 1.0; // Curved tail
  const turbulence = Math.sin(i * 0.5) * spread * 0.15; // Add turbulence
  
  dustTailPositions[i * 3] = curve + turbulence + (Math.random() - 0.5) * spread * 0.3;
@@ -6513,10 +6429,10 @@ export class SolarSystemModule {
  dustTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.8;
  
  // Size decreases with distance, with variation
- dustTailSizes[i] = (0.2 + Math.random() * 0.1) * (1 - t * 0.8);
+ dustTailSizes[i] = (0.1 + Math.random() * 0.05) * (1 - t * 0.8);
  
  // Gradient: bright white-yellow → orange-red → dark
- const brightness = 1 - t * 0.7;
+ const brightness = 0.45 - t * 0.3;
  dustTailColors[i * 3] = Math.min(1, 0.9 + t * 0.3) * brightness; // R
  dustTailColors[i * 3 + 1] = Math.max(0.3, 0.85 - t * 0.4) * brightness; // G 
  dustTailColors[i * 3 + 2] = Math.max(0, 1.0 - t * 0.9) * brightness; // B
@@ -6530,17 +6446,25 @@ export class SolarSystemModule {
  vertexColors: true,
  sizeAttenuation: true,
  transparent: true,
- opacity: 0.75,
+ opacity: 0.14, // More subtle dust tail
  blending: THREE.AdditiveBlending,
  depthWrite: false
  });
  
  const dustTail = new THREE.Points(dustTailGeometry, dustTailMaterial);
  cometGroup.add(dustTail);
+
+ // Precomputed jitter seeds (hot-path optimization: avoid per-frame Math.random in animate loop)
+ const dustJitterA = new Float32Array(dustParticles);
+ const dustJitterB = new Float32Array(dustParticles);
+ for (let i = 0; i < dustParticles; i++) {
+ dustJitterA[i] = Math.random() - 0.5;
+ dustJitterB[i] = Math.random() - 0.5;
+ }
  
  // ===== BRILLIANT ION TAIL =====
  // Straight, narrow, electric blue plasma stream with wisps
- const ionParticles = 600; // More particles for brilliant effect
+ const ionParticles = 180; // Further reduced particle count for subtle plasma tail
  const ionTailGeometry = new THREE.BufferGeometry();
  const ionTailPositions = new Float32Array(ionParticles * 3);
  const ionTailColors = new Float32Array(ionParticles * 3);
@@ -6548,8 +6472,8 @@ export class SolarSystemModule {
  
  for (let i = 0; i < ionParticles; i++) {
  const t = i / ionParticles;
- const spread = t * 0.3; // Narrower than dust tail but with wisps
- const length = t * 2.0; // Longer, straight ion tail
+ const spread = t * 0.2; // Narrower than dust tail but with wisps
+ const length = t * 1.5; // Longer, straight ion tail
  const wisp = Math.sin(i * 0.3) * spread * 0.2; // Wispy structure
  
  ionTailPositions[i * 3] = length + wisp + (Math.random() - 0.5) * 0.015;
@@ -6557,11 +6481,11 @@ export class SolarSystemModule {
  ionTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.8;
  
  // Size variation with brilliant streaks
- const ionBrightness = Math.pow(1 - t, 0.4) * (0.8 + Math.random() * 0.4);
- ionTailSizes[i] = (0.15 + Math.random() * 0.15) * ionBrightness;
+ const ionBrightness = Math.pow(1 - t, 0.4) * (0.6 + Math.random() * 0.3);
+ ionTailSizes[i] = (0.08 + Math.random() * 0.1) * ionBrightness;
  
  // Electric blue plasma gradient - brilliant cyan-blue
- const intensity = (1 - t * 0.5) * ionBrightness;
+ const intensity = (1 - t * 0.5) * ionBrightness * 0.35; // Further dimmed ion emission
  ionTailColors[i * 3] = 0.4 * intensity; // R - less red for purer blue
  ionTailColors[i * 3 + 1] = 0.85 * intensity; // G - strong cyan
  ionTailColors[i * 3 + 2] = 1.0 * intensity; // B - full blue
@@ -6575,37 +6499,81 @@ export class SolarSystemModule {
  vertexColors: true,
  sizeAttenuation: true,
  transparent: true,
- opacity: 0.85, // Higher opacity for brilliant plasma effect
+ opacity: 0.18, // More subtle ion tail
  blending: THREE.AdditiveBlending,
  depthWrite: false
  });
  
  const ionTail = new THREE.Points(ionTailGeometry, ionTailMaterial);
  cometGroup.add(ionTail);
+
+ // Precomputed ion jitter seeds (hot-path optimization)
+ const ionJitter = new Float32Array(ionParticles);
+ for (let i = 0; i < ionParticles; i++) {
+ ionJitter[i] = Math.random() - 0.5;
+ }
  
+ // Clamp eccentricity so perihelion stays outside the sun (radius 15 + 30 safety margin = 45 units).
+ // Sungrazers like Hyakutake (e=0.999) and Lovejoy (e=0.998) would otherwise dive deep inside the sun mesh.
+ const MIN_PERIHELION = 45;
+ const safeEccentricity = Math.min(cometData.eccentricity, 1 - MIN_PERIHELION / cometData.distance);
+
  cometGroup.userData = {
  name: cometData.name,
  type: 'comet',
- radius: cometData.size,
- actualSize: cometData.size, // Store actual size for zoom calculations
+ radius: visualRadius, // Use visual coma radius for zoom/label sizing
+ actualSize: cometData.size, // True nucleus size
+ visualRadius: visualRadius,
  distance: cometData.distance,
  angle: Math.random() * Math.PI * 2,
  speed: cometData.speed,
- eccentricity: cometData.eccentricity,
+ eccentricity: safeEccentricity, // Clamped to keep perihelion outside sun
+ originalEccentricity: cometData.eccentricity, // Stored for reclamping after scale changes
+ orbitalPeriod: cometData.orbitalPeriod,
  description: cometData.description,
  realSize: '1-60 km nucleus',
  funFact: t('funFactComets'),
  dustTail: dustTail,
  ionTail: ionTail,
+ dustParticles,
+ ionParticles,
+ dustJitterA,
+ dustJitterB,
+ ionJitter,
  isComet: true // Flag for special zoom handling
  };
  
+ // ===== ELLIPTICAL ORBIT PATH =====
+ const orbitSegments = 256;
+ const orbitPoints = [];
+ const orbitA = cometData.distance;
+ const orbitE = safeEccentricity; // use same clamped value stored in userData
+ for (let j = 0; j <= orbitSegments; j++) {
+ const f = (j / orbitSegments) * Math.PI * 2;
+ const orbitR = orbitA * (1 - orbitE * orbitE) / (1 + orbitE * Math.cos(f));
+ orbitPoints.push(new THREE.Vector3(orbitR * Math.cos(f), Math.sin(f) * 15, orbitR * Math.sin(f)));
+ }
+ const cometOrbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+ const cometOrbitMat = new THREE.LineBasicMaterial({
+ color: 0x6688AA,
+ transparent: true,
+ opacity: 0.5,
+ depthWrite: false
+ });
+ const cometOrbitLine = new THREE.Line(cometOrbitGeo, cometOrbitMat);
+ cometOrbitLine.visible = this.cometOrbitsVisible;
+ cometOrbitLine.renderOrder = 1;
+ cometOrbitLine.userData = { type: 'orbit', comet: cometData.name };
+ scene.add(cometOrbitLine);
+ this.cometOrbits.push(cometOrbitLine);
+ cometGroup.userData.orbitLine = cometOrbitLine;
+
  cometGroup.visible = true; // Ensure comet is visible
  scene.add(cometGroup);
  this.objects.push(cometGroup);
  this.comets.push(cometGroup);
  
- if (DEBUG.enabled) console.log(` ${cometData.name} created at distance ${cometData.distance}`);
+ if (DEBUG.enabled) console.log(` ${cometData.name} created at distance ${cometData.distance}, visualRadius=${visualRadius.toFixed(2)}`);
  });
  }
 
@@ -8112,6 +8080,7 @@ createHyperrealisticHubble(satData) {
  this._lastDateEventWall = _wallNow;
  window.dispatchEvent(new CustomEvent('simulatedDateChanged', { detail: { jd: this.simulatedJD } }));
  }
+ const now = performance.now();
  const elapsedHours = this.simulatedHours;
  
  // Update all planets (use cached array to avoid Object.values() allocation each frame)
@@ -8157,6 +8126,7 @@ createHyperrealisticHubble(satData) {
  planet.position.z = zOrb * Math.cos(i);
  } else {
  planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
+ planet.position.y = 0;
  planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
  }
  
@@ -8307,7 +8277,8 @@ createHyperrealisticHubble(satData) {
  if (this.comets) {
  this.comets.forEach(comet => {
  const userData = comet.userData;
- const angleIncrement = userData.speed * orbitalSpeed * deltaTime;
+ const cometMotionMultiplier = this.scientificMode ? 1 : 18; // Educational mode boost so motion is visible
+ const angleIncrement = userData.speed * orbitalSpeed * deltaTime * cometMotionMultiplier;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  }
@@ -8329,7 +8300,7 @@ createHyperrealisticHubble(satData) {
  // Store the real orbital position — reuse cached object to avoid per-frame heap allocation
  if (!userData.orbitPosition) userData.orbitPosition = { x: 0, y: 0, z: 0 };
  userData.orbitPosition.x = r * cosAngle;
- userData.orbitPosition.y = Math.sin(angle * 0.5) * 20;
+ userData.orbitPosition.y = Math.sin(angle) * 15;
  userData.orbitPosition.z = r * sinAngle;
  // Position at viewable distance from sun (200 units)
  const detailDistance = 200;
@@ -8349,7 +8320,13 @@ createHyperrealisticHubble(satData) {
  // Normal orbital position
  comet.position.x = r * cosAngle;
  comet.position.z = r * sinAngle;
- comet.position.y = Math.sin(angle * 0.5) * 20;
+ comet.position.y = Math.sin(angle) * 15;
+ }
+
+ // Keep orbit-line visibility consistent with detail-view mode:
+ // in detail view the comet is intentionally moved to a near-camera showcase position.
+ if (userData.orbitLine) {
+ userData.orbitLine.visible = this.cometOrbitsVisible && !userData.detailView;
  }
  
  // Show/hide comet tails based on toggle
@@ -8370,18 +8347,34 @@ createHyperrealisticHubble(satData) {
  if (!userData._sunDir) userData._sunDir = new THREE.Vector3();
  if (!userData._velDir) userData._velDir = new THREE.Vector3();
  
- userData._sunDir.set(-comet.position.x, -comet.position.y, -comet.position.z).normalize();
+ // Tails always point AWAY from the sun (solar wind pushes them outward from origin)
+ userData._sunDir.set(comet.position.x, comet.position.y, comet.position.z).normalize();
  userData._velDir.set(Math.cos(angle + Math.PI/2), 0, Math.sin(angle + Math.PI/2)).normalize();
  
+ // Dynamic tail transparency scaling: tails get invisible far from the sun but very bright close to perihelion
+ const distanceToSun = Math.sqrt(comet.position.x ** 2 + comet.position.y ** 2 + comet.position.z ** 2);
+ const sunProximityScale = Math.max(0.12, Math.min(1.0, 500 / distanceToSun)); // Keep tails dim when far from the sun
+
  // Update dust tail (only every 3 frames for performance)
  if (userData.dustTail && userData.frameCount % 3 === 0) {
+ // Dynamically set material opacity based on sun distance
+ if (userData.dustTail.material) {
+ userData.dustTail.material.opacity = 0.14 * sunProximityScale;
+ }
+ 
  const dustPositions = userData.dustTail.geometry.attributes.position.array;
  const dustSizes = userData.dustTail.geometry.attributes.size.array;
  
  const curveFactor = 0.3;
- for (let i = 0; i < 800; i++) {
- const t = i / 800;
- const length = 4 * t;
+ const vr = userData.visualRadius || 2.0; // Scale tail proportional to visible coma size
+ const dustTailLen = vr * 8; // Dust tail: 8× coma radius
+ const dustParticleCount = userData.dustParticles || dustSizes.length;
+ // Flowing animation: offset parametric position so particles appear to stream outward
+ const dustFlow = (now * 0.00025) % 1.0;
+ for (let i = 0; i < dustParticleCount; i++) {
+ const tBase = i / dustParticleCount;
+ const t = (tBase + dustFlow) % 1.0; // flowing position along tail
+ const length = dustTailLen * t;
  
  // Curve effect - pre-calculated
  const dirX = userData._sunDir.x + userData._velDir.x * curveFactor * t;
@@ -8389,16 +8382,17 @@ createHyperrealisticHubble(satData) {
  const dirZ = userData._sunDir.z + userData._velDir.z * curveFactor * t;
  const normFactor = 1 / Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
  
- // Add spread
- const spread = (Math.random() - 0.5) * 0.8 * t;
- const spreadPerpendicular = (Math.random() - 0.5) * 0.4 * t;
+ const jitterA = userData.dustJitterA ? userData.dustJitterA[i] : (Math.random() - 0.5);
+ const jitterB = userData.dustJitterB ? userData.dustJitterB[i] : (Math.random() - 0.5);
+ const spread = jitterA * vr * 1.0 * t;
+ const spreadPerpendicular = jitterB * vr * 0.5 * t;
  
  dustPositions[i * 3] = dirX * normFactor * length + spread;
  dustPositions[i * 3 + 1] = dirY * normFactor * length + spreadPerpendicular;
  dustPositions[i * 3 + 2] = dirZ * normFactor * length + spread;
  
- // Vary size (less random() calls)
- dustSizes[i] = 0.15 * (1 - t * 0.7) * (0.9 + (i % 5) * 0.05);
+ // Vary size based on original index (not flowing t) so near particles stay large
+ dustSizes[i] = vr * 0.10 * (1 - tBase * 0.7) * (0.9 + (i % 5) * 0.05);
  }
  userData.dustTail.geometry.attributes.position.needsUpdate = true;
  userData.dustTail.geometry.attributes.size.needsUpdate = true;
@@ -8406,19 +8400,32 @@ createHyperrealisticHubble(satData) {
  
  // Update ion tail (only every 2 frames for performance)
  if (userData.ionTail && userData.frameCount % 2 === 0) {
+ // Dynamically set material opacity based on sun distance
+ if (userData.ionTail.material) {
+ userData.ionTail.material.opacity = 0.18 * sunProximityScale;
+ }
+
  const ionPositions = userData.ionTail.geometry.attributes.position.array;
  const sunDirX = userData._sunDir.x;
  const sunDirY = userData._sunDir.y;
  const sunDirZ = userData._sunDir.z;
+ const vrIon = userData.visualRadius || 2.0;
+ const ionTailLen = vrIon * 12; // Ion tail: 12× coma radius, longer than dust
+ const ionParticleCount = userData.ionParticles || ionPositions.length / 3;
+ // Faster flow for plasma stream effect
+ const ionFlow = (now * 0.00075) % 1.0;
  
- for (let i = 0; i < 600; i++) {
- const t = i / 600;
- const length = 6 * t;
- const spread = (Math.random() - 0.5) * 0.15 * t;
+ for (let i = 0; i < ionParticleCount; i++) {
+ const tBase = i / ionParticleCount;
+ const t = (tBase + ionFlow) % 1.0;
+ const length = ionTailLen * t;
+ const ionJitterVal = userData.ionJitter ? userData.ionJitter[i] : (Math.random() - 0.5);
+ const spreadIon = ionJitterVal * vrIon * 0.9 * t; // Wider fan so it looks like a stream, not a line
+ const spreadIon2 = (userData.ionJitter ? userData.ionJitter[(i + 1) % ionParticleCount] : (Math.random() - 0.5)) * vrIon * 0.5 * t;
  
- ionPositions[i * 3] = sunDirX * length + spread;
- ionPositions[i * 3 + 1] = sunDirY * length + spread;
- ionPositions[i * 3 + 2] = sunDirZ * length + spread;
+ ionPositions[i * 3] = sunDirX * length + spreadIon;
+ ionPositions[i * 3 + 1] = sunDirY * length + spreadIon2;
+ ionPositions[i * 3 + 2] = sunDirZ * length + spreadIon;
  }
  userData.ionTail.geometry.attributes.position.needsUpdate = true;
  }
@@ -8608,6 +8615,15 @@ createHyperrealisticHubble(satData) {
  scene.remove(orbit);
  });
 
+ // Clean up comet orbit lines (separate from planet orbits)
+ if (this.cometOrbits) {
+ this.cometOrbits.forEach(orbit => {
+ if (orbit.geometry) orbit.geometry.dispose();
+ if (orbit.material) orbit.material.dispose();
+ scene.remove(orbit);
+ });
+ }
+
  // Remove sun light
  const sunLight = scene.getObjectByName('sunLight');
  if (sunLight) scene.remove(sunLight);
@@ -8626,6 +8642,7 @@ createHyperrealisticHubble(satData) {
  this.kuiperBelt = null;
  this.oortCloud = null;
  this.orbits = [];
+ this.cometOrbits = [];
  this.comets = [];
  this.satellites = [];
  this.spacecraft = [];
@@ -8642,12 +8659,31 @@ createHyperrealisticHubble(satData) {
  return this.objects;
  }
  
- toggleOrbits(visible) {
- this.orbitsVisible = visible;
- this.orbits.forEach(orbit => {
- orbit.visible = visible;
+ /**
+ * Set which orbit paths are visible.
+ * mode: 'all' | 'planets' | 'comets' | 'none'
+ */
+ setOrbitMode(mode) {
+ this.orbitMode = mode;
+ const showPlanets = (mode === 'all' || mode === 'planets');
+ const showComets = (mode === 'all' || mode === 'comets');
+ this.orbitsVisible = showPlanets;
+ this.cometOrbitsVisible = showComets;
+ this.orbits.forEach(orbit => { orbit.visible = showPlanets; });
+ if (this.cometOrbits) this.cometOrbits.forEach(orbit => { orbit.visible = showComets; });
+ // comet orbit lines stored in userData also need updating
+ if (this.comets) {
+ this.comets.forEach(comet => {
+ const orbitLine = comet?.userData?.orbitLine;
+ if (orbitLine) orbitLine.visible = showComets && !comet.userData.detailView;
  });
- if (DEBUG.enabled) console.log(` Orbit paths ${visible ? 'shown' : 'hidden'}`);
+ }
+ if (DEBUG.enabled) console.log(` Orbit mode: ${mode}`);
+ }
+
+ // Backward-compat: old boolean toggle maps to all/none
+ toggleOrbits(visible) {
+ this.setOrbitMode(visible ? 'all' : 'none');
  }
  
  toggleConstellations(visible) {
@@ -8774,19 +8810,15 @@ createHyperrealisticHubble(satData) {
  this.orbits = [];
 
  // Helper: generate orbit trace points.
- // In scientific mode, traces the actual Keplerian ellipse (Sun at focus).
- // In educational mode, generates a simple circle of radius `distance`.
- const makeOrbitPoints = (planetName, distance, segments) => {
+ // In scientific mode, traces the actual Keplerian ellipse (Sun at focus) or the tilted ellipse.
+ // In educational mode, generates a simple circle of radius `distance` on the XZ plane.
+ const makeOrbitPoints = (distance, e, inc, w, segments) => {
  const pts = [];
- const elem = this.scientificMode ? this.SCIENTIFIC_ORBITAL_ELEMENTS[planetName] : null;
- const e = elem?.eccentricity || 0;
- if (this.scientificMode && e > 0.001) {
- const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
- const w = (elem?.periapsisDeg || 0) * Math.PI / 180;
+ if (this.scientificMode) {
  const a = distance;
  for (let j = 0; j <= segments; j++) {
  const f = (j / segments) * Math.PI * 2; // true anomaly
- const r = a * (1 - e * e) / (1 + e * Math.cos(f));
+ const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(f))) : a;
  const theta = f + w; // argument of periapsis rotates the ellipse
  const xOrb = r * Math.cos(theta);
  const zOrb = r * Math.sin(theta);
@@ -8807,19 +8839,25 @@ createHyperrealisticHubble(satData) {
  planetsToOrbit.forEach(planetName => {
  const planet = this.planets[planetName];
  if (planet && planet.userData) {
+ const elem = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetName];
+ const e = elem?.eccentricity || 0;
+ const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
+ const w = (elem?.periapsisDeg || 0) * Math.PI / 180;
  const distance = planet.userData.distance;
  const segments = 128;
- const points = makeOrbitPoints(planetName, distance, segments);
+ const points = makeOrbitPoints(distance, e, inc, w, segments);
  
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const material = new THREE.LineBasicMaterial({
  color: 0x6688AA,
  transparent: true,
- opacity: 0.5
+ opacity: 0.5,
+ depthWrite: false
  });
  
  const orbit = new THREE.Line(geometry, material);
  orbit.visible = this.orbitsVisible;
+ orbit.renderOrder = 1;
  orbit.userData = { type: 'orbit', planet: planetName };
  
  planet.parent.add(orbit);
@@ -8830,18 +8868,24 @@ createHyperrealisticHubble(satData) {
  // Also update Pluto if it exists
  if (this.planets.pluto && this.planets.pluto.userData) {
  const distance = this.planets.pluto.userData.distance;
+ const elem = this.SCIENTIFIC_ORBITAL_ELEMENTS['pluto'];
+ const e = elem?.eccentricity || 0;
+ const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
+ const w = (elem?.periapsisDeg || 0) * Math.PI / 180;
  const segments = 128;
- const points = makeOrbitPoints('pluto', distance, segments);
+ const points = makeOrbitPoints(distance, e, inc, w, segments);
  
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const material = new THREE.LineBasicMaterial({
  color: 0x6688AA,
  transparent: true,
- opacity: 0.5
+ opacity: 0.5,
+ depthWrite: false
  });
  
  const orbit = new THREE.Line(geometry, material);
  orbit.visible = this.orbitsVisible;
+ orbit.renderOrder = 1;
  orbit.userData = { type: 'orbit', planet: 'pluto' };
  
  this.planets.pluto.parent.add(orbit);
@@ -8854,28 +8898,21 @@ createHyperrealisticHubble(satData) {
  if (DEBUG.enabled) console.log(`[Orbits] Recreating ${planet.userData.moons.length} moon orbit(s) for ${planet.userData.name}`);
  planet.userData.moons.forEach(moon => {
  const moonDistance = moon.userData.distance;
+ const e = this.scientificMode ? (moon.userData.orbitalEccentricity || 0) : 0;
+ const inc = this.scientificMode ? (moon.userData.orbitalInclination || 0) : 0;
+ const w = this.scientificMode ? (moon.userData.orbitalPeriapsis || 0) : 0;
  
- const curve = new THREE.EllipseCurve(
- 0, 0,
- moonDistance, moonDistance,
- 0, 2 * Math.PI,
- false,
- 0
- );
- 
- const points = curve.getPoints(128);
+ const points = makeOrbitPoints(moonDistance, e, inc, w, 128);
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const material = new THREE.LineBasicMaterial({
  color: 0xAADDFF, // Brighter cyan for better visibility
  transparent: true,
- opacity: 0.7,
- linewidth: 2,
- depthTest: true,
+ opacity: 0.5,
  depthWrite: false
  });
  
  const orbitLine = new THREE.Line(geometry, material);
- orbitLine.rotation.x = Math.PI / 2;
+ // We do NOT need orbitLine.rotation.x = Math.PI / 2 because makeOrbitPoints generates Vector3s mapped to the correct planes directly!
  orbitLine.visible = this.orbitsVisible;
  orbitLine.renderOrder = 1;
  orbitLine.userData = { type: 'moonOrbit', moon: moon.userData.name, planet: planet.userData.name };
@@ -9064,13 +9101,13 @@ createHyperrealisticHubble(satData) {
  'Comet Encke': 385,       // ~7.5 AU actual (shortest period)
  'Comet Swift-Tuttle': 2570 // ~50 AU actual
  } : {
- // Educational scale - same distances (comets use educational scale by default in creation)
- 'Halley\'s Comet': 1795,  // 35 AU
- 'Comet Hale-Bopp': 12820, // 250 AU
- 'Comet Hyakutake': 1540,  // 30 AU
- 'Comet Lovejoy': 770,     // 15 AU
- 'Comet Encke': 385,       // 7.5 AU
- 'Comet Swift-Tuttle': 2570 // 50 AU
+ // Educational scale - compressed so comet motion is easier to perceive
+ 'Halley\'s Comet': 950,
+ 'Comet Hale-Bopp': 3500,
+ 'Comet Hyakutake': 850,
+ 'Comet Lovejoy': 520,
+ 'Comet Encke': 260,
+ 'Comet Swift-Tuttle': 1300
  };
  
  this.comets.forEach(comet => {
@@ -9081,7 +9118,13 @@ createHyperrealisticHubble(satData) {
  if (newDistance !== undefined) {
  // Update stored distance (semi-major axis)
  userData.distance = newDistance;
- 
+ // Reclamp eccentricity for the new distance so perihelion stays outside the sun
+ const MIN_PERIHELION = 45;
+ userData.eccentricity = Math.min(
+ userData.originalEccentricity || userData.eccentricity,
+ 1 - MIN_PERIHELION / newDistance
+ );
+
  // Recalculate position based on current angle and eccentricity
  const e = userData.eccentricity;
  const a = userData.distance;
@@ -9094,13 +9137,40 @@ createHyperrealisticHubble(satData) {
  const r = a * (1 - e * e) / (1 + e * cosAngle);
  comet.position.x = r * cosAngle;
  comet.position.z = r * sinAngle;
- comet.position.y = Math.sin(angle * 0.5) * 20;
+ comet.position.y = Math.sin(angle) * 15;
  
  if (DEBUG.enabled) console.log(` ${userData.name}: ${newDistance} units (e=${e})`);
  }
  });
  
  if (DEBUG.enabled) console.log(` Comet positions updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
+
+ // Ensure comet orbit lines match updated scale/distances.
+ this.updateCometOrbitLines();
+ }
+
+ updateCometOrbitLines() {
+ if (!this.comets || this.comets.length === 0) return;
+
+ const orbitSegments = 256;
+ this.comets.forEach(comet => {
+ const userData = comet?.userData;
+ const orbitLine = userData?.orbitLine;
+ if (!userData || !orbitLine) return;
+
+ const a = userData.distance;
+ const e = userData.eccentricity || 0;
+ const points = [];
+ for (let j = 0; j <= orbitSegments; j++) {
+ const f = (j / orbitSegments) * Math.PI * 2;
+ const r = a * (1 - e * e) / (1 + e * Math.cos(f));
+ points.push(new THREE.Vector3(r * Math.cos(f), Math.sin(f) * 15, r * Math.sin(f)));
+ }
+
+ orbitLine.geometry.setFromPoints(points);
+ orbitLine.geometry.computeBoundingSphere();
+ orbitLine.visible = this.cometOrbitsVisible && !userData.detailView;
+ });
  }
  
  updateDeepSpaceObjects() {
@@ -9342,7 +9412,7 @@ createHyperrealisticHubble(satData) {
  
  // Scale up comet to be visible (nucleus is tiny - only 0.002-0.005 units!)
  // With enhanced tails (25-35 units), scale of 15x gives perfect visibility
- const detailViewScale = 15.0; // Sweet spot: visible but not overwhelming
+ const detailViewScale = 1.0; // Coma already scaled to solar-system proportions; no extra inflate needed
  object.scale.set(detailViewScale, detailViewScale, detailViewScale);
  
  if (DEBUG.enabled) {

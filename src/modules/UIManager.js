@@ -208,6 +208,16 @@ export class UIManager {
  // Update app timeSpeed
  if (window.app) {
  window.app.timeSpeed = speed;
+ 
+ // Reset reverse if speed becomes paused
+ if (speed === 0 && window.app.isTimeReversed) {
+ window.app.isTimeReversed = false;
+ const revBtn = document.getElementById('time-reverse');
+ if (revBtn) {
+ revBtn.setAttribute('aria-pressed', 'false');
+ revBtn.classList.remove('active');
+ }
+ }
  }
  
  // Update labels

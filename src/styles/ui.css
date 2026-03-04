@@ -878,7 +878,7 @@
     display: flex;
     gap: 3px;
     justify-content: center;
-    flex-wrap: nowrap;
+    flex-wrap: wrap; /* allow wrapping on very small screens */
 }
 
 /* Small compact time-step buttons */
@@ -892,14 +892,21 @@
     font-weight: 600;
     cursor: pointer;
     padding: 4px 5px;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
     white-space: nowrap;
     line-height: 1.2;
 }
 
-.tm-step:hover, .tm-reverse:hover, .tm-now-btn:hover {
+.tm-step:hover, .tm-reverse:hover, .tm-now-btn:hover,
+.tm-step:focus-visible, .tm-reverse:focus-visible, .tm-now-btn:focus-visible {
     background: rgba(255, 255, 255, 0.18);
     border-color: var(--fluent-accent);
+    outline: none;
+}
+
+.tm-step:active, .tm-reverse:active, .tm-now-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .tm-reverse {
@@ -2058,8 +2065,8 @@ select {
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease;
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     white-space: nowrap;
     overflow: hidden;
