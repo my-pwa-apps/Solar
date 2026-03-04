@@ -3491,6 +3491,9 @@ export class SolarSystemModule {
  setScientificMode(enabled) {
  this.scientificMode = !!enabled;
  this.applyScientificModeSpeeds();
+ // Redraw orbit lines to match the new motion model
+ // (circles for educational mode, Keplerian ellipses for scientific mode)
+ this.updateOrbitalPaths();
  }
 
  applyScientificModeSpeeds() {
@@ -8649,7 +8652,35 @@ createHyperrealisticHubble(satData) {
  if (orbit.material) orbit.material.dispose();
  });
  this.orbits = [];
- 
+
+ // Helper: generate orbit trace points.
+ // In scientific mode, traces the actual Keplerian ellipse (Sun at focus).
+ // In educational mode, generates a simple circle of radius `distance`.
+ const makeOrbitPoints = (planetName, distance, segments) => {
+ const pts = [];
+ const elem = this.scientificMode ? this.SCIENTIFIC_ORBITAL_ELEMENTS[planetName] : null;
+ const e = elem?.eccentricity || 0;
+ if (this.scientificMode && e > 0.001) {
+ const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
+ const w = (elem?.periapsisDeg || 0) * Math.PI / 180;
+ const a = distance;
+ for (let j = 0; j <= segments; j++) {
+ const f = (j / segments) * Math.PI * 2; // true anomaly
+ const r = a * (1 - e * e) / (1 + e * Math.cos(f));
+ const theta = f + w; // argument of periapsis rotates the ellipse
+ const xOrb = r * Math.cos(theta);
+ const zOrb = r * Math.sin(theta);
+ pts.push(new THREE.Vector3(xOrb, zOrb * Math.sin(inc), zOrb * Math.cos(inc)));
+ }
+ } else {
+ for (let j = 0; j <= segments; j++) {
+ const angle = (j / segments) * Math.PI * 2;
+ pts.push(new THREE.Vector3(distance * Math.cos(angle), 0, distance * Math.sin(angle)));
+ }
+ }
+ return pts;
+ };
+
  // Recreate orbital paths for all planets
  const planetsToOrbit = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
  
@@ -8657,17 +8688,8 @@ createHyperrealisticHubble(satData) {
  const planet = this.planets[planetName];
  if (planet && planet.userData) {
  const distance = planet.userData.distance;
- const points = [];
  const segments = 128;
- 
- for (let i = 0; i <= segments; i++) {
- const angle = (i / segments) * Math.PI * 2;
- points.push(new THREE.Vector3(
- distance * Math.cos(angle),
- 0,
- distance * Math.sin(angle)
- ));
- }
+ const points = makeOrbitPoints(planetName, distance, segments);
  
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const material = new THREE.LineBasicMaterial({
@@ -8688,17 +8710,8 @@ createHyperrealisticHubble(satData) {
  // Also update Pluto if it exists
  if (this.planets.pluto && this.planets.pluto.userData) {
  const distance = this.planets.pluto.userData.distance;
- const points = [];
  const segments = 128;
- 
- for (let i = 0; i <= segments; i++) {
- const angle = (i / segments) * Math.PI * 2;
- points.push(new THREE.Vector3(
- distance * Math.cos(angle),
- 0,
- distance * Math.sin(angle)
- ));
- }
+ const points = makeOrbitPoints('pluto', distance, segments);
  
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const material = new THREE.LineBasicMaterial({
