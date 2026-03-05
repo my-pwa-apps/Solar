@@ -3610,7 +3610,8 @@ export class SolarSystemModule {
  if (!orbitalPeriodDays || orbitalPeriodDays <= 0) return;
 
  // Seed mean anomaly linearly from JD; derive true anomaly via Kepler solver
- const meanAnomaly = normalizeAngle((daysSinceJ2000 / orbitalPeriodDays) * TWO_PI);
+        let elapsedD = daysSinceJ2000; if (userData.perihelionJD) { elapsedD = jd - userData.perihelionJD; }
+        const meanAnomaly = normalizeAngle((elapsedD / orbitalPeriodDays) * TWO_PI);
  userData.meanAnomaly = meanAnomaly;
  const e = userData.eccentricity || 0;
  userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(meanAnomaly, e) : meanAnomaly;
