@@ -4180,7 +4180,7 @@ export class SolarSystemModule {
  const orbitLine = new THREE.Line(geometry, material);
  orbitLine.visible = this.orbitsVisible;
  orbitLine.renderOrder = 1; // Prevent z-fighting with transparent rings/glows
- orbitLine.userData = { type: 'orbit', planet: planetName };
+ orbitLine.userData = { type: 'orbit', planet: planetName, isDwarf: isDwarf };
  scene.add(orbitLine);
  this.orbits.push(orbitLine);
  }
@@ -8724,15 +8724,26 @@ createHyperrealisticHubble(satData) {
  
  /**
  * Set which orbit paths are visible.
- * mode: 'all' | 'planets' | 'comets' | 'none'
+ * mode: 'all' | 'planets' | 'dwarfs' | 'moons' | 'comets' | 'none'
  */
  setOrbitMode(mode) {
  this.orbitMode = mode;
  const showPlanets = (mode === 'all' || mode === 'planets');
+ const showDwarfs = (mode === 'all' || mode === 'dwarfs');
+ const showMoons = (mode === 'all' || mode === 'moons');
  const showComets = (mode === 'all' || mode === 'comets');
- this.orbitsVisible = showPlanets;
+ this.orbitsVisible = (mode === 'all'); // legacy flag: true only when everything is on
  this.cometOrbitsVisible = showComets;
- this.orbits.forEach(orbit => { orbit.visible = showPlanets; });
+ this.orbits.forEach(orbit => {
+ const ud = orbit.userData;
+ if (ud.type === 'moonOrbit') {
+ orbit.visible = showMoons;
+ } else if (ud.isDwarf) {
+ orbit.visible = showDwarfs;
+ } else {
+ orbit.visible = showPlanets;
+ }
+ });
  if (this.cometOrbits) this.cometOrbits.forEach(orbit => { orbit.visible = showComets; });
  // comet orbit lines stored in userData also need updating
  if (this.comets) {
@@ -8919,7 +8930,7 @@ createHyperrealisticHubble(satData) {
  const orbit = new THREE.Line(geometry, material);
  orbit.visible = this.orbitsVisible;
  orbit.renderOrder = 1;
- orbit.userData = { type: 'orbit', planet: planetName };
+ orbit.userData = { type: 'orbit', planet: planetName, isDwarf: isDwarf };
  
  planet.parent.add(orbit);
  this.orbits.push(orbit);

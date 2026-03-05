@@ -360,9 +360,9 @@ class App {
  this.applyScaleMode(nextMode);
  }
 
- // Orbit mode cycling: 'all' → 'planets' → 'comets' → 'none' → 'all'
+ // Orbit mode cycling: 'all' → 'planets' → 'dwarfs' → 'moons' → 'comets' → 'none' → 'all'
  _orbitModeNext(current) {
- const cycle = { 'all': 'planets', 'planets': 'comets', 'comets': 'none', 'none': 'all' };
+ const cycle = { 'all': 'planets', 'planets': 'dwarfs', 'dwarfs': 'moons', 'moons': 'comets', 'comets': 'none', 'none': 'all' };
  return cycle[current] || 'all';
  }
 
@@ -371,6 +371,8 @@ class App {
  const labels = {
  'all': t('orbitModeAll') || 'All Orbits',
  'planets': t('orbitModePlanets') || 'Planets',
+ 'dwarfs': t('orbitModeDwarfs') || 'Dwarf Planets',
+ 'moons': t('orbitModeMoons') || 'Moons',
  'comets': t('orbitModeComets') || 'Comets',
  'none': t('orbitModeNone') || 'Orbits'
  };
@@ -392,7 +394,7 @@ class App {
  // Map legacy boolean strings to mode names
  if (mode === 'true') mode = 'all';
  if (mode === 'false') mode = 'none';
- const validModes = ['all', 'planets', 'comets', 'none'];
+ const validModes = ['all', 'planets', 'dwarfs', 'moons', 'comets', 'none'];
  if (!validModes.includes(mode)) mode = 'all';
  this.solarSystemModule.setOrbitMode(mode);
  this._updateOrbitButton(mode);

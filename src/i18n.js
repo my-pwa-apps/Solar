@@ -112,6 +112,12 @@ const translations = {
         
         // Control buttons
         toggleOrbits: "Orbits",
+        orbitModeAll: "All Orbits",
+        orbitModePlanets: "Planets",
+        orbitModeDwarfs: "Dwarf Planets",
+        orbitModeMoons: "Moons",
+        orbitModeComets: "Comets",
+        orbitModeNone: "Orbits",
         toggleConstellations: "Constellations",
         toggleScale: "Educational",
         toggleScaleRealistic: "Educational",
@@ -603,6 +609,12 @@ const translations = {
         
         // Bedieningsknoppen
         toggleOrbits: "Banen",
+        orbitModeAll: "Alle banen",
+        orbitModePlanets: "Planeten",
+        orbitModeDwarfs: "Dwergplaneten",
+        orbitModeMoons: "Manen",
+        orbitModeComets: "Kometen",
+        orbitModeNone: "Banen",
         toggleConstellations: "Sterrenbeelden",
         toggleScale: "Educatief",
         toggleScaleRealistic: "Educatief",
@@ -758,8 +770,8 @@ const translations = {
         // Laadberichten
         creatingInnerPlanets: 'Binnenplaneten maken...',
         creatingOuterPlanets: 'Buitenplaneten maken...',
-        creatingMercury: 'Mercurius maken...',,
-        creatingVenus: 'Venus maken...',
+        creatingMercury: 'Mercurius maken...',
+        creatingVenus: 'Venus maken...'
         creatingEarth: 'Aarde maken...',
         creatingMars: 'Mars maken...',
         creatingJupiter: 'Jupiter maken...',
@@ -1088,6 +1100,12 @@ const translations = {
         
         // Boutons de contrôle
         toggleOrbits: "Orbites",
+        orbitModeAll: "Toutes les orbites",
+        orbitModePlanets: "Planètes",
+        orbitModeDwarfs: "Planètes naines",
+        orbitModeMoons: "Lunes",
+        orbitModeComets: "Comètes",
+        orbitModeNone: "Orbites",
         toggleConstellations: "Constellations",
         toggleScale: "Éducatif",
         toggleScaleRealistic: "Éducatif",
@@ -1235,8 +1253,8 @@ const translations = {
         // Messages de chargement
         creatingInnerPlanets: 'Création des planètes intérieures...',
         creatingOuterPlanets: 'Création des planètes extérieures...',
-        creatingMercury: 'Création de Mercure...',,
-        creatingVenus: 'Création de Vénus...',
+        creatingMercury: 'Création de Mercure...',
+        creatingVenus: 'Création de Vénus...'
         creatingEarth: 'Création de la Terre...',
         creatingMars: 'Création de Mars...',
         creatingJupiter: 'Création de Jupiter...',
@@ -1565,6 +1583,12 @@ const translations = {
         
         // Steuerungstasten
         toggleOrbits: "Umlaufbahnen",
+        orbitModeAll: "Alle Bahnen",
+        orbitModePlanets: "Planeten",
+        orbitModeDwarfs: "Zwergplaneten",
+        orbitModeMoons: "Monde",
+        orbitModeComets: "Kometen",
+        orbitModeNone: "Bahnen",
         toggleConstellations: "Sternbilder",
         toggleScale: "Lehrreich",
         toggleScaleRealistic: "Lehrreich",
@@ -1712,8 +1736,8 @@ const translations = {
         // Lademeldungen
         creatingInnerPlanets: 'Innere Planeten werden erstellt...',
         creatingOuterPlanets: 'Äußere Planeten werden erstellt...',
-        creatingMercury: 'Merkur wird erstellt...',,
-        creatingVenus: 'Venus wird erstellt...',
+        creatingMercury: 'Merkur wird erstellt...',
+        creatingVenus: 'Venus wird erstellt...'
         creatingEarth: 'Erde wird erstellt...',
         creatingMars: 'Mars wird erstellt...',
         creatingJupiter: 'Jupiter wird erstellt...',
@@ -2042,6 +2066,12 @@ const translations = {
         
         // Botones de control
         toggleOrbits: "Órbitas",
+        orbitModeAll: "Todas las órbitas",
+        orbitModePlanets: "Planetas",
+        orbitModeDwarfs: "Planetas enanos",
+        orbitModeMoons: "Lunas",
+        orbitModeComets: "Cometas",
+        orbitModeNone: "Órbitas",
         toggleConstellations: "Constelaciones",
         toggleScale: "Educativo",
         toggleScaleRealistic: "Educativo",
@@ -2189,8 +2219,8 @@ const translations = {
         // Mensajes de carga
         creatingInnerPlanets: 'Creando planetas interiores...',
         creatingOuterPlanets: 'Creando planetas exteriores...',
-        creatingMercury: 'Creando Mercurio...',,
-        creatingVenus: 'Creando Venus...',
+        creatingMercury: 'Creando Mercurio...',
+        creatingVenus: 'Creando Venus...'
         creatingEarth: 'Creando la Tierra...',
         creatingMars: 'Creando Marte...',
         creatingJupiter: 'Creando Júpiter...',
@@ -2519,6 +2549,12 @@ const translations = {
         
         // Botões de controle
         toggleOrbits: "Órbitas",
+        orbitModeAll: "Todas as órbitas",
+        orbitModePlanets: "Planetas",
+        orbitModeDwarfs: "Planetas anões",
+        orbitModeMoons: "Luas",
+        orbitModeComets: "Cometas",
+        orbitModeNone: "Órbitas",
         toggleConstellations: "Constelações",
         toggleScale: "Educacional",
         toggleScaleRealistic: "Educacional",
@@ -2666,7 +2702,7 @@ const translations = {
         // Mensagens de carregamento
         creatingInnerPlanets: 'Criando planetas interiores...',
         creatingOuterPlanets: 'Criando planetas exteriores...',
-        creatingMercury: 'Criando Mercúrio...',,
+        creatingMercury: 'Criando Mercúrio...',
         creatingVenus: 'Criando Vênus...',
         creatingEarth: 'Criando a Terra...',
         creatingMars: 'Criando Marte...',
