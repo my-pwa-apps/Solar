@@ -437,9 +437,9 @@ export class SceneManager {
  this.dolly.updateMatrixWorld(true);
 
  // Without logarithmicDepthBuffer on mobile/Quest, widen the near plane
- // slightly to improve depth precision for the compressed educational scale.
- this.camera.near = 1.0;
- this.camera.updateProjectionMatrix();
+        // significantly to improve depth precision for the compressed educational scale.
+        // This prevents Z-fighting on large distant geometries like Saturn's rings.
+        this.camera.near = 10.0;
 
  if (DEBUG.enabled || DEBUG.VR) console.log(`[XR] Dolly at (${this.dolly.position.x}, ${this.dolly.position.y}, ${this.dolly.position.z}), camera near=${this.camera.near}, far=${this.camera.far}`);
  if (DEBUG.enabled || DEBUG.VR) console.log(`[XR] Scene children: ${this.scene.children.length}`);
@@ -526,7 +526,7 @@ export class SceneManager {
  this.camera.quaternion.set(0, 0, 0, 1);
  this.dolly.updateMatrixWorld(true);
 
- this.camera.near = 1.0;
+this.camera.near = 10.0;
  this.camera.updateProjectionMatrix();
 
  // Point camera towards origin (where the Sun/planets are)

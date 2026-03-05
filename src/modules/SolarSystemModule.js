@@ -8216,15 +8216,7 @@ createHyperrealisticHubble(satData) {
  const rotationsComplete = elapsedHours / planet.userData.realRotationPeriod;
  let rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
  
- // Reverse rotation for retrograde planets (Venus, Uranus)
- if (planet.userData.retrograde) {
- rotationAngle = -rotationAngle;
- }
- 
- // Apply rotation
- planet.rotation.y = rotationAngle;
- 
- // Apply axial tilt (already set during creation, but ensure it stays)
+            // Apply rotation (retrograde is naturally handled by axial tilts > 90)
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
  }
  
@@ -8279,15 +8271,7 @@ createHyperrealisticHubble(satData) {
  const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
  let rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
  
- // Reverse rotation for retrograde moons
- if (moon.userData.retrograde) {
- rotationAngle = -rotationAngle;
- }
- 
- // Apply rotation
- moon.rotation.y = rotationAngle;
- 
- // Apply axial tilt
+            // Apply rotation (retrograde is naturally handled by axial tilts > 90)
  moon.rotation.z = (moon.userData.axialTilt || 0) * Math.PI / 180;
  }
  
@@ -9873,8 +9857,7 @@ let actualRadius;
  // targetPosition already set to constellation center
  } else if (useRelativeOffset && progress < 1) {
  // For fast orbiters during transition: maintain relative offset from parent
- const planetPos = parentPlanet.position.clone();
- targetPosition.copy(planetPos).add(relativeOffset);
+ targetPosition.copy(parentPlanet.position).add(relativeOffset);
  endPos.set(
  targetPosition.x,
  targetPosition.y + distance * 0.3,
@@ -10225,4 +10208,5 @@ let actualRadius;
  return targets;
  }
 }
+
 

@@ -771,7 +771,7 @@ const translations = {
         creatingInnerPlanets: 'Binnenplaneten maken...',
         creatingOuterPlanets: 'Buitenplaneten maken...',
         creatingMercury: 'Mercurius maken...',
-        creatingVenus: 'Venus maken...'
+        creatingVenus: 'Venus maken...',
         creatingEarth: 'Aarde maken...',
         creatingMars: 'Mars maken...',
         creatingJupiter: 'Jupiter maken...',
@@ -1254,7 +1254,7 @@ const translations = {
         creatingInnerPlanets: 'Création des planètes intérieures...',
         creatingOuterPlanets: 'Création des planètes extérieures...',
         creatingMercury: 'Création de Mercure...',
-        creatingVenus: 'Création de Vénus...'
+        creatingVenus: 'Création de Vénus...',
         creatingEarth: 'Création de la Terre...',
         creatingMars: 'Création de Mars...',
         creatingJupiter: 'Création de Jupiter...',
@@ -1737,7 +1737,7 @@ const translations = {
         creatingInnerPlanets: 'Innere Planeten werden erstellt...',
         creatingOuterPlanets: 'Äußere Planeten werden erstellt...',
         creatingMercury: 'Merkur wird erstellt...',
-        creatingVenus: 'Venus wird erstellt...'
+        creatingVenus: 'Venus wird erstellt...',
         creatingEarth: 'Erde wird erstellt...',
         creatingMars: 'Mars wird erstellt...',
         creatingJupiter: 'Jupiter wird erstellt...',
@@ -2220,7 +2220,7 @@ const translations = {
         creatingInnerPlanets: 'Creando planetas interiores...',
         creatingOuterPlanets: 'Creando planetas exteriores...',
         creatingMercury: 'Creando Mercurio...',
-        creatingVenus: 'Creando Venus...'
+        creatingVenus: 'Creando Venus...',
         creatingEarth: 'Creando la Tierra...',
         creatingMars: 'Creando Marte...',
         creatingJupiter: 'Creando Júpiter...',
