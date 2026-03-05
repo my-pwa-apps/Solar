@@ -130,7 +130,7 @@ export class SolarSystemModule {
  gonggong: 202780.0,
  sedna: 4163700.0,
  salacia: 100684.0,
- varda: 102250.0,
+ varda: 113688.0,
  varuna: 102164.0
  };
 
@@ -566,7 +566,7 @@ export class SolarSystemModule {
             radius: 0.06, // Scaled up for visibility (was 0.0015)
             color: 0x888888,
             distance: 2.5,
-            speed: 4.35, // 544x Mars's speed (0.008 * 544)
+            speed: 0.75, // Slower than Phobos (30.3h vs 7.65h orbit) — ratio ~4:1
             description: t('descDeimos')
         });
     } async createOuterPlanets(scene) {
@@ -793,7 +793,7 @@ export class SolarSystemModule {
             { name: 'Ceres', radius: 0.074, color: 0xC8C8B4, distance: 140, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: t('descCeres'), funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
             { name: 'Haumea', radius: 0.125, color: 0xE0D6C8, distance: 2139, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: t('descHaumea'), funFact: 'Rotation period ~4 hours gives its triaxial ellipsoid shape.', realSize: '2322 × 1704 × 1026 km (triaxial diameters)' },
             { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2279, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: t('descMakemake'), funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
-            { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2483, speed: 0.00004, rotationSpeed: 0.01, tilt: 44, description: t('descEris'), funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
+            { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2483, speed: 0.00004, rotationSpeed: 0.01, tilt: 78, description: t('descEris'), funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
             { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2024, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
             { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2189, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
             { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 3457, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
@@ -3009,7 +3009,7 @@ export class SolarSystemModule {
  
  // Real astronomical data for day/night cycle
  realRotationPeriod: astroData.rotationPeriod || 24, // hours
- axialTilt: astroData.axialTilt || 0, // degrees
+ axialTilt: astroData.axialTilt ?? config.tilt ?? 0, // degrees
  retrograde: astroData.retrograde || false, // rotation direction
  rotationPhase: Math.random() * Math.PI * 2 // starting rotation angle
  };
@@ -3546,6 +3546,7 @@ export class SolarSystemModule {
  const e = planet.userData.orbitalEccentricity || 0;
 
  // True anomaly (= userData.angle the update loop uses as orbital phase)
+ planet.userData.meanAnomaly = M_rad;
  planet.userData.angle = this._meanToTrueAnomaly(M_rad, e);
 
  // Also update planet.position immediately so focusOnObject / getWorldPosition
@@ -3576,6 +3577,7 @@ export class SolarSystemModule {
  if (!orbitalPeriodDays || orbitalPeriodDays <= 0) return;
 
  const meanAnomaly = normalizeAngle((daysSinceJ2000 / orbitalPeriodDays) * TWO_PI);
+ moon.userData.meanAnomaly = meanAnomaly;
  moon.userData.angle = meanAnomaly;
 
  if (this.scientificMode) {
@@ -4166,9 +4168,10 @@ export class SolarSystemModule {
  planetsToOrbit.forEach(planetName => {
  const planet = this.planets[planetName];
  if (planet && planet.userData) {
+ const isDwarf = planet.userData.type === 'DwarfPlanet';
  const geometry = new THREE.BufferGeometry();
  const material = new THREE.LineBasicMaterial({
- color: 0x6688AA,
+ color: isDwarf ? 0x9966CC : 0x4488CC,
  transparent: true,
  opacity: 0.5,
  depthWrite: false
@@ -6604,7 +6607,9 @@ export class SolarSystemModule {
  dustJitterA,
  dustJitterB,
  ionJitter,
- isComet: true // Flag for special zoom handling
+ isComet: true, // Flag for special zoom handling
+ _sunDir: new THREE.Vector3(), // Pre-allocated for tail updates
+ _velDir: new THREE.Vector3() // Pre-allocated for tail updates
  };
  
  // ===== ELLIPTICAL ORBIT PATH =====
@@ -6619,9 +6624,9 @@ export class SolarSystemModule {
  }
  const cometOrbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPoints);
  const cometOrbitMat = new THREE.LineBasicMaterial({
- color: 0x6688AA,
+ color: 0xCC9955,
  transparent: true,
- opacity: 0.5,
+ opacity: 0.6,
  depthWrite: false
  });
  const cometOrbitLine = new THREE.Line(cometOrbitGeo, cometOrbitMat);
@@ -7676,7 +7681,7 @@ createHyperrealisticHubble(satData) {
  ];
 
  if (!this.planets.earth) {
- console.warn('Earth not found, cannot create satellites');
+ if (DEBUG.enabled) console.warn('Earth not found, cannot create satellites');
  return;
  }
 
@@ -8168,7 +8173,14 @@ createHyperrealisticHubble(satData) {
  }
  
  // Solar orbit (affected by orbital pause)
+ if (this.scientificMode) {
+ // Kepler’s 2nd law: mean anomaly advances linearly, true anomaly derived via solver
+ const e = planet.userData.orbitalEccentricity || 0;
+ planet.userData.meanAnomaly = (planet.userData.meanAnomaly || 0) + angleIncrement;
+ planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e) : planet.userData.meanAnomaly;
+ } else {
  planet.userData.angle += angleIncrement;
+ }
  
  // Safety check for angle
  if (isNaN(planet.userData.angle) || !isFinite(planet.userData.angle)) {
@@ -8229,7 +8241,13 @@ createHyperrealisticHubble(satData) {
  const moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
  
  // Moons orbit their planet
+ if (this.scientificMode) {
+ const e = moon.userData.orbitalEccentricity || 0;
+ moon.userData.meanAnomaly = (moon.userData.meanAnomaly || 0) + moonAngleIncrement;
+ moon.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(moon.userData.meanAnomaly, e) : moon.userData.meanAnomaly;
+ } else {
  moon.userData.angle += moonAngleIncrement;
+ }
  
  // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
  // these positions are RELATIVE to the planet's position, not world coordinates!
@@ -8345,7 +8363,7 @@ createHyperrealisticHubble(satData) {
  if (this.comets) {
  this.comets.forEach(comet => {
  const userData = comet.userData;
- const cometMotionMultiplier = this.scientificMode ? 1 : 18; // Educational mode boost so motion is visible
+ const cometMotionMultiplier = this.scientificMode ? 1 : 5; // Educational mode boost so motion is visible
  const meanAnomalyIncrement = userData.speed * orbitalSpeed * deltaTime * cometMotionMultiplier;
  if (!isNaN(meanAnomalyIncrement) && isFinite(meanAnomalyIncrement)) {
  userData.meanAnomaly = (userData.meanAnomaly || 0) + meanAnomalyIncrement;
@@ -8390,11 +8408,7 @@ createHyperrealisticHubble(satData) {
  return;
  }
  
- // Cache direction vectors (reuse objects to avoid GC)
- if (!userData._sunDir) userData._sunDir = new THREE.Vector3();
- if (!userData._velDir) userData._velDir = new THREE.Vector3();
- 
- // Tails always point AWAY from the sun (solar wind pushes them outward from origin)
+ // Cache direction vectors (reuse pre-allocated objects to avoid GC)
  userData._sunDir.set(comet.position.x, comet.position.y, comet.position.z).normalize();
  userData._velDir.set(Math.cos(angle + Math.PI/2), 0, Math.sin(angle + Math.PI/2)).normalize();
  
@@ -8882,12 +8896,10 @@ createHyperrealisticHubble(satData) {
  return pts;
  };
 
- // Recreate orbital paths for all planets
- const planetsToOrbit = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
- 
- planetsToOrbit.forEach(planetName => {
- const planet = this.planets[planetName];
- if (planet && planet.userData) {
+ // Recreate orbital paths for all planets and dwarf planets
+ Object.entries(this.planets).forEach(([planetName, planet]) => {
+ if (!planet?.userData) return;
+ const isDwarf = planet.userData.type === 'DwarfPlanet';
  const elem = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetName];
  const e = elem?.eccentricity || 0;
  const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
@@ -8898,7 +8910,7 @@ createHyperrealisticHubble(satData) {
  
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const material = new THREE.LineBasicMaterial({
- color: 0x6688AA,
+ color: isDwarf ? 0x9966CC : 0x4488CC,
  transparent: true,
  opacity: 0.5,
  depthWrite: false
@@ -8911,35 +8923,7 @@ createHyperrealisticHubble(satData) {
  
  planet.parent.add(orbit);
  this.orbits.push(orbit);
- }
  });
- 
- // Also update Pluto if it exists
- if (this.planets.pluto && this.planets.pluto.userData) {
- const distance = this.planets.pluto.userData.distance;
- const elem = this.SCIENTIFIC_ORBITAL_ELEMENTS['pluto'];
- const e = elem?.eccentricity || 0;
- const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
- const w = (elem?.periapsisDeg || 0) * Math.PI / 180;
- const segments = 128;
- const points = makeOrbitPoints(distance, e, inc, w, segments);
- 
- const geometry = new THREE.BufferGeometry().setFromPoints(points);
- const material = new THREE.LineBasicMaterial({
- color: 0x6688AA,
- transparent: true,
- opacity: 0.5,
- depthWrite: false
- });
- 
- const orbit = new THREE.Line(geometry, material);
- orbit.visible = this.orbitsVisible;
- orbit.renderOrder = 1;
- orbit.userData = { type: 'orbit', planet: 'pluto' };
- 
- this.planets.pluto.parent.add(orbit);
- this.orbits.push(orbit);
- }
  
  // Recreate moon orbital paths
  Object.values(this.planets).forEach(planet => {
@@ -9204,7 +9188,26 @@ createHyperrealisticHubble(satData) {
  const orbitSegments = 256;
  this.comets.forEach(comet => {
  const userData = comet?.userData;
- const orbitLine = userData?.orbitLine;
+ let orbitLine = userData?.orbitLine;
+
+ // Recreate orbit line if reference was lost
+ if (userData && !orbitLine) {
+ const geo = new THREE.BufferGeometry();
+ const mat = new THREE.LineBasicMaterial({
+ color: 0xCC9955,
+ transparent: true,
+ opacity: 0.6,
+ depthWrite: false
+ });
+ orbitLine = new THREE.Line(geo, mat);
+ orbitLine.renderOrder = 1;
+ orbitLine.frustumCulled = false;
+ orbitLine.userData = { type: 'orbit', comet: userData.name };
+ comet.parent?.add(orbitLine);
+ this.cometOrbits.push(orbitLine);
+ userData.orbitLine = orbitLine;
+ if (DEBUG.enabled) console.warn(`[Comets] Recreated missing orbit line for ${userData.name}`);
+ }
  if (!userData || !orbitLine) return;
 
  const a = userData.distance;
@@ -9218,6 +9221,7 @@ createHyperrealisticHubble(satData) {
 
  orbitLine.geometry.setFromPoints(points);
  orbitLine.geometry.computeBoundingSphere();
+ orbitLine.frustumCulled = false;
  orbitLine.visible = this.cometOrbitsVisible;
  });
  }
@@ -9493,12 +9497,18 @@ let actualRadius;
      // Orbital spacecraft (ISS, satellites): slow to 0.1x for detailed observation
      if (window.app && window.app.timeSpeed !== 0) {
          window.app.timeSpeed = 0.1;
+         // Sync speed slider UI
+         const sl = document.getElementById('time-speed');
+         if (sl && window.app.uiManager) { sl.value = window.app.uiManager.speedToSlider(0.1); sl.dispatchEvent(new Event('input')); }
          if (DEBUG.enabled) console.log(` [Time Speed] Reduced to 0.1x for orbital spacecraft observation`);
      }
  } else if (userData.type === 'planet' || userData.isPlanet) {
      // Planets: return to normal 1x speed
      if (window.app && window.app.timeSpeed !== 0 && window.app.timeSpeed !== 1) {
          window.app.timeSpeed = 1;
+         // Sync speed slider UI
+         const sl = document.getElementById('time-speed');
+         if (sl && window.app.uiManager) { sl.value = window.app.uiManager.speedToSlider(1); sl.dispatchEvent(new Event('input')); }
          if (DEBUG.enabled) console.log(` [Time Speed] Restored to 1x for planet observation`);
      }
  }

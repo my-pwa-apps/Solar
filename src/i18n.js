@@ -75,6 +75,7 @@ const translations = {
         exoplanets: "Exoplanets",
         nebulae: "Nebulae",
         galaxies: "Galaxies",
+        searchObjects: "🔍 Search objects...",
         navOurStar: "Our Star",
         navInnerPlanets: "Inner Planets (Rocky)",
         navAsteroidBelt: "Asteroid Belt",
@@ -228,6 +229,9 @@ const translations = {
         // Errors
         errorLoading: "Error loading Space Voyage",
         errorMessage: "Please refresh the page to try again.",
+
+        // Help content
+        helpContent: '<h3>🖱️ Controls</h3><p>🖱️ <strong>Click & Drag:</strong> Rotate view around selected object</p><p>🖱️ <strong>Scroll:</strong> Zoom in/out</p><p>🖱️ <strong>Right Click & Drag:</strong> Pan camera position</p><p>👆 <strong>Click Objects:</strong> Select and focus on object</p><h3>⌨️ Keyboard Shortcuts</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset <span class="keyboard-shortcut">O</span> Orbits <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Scale mode</p><p><span class="keyboard-shortcut">Space</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Speed <span class="keyboard-shortcut">ESC</span> Close</p><h3>🔍 Object Inspection</h3><p>Drag to rotate, scroll to zoom, camera tracks orbiting objects</p><h3>🥽 VR Mode</h3><p>Click "Enter VR" — left stick moves, right stick turns, trigger selects, grip opens menu</p><h3>💡 Tips</h3><p>Use speed slider for fast-forward • Click objects or use explorer panel • Zoom in for surface details</p>',
         
         // Footer
         madeWith: "Made with",
@@ -711,6 +715,8 @@ const translations = {
         // Fouten
         errorLoading: "Fout bij laden Ruimtereis",
         errorMessage: "Ververs de pagina om het opnieuw te proberen.",
+
+        helpContent: '<h3>🖱️ Bediening</h3><p>🖱️ <strong>Klik & sleep:</strong> Draai het zicht rond geselecteerd object</p><p>🖱️ <strong>Scrollen:</strong> In-/uitzoomen</p><p>🖱️ <strong>Rechtsklik & sleep:</strong> Camera verschuiven</p><p>👆 <strong>Klik objecten:</strong> Selecteren en focussen</p><h3>⌨️ Sneltoetsen</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset <span class="keyboard-shortcut">O</span> Banen <span class="keyboard-shortcut">C</span> Sterrenbeelden <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Schaalmodus</p><p><span class="keyboard-shortcut">Spatie</span> Pauze <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Snelheid <span class="keyboard-shortcut">ESC</span> Sluiten</p><h3>🔍 Objectinspectie</h3><p>Sleep om te draaien, scroll om te zoomen, camera volgt ronddraaiende objecten</p><h3>🥽 VR-modus</h3><p>Klik "Enter VR" — linker stick beweegt, rechter stick draait, trigger selecteert, grip opent menu</p><h3>💡 Tips</h3><p>Gebruik snelheidsschuif voor versneld afspelen • Klik objecten of gebruik verkennerpaneel • Zoom in voor oppervlaktedetails</p>',
         
         // Footer
         madeWith: "Gemaakt met",
@@ -750,7 +756,9 @@ const translations = {
         descNeptune: 'Neptunus is de stormachtigste planeet met windsnelheden tot 2.100 km/u! Het is de verste planeet vanaf de Zon en doet er 165 aardse jaren over om één ronde te maken. De blauwe kleur komt door methaan in de atmosfeer.',
         
         // Laadberichten
-        creatingMercury: 'Mercurius maken...',
+        creatingInnerPlanets: 'Binnenplaneten maken...',
+        creatingOuterPlanets: 'Buitenplaneten maken...',
+        creatingMercury: 'Mercurius maken...',,
         creatingVenus: 'Venus maken...',
         creatingEarth: 'Aarde maken...',
         creatingMars: 'Mars maken...',
@@ -1034,6 +1042,10 @@ const translations = {
         juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturne)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
         // Sections du menu de navigation
+        nearbyStars: "Étoiles Proches",
+        exoplanets: "Exoplanètes",
+        nebulae: "Nébuleuses",
+        galaxies: "Galaxies",
         navOurStar: "Notre Étoile",
         navInnerPlanets: "Planètes Intérieures (Rocheuses)",
         navAsteroidBelt: "Ceinture d'Astéroïdes",
@@ -1180,6 +1192,8 @@ const translations = {
         update: "Mettre à jour",
         errorLoading: "Erreur de chargement de Voyage Spatial",
         errorMessage: "Veuillez actualiser la page pour réessayer.",
+
+        helpContent: '<h3>🖱️ Commandes</h3><p>🖱️ <strong>Cliquer & glisser :</strong> Tourner la vue autour de l\'objet</p><p>🖱️ <strong>Molette :</strong> Zoom avant/arrière</p><p>🖱️ <strong>Clic droit & glisser :</strong> Déplacer la caméra</p><p>👆 <strong>Cliquer objets :</strong> Sélectionner et focaliser</p><h3>⌨️ Raccourcis clavier</h3><p><span class="keyboard-shortcut">H</span> Aide <span class="keyboard-shortcut">R</span> Réinitialiser <span class="keyboard-shortcut">O</span> Orbites <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Étiquettes <span class="keyboard-shortcut">S</span> Mode</p><p><span class="keyboard-shortcut">Espace</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Vitesse <span class="keyboard-shortcut">Échap</span> Fermer</p><h3>🔍 Inspection</h3><p>Glissez pour tourner, scrollez pour zoomer, caméra suit les objets en orbite</p><h3>🥽 Mode VR</h3><p>Cliquez "Enter VR" — stick gauche bouge, stick droit tourne, gâchette sélectionne, grip ouvre le menu</p><h3>💡 Astuces</h3><p>Curseur de vitesse pour accélérer • Cliquez objets ou utilisez le panneau explorateur • Zoomez pour les détails de surface</p>',
         
         // Pied de page
         madeWith: "Fait avec",
@@ -1219,7 +1233,9 @@ const translations = {
         descNeptune: 'Neptune est la planète la plus venteuse avec des tempêtes atteignant 2 100 km/h! C\'est la planète la plus éloignée du Soleil et il lui faut 165 années terrestres pour compléter une orbite. Sa couleur bleue provient du méthane dans l\'atmosphère.',
         
         // Messages de chargement
-        creatingMercury: 'Création de Mercure...',
+        creatingInnerPlanets: 'Création des planètes intérieures...',
+        creatingOuterPlanets: 'Création des planètes extérieures...',
+        creatingMercury: 'Création de Mercure...',,
         creatingVenus: 'Création de Vénus...',
         creatingEarth: 'Création de la Terre...',
         creatingMars: 'Création de Mars...',
@@ -1504,6 +1520,10 @@ const translations = {
         
         // Navigationsmenü-Abschnitte
         navOurStar: "Unser Stern",
+        nearbyStars: "Nahe Sterne",
+        exoplanets: "Exoplaneten",
+        nebulae: "Nebel",
+        galaxies: "Galaxien",
         navInnerPlanets: "Innere Planeten (Gesteinsplaneten)",
         navAsteroidBelt: "Asteroidengürtel",
         navOuterPlanets: "Äußere Planeten (Gasriesen)",
@@ -1649,6 +1669,8 @@ const translations = {
         update: "Aktualisieren",
         errorLoading: "Fehler beim Laden der Weltraumreise",
         errorMessage: "Bitte aktualisieren Sie die Seite, um es erneut zu versuchen.",
+
+        helpContent: '<h3>🖱️ Steuerung</h3><p>🖱️ <strong>Klicken & ziehen:</strong> Ansicht um ausgew\u00e4hltes Objekt drehen</p><p>🖱️ <strong>Scrollen:</strong> Rein-/Rauszoomen</p><p>🖱️ <strong>Rechtsklick & ziehen:</strong> Kamera verschieben</p><p>👆 <strong>Objekte klicken:</strong> Ausw\u00e4hlen und fokussieren</p><h3>⌨️ Tastaturk\u00fcrzel</h3><p><span class="keyboard-shortcut">H</span> Hilfe <span class="keyboard-shortcut">R</span> Zur\u00fccksetzen <span class="keyboard-shortcut">O</span> Bahnen <span class="keyboard-shortcut">C</span> Sternbilder <span class="keyboard-shortcut">D</span> Beschriftungen <span class="keyboard-shortcut">S</span> Skalenmodus</p><p><span class="keyboard-shortcut">Leertaste</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Geschwindigkeit <span class="keyboard-shortcut">ESC</span> Schlie\u00dfen</p><h3>🔍 Objektinspektion</h3><p>Ziehen zum Drehen, Scrollen zum Zoomen, Kamera folgt umlaufenden Objekten</p><h3>🥽 VR-Modus</h3><p>"Enter VR" klicken \u2014 linker Stick bewegt, rechter Stick dreht, Trigger w\u00e4hlt aus, Grip \u00f6ffnet Men\u00fc</p><h3>💡 Tipps</h3><p>Geschwindigkeitsregler f\u00fcr Zeitraffer \u2022 Objekte klicken oder Explorer-Panel nutzen \u2022 Reinzoomen f\u00fcr Oberfl\u00e4chendetails</p>',
         
         // Fußzeile
         madeWith: "Erstellt mit",
@@ -1688,7 +1710,9 @@ const translations = {
         descNeptune: 'Neptun ist der windigste Planet mit Stürmen von bis zu 2.100 km/h! Er ist der am weitesten von der Sonne entfernte Planet und braucht 165 Erdjahre für eine Umlaufbahn. Seine blaue Farbe stammt von Methan in der Atmosphäre.',
         
         // Lademeldungen
-        creatingMercury: 'Merkur wird erstellt...',
+        creatingInnerPlanets: 'Innere Planeten werden erstellt...',
+        creatingOuterPlanets: 'Äußere Planeten werden erstellt...',
+        creatingMercury: 'Merkur wird erstellt...',,
         creatingVenus: 'Venus wird erstellt...',
         creatingEarth: 'Erde wird erstellt...',
         creatingMars: 'Mars wird erstellt...',
@@ -1973,6 +1997,10 @@ const translations = {
         
         // Secciones del menú de navegación
         navOurStar: "Nuestra Estrella",
+        nearbyStars: "Estrellas Cercanas",
+        exoplanets: "Exoplanetas",
+        nebulae: "Nebulosas",
+        galaxies: "Galaxias",
         navInnerPlanets: "Planetas Interiores (Rocosos)",
         navAsteroidBelt: "Cinturón de Asteroides",
         navOuterPlanets: "Planetas Exteriores (Gigantes Gaseosos)",
@@ -2118,6 +2146,8 @@ const translations = {
         update: "Actualizar",
         errorLoading: "Error al cargar Viaje Espacial",
         errorMessage: "Por favor, actualiza la página para intentarlo de nuevo.",
+
+        helpContent: '<h3>🖱️ Controles</h3><p>🖱️ <strong>Clic y arrastrar:</strong> Rotar vista alrededor del objeto</p><p>🖱️ <strong>Scroll:</strong> Acercar/alejar</p><p>🖱️ <strong>Clic derecho y arrastrar:</strong> Mover cámara</p><p>👆 <strong>Clic en objetos:</strong> Seleccionar y enfocar</p><h3>⌨️ Atajos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ayuda <span class="keyboard-shortcut">R</span> Restablecer <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelaciones <span class="keyboard-shortcut">D</span> Etiquetas <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espacio</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidad <span class="keyboard-shortcut">ESC</span> Cerrar</p><h3>🔍 Inspección</h3><p>Arrastrar para rotar, scroll para zoom, cámara sigue objetos en órbita</p><h3>🥽 Modo VR</h3><p>Clic "Enter VR" — stick izquierdo mueve, stick derecho gira, gatillo selecciona, grip abre menú</p><h3>💡 Consejos</h3><p>Control de velocidad para avance rápido • Clic en objetos o usar panel explorador • Acercar para detalles de superficie</p>',
         
         // Pie de página
         madeWith: "Hecho con",
@@ -2157,7 +2187,9 @@ const translations = {
         descNeptune: 'Neptuno es el planeta más ventoso con tormentas que alcanzan ¡2.100 km/h! Es el planeta más lejano del Sol y tarda 165 años terrestres en completar una órbita. Su color azul proviene del metano en la atmósfera.',
         
         // Mensajes de carga
-        creatingMercury: 'Creando Mercurio...',
+        creatingInnerPlanets: 'Creando planetas interiores...',
+        creatingOuterPlanets: 'Creando planetas exteriores...',
+        creatingMercury: 'Creando Mercurio...',,
         creatingVenus: 'Creando Venus...',
         creatingEarth: 'Creando la Tierra...',
         creatingMars: 'Creando Marte...',
@@ -2442,6 +2474,10 @@ const translations = {
         
         // Seções do menu de navegação
         navOurStar: "Nossa Estrela",
+        nearbyStars: "Estrelas Próximas",
+        exoplanets: "Exoplanetas",
+        nebulae: "Nebulosas",
+        galaxies: "Galáxias",
         navInnerPlanets: "Planetas Interiores (Rochosos)",
         navAsteroidBelt: "Cinturão de Asteroides",
         navOuterPlanets: "Planetas Exteriores (Gigantes Gasosos)",
@@ -2587,6 +2623,8 @@ const translations = {
         update: "Atualizar",
         errorLoading: "Erro ao carregar Viagem Espacial",
         errorMessage: "Por favor, atualize a página para tentar novamente.",
+
+        helpContent: '<h3>🖱️ Controles</h3><p>🖱️ <strong>Clicar e arrastar:</strong> Rotacionar vista ao redor do objeto</p><p>🖱️ <strong>Scroll:</strong> Aproximar/afastar</p><p>🖱️ <strong>Clique direito e arrastar:</strong> Mover câmera</p><p>👆 <strong>Clicar objetos:</strong> Selecionar e focar</p><h3>⌨️ Atalhos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ajuda <span class="keyboard-shortcut">R</span> Resetar <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelações <span class="keyboard-shortcut">D</span> Rótulos <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espaço</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidade <span class="keyboard-shortcut">ESC</span> Fechar</p><h3>🔍 Inspeção</h3><p>Arraste para rotacionar, scroll para zoom, câmera segue objetos em órbita</p><h3>🥽 Modo VR</h3><p>Clique "Enter VR" — stick esquerdo move, stick direito gira, gatilho seleciona, grip abre menu</p><h3>💡 Dicas</h3><p>Controle de velocidade para avanço rápido • Clique objetos ou use painel explorador • Aproxime para detalhes de superfície</p>',
         
         // Rodapé
         madeWith: "Feito com",
@@ -2626,7 +2664,9 @@ const translations = {
         descNeptune: 'Netuno é o planeta mais ventoso com tempestades alcançando 2.100 km/h! É o planeta mais distante do Sol e leva 165 anos terrestres para completar uma órbita. Sua cor azul vem do metano na atmosfera.',
         
         // Mensagens de carregamento
-        creatingMercury: 'Criando Mercúrio...',
+        creatingInnerPlanets: 'Criando planetas interiores...',
+        creatingOuterPlanets: 'Criando planetas exteriores...',
+        creatingMercury: 'Criando Mercúrio...',,
         creatingVenus: 'Criando Vênus...',
         creatingEarth: 'Criando a Terra...',
         creatingMars: 'Criando Marte...',

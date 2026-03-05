@@ -98,6 +98,7 @@ export class UIManager {
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.remove('hidden');
  this.elements.helpModal.setAttribute('aria-hidden', 'false');
+ this._trapFocus(this.elements.helpModal);
  }
  }
 
@@ -112,7 +113,44 @@ export class UIManager {
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.add('hidden');
  this.elements.helpModal.setAttribute('aria-hidden', 'true');
+ this._releaseFocusTrap();
  }
+ }
+
+ /**
+ * Trap focus within a modal dialog (WCAG 2.4.3).
+ * Stores the previously focused element and restores it on release.
+ */
+ _trapFocus(container) {
+ this._focusTrapPrev = document.activeElement;
+ this._focusTrapContainer = container;
+ const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+ if (focusable.length) focusable[0].focus();
+ this._focusTrapHandler = (e) => {
+ if (e.key !== 'Tab') return;
+ const focusableEls = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+ if (!focusableEls.length) return;
+ const first = focusableEls[0];
+ const last = focusableEls[focusableEls.length - 1];
+ if (e.shiftKey) {
+ if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+ } else {
+ if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+ }
+ };
+ document.addEventListener('keydown', this._focusTrapHandler);
+ }
+
+ _releaseFocusTrap() {
+ if (this._focusTrapHandler) {
+ document.removeEventListener('keydown', this._focusTrapHandler);
+ this._focusTrapHandler = null;
+ }
+ if (this._focusTrapPrev && typeof this._focusTrapPrev.focus === 'function') {
+ this._focusTrapPrev.focus();
+ this._focusTrapPrev = null;
+ }
+ this._focusTrapContainer = null;
  }
  
  setupSolarSystemUI() {
@@ -227,6 +265,8 @@ export class UIManager {
  // Update labels
  const label = this.formatSpeed(speed);
  timeSpeedLabel.textContent = label;
+ timeSpeedSlider.setAttribute('aria-valuenow', speed.toFixed(2));
+ timeSpeedSlider.setAttribute('aria-valuetext', label);
  if (speedCompactLabel) {
  speedCompactLabel.textContent = label;
  }

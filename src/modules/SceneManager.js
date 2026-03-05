@@ -280,6 +280,14 @@ export class SceneManager {
  controller.addEventListener('selectend', () => this.onSelectEnd(controller, i));
  controller.addEventListener('squeezestart', () => this.onSqueezeStart(controller, i));
  controller.addEventListener('squeezeend', () => this.onSqueezeEnd(controller, i));
+ controller.addEventListener('connected', (event) => {
+ controller.userData.handedness = event.data?.handedness || (i === 0 ? 'left' : 'right');
+ if (DEBUG.VR) console.log(`[XR] Controller ${i} connected: ${controller.userData.handedness}`);
+ });
+ controller.addEventListener('disconnected', () => {
+ controller.userData.handedness = null;
+ if (DEBUG.VR) console.log(`[XR] Controller ${i} disconnected`);
+ });
  controller.userData.index = i;
  this.dolly.add(controller);
  this.controllers.push(controller);
@@ -490,6 +498,10 @@ export class SceneManager {
  this.scene.background = new THREE.Color(0x000011); // Restore original space background
  // Hide VR UI panel
  if (this.vrUIPanel) this.vrUIPanel.visible = false;
+
+ // Reset grab/drag state to prevent stale flags in next session
+ if (this.grabRotateState) this.grabRotateState.active = false;
+ if (this.vrPanelDrag) this.vrPanelDrag.active = false;
  });
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.warn('WebXR not supported:', error);
@@ -576,7 +588,7 @@ export class SceneManager {
  };
 
  updateHUD();
- setInterval(updateHUD, 1000);
+ this._vrDebugHUDInterval = setInterval(updateHUD, 1000);
  }
 
  setupVRUI() {
@@ -1739,7 +1751,7 @@ export class SceneManager {
 
  case 'scale':
  document.getElementById('toggle-scale')?.click();
- if (module?.scientificMode) {
+ if (window.app?.solarSystemModule?.scientificMode) {
  this.updateVRStatus('🧪 Scientific mode enabled');
  } else {
  this.updateVRStatus('📚 Educational mode enabled');
@@ -2303,7 +2315,7 @@ export class SceneManager {
  if (!mat || !mat.isMeshBasicMaterial) return;
  unsupported.forEach((prop) => {
  if (mat[prop]) {
- console.warn(
+ if (DEBUG.enabled) console.warn(
  `[Diag] MeshBasicMaterial on "${obj.name || obj.userData?.name || '(unnamed)'}" ` +
  `has unsupported .${prop}=${mat[prop]} — removing to fix crash`
  );
@@ -2402,6 +2414,10 @@ export class SceneManager {
  if (this._vrMenuRefreshTimer) {
  clearTimeout(this._vrMenuRefreshTimer);
  this._vrMenuRefreshTimer = null;
+ }
+ if (this._vrDebugHUDInterval) {
+ clearInterval(this._vrDebugHUDInterval);
+ this._vrDebugHUDInterval = null;
  }
  
  // End active XR session
