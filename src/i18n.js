@@ -61,7 +61,7 @@ const translations = {
         canisMajor: 'Canis Major', aquila: 'Aquila', pegasus: 'Pegasus',
         // Spacecraft
         iss: 'ISS', hubble: 'Hubble',
-        jwst: 'James Webb Space Telescope', gpsNavstar: 'GPS Satellite (NAVSTAR)',
+        jwst: 'James Webb Space Telescope', gpsNavstar: 'GPS Satellite (NAVSTAR)', sputnik1: 'Sputnik 1',
         voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
         juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturn)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
@@ -353,6 +353,8 @@ const translations = {
         funFactHubble: 'Can resolve objects 0.05 arcseconds apart - like seeing two fireflies 10,000 km away! Deepest image (eXtreme Deep Field) shows 5,500 galaxies, some 13.2 billion light-years away.',
         descGPS: 'GPS (NAVSTAR) constellation: 31 operational satellites (as of Oct 2025) in 6 orbital planes, 55° inclination. Each satellite orbits at 20,180 km altitude. Transmits L-band signals (1.2-1.5 GHz). Rubidium/cesium atomic clocks accurate to 10⁻¹⁴ seconds.',
         funFactGPS: 'Need 4 satellites for 3D position fix (trilateration + clock correction). System provides 5-10m accuracy. Military signal (P/Y code) accurate to centimeters!',
+        descSputnik1: 'Sputnik 1 was the first artificial satellite to orbit Earth! Launched October 4, 1957 by the Soviet Union on a modified R-7 ICBM. This polished 58 cm aluminum sphere with four trailing antennas transmitted a simple radio "beep" at 20.005 and 40.002 MHz for 21 days. It orbited at 215-939 km altitude, completing one orbit every 96.2 minutes.',
+        funFactSputnik1: 'Sputnik\'s "beep-beep" signal could be picked up by amateur radio operators worldwide! It burned up on re-entry on January 4, 1958 after 1,440 orbits. Its launch shocked the world and ignited the Space Race!',
         descJWST: 'Launched Dec 25, 2021. Reached L2 point Jan 24, 2022. First images released July 12, 2022. Observes infrared (0.6-28.5 μm). 6.5m segmented beryllium mirror (18 hexagons) with 25 m² collecting area - 6x Hubble! Sunshield: 21.2m × 14.2m, 5 layers.',
         funFactJWST: 'Operating at -233C (-388F)! Can detect heat signature of a bumblebee at Moon distance. Discovered earliest galaxies at z=14 (280 million years after Big Bang).',
         
@@ -372,6 +374,57 @@ const translations = {
         descPioneer11: 'Pioneer 11 was the first spacecraft to visit Saturn (Sept 1, 1979)! Also flew by Jupiter (Dec 3, 1974). Launched April 5, 1973, it discovered Saturn\'s F ring and a new moon. Also carries the Pioneer plaque. Last contact: Nov 24, 1995 at 6.5 billion km.',
         funFactPioneer11: 'Pioneer 11 used Jupiter\'s gravity for a daring gravity assist, saving years of travel time to Saturn!',
         
+        // Notable event descriptions
+        eventSolarEclipse2024: 'The April 8, 2024 total solar eclipse crossed Mexico, the USA (Texas to Maine), and eastern Canada. Totality lasted up to 4 minutes 28 seconds. During a solar eclipse, the Moon passes directly between Earth and the Sun, casting a shadow on Earth\'s surface.',
+        eventSolarEclipse2025Mar: 'A partial solar eclipse visible across the North Atlantic, Iceland, and parts of Europe on March 29, 2025. The Moon covered up to 93% of the Sun\'s disk as seen from Iceland. In the 3D view, watch the Moon align between Earth and the Sun.',
+        eventSolarEclipse2026Feb: 'An annular solar eclipse on February 17, 2026, visible from Antarctica and southern Patagonia. The Moon is too far from Earth to completely cover the Sun, creating a "ring of fire" effect.',
+        eventSolarEclipse2026Aug: 'A total solar eclipse on August 12, 2026, crossing Arctic Russia, Greenland, Iceland, Spain, and Portugal. Totality lasts up to 2 minutes 18 seconds. The Moon\'s shadow races across Earth\'s surface at over 1,000 km/h.',
+        eventSolarEclipse2027: 'A total solar eclipse on August 2, 2027, crossing North Africa, the Mediterranean, and the Arabian Peninsula. Totality lasts up to 6 minutes 23 seconds in Egypt — one of the longest this century.',
+        eventSolarEclipse2028: 'A total solar eclipse on July 22, 2028, visible from Australia, New Zealand, and South America. Totality reaches 5 minutes 10 seconds across the Australian outback.',
+        eventSolarEclipse2030Jun: 'An annular solar eclipse on June 1, 2030, visible from Algeria, Tunisia, Greece, Turkey, Russia, and Japan. The Moon near apogee creates a broad "ring of fire."',
+        eventSolarEclipse2030Nov: 'A total solar eclipse on November 25, 2030, crossing Namibia, Botswana, South Africa, and the southern Indian Ocean. Totality reaches 3 minutes 44 seconds.',
+        eventSolarEclipse2033: 'A total solar eclipse on March 30, 2033, visible from Alaska and far eastern Siberia. The path crosses the Bering Sea, with totality lasting up to 2 minutes 37 seconds.',
+        eventSolarEclipse2035: 'A total solar eclipse on September 2, 2035, crossing China, Korea, and Japan. Totality reaches 2 minutes 54 seconds. Beijing lies within the path of totality.',
+        eventMarsOpposition2025: 'Mars at opposition on January 16, 2025 — its closest approach to Earth since 2022 at about 96 million km. The Red Planet shines at magnitude -1.4, brighter than Sirius, visible all night long.',
+        eventMarsOpposition2027: 'Mars at opposition on February 19, 2027. Mars is directly opposite the Sun from Earth\'s perspective, rising at sunset and setting at sunrise, making it visible throughout the night.',
+        eventMarsOpposition2029: 'Mars at opposition on March 29, 2029. Earth passes between Mars and the Sun, making Mars appear larger and brighter than usual in our sky.',
+        eventMarsOpposition2031: 'Mars at perihelic opposition on May 4, 2031 — an exceptionally close approach! Mars reaches near-maximum apparent size as Earth and Mars are at their closest since 2018. Ideal for telescopic observation of surface features.',
+        eventUranusOpposition: 'Uranus at opposition — directly opposite the Sun as seen from Earth. At magnitude +5.7, it\'s barely visible to the naked eye under perfect conditions but a beautiful blue-green disk through a telescope.',
+        eventSaturnOpposition: 'Saturn at opposition — rising at sunset and visible all night. Its famous rings are beautifully visible through even a small telescope, and several moons can be spotted as tiny points of light nearby.',
+        eventNeptuneOpposition: 'Neptune at opposition — at its brightest for the year. At magnitude +7.8, it requires binoculars or a telescope to see. Through a large telescope, its blue disk and moon Triton are visible.',
+        eventJupiterOpposition: 'Jupiter at opposition — the giant planet shines at its brightest, visible all night. Through binoculars, you can see its four Galilean moons. A telescope reveals the Great Red Spot and cloud bands.',
+        eventGreatConjunction2020: 'The Great Conjunction of Dec 21, 2020 — Jupiter and Saturn appeared just 0.1° apart, their closest visible conjunction since 1226! Nicknamed the "Christmas Star," the two gas giants appeared almost as one bright object.',
+        eventPlanetAlignment2022: 'On June 24, 2022, all five naked-eye planets — Mercury, Venus, Mars, Jupiter, and Saturn — lined up in order of their distance from the Sun across the pre-dawn sky. This alignment hadn\'t occurred since 2004.',
+        eventJupiterVenus2023: 'Jupiter and Venus passed within 0.5° of each other on March 1, 2023 — the two brightest planets appearing almost to merge in the evening sky, creating a spectacular sight visible worldwide.',
+        eventMarsJupiter2024: 'Mars and Jupiter appeared close together in the sky on August 14, 2024. The red and golden planets made a striking pair visible in the pre-dawn sky.',
+        eventVenusSaturn2025: 'Venus and Saturn in a close conjunction on February 1, 2025. The brilliant Venus (magnitude -3.9) passed near the fainter Saturn in the evening twilight sky.',
+        eventVenusJupiter2025: 'Venus and Jupiter appeared just 0.9° apart on August 12, 2025 — the two brightest planets creating a dazzling pair in the sky.',
+        eventGreatConjunction2040: 'The next Great Conjunction of Jupiter and Saturn occurs on October 31, 2040. The two giant planets will appear close together, though not as dramatically close as the 2020 event.',
+        eventHalley1910: 'Halley\'s Comet at its 1910 perihelion — the first return ever photographed! Earth actually passed through the comet\'s tail on May 19, 1910, causing widespread (but unfounded) public panic about poisonous cyanogen gas.',
+        eventHalley1986: 'Halley\'s Comet returned in 1986. ESA\'s Giotto probe flew within 596 km of the nucleus on March 14, 1986, revealing a dark, potato-shaped body 15×8 km with jets of gas and dust. Five spacecraft studied it — the "Halley Armada."',
+        eventHaleBopp1997: 'Comet Hale-Bopp reached perihelion on April 1, 1997, becoming one of the most widely observed comets of the 20th century. Visible to the naked eye for a record 18 months, it displayed two distinct tails — blue ion and white dust.',
+        eventNeowise2020: 'Comet NEOWISE (C/2020 F3) made its closest approach to the Sun on July 3, 2020, becoming the brightest comet visible from the Northern Hemisphere since Hale-Bopp in 1997. Its orbital period is approximately 6,800 years.',
+        eventTsuchinshan2024: 'Comet Tsuchinshan-ATLAS (C/2023 A3) made a spectacular appearance in October 2024 as it passed closest to Earth. Discovered independently by observatories in China and South Africa, it displayed a brilliant tail visible to the naked eye.',
+        eventHalley2061: 'Halley\'s Comet will return to the inner solar system in July 2061 for its next perihelion passage. This will be the first return since 1986. Modern space agencies may send new missions to study this famous 4.6-billion-year-old cosmic visitor.',
+        eventSputnik1957: 'On October 4, 1957, the Soviet Union launched Sputnik 1 — the first artificial satellite to orbit Earth. This 58 cm, 83.6 kg metal sphere with four antennas orbited for 3 months, transmitting a simple "beep-beep" radio signal that changed the world and ignited the Space Age.',
+        eventGagarin1961: 'On April 12, 1961, Soviet cosmonaut Yuri Gagarin became the first human in space aboard Vostok 1. He completed one orbit of Earth in 108 minutes. "I see Earth! It is so beautiful!" he radioed. This date is celebrated as Cosmonautics Day.',
+        eventApollo111969: 'On July 20, 1969, Neil Armstrong and Buzz Aldrin became the first humans to walk on the Moon, while Michael Collins orbited above in the command module. "That\'s one small step for man, one giant leap for mankind." They spent 21 hours 36 minutes on the surface.',
+        eventApollo171972: 'Apollo 17 (December 7-19, 1972) was the last crewed Moon mission to date. Gene Cernan and Harrison Schmitt (the only geologist to walk on the Moon) spent a record 75 hours on the surface, collecting 110 kg of samples and driving the lunar rover 35 km.',
+        eventVoyager1Launch: 'Voyager 1 launched on September 5, 1977, on a mission to study Jupiter and Saturn. It carried the Golden Record — a 12-inch gold-plated disc containing sounds, images, and greetings from Earth in 55 languages. It is now the farthest human-made object from Earth.',
+        eventPaleBlueDot: 'On February 14, 1990, Voyager 1 turned its camera back toward Earth from 6 billion km (40 AU) away and captured the famous "Pale Blue Dot" photograph. Earth appears as a tiny speck less than a pixel in size, suspended in a sunbeam. Carl Sagan wrote: "Look again at that dot. That\'s here. That\'s home. That\'s us."',
+        eventShoemakerLevy1994: 'From July 16-22, 1994, fragments of Comet Shoemaker-Levy 9 slammed into Jupiter at 60 km/s, creating a spectacular series of impacts. The largest fragment (G) created a dark impact scar larger than Earth! It was the first observed collision between solar system bodies.',
+        eventNewHorizonsLaunch: 'New Horizons launched on January 19, 2006, as the fastest spacecraft ever launched, leaving Earth at 58,536 km/h. It carries a small portion of Clyde Tombaugh\'s ashes — the discoverer of Pluto. After a Jupiter gravity assist, it arrived at Pluto 9.5 years later.',
+        eventNewHorizonsFlyby: 'On July 14, 2015, New Horizons flew within 12,500 km of Pluto after a 3-billion-mile journey. It revealed a world of stunning complexity: nitrogen ice glaciers, water ice mountains up to 3,500m tall, and the iconic heart-shaped Tombaugh Regio.',
+        eventPerseverance2021: 'NASA\'s Perseverance rover landed in Jezero Crater on Mars on February 18, 2021. It carried Ingenuity, the first helicopter to fly on another planet! Perseverance is collecting rock samples for future return to Earth and searching for signs of ancient microbial life.',
+        eventCopernicus1543: 'On May 24, 1543, Nicolaus Copernicus published "De revolutionibus orbium coelestium," proposing that Earth and the planets orbit the Sun — not the other way around. This heliocentric model revolutionized astronomy and our understanding of humanity\'s place in the universe.',
+        eventHalley1066: 'Halley\'s Comet appeared in April 1066, just months before the Battle of Hastings. It was depicted in the Bayeux Tapestry as a fiery star — an omen of doom for King Harold II of England. The comet has been recorded by civilizations for over 2,000 years.',
+        eventGalileo1610: 'On January 7, 1610, Galileo Galilei pointed his telescope at Jupiter and discovered three bright "stars" near it. Within days he found a fourth. These were Jupiter\'s four largest moons — Io, Europa, Ganymede, and Callisto — proof that not everything orbited Earth.',
+        eventHuygens1655: 'On March 25, 1655, Dutch astronomer Christiaan Huygens discovered Titan, Saturn\'s largest moon, using a 50-power refracting telescope he built himself. Titan is the only moon with a dense atmosphere and has lakes of liquid methane on its surface.',
+        eventHerschel1781: 'On March 13, 1781, William Herschel discovered Uranus — the first planet found with a telescope! Initially thinking it was a comet, he named it "Georgium Sidus" (George\'s Star) after King George III. It was the first expansion of the known solar system since antiquity.',
+        eventNeptune1846: 'Neptune was discovered on September 23, 1846, by Johann Galle at Berlin Observatory — exactly where mathematicians Le Verrier and Adams predicted it would be! It was the first planet found through mathematical prediction rather than direct observation.',
+        eventPluto1930: 'On February 18, 1930, Clyde Tombaugh discovered Pluto at Lowell Observatory by comparing photographic plates. Named by 11-year-old Venetia Burney after the Roman god of the underworld. Reclassified as a dwarf planet in 2006, but it will always hold a special place in our hearts.',
+        eventVoyager1Jupiter1979: 'Voyager 1 flew past Jupiter on March 5, 1979, making stunning discoveries: active volcanoes on Io (the first found beyond Earth!), a faint ring system, and detailed views of the Great Red Spot. It passed within 349,000 km of Jupiter\'s cloud tops.',
+
         // Comet descriptions
         descHalley: 'Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!',
         descHaleBopp: 'Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at about 40 km in diameter.',
@@ -559,7 +612,7 @@ const translations = {
         canisMajor: 'Grote Hond', aquila: 'Adelaar', pegasus: 'Pegasus',
         // Ruimtevaartuigen
         iss: 'ISS', hubble: 'Hubble',
-        jwst: 'James Webb-ruimtetelescoop', gpsNavstar: 'GPS-satelliet (NAVSTAR)',
+        jwst: 'James Webb-ruimtetelescoop', gpsNavstar: 'GPS-satelliet (NAVSTAR)', sputnik1: 'Spoetnik 1',
         voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
         juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturnus)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
@@ -1049,7 +1102,7 @@ const translations = {
         canisMajor: 'Grand Chien', aquila: 'Aigle', pegasus: 'Pégase',
         // Engins spatiaux
         iss: 'ISS', hubble: 'Hubble',
-        jwst: 'Télescope spatial James-Webb', gpsNavstar: 'Satellite GPS (NAVSTAR)',
+        jwst: 'Télescope spatial James-Webb', gpsNavstar: 'Satellite GPS (NAVSTAR)', sputnik1: 'Spoutnik 1',
         voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
         juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturne)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
@@ -1532,7 +1585,7 @@ const translations = {
         canisMajor: 'Großer Hund', aquila: 'Adler', pegasus: 'Pegasus',
         // Raumfahrzeuge
         iss: 'ISS', hubble: 'Hubble',
-        jwst: 'James-Webb-Weltraumteleskop', gpsNavstar: 'GPS-Satellit (NAVSTAR)',
+        jwst: 'James-Webb-Weltraumteleskop', gpsNavstar: 'GPS-Satellit (NAVSTAR)', sputnik1: 'Sputnik 1',
         voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
         juno: 'Juno (Jupiter)', cassini: 'Cassini (Saturn)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
@@ -2015,7 +2068,7 @@ const translations = {
         canisMajor: 'Can Mayor', aquila: 'Águila', pegasus: 'Pegaso',
         // Naves espaciales
         iss: 'ISS', hubble: 'Hubble',
-        jwst: 'Telescopio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)',
+        jwst: 'Telescopio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)', sputnik1: 'Sputnik 1',
         voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
         juno: 'Juno (Júpiter)', cassini: 'Cassini (Saturno)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         
@@ -2498,7 +2551,7 @@ const translations = {
         canisMajor: 'Cão Maior', aquila: 'Águia', pegasus: 'Pégaso',
         // Naves espaciais
         iss: 'ISS', hubble: 'Hubble',
-        jwst: 'Telescópio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)',
+        jwst: 'Telescópio Espacial James Webb', gpsNavstar: 'Satélite GPS (NAVSTAR)', sputnik1: 'Sputnik 1',
         voyager1: 'Voyager 1', voyager2: 'Voyager 2', newHorizons: 'New Horizons',
         juno: 'Juno (Júpiter)', cassini: 'Cassini (Saturno)', pioneer10: 'Pioneer 10', pioneer11: 'Pioneer 11',
         

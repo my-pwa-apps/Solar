@@ -691,6 +691,8 @@ class App {
  'hubble': ['Hubble', 'Hubble Space Telescope'],
  'gps': ['GPS', 'NAVSTAR'],
  'gps-navstar': ['GPS', 'NAVSTAR'],
+ 'sputnik': ['Sputnik'],
+ 'sputnik-1': ['Sputnik 1'],
  }},
  { prefix: '', array: 'spacecraft', patterns: {
  'voyager-1': ['Voyager 1'],
@@ -1420,24 +1422,29 @@ class App {
  const eventLabel = rawLabel.includes(' — ') ? rawLabel.split(' — ').slice(1).join(' — ') : rawLabel;
  const eventTimestamp = selectedOption.dataset.utc || `${val}T12:00:00Z`;
  const eventDate = new Date(eventTimestamp);
- if (!isNaN(eventDate.getTime())) {
- ssm.seekToDate(eventDate);
- }
 
- // Pause so the user can study the event, rewind, or fast-forward from this point.
- // We deliberately pause *after* seekToDate so the planet positions are already set
- // at the event date before the animation freezes.
+ // Pause BEFORE seeking so no animation frame can advance the date
+ // past the target while the event handler is running.
  const speedSlider = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (speedSlider && this.timeSpeed !== 0) {
  speedSlider.value = '0';
  speedSlider.dispatchEvent(new Event('input')); // triggers UIManager to sync labels + reset reverse flag
  }
 
+ if (!isNaN(eventDate.getTime())) {
+ ssm.seekToDate(eventDate);
+ }
+
  // Move camera to the relevant body for this event (data-focus="earth" etc.)
  // initPositionsToDate now updates planet.position directly, so world positions
  // are correct immediately — no setTimeout needed.
  const focusKey = selectedOption.dataset.focus;
- if (focusKey) {
+ const isPaleBlueDot = val === '1990-02-14' && rawLabel.includes('Pale Blue Dot');
+
+ if (isPaleBlueDot) {
+ // Special handling: position camera at Voyager 1's location, looking back toward Earth
+ this._handlePaleBlueDot(ssm);
+ } else if (focusKey) {
  const focusTarget = this.findObjectByNavigationValue(focusKey);
  if (focusTarget) {
  this.solarSystemModule.focusOnObject(
@@ -1445,10 +1452,11 @@ class App {
  this.sceneManager.camera,
  this.sceneManager.controls
  );
- const info = this.solarSystemModule.getObjectInfo(focusTarget);
- if (info) this.uiManager.updateInfoPanel(info);
  }
  }
+
+ // Show event-specific info in the info panel
+ this._showEventInfo(val, eventLabel, focusKey);
 
  this.showEventToast(`⏸ ${eventLabel}`);
  e.target.value = ''; // reset so same event can be selected again
@@ -1470,6 +1478,149 @@ class App {
  toast.classList.remove('event-toast--visible');
  setTimeout(() => toast.remove(), 400);
  }, 3500);
+ }
+
+ // Notable event descriptions keyed by ISO date value
+ _getEventDescriptions() {
+ const t = window.t || ((key) => key);
+ return {
+ // Solar Eclipses
+ '2024-04-08': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2024' },
+ '2025-03-29': { name: 'Partial Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2025Mar' },
+ '2026-02-17': { name: 'Annular Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2026Feb' },
+ '2026-08-12': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2026Aug' },
+ '2027-08-02': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2027' },
+ '2028-07-22': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2028' },
+ '2030-06-01': { name: 'Annular Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2030Jun' },
+ '2030-11-25': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2030Nov' },
+ '2033-03-30': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2033' },
+ '2035-09-02': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2035' },
+ // Mars Oppositions
+ '2025-01-16': { name: 'Mars at Opposition', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2025' },
+ '2027-02-19': { name: 'Mars at Opposition', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2027' },
+ '2029-03-29': { name: 'Mars at Opposition', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2029' },
+ '2031-05-04': { name: 'Mars at Opposition (Perihelic)', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2031' },
+ // Outer Planet Oppositions
+ '2024-11-16': { name: 'Uranus at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventUranusOpposition' },
+ '2025-09-21': { name: 'Saturn at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventSaturnOpposition' },
+ '2025-09-23': { name: 'Neptune at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventNeptuneOpposition' },
+ '2025-11-05': { name: 'Jupiter at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventJupiterOpposition' },
+ '2025-11-21': { name: 'Uranus at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventUranusOpposition' },
+ '2026-09-24': { name: 'Neptune at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventNeptuneOpposition' },
+ '2026-10-04': { name: 'Saturn at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventSaturnOpposition' },
+ '2026-12-02': { name: 'Uranus at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventUranusOpposition' },
+ '2026-12-07': { name: 'Jupiter at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventJupiterOpposition' },
+ '2027-10-17': { name: 'Saturn at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventSaturnOpposition' },
+ '2028-01-10': { name: 'Jupiter at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventJupiterOpposition' },
+ // Conjunctions & Alignments
+ '2020-12-21': { name: 'Great Jupiter–Saturn Conjunction', type: '✨ Conjunction', i18nKey: 'eventGreatConjunction2020' },
+ '2022-06-24': { name: '5-Planet Alignment', type: '✨ Alignment', i18nKey: 'eventPlanetAlignment2022' },
+ '2023-03-01': { name: 'Jupiter–Venus Conjunction', type: '✨ Conjunction', i18nKey: 'eventJupiterVenus2023' },
+ '2024-08-14': { name: 'Mars–Jupiter Conjunction', type: '✨ Conjunction', i18nKey: 'eventMarsJupiter2024' },
+ '2025-02-01': { name: 'Venus–Saturn Close Conjunction', type: '✨ Conjunction', i18nKey: 'eventVenusSaturn2025' },
+ '2025-08-12': { name: 'Venus–Jupiter Close Conjunction', type: '✨ Conjunction', i18nKey: 'eventVenusJupiter2025' },
+ '2040-10-31': { name: 'Jupiter–Saturn Great Conjunction', type: '✨ Conjunction', i18nKey: 'eventGreatConjunction2040' },
+ // Famous Comets
+ '1910-04-20': { name: "Halley's Comet Perihelion", type: '☄️ Comet', i18nKey: 'eventHalley1910' },
+ '1986-02-09': { name: "Halley's Comet Perihelion", type: '☄️ Comet', i18nKey: 'eventHalley1986' },
+ '1997-03-22': { name: 'Comet Hale-Bopp Perihelion', type: '☄️ Comet', i18nKey: 'eventHaleBopp1997' },
+ '2020-07-23': { name: 'Comet NEOWISE Closest Approach', type: '☄️ Comet', i18nKey: 'eventNeowise2020' },
+ '2024-10-12': { name: 'Comet Tsuchinshan-ATLAS', type: '☄️ Comet', i18nKey: 'eventTsuchinshan2024' },
+ '2061-07-28': { name: "Halley's Comet Next Perihelion", type: '☄️ Comet', i18nKey: 'eventHalley2061' },
+ // Space Age Milestones
+ '1957-10-04': { name: 'Sputnik 1', type: '🚀 Space Milestone', i18nKey: 'eventSputnik1957' },
+ '1961-04-12': { name: 'Yuri Gagarin — First Human in Space', type: '🚀 Space Milestone', i18nKey: 'eventGagarin1961' },
+ '1969-07-20': { name: 'Apollo 11 — First Moon Landing', type: '🚀 Space Milestone', i18nKey: 'eventApollo111969' },
+ '1972-12-07': { name: 'Apollo 17 — Last Moon Landing', type: '🚀 Space Milestone', i18nKey: 'eventApollo171972' },
+ '1977-09-05': { name: 'Voyager 1 Launch', type: '🚀 Space Milestone', i18nKey: 'eventVoyager1Launch' },
+ '1990-02-14': { name: 'Voyager 1 — "Pale Blue Dot" Photo', type: '🚀 Space Milestone', i18nKey: 'eventPaleBlueDot' },
+ '1994-07-16': { name: 'Shoemaker-Levy 9 Impacts Jupiter', type: '🚀 Space Milestone', i18nKey: 'eventShoemakerLevy1994' },
+ '2006-01-19': { name: 'New Horizons Launch toward Pluto', type: '🚀 Space Milestone', i18nKey: 'eventNewHorizonsLaunch' },
+ '2015-07-14': { name: 'New Horizons — Pluto Flyby', type: '🚀 Space Milestone', i18nKey: 'eventNewHorizonsFlyby' },
+ '2021-02-18': { name: 'Perseverance Rover — Mars Landing', type: '🚀 Space Milestone', i18nKey: 'eventPerseverance2021' },
+ // Historic Discoveries
+ '1543-05-24': { name: 'Copernicus Publishes Heliocentric Model', type: '📜 Historic Discovery', i18nKey: 'eventCopernicus1543' },
+ '1066-04-24': { name: "Halley's Comet — Battle of Hastings Era", type: '📜 Historic Discovery', i18nKey: 'eventHalley1066' },
+ '1610-01-07': { name: "Galileo Discovers Jupiter's Moons", type: '📜 Historic Discovery', i18nKey: 'eventGalileo1610' },
+ '1655-03-25': { name: 'Huygens Discovers Titan', type: '📜 Historic Discovery', i18nKey: 'eventHuygens1655' },
+ '1781-03-13': { name: 'Herschel Discovers Uranus', type: '📜 Historic Discovery', i18nKey: 'eventHerschel1781' },
+ '1846-09-23': { name: 'Discovery of Neptune', type: '📜 Historic Discovery', i18nKey: 'eventNeptune1846' },
+ '1930-02-18': { name: 'Tombaugh Discovers Pluto', type: '📜 Historic Discovery', i18nKey: 'eventPluto1930' },
+ '1979-03-05': { name: 'Voyager 1 — Jupiter Flyby', type: '📜 Historic Discovery', i18nKey: 'eventVoyager1Jupiter1979' },
+ };
+ }
+
+ _showEventInfo(dateValue, eventLabel, focusKey) {
+ const t = window.t || ((key) => key);
+ const eventDescs = this._getEventDescriptions();
+ // Try composite key (date|focus) first, then date-only fallback
+ const eventData = eventDescs[`${dateValue}|${focusKey}`] || eventDescs[dateValue];
+
+ if (eventData) {
+ const descKey = eventData.i18nKey;
+ const translatedDesc = (window.t && t(descKey) !== descKey) ? t(descKey) : eventData.name;
+ const dateObj = new Date(dateValue + 'T12:00:00Z');
+ const dateStr = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+ this.uiManager.updateInfoPanel({
+ name: eventData.name,
+ type: eventData.type,
+ distance: dateStr,
+ size: '',
+ description: translatedDesc
+ });
+ } else if (focusKey) {
+ // Fallback: show focused object info
+ const focusTarget = this.findObjectByNavigationValue(focusKey);
+ if (focusTarget) {
+ const info = this.solarSystemModule.getObjectInfo(focusTarget);
+ if (info) this.uiManager.updateInfoPanel(info);
+ }
+ }
+ }
+
+ _handlePaleBlueDot(ssm) {
+ // Voyager 1 took the Pale Blue Dot photo on Feb 14, 1990 at ~6 billion km (40 AU) from Earth.
+ // Position the camera at Voyager 1's location, looking back toward Earth.
+ const voyager1 = this.findObjectByNavigationValue('voyager-1');
+ const earth = this.findObjectByNavigationValue('earth');
+ if (!voyager1 || !earth) {
+ // Fallback: focus on Earth
+ if (earth) {
+ this.solarSystemModule.focusOnObject(earth, this.sceneManager.camera, this.sceneManager.controls);
+ }
+ return;
+ }
+
+ const camera = this.sceneManager.camera;
+ const controls = this.sceneManager.controls;
+
+ // Get Voyager 1 and Earth world positions
+ const voyagerPos = new THREE.Vector3();
+ const earthPos = new THREE.Vector3();
+ voyager1.getWorldPosition(voyagerPos);
+ earth.getWorldPosition(earthPos);
+
+ // Position camera near Voyager 1, slightly offset so the spacecraft is visible
+ const dirToEarth = new THREE.Vector3().subVectors(earthPos, voyagerPos).normalize();
+ // Offset camera slightly to the side so Voyager 1 is in the corner of the view
+ const side = new THREE.Vector3().crossVectors(dirToEarth, new THREE.Vector3(0, 1, 0)).normalize();
+ const cameraOffset = 3; // Small offset from Voyager
+ camera.position.copy(voyagerPos).add(side.clone().multiplyScalar(cameraOffset)).add(new THREE.Vector3(0, 1, 0));
+
+ // Look toward Earth (the pale blue dot in the distance)
+ controls.target.copy(earthPos);
+ controls.update();
+
+ // Disable tracking/follow so camera stays fixed at this dramatic viewpoint
+ this.solarSystemModule.cameraFollowMode = false;
+ this.solarSystemModule.cameraCoRotateMode = false;
+ this.solarSystemModule.focusedObject = voyager1;
+
+ // Set zoom limits appropriate for this extreme distance
+ controls.minDistance = 1;
+ controls.maxDistance = 50000;
+
+ if (DEBUG.enabled) console.log(' [Pale Blue Dot] Camera at Voyager 1 position, looking back at Earth');
  }
 
  setupNavigationSearch() {

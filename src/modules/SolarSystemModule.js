@@ -1636,28 +1636,30 @@ export class SolarSystemModule {
  // Approximate major landmasses using mathematical patterns
  
  // Convert to normalized coordinates (0-1)
- const lonNorm = lon / (Math.PI * 2); // 0 to 1
+ // Shift by 0.5 so u=0 aligns with the dateline (180°W),
+ // matching the NASA equirectangular convention.
+ const lonNorm = ((lon / (Math.PI * 2)) + 0.5) % 1.0; // 0 to 1, dateline at 0
  const latNorm01 = (lat + Math.PI / 2) / Math.PI; // 0 to 1
  
- // Americas (Western Hemisphere, lon ~0.75-0.95)
- const americas = Math.exp(-Math.pow((lonNorm - 0.85) * 6, 2)) * 
+ // Americas (Western Hemisphere, lon ~0.25-0.45)
+ const americas = Math.exp(-Math.pow((lonNorm - 0.35) * 6, 2)) * 
  (1 - Math.abs(latNorm01 - 0.5) * 1.5);
  
- // Eurasia-Africa (Eastern Hemisphere, lon ~0-0.4)
- const eurasia = Math.exp(-Math.pow(lonNorm * 4, 2)) * 
+ // Eurasia-Africa (Eastern Hemisphere, lon ~0.5-0.9)
+ const eurasia = Math.exp(-Math.pow((lonNorm - 0.5) * 4, 2)) * 
  (1 - Math.abs(latNorm01 - 0.55) * 1.2) * 1.2;
- const africa = Math.exp(-Math.pow((lonNorm - 0.15) * 8, 2)) * 
+ const africa = Math.exp(-Math.pow((lonNorm - 0.65) * 8, 2)) * 
  Math.exp(-Math.pow((latNorm01 - 0.35) * 4, 2)) * 1.5;
  
- // Australia (lon ~0.55-0.65, lat ~0.2-0.3)
- const australia = Math.exp(-Math.pow((lonNorm - 0.6) * 12, 2)) * 
+ // Australia (lon ~1.05-1.15, wraps to ~0.05-0.15)
+ const australia = Math.exp(-Math.pow((lonNorm - 0.1) * 12, 2)) * 
  Math.exp(-Math.pow((latNorm01 - 0.25) * 8, 2)) * 0.8;
  
  // Antarctica (bottom, all longitudes)
  const antarctica = Math.exp(-Math.pow((latNorm01 - 0.05) * 8, 2)) * 0.9;
  
- // Greenland (lon ~0.95-1.0, lat ~0.75-0.85)
- const greenland = Math.exp(-Math.pow((lonNorm - 0.97) * 20, 2)) * 
+ // Greenland (lon ~0.42-0.48, lat ~0.75-0.85)
+ const greenland = Math.exp(-Math.pow((lonNorm - 0.47) * 20, 2)) * 
  Math.exp(-Math.pow((latNorm01 - 0.8) * 10, 2)) * 0.7;
  
  // Combine all continents
@@ -3499,6 +3501,21 @@ export class SolarSystemModule {
  return Math.floor(365.25 * (A + 4716)) + Math.floor(30.6001 * (B + 1)) + d + C - 1524.5;
  }
 
+ /** Sun's right ascension in radians for a given days-since-J2000 value.
+ * Uses low-precision solar coordinates (good to ~1°). */
+ _sunRA(daysSinceJ2000) {
+ const T = daysSinceJ2000 / 36525;
+ const L0 = ((280.46646 + 36000.76983 * T) % 360 + 360) % 360;
+ const M = ((357.52911 + 35999.05029 * T) % 360 + 360) % 360;
+ const M_rad = M * Math.PI / 180;
+ const C = (1.9146 - 0.004817 * T) * Math.sin(M_rad) + 0.019993 * Math.sin(2 * M_rad);
+ const sunLon = (L0 + C) * Math.PI / 180;
+ const eps = (23.439 - 0.00000036 * daysSinceJ2000) * Math.PI / 180;
+ let ra = Math.atan2(Math.cos(eps) * Math.sin(sunLon), Math.cos(sunLon));
+ if (ra < 0) ra += Math.PI * 2;
+ return ra;
+ }
+
  /** Solve Kepler's equation M = E - e·sin(E) via Newton-Raphson iteration. */
  _solveKepler(M_rad, e) {
  let E = M_rad + e * Math.sin(M_rad);
@@ -3568,6 +3585,16 @@ export class SolarSystemModule {
  }
  });
 
+ // Set Earth's self-rotation immediately so the correct face is visible
+ // before the next animation frame (same formula as update loop).
+ const earthPlanet = this.planets['earth'];
+ if (earthPlanet) {
+ const gmst = ((280.46061837 + 360.98564736629 * daysSinceJ2000) % 360 + 360) % 360 * Math.PI / 180;
+ const sunRA = this._sunRA(daysSinceJ2000);
+ const orbAngle = Math.atan2(earthPlanet.position.z, earthPlanet.position.x);
+ earthPlanet.rotation.y = orbAngle + Math.PI + sunRA - gmst;
+ }
+
  // Date-seed moon orbital phases (deterministic by JD, not random startup state)
  Object.values(this.moons).forEach((moon) => {
  if (!moon?.userData) return;
@@ -3580,6 +3607,9 @@ export class SolarSystemModule {
  moon.userData.meanAnomaly = meanAnomaly;
  moon.userData.angle = meanAnomaly;
 
+ // Counter-rotate by parent's rotation.y so the moon's world-space
+ // orbit is not dragged by the planet's self-rotation.
+ const parentRotY = moon.parent ? (moon.parent.rotation.y || 0) : 0;
  if (this.scientificMode) {
  const e = moon.userData.orbitalEccentricity || 0;
  const i = moon.userData.orbitalInclination || 0;
@@ -3587,16 +3617,17 @@ export class SolarSystemModule {
  const a = moon.userData.distance;
  const nu = moon.userData.angle;
  const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
- const theta = nu + w;
+ const theta = nu + w + parentRotY;
  const xOrb = r * Math.cos(theta);
  const zOrb = r * Math.sin(theta);
  moon.position.x = xOrb;
  moon.position.y = zOrb * Math.sin(i);
  moon.position.z = zOrb * Math.cos(i);
  } else {
- moon.position.x = moon.userData.distance * Math.cos(moon.userData.angle);
+ const adj = moon.userData.angle + parentRotY;
+ moon.position.x = moon.userData.distance * Math.cos(adj);
  moon.position.y = 0;
- moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
+ moon.position.z = moon.userData.distance * Math.sin(adj);
  }
  });
 
@@ -6910,6 +6941,67 @@ createHyperrealisticHubble(satData) {
         return jwst;
     }
 
+    createHyperrealisticSputnik(satData) {
+        if (DEBUG.enabled) console.log('[MODEL] Creating hyperrealistic Sputnik 1');
+        const sputnik = new THREE.Group();
+        const scale = satData.size || 0.02;
+
+        // Materials
+        const silverMat = MaterialFactory.createSpacecraftMaterial('silver');
+        const darkMat = MaterialFactory.createSpacecraftMaterial('body');
+
+        // Main spherical body (58 cm diameter polished aluminum alloy)
+        const body = new THREE.Mesh(
+            GeometryFactory.createSphere(scale * 2.9, 32, 32, this.geometryCache),
+            new THREE.MeshStandardMaterial({
+                color: 0xD0D0D0,
+                roughness: 0.05,
+                metalness: 1.0,
+                emissive: 0x404040,
+                emissiveIntensity: 0.15
+            })
+        );
+        sputnik.add(body);
+
+        // Equatorial seam ring
+        const seamGeom = GeometryFactory.createCylinder(scale * 2.95, scale * 2.95, scale * 0.1, 32, this.geometryCache);
+        const seam = new THREE.Mesh(seamGeom, darkMat);
+        seam.rotation.x = Math.PI / 2;
+        sputnik.add(seam);
+
+        // Four trailing whip antennas (2 pairs at different angles)
+        // Real Sputnik: 2 antennas at 2.4m, 2 at 2.9m, ~35° and ~70° from axis
+        const antennaMat = new THREE.MeshStandardMaterial({
+            color: 0xB0B0B0,
+            roughness: 0.2,
+            metalness: 0.9
+        });
+        const antennaLengths = [scale * 12, scale * 12, scale * 14.5, scale * 14.5];
+        const antennaAngles = [35, 35, 70, 70];
+        const antennaRotations = [0, Math.PI, Math.PI / 2, -Math.PI / 2];
+
+        for (let i = 0; i < 4; i++) {
+            const len = antennaLengths[i];
+            const tiltRad = (antennaAngles[i] * Math.PI) / 180;
+            const antenna = new THREE.Mesh(
+                GeometryFactory.createCylinder(scale * 0.06, scale * 0.03, len, 8, this.geometryCache),
+                antennaMat
+            );
+            antenna.position.z = -Math.cos(tiltRad) * (len / 2 + scale * 2.5);
+            antenna.position.x = Math.sin(tiltRad) * Math.cos(antennaRotations[i]) * (len / 2 + scale * 2.5);
+            antenna.position.y = Math.sin(tiltRad) * Math.sin(antennaRotations[i]) * (len / 2 + scale * 2.5);
+            // Point antenna away from front
+            antenna.lookAt(
+                antenna.position.x * 2 - sputnik.position.x,
+                antenna.position.y * 2 - sputnik.position.y,
+                antenna.position.z * 2 - sputnik.position.z
+            );
+            sputnik.add(antenna);
+        }
+
+        return sputnik;
+    }
+
     createHyperrealisticPioneer(satData) {
         if (DEBUG.enabled) console.log('[MODEL] Creating hyperrealistic Pioneer probe');
         const pioneer = new THREE.Group();
@@ -7678,6 +7770,17 @@ createHyperrealisticHubble(satData) {
  funFact: t('funFactGPS'),
  realSize: 'GPS III: 2,161 kg, 7.8m solar span',
  orbitTime: '11h 58min'
+ },
+ {
+ name: 'Sputnik 1',
+ distance: 1.03, // Average orbit ~500 km altitude (228-939 km)
+ speed: 14.9, // Orbital period 96.2 minutes, ~15 orbits/day
+ size: 0.02,
+ color: 0xC0C0C0,
+ description: t('descSputnik1'),
+ funFact: t('funFactSputnik1'),
+ realSize: '58 cm diameter sphere, 83.6 kg',
+ orbitTime: '96.2 minutes'
  }
  ];
 
@@ -7706,6 +7809,8 @@ createHyperrealisticHubble(satData) {
  satellite = this.createHyperrealisticJuno(satData);
  } else if (satData.name.includes('New Horizons')) {
  satellite = this.createHyperrealisticNewHorizons(satData);
+ } else if (satData.name.includes('Sputnik')) {
+ satellite = this.createHyperrealisticSputnik(satData);
  } else {
  // Simple satellite body for others
  const geometry = new THREE.BoxGeometry(satData.size, satData.size * 0.5, satData.size * 0.3);
@@ -8213,11 +8318,23 @@ createHyperrealisticHubble(satData) {
  
  // REALISTIC PLANET ROTATION based on real astronomical data
  if (planet.userData.realRotationPeriod && rotationSpeed !== 0) {
- // Calculate elapsed real time in hours (use shared value from outer scope)
+ let rotationAngle;
+ if (planet.userData.name === 'Earth') {
+ // Compute Earth's rotation so the correct subsolar longitude faces the Sun.
+ // Formula: rotation.y = orbital_angle + PI + SunRA - GMST
+ // where orbital_angle = atan2(earth.z, earth.x) in the scene.
+ const d = this.simulatedJD - 2451545.0;
+ const gmst = ((280.46061837 + 360.98564736629 * d) % 360 + 360) % 360 * Math.PI / 180;
+ const sunRA = this._sunRA(d);
+ const orbAngle = Math.atan2(planet.position.z, planet.position.x);
+ rotationAngle = orbAngle + Math.PI + sunRA - gmst;
+ } else {
  const rotationsComplete = elapsedHours / planet.userData.realRotationPeriod;
- let rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
- 
-            // Apply rotation (retrograde is naturally handled by axial tilts > 90)
+ rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
+ }
+
+ // Apply rotation (retrograde is naturally handled by axial tilts > 90)
+ planet.rotation.y = rotationAngle;
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
  }
  
@@ -8244,7 +8361,9 @@ createHyperrealisticHubble(satData) {
  
  // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
  // these positions are RELATIVE to the planet's position, not world coordinates!
- // This keeps the moon orbiting around its parent planet correctly.
+ // Counter-rotate by parent's rotation.y so the moon's world-space
+ // orbit is not dragged by the planet's self-rotation.
+ const parentRotY = planet.rotation.y || 0;
  if (this.scientificMode) {
  const e = moon.userData.orbitalEccentricity || 0;
  const i = moon.userData.orbitalInclination || 0;
@@ -8252,7 +8371,7 @@ createHyperrealisticHubble(satData) {
  const a = moon.userData.distance;
  const nu = moon.userData.angle;
  const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
- const theta = nu + w;
+ const theta = nu + w + parentRotY;
  const cosTheta = Math.cos(theta);
  const sinTheta = Math.sin(theta);
  const xOrb = r * cosTheta;
@@ -8261,8 +8380,9 @@ createHyperrealisticHubble(satData) {
  moon.position.y = zOrb * Math.sin(i);
  moon.position.z = zOrb * Math.cos(i);
  } else {
- moon.position.x = moon.userData.distance * Math.cos(moon.userData.angle);
- moon.position.z = moon.userData.distance * Math.sin(moon.userData.angle);
+ const adj = moon.userData.angle + parentRotY;
+ moon.position.x = moon.userData.distance * Math.cos(adj);
+ moon.position.z = moon.userData.distance * Math.sin(adj);
  moon.position.y = 0;
  }
  
@@ -8270,9 +8390,10 @@ createHyperrealisticHubble(satData) {
  if (moon.userData.realRotationPeriod && rotationSpeed !== 0) {
  // Calculate rotation angle based on real rotation period (use shared value from outer scope)
  const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
- let rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
- 
-            // Apply rotation (retrograde is naturally handled by axial tilts > 90)
+ const rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
+
+ // Apply rotation (retrograde is naturally handled by axial tilts > 90)
+ moon.rotation.y = rotationAngle;
  moon.rotation.z = (moon.userData.axialTilt || 0) * Math.PI / 180;
  }
  
