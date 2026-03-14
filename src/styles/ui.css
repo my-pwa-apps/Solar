@@ -962,9 +962,9 @@
     outline: none;
 }
 
-/* Notable events dropdown */
+/* Notable events dropdown — hidden until feature is complete */
 .tm-events-row {
-    width: 100%;
+    display: none;
 }
 
 .tm-events-select {

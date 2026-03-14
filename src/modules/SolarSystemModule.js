@@ -6955,58 +6955,96 @@ createHyperrealisticHubble(satData) {
         if (DEBUG.enabled) console.log('[MODEL] Creating hyperrealistic Sputnik 1');
         const sputnik = new THREE.Group();
         const scale = satData.size || 0.02;
+        const R = scale * 2.9; // sphere radius (58 cm real diameter → R = 29 cm)
 
-        // Materials
-        const silverMat = MaterialFactory.createSpacecraftMaterial('silver');
-        const darkMat = MaterialFactory.createSpacecraftMaterial('body');
-
-        // Main spherical body (58 cm diameter polished aluminum alloy)
-        const body = new THREE.Mesh(
-            GeometryFactory.createSphere(scale * 2.9, 32, 32, this.geometryCache),
+        // ── Main spherical body ─────────────────────────────────────────────
+        // Highly polished N1-Al aluminium alloy — near-mirror finish
+        sputnik.add(new THREE.Mesh(
+            GeometryFactory.createSphere(R, 64, 48, this.geometryCache),
             new THREE.MeshStandardMaterial({
-                color: 0xD0D0D0,
-                roughness: 0.05,
+                color: 0xD4D4D4,
+                roughness: 0.03,
                 metalness: 1.0,
-                emissive: 0x404040,
-                emissiveIntensity: 0.15
+                emissive: 0x282828,
+                emissiveIntensity: 0.14
             })
-        );
-        sputnik.add(body);
+        ));
 
-        // Equatorial seam ring
-        const seamGeom = GeometryFactory.createCylinder(scale * 2.95, scale * 2.95, scale * 0.1, 32, this.geometryCache);
-        const seam = new THREE.Mesh(seamGeom, darkMat);
-        seam.rotation.x = Math.PI / 2;
+        // ── Equatorial mating seam (two hemispheres bolted together) ────────
+        const seamMat = new THREE.MeshStandardMaterial({
+            color: 0x909090, metalness: 0.85, roughness: 0.25
+        });
+        const seam = new THREE.Mesh(
+            new THREE.TorusGeometry(R, scale * 0.07, 12, 72),
+            seamMat
+        );
+        seam.rotation.x = Math.PI / 2; // ring lies in XZ plane (equator)
         sputnik.add(seam);
 
-        // Four trailing whip antennas (2 pairs at different angles)
-        // Real Sputnik: 2 antennas at 2.4m, 2 at 2.9m, ~35° and ~70° from axis
-        const antennaMat = new THREE.MeshStandardMaterial({
-            color: 0xB0B0B0,
-            roughness: 0.2,
-            metalness: 0.9
+        // 12 bolt heads evenly spaced around the equatorial seam
+        const boltMat = new THREE.MeshStandardMaterial({
+            color: 0x787878, metalness: 0.9, roughness: 0.2
         });
-        const antennaLengths = [scale * 12, scale * 12, scale * 14.5, scale * 14.5];
-        const antennaAngles = [35, 35, 70, 70];
-        const antennaRotations = [0, Math.PI, Math.PI / 2, -Math.PI / 2];
+        for (let i = 0; i < 12; i++) {
+            const a = (i / 12) * Math.PI * 2;
+            const bolt = new THREE.Mesh(
+                GeometryFactory.createSphere(scale * 0.09, 6, 6, this.geometryCache),
+                boltMat
+            );
+            bolt.position.set(Math.cos(a) * R, 0, Math.sin(a) * R); // in XZ plane
+            sputnik.add(bolt);
+        }
 
-        for (let i = 0; i < 4; i++) {
-            const len = antennaLengths[i];
-            const tiltRad = (antennaAngles[i] * Math.PI) / 180;
+        // ── Four whip antennas — all trailing rearward (−Z direction) ───────
+        // All antennas emerge from the rear hemisphere and trail behind the satellite.
+        // Short pair (2.4 m real, ≈12 × scale): splayed ±35° in the X–Z plane.
+        // Long  pair (2.9 m real, ≈14.5 × scale): splayed ±65° in the Y–Z plane.
+        const antennaMat = new THREE.MeshStandardMaterial({
+            color: 0xBCBCBC, roughness: 0.12, metalness: 0.95
+        });
+        const stubMat = new THREE.MeshStandardMaterial({
+            color: 0x999999, metalness: 0.9, roughness: 0.2
+        });
+        // Y axis — used as the "up" axis of every CylinderGeometry for quaternion alignment
+        const yAxis = new THREE.Vector3(0, 1, 0);
+
+        const antennaConfig = [
+            { sx:  1, sy:  0, tilt: 35, len: scale * 12   }, // short, +X spread
+            { sx: -1, sy:  0, tilt: 35, len: scale * 12   }, // short, -X spread
+            { sx:  0, sy:  1, tilt: 65, len: scale * 14.5 }, // long,  +Y spread
+            { sx:  0, sy: -1, tilt: 65, len: scale * 14.5 }, // long,  -Y spread
+        ];
+
+        for (const cfg of antennaConfig) {
+            const tiltRad = (cfg.tilt * Math.PI) / 180;
+            // Unit direction vector pointing from sphere centre along this antenna.
+            // sin/cos identity guarantees |dir| = 1 because sx and sy are ±1 or 0.
+            const dir = new THREE.Vector3(
+                cfg.sx * Math.sin(tiltRad),
+                cfg.sy * Math.sin(tiltRad),
+                -Math.cos(tiltRad)   // always trailing toward −Z
+            );
+            const len = cfg.len;
+
+            // Tapered tube: wider at the root, thin at the tip
             const antenna = new THREE.Mesh(
-                GeometryFactory.createCylinder(scale * 0.06, scale * 0.03, len, 8, this.geometryCache),
+                GeometryFactory.createCylinder(scale * 0.05, scale * 0.015, len, 8, this.geometryCache),
                 antennaMat
             );
-            antenna.position.z = -Math.cos(tiltRad) * (len / 2 + scale * 2.5);
-            antenna.position.x = Math.sin(tiltRad) * Math.cos(antennaRotations[i]) * (len / 2 + scale * 2.5);
-            antenna.position.y = Math.sin(tiltRad) * Math.sin(antennaRotations[i]) * (len / 2 + scale * 2.5);
-            // Point antenna away from front
-            antenna.lookAt(
-                antenna.position.x * 2 - sputnik.position.x,
-                antenna.position.y * 2 - sputnik.position.y,
-                antenna.position.z * 2 - sputnik.position.z
-            );
+            // Place cylinder centre halfway along the antenna, starting from sphere surface
+            antenna.position.copy(dir).multiplyScalar(R + len * 0.5);
+            // Align the cylinder's Y axis with the antenna direction
+            antenna.quaternion.setFromUnitVectors(yAxis, dir);
             sputnik.add(antenna);
+
+            // Conical mounting stub where antenna exits the sphere skin
+            const stub = new THREE.Mesh(
+                GeometryFactory.createCylinder(scale * 0.14, scale * 0.05, scale * 0.3, 8, this.geometryCache),
+                stubMat
+            );
+            stub.position.copy(dir).multiplyScalar(R + scale * 0.15);
+            stub.quaternion.setFromUnitVectors(yAxis, dir);
+            sputnik.add(stub);
         }
 
         return sputnik;
@@ -7783,9 +7821,9 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'Sputnik 1',
- distance: 1.03, // Average orbit ~500 km altitude (228-939 km)
+ distance: 1.09, // Average orbit ~577 km altitude (215–939 km); distance 1.09 = safely above Earth surface (radius 1.0)
  speed: 14.9, // Orbital period 96.2 minutes, ~15 orbits/day
- size: 0.02,
+ size: 0.008, // Educationally scaled: visible when focused, proportional relative to Earth
  color: 0xC0C0C0,
  description: t('descSputnik1'),
  funFact: t('funFactSputnik1'),

@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.96
+// Version 2.10.99
 
-const CACHE_VERSION = '2.10.96';
+const CACHE_VERSION = '2.10.99';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
