@@ -10030,6 +10030,13 @@ let actualRadius;
  if (this._focusTransitionActive) {
  this._focusTransitionCancelRequested = true;
  }
+ // Manual drag should hand orbit angle control back to the user. Keep follow mode
+ // so moving targets stay centered, but stop the chase-cam co-rotation path that
+ // rewrites camera.position every frame and blocks tilt/orbit on moons.
+ if (this.focusedObject && this.cameraCoRotateMode) {
+ this.cameraCoRotateMode = false;
+ this.cameraFollowMode = true;
+ }
  // User grabbed manual control — stop auto-orbit so camera doesn't fight the drag
  if (this._activeControls) {
  this._activeControls.autoRotate = false;
