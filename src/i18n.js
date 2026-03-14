@@ -2975,6 +2975,68 @@ const translations = {
     }
 };
 
+const localeParityFallbackKeys = [
+    'descSputnik1',
+    'eventApollo111969',
+    'eventApollo171972',
+    'eventCopernicus1543',
+    'eventGagarin1961',
+    'eventGalileo1610',
+    'eventGreatConjunction2020',
+    'eventGreatConjunction2040',
+    'eventHaleBopp1997',
+    'eventHalley1066',
+    'eventHalley1910',
+    'eventHalley1986',
+    'eventHalley2061',
+    'eventHerschel1781',
+    'eventHuygens1655',
+    'eventJupiterOpposition',
+    'eventJupiterVenus2023',
+    'eventMarsJupiter2024',
+    'eventMarsOpposition2025',
+    'eventMarsOpposition2027',
+    'eventMarsOpposition2029',
+    'eventMarsOpposition2031',
+    'eventNeowise2020',
+    'eventNeptune1846',
+    'eventNeptuneOpposition',
+    'eventNewHorizonsFlyby',
+    'eventNewHorizonsLaunch',
+    'eventPaleBlueDot',
+    'eventPerseverance2021',
+    'eventPlanetAlignment2022',
+    'eventPluto1930',
+    'eventSaturnOpposition',
+    'eventShoemakerLevy1994',
+    'eventSolarEclipse2024',
+    'eventSolarEclipse2025Mar',
+    'eventSolarEclipse2026Aug',
+    'eventSolarEclipse2026Feb',
+    'eventSolarEclipse2027',
+    'eventSolarEclipse2028',
+    'eventSolarEclipse2030Jun',
+    'eventSolarEclipse2030Nov',
+    'eventSolarEclipse2033',
+    'eventSolarEclipse2035',
+    'eventSputnik1957',
+    'eventTsuchinshan2024',
+    'eventUranusOpposition',
+    'eventVenusJupiter2025',
+    'eventVenusSaturn2025',
+    'eventVoyager1Jupiter1979',
+    'eventVoyager1Launch',
+    'funFactSputnik1'
+];
+
+for (const lang of ['nl', 'fr', 'de', 'es', 'pt']) {
+    for (const key of localeParityFallbackKeys) {
+        if (!(key in translations[lang]) && key in translations.en) {
+            translations[lang][key] = translations.en[key];
+        }
+    }
+}
+
 // Get current language from HTML lang attribute
 function getCurrentLanguage() {
     return document.documentElement.lang || 'en';
@@ -3055,7 +3117,11 @@ function setLanguage(lang) {
     }
 
     document.documentElement.lang = lang;
-    localStorage.setItem('appLanguage', lang);
+    try {
+        localStorage.setItem('appLanguage', lang);
+    } catch {
+        // Ignore storage failures such as Safari private mode.
+    }
 
     const manifestFiles = {
         'en': './manifest.json',
@@ -3068,7 +3134,7 @@ function setLanguage(lang) {
 
     const manifestLink = document.querySelector('link[rel="manifest"]');
     if (manifestLink) {
-        manifestLink.href = manifestFiles[lang] || './manifest.json';
+        manifestLink.href = `${manifestFiles[lang] || './manifest.json'}?v=2.10.96`;
     }
 
     applyTranslations();

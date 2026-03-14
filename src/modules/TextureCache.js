@@ -6,6 +6,7 @@ import { DEBUG, CONFIG } from './utils.js';
 export class TextureCache {
  constructor() {
  this.cache = new Map();
+ this.maxMemoryCacheSize = 200; // Evict oldest entries beyond this limit
  this.dbName = 'SolarSystemTextureCache';
  this.dbVersion = 1;
  this.storeName = 'textures';
@@ -71,6 +72,11 @@ export class TextureCache {
  }
 
  async set(key, dataURL) {
+ // Evict oldest entries if memory cache is at capacity
+ if (this.cache.size >= this.maxMemoryCacheSize && !this.cache.has(key)) {
+ const oldest = this.cache.keys().next().value;
+ this.cache.delete(oldest);
+ }
  // Set in memory cache
  this.cache.set(key, dataURL);
 

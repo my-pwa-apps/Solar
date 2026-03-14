@@ -32,6 +32,16 @@ export class SolarSystemModule {
  this.satellites = [];
  this.spacecraft = [];
  this.constellations = [];
+ this._focusScratch = {
+ directionFromOrigin: new THREE.Vector3(),
+ perpendicularVector: new THREE.Vector3(),
+ earthPos: new THREE.Vector3(),
+ issDirection: new THREE.Vector3(),
+ moonDirection: new THREE.Vector3(),
+ sunPosition: new THREE.Vector3(),
+ cometToSunDir: new THREE.Vector3(),
+ rightVector: new THREE.Vector3()
+ };
  
  // Scale mode: false = educational (compressed), true = realistic (vast)
  this.realisticScale = false;
@@ -1088,7 +1098,7 @@ export class SolarSystemModule {
                     img.onerror = () => {
                         console.warn(`[TEX] ${planetName}: cached image CORRUPT, clearing & retrying`);
                         // Cached texture is corrupted, clear it and retry the same URL from network
-                        TEXTURE_CACHE.set(cacheKey, null).catch(() => {});
+                        TEXTURE_CACHE.set(cacheKey, null).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache clear failed:', e); });
                         tryNext();
                     };
                     img.src = cachedDataURL;
@@ -1825,7 +1835,7 @@ export class SolarSystemModule {
  
  // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
  const dataURL = canvas.toDataURL('image/png');
- TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache write failed:', e); });
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
@@ -1904,7 +1914,7 @@ export class SolarSystemModule {
  
  // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
  const dataURL = canvas.toDataURL('image/png');
- TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache write failed:', e); });
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
@@ -1970,7 +1980,7 @@ export class SolarSystemModule {
  
  // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
  const dataURL = canvas.toDataURL('image/png');
- TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+ TEXTURE_CACHE.set(cacheKey, dataURL).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache write failed:', e); });
  
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
@@ -9674,8 +9684,9 @@ let actualRadius;
  }
  
  // Smooth camera transition
- const startPos = camera.position.clone();
- const startTarget = controls.target.clone();
+ const startPos = new THREE.Vector3().copy(camera.position);
+ const startTarget = new THREE.Vector3().copy(controls.target);
+ const focusScratch = this._focusScratch;
  
  // For fast orbiters (like ISS), do NOT use relative offset if isSpacecraft
  let useRelativeOffset = false;
@@ -9686,7 +9697,7 @@ let actualRadius;
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
      if (parentPlanet) {
          useRelativeOffset = true;
-         relativeOffset = targetPosition.clone().sub(parentPlanet.position);
+         relativeOffset = new THREE.Vector3().copy(targetPosition).sub(parentPlanet.position);
          if (DEBUG.enabled) console.log(` Fast orbiter: using relative offset from ${userData.orbitPlanet}`);
      }
  }
@@ -9700,28 +9711,28 @@ let actualRadius;
      // doesn't pass through the solar system at origin
      
      // Direction from origin to constellation
-     const directionFromOrigin = targetPosition.clone().normalize();
+    const directionFromOrigin = focusScratch.directionFromOrigin.copy(targetPosition).normalize();
      
      // Position camera slightly to the SIDE of the direct line from origin to constellation
      // This ensures the solar system (at origin) is not in the line of sight
      
      // Create a perpendicular vector (90 degrees from the origin-constellation line)
-     const perpendicularVector = new THREE.Vector3(-directionFromOrigin.z, 0, directionFromOrigin.x).normalize();
+    const perpendicularVector = focusScratch.perpendicularVector.set(-directionFromOrigin.z, 0, directionFromOrigin.x).normalize();
      
      // Scale side offset proportionally to constellation size
      // Small constellations (Orion's Belt radius ~200) get a smaller offset for closer viewing
      const sideOffset = Math.max(actualRadius * 0.8, 200); // Proportional, min 200 (tighter framing)
      const backOffset = distance; // Viewing distance
      
-     endPos = targetPosition.clone()
-         .add(perpendicularVector.clone().multiplyScalar(sideOffset)) // Move to the side
-         .add(directionFromOrigin.clone().multiplyScalar(-backOffset * 0.3)); // Pull back slightly for viewing angle
+     endPos = new THREE.Vector3().copy(targetPosition)
+         .addScaledVector(perpendicularVector, sideOffset) // Move to the side
+         .addScaledVector(directionFromOrigin, -backOffset * 0.3); // Pull back slightly for viewing angle
      
      // Ensure camera is far from origin (outside solar system sphere of ~300 units)
      const distanceFromOrigin = endPos.length();
      if (distanceFromOrigin < 500) {
          // If too close to origin, push camera further out in perpendicular direction
-         endPos.add(perpendicularVector.clone().multiplyScalar(500));
+         endPos.addScaledVector(perpendicularVector, 500);
          if (DEBUG.enabled) console.log(` [${userData.type}] Camera repositioned further from solar system`);
      }
      
@@ -9734,9 +9745,9 @@ let actualRadius;
      parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
      if (parentPlanet) {
          // Get direction from Earth to ISS (radial direction)
-         const earthPos = new THREE.Vector3();
+         const earthPos = focusScratch.earthPos;
          parentPlanet.getWorldPosition(earthPos);
-         const issDirection = targetPosition.clone().sub(earthPos).normalize();
+         const issDirection = focusScratch.issDirection.copy(targetPosition).sub(earthPos).normalize();
          
          // Position camera OUTSIDE the orbit, looking inward at both ISS and Earth
          // This ensures Earth is always visible as backdrop
@@ -9771,7 +9782,7 @@ let actualRadius;
      parentPlanet = this.planets[userData.parentPlanet.toLowerCase()];
      if (parentPlanet) {
          // Calculate moon direction from planet
-         const moonDirection = targetPosition.clone().sub(parentPlanet.position).normalize();
+         const moonDirection = focusScratch.moonDirection.copy(targetPosition).sub(parentPlanet.position).normalize();
          
          // Position camera behind and slightly above moon for chase-cam effect
          const offsetDistance = distance;
@@ -9850,21 +9861,21 @@ let actualRadius;
      // Comets: Chase camera positioned to see nucleus, coma, and spectacular tails
      // (Detail view positioning already done above before getWorldPosition)
      // Tails point away from sun - position camera to show the full majesty
-     const sunPosition = this.sun ? this.sun.position : new THREE.Vector3(0, 0, 0);
-     const cometToSunDir = sunPosition.clone().sub(targetPosition).normalize();
+    const sunPosition = focusScratch.sunPosition.copy(this.sun ? this.sun.position : { x: 0, y: 0, z: 0 });
+    const cometToSunDir = focusScratch.cometToSunDir.copy(sunPosition).sub(targetPosition).normalize();
      
      // Position camera at 45° angle from sun-comet line, elevated for cinematic view
      // This shows: nucleus (center), coma (glow), and tails streaming AWAY from camera toward us
-     const rightVector = new THREE.Vector3(-cometToSunDir.z, 0, cometToSunDir.x).normalize();
+    const rightVector = focusScratch.rightVector.set(-cometToSunDir.z, 0, cometToSunDir.x).normalize();
      
      // Camera offset: 
      // - 70% along sun direction (slightly toward sun for lighting)
      // - 50% to the side (perpendicular for better view)  
      // - 40% elevated (cinematic angle from above)
-     endPos = targetPosition.clone()
-         .add(cometToSunDir.clone().multiplyScalar(distance * 0.7))
-         .add(rightVector.multiplyScalar(distance * 0.5))
-         .add(new THREE.Vector3(0, distance * 0.4, 0));
+     endPos = new THREE.Vector3().copy(targetPosition)
+         .addScaledVector(cometToSunDir, distance * 0.7)
+         .addScaledVector(rightVector, distance * 0.5)
+         .setY(targetPosition.y + (cometToSunDir.y * distance * 0.7) + (rightVector.y * distance * 0.5) + (distance * 0.4));
      
      controls.target.copy(targetPosition); // Look at comet nucleus
      
@@ -9919,7 +9930,7 @@ let actualRadius;
  // For moving objects: capture the camera-end offset once so we can update endPos every
  // frame as the object moves, preventing a stale landing position.
  const isStaticTarget = (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula');
- const endOffset = isStaticTarget ? null : endPos.clone().sub(targetPosition);
+ const endOffset = isStaticTarget ? null : new THREE.Vector3().copy(endPos).sub(targetPosition);
 
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
  const startTime = performance.now();

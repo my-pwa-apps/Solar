@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.85
+// Version 2.10.96
 
-const CACHE_VERSION = '2.10.93';
+const CACHE_VERSION = '2.10.96';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -18,6 +18,8 @@ const STATIC_CACHE_FILES = [
   './index.html',
   './src/main.js',
   './src/i18n.js',
+  './src/bootstrap/installPromptCapture.js',
+  './src/bootstrap/initManagers.js',
   './src/modules/SceneManager.js',
   './src/modules/SolarSystemModule.js',
   './src/modules/TextureCache.js',
@@ -56,7 +58,6 @@ const STATIC_CACHE_FILES = [
   './textures/planets/mercury.jpg',
   './textures/planets/venus.jpg',
   './textures/planets/earth_1k.jpg',
-  './textures/planets/earth_atmos_2k.jpg',
   './textures/planets/mars_1k.jpg',
   './textures/planets/jupiter.jpg',
   './textures/planets/saturn.jpg',

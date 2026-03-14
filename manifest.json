@@ -274,6 +274,22 @@
     {"src": "icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png", "sizes": "32x32", "type": "image/png"},
     {"src": "icons/windows11/StoreLogo.scale-100.png", "sizes": "50x50", "type": "image/png"}
   ],
+  "screenshots": [
+    {
+      "src": "./screenshots/solar1.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Space Voyage - Solar System View"
+    },
+    {
+      "src": "./screenshots/solar2.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Space Voyage - Planet Detail"
+    }
+  ],
   "shortcuts": [
     {
       "name": "View Earth",

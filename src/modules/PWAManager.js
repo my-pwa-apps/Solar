@@ -234,7 +234,7 @@ export class PWAManager {
         
         const msgP = promptElement.querySelector('p');
         if (msgP) {
-            msgP.innerHTML = 'Tap the Share icon <span style="font-size:18px">▵</span> then choose "Add to Home Screen" to install.';
+            msgP.textContent = 'Tap the Share icon \u25b5 then choose "Add to Home Screen" to install.';
         }
         
         const buttons = promptElement.querySelector('.install-buttons');

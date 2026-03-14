@@ -2093,3 +2093,38 @@ select {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
 }
+
+@media (pointer: coarse), (max-width: 768px) {
+    #main-header,
+    .draggable-panel,
+    #main-footer,
+    .modal,
+    .modal-content,
+    [data-tooltip]::after,
+    #hover-label,
+    #install-prompt,
+    #offline-indicator,
+    #update-notification,
+    .gesture-hint,
+    .event-toast {
+        -webkit-backdrop-filter: blur(8px) saturate(120%) !important;
+        backdrop-filter: blur(8px) saturate(120%) !important;
+    }
+}
+
+body.xr-active #main-header,
+body.xr-active .draggable-panel,
+body.xr-active #main-footer,
+body.xr-active .modal,
+body.xr-active .modal-content,
+body.xr-active [data-tooltip]::after,
+body.xr-active #hover-label,
+body.xr-active #install-prompt,
+body.xr-active #offline-indicator,
+body.xr-active #update-notification,
+body.xr-active .gesture-hint,
+body.xr-active .event-toast {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(20, 20, 28, 0.94) !important;
+}

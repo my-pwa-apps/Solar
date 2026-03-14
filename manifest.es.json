@@ -328,19 +328,22 @@
             "name": "Ver la Tierra",
             "short_name": "Tierra",
             "description": "Saltar directamente a la Tierra",
-            "url": "./?planet=earth&lang=es"
+            "url": "./?planet=earth&lang=es",
+            "icons": [{"src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png", "sizes": "256x256"}]
         },
         {
             "name": "Ver Marte",
             "short_name": "Marte",
             "description": "Saltar directamente a Marte",
-            "url": "./?planet=mars&lang=es"
+            "url": "./?planet=mars&lang=es",
+            "icons": [{"src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png", "sizes": "256x256"}]
         },
         {
             "name": "Iniciar Modo RV",
             "short_name": "RV",
             "description": "Iniciar en modo RV",
-            "url": "./?vr=true&lang=es"
+            "url": "./?vr=true&lang=es",
+            "icons": [{"src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png", "sizes": "256x256"}]
         }
     ],
     "prefer_related_applications": false,

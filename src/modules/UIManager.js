@@ -93,13 +93,48 @@ export class UIManager {
 
  showHelp(content) {
  if (this.elements.helpContent) {
- this.elements.helpContent.innerHTML = content;
+ this.elements.helpContent.replaceChildren(...this._buildSafeHelpNodes(content));
  }
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.remove('hidden');
  this.elements.helpModal.setAttribute('aria-hidden', 'false');
  this._trapFocus(this.elements.helpModal);
  }
+ }
+
+ _buildSafeHelpNodes(content) {
+ const parser = new DOMParser();
+ const doc = parser.parseFromString(`<div>${content || ''}</div>`, 'text/html');
+ const allowedTags = new Set(['DIV', 'H3', 'P', 'STRONG', 'SPAN', 'BR']);
+
+ const sanitizeNode = (node) => {
+ if (node.nodeType === Node.TEXT_NODE) {
+ return document.createTextNode(node.textContent || '');
+ }
+
+ if (node.nodeType !== Node.ELEMENT_NODE || !allowedTags.has(node.tagName)) {
+ const fragment = document.createDocumentFragment();
+ node.childNodes.forEach((child) => {
+ const safeChild = sanitizeNode(child);
+ if (safeChild) fragment.appendChild(safeChild);
+ });
+ return fragment;
+ }
+
+ const safeElement = document.createElement(node.tagName.toLowerCase());
+ if (node.tagName === 'SPAN' && node.classList.contains('keyboard-shortcut')) {
+ safeElement.className = 'keyboard-shortcut';
+ }
+
+ node.childNodes.forEach((child) => {
+ const safeChild = sanitizeNode(child);
+ if (safeChild) safeElement.appendChild(safeChild);
+ });
+
+ return safeElement;
+ };
+
+ return Array.from(doc.body.firstChild?.childNodes || []).map(sanitizeNode);
  }
 
  closeInfoPanel() {

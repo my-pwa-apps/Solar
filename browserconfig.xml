@@ -8,9 +8,5 @@
             <wide310x150logo src="./icons/windows11/Wide310x150Logo.scale-100.png"/>
             <TileColor>#0078D4</TileColor>
         </tile>
-        <badge>
-            <polling-uri src="./badge.json"/>
-            <frequency>30</frequency>
-        </badge>
     </msapplication>
 </browserconfig>

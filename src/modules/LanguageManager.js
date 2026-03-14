@@ -32,7 +32,8 @@ class LanguageManager {
     detectAndSetLanguage() {
         const urlParams = new URLSearchParams(window.location.search);
         const urlLang = urlParams.get('lang');
-        const storedLang = localStorage.getItem('appLanguage');
+        let storedLang;
+        try { storedLang = localStorage.getItem('appLanguage'); } catch { storedLang = null; }
         const userLang = navigator.language || navigator.userLanguage;
         
         let langCode;
@@ -54,7 +55,7 @@ class LanguageManager {
         
         // Store the language preference for future sessions
         if (!storedLang) {
-            localStorage.setItem('appLanguage', langCode);
+            try { localStorage.setItem('appLanguage', langCode); } catch { /* Safari private mode */ }
         }
         
         // Set HTML lang attribute
@@ -77,7 +78,7 @@ class LanguageManager {
         const manifestLink = document.getElementById('pwa-manifest');
         if (manifestLink) {
             const manifestFile = this.manifestFiles[langCode] || './manifest.json';
-            manifestLink.href = manifestFile + '?v=2.10.6';
+            manifestLink.href = manifestFile + '?v=2.10.96';
         }
     }
 }

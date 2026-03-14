@@ -337,9 +337,10 @@ export class SceneManager {
  if (supported) {
  const vrButton = document.createElement('button');
  vrButton.id = 'VRButton';
- vrButton.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
- vrButton.innerHTML = '<span style="font-weight: 600; font-size: 16px;">VR</span>'; // Clear text label
+ vrButton.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s; font-weight: 600; font-size: 16px;';
+ vrButton.textContent = 'VR';
  vrButton.title = 'Enter VR Mode';
+ vrButton.setAttribute('aria-label', 'Enter VR Mode');
  
  // Hover effect
  vrButton.onmouseenter = () => {
@@ -362,7 +363,7 @@ export class SceneManager {
  await this.renderer.xr.setSession(session);
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.error('[VR] Failed to start VR session:', error);
- alert('Could not enter VR mode: ' + error.message);
+ console.warn('Could not enter VR mode: ' + error.message);
  }
  };
  
@@ -372,6 +373,8 @@ export class SceneManager {
  vrContainer.classList.remove('hidden');
  }
  }
+ }).catch((err) => {
+ if (DEBUG && DEBUG.enabled) console.warn('[VR] XR support check failed:', err);
  });
  }
 
@@ -381,9 +384,10 @@ export class SceneManager {
  if (supported) {
  const arButton = document.createElement('button');
  arButton.id = 'ARButton';
- arButton.style.cssText = 'position: fixed; bottom: 80px; right: 80px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s;';
- arButton.innerHTML = '<span style="font-weight: 600; font-size: 16px;">AR</span>'; // Clear text label
+ arButton.style.cssText = 'position: fixed; bottom: 80px; right: 80px; width: 50px; height: 50px; cursor: pointer; padding: 0; border: 2px solid #fff; border-radius: 50%; background: rgba(0,0,0,0.8); color: #fff; font-size: 24px; text-align: center; line-height: 50px; opacity: 0.9; outline: none; z-index: 999; transition: all 0.3s; font-weight: 600; font-size: 16px;';
+ arButton.textContent = 'AR';
  arButton.title = 'Enter AR Mode';
+ arButton.setAttribute('aria-label', 'Enter AR Mode');
  
  // Hover effect
  arButton.onmouseenter = () => {
@@ -403,7 +407,7 @@ export class SceneManager {
  await this.renderer.xr.setSession(session);
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.error('[AR] Failed to start AR session:', error);
- alert('Could not enter AR mode: ' + error.message);
+ console.warn('Could not enter AR mode: ' + error.message);
  }
  };
  
@@ -421,6 +425,7 @@ export class SceneManager {
  try {
  const session = this.renderer.xr.getSession();
  if (DEBUG.VR) console.log(`[XR] Session started: ${session.mode}`);
+ document.body.classList.add('xr-active');
  
  // Save desktop camera state so we can restore it after the session ends.
  this._preVRCameraPosition = this.camera.position.clone();
@@ -474,6 +479,7 @@ export class SceneManager {
  // Handle XR session end
  this.renderer.xr.addEventListener('sessionend', () => {
  if (DEBUG.enabled || DEBUG.VR) console.log('[XR] Session ended');
+ document.body.classList.remove('xr-active');
  
  // Return dolly to origin so desktop camera world == camera local
  this.dolly.position.set(0, 0, 0);
@@ -520,6 +526,7 @@ export class SceneManager {
  console.log('%c[VR-Emulate] Activating desktop VR emulation mode', 'color: #00ff88; font-weight: bold; font-size: 14px');
 
  // Replicate what sessionstart does
+ document.body.classList.add('xr-active');
  this.dolly.position.set(0, 0, 200);
  this.dolly.rotation.set(0, 0, 0);
  this.camera.position.set(0, 0, 0);
@@ -2403,6 +2410,8 @@ this.camera.near = 10.0;
  }
 
  dispose() {
+ this._disposed = true;
+ 
  // Clean up resources
  this.clear();
  
@@ -2422,8 +2431,11 @@ this.camera.near = 10.0;
  
  // End active XR session
  if (this.renderer?.xr?.isPresenting) {
- this.renderer.xr.getSession()?.end().catch(() => {});
+ this.renderer.xr.getSession()?.end().catch((err) => {
+ if (DEBUG && DEBUG.enabled) console.warn('[Dispose] XR session end error:', err);
+ });
  }
+ document.body.classList.remove('xr-active');
  
  // Dispose label renderer
  if (this.labelRenderer?.domElement?.parentNode) {

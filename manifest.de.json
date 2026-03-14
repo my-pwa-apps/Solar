@@ -328,19 +328,22 @@
             "name": "Erde Anzeigen",
             "short_name": "Erde",
             "description": "Direkt zur Erde springen",
-            "url": "./?planet=earth&lang=de"
+            "url": "./?planet=earth&lang=de",
+            "icons": [{"src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png", "sizes": "256x256"}]
         },
         {
             "name": "Mars Anzeigen",
             "short_name": "Mars",
             "description": "Direkt zu Mars springen",
-            "url": "./?planet=mars&lang=de"
+            "url": "./?planet=mars&lang=de",
+            "icons": [{"src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png", "sizes": "256x256"}]
         },
         {
             "name": "VR Modus Starten",
             "short_name": "VR",
             "description": "Im VR-Modus starten",
-            "url": "./?vr=true&lang=de"
+            "url": "./?vr=true&lang=de",
+            "icons": [{"src": "./icons/windows11/Square44x44Logo.altform-unplated_targetsize-256.png", "sizes": "256x256"}]
         }
     ],
     "prefer_related_applications": false,
