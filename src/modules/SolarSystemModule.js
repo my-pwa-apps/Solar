@@ -1270,32 +1270,37 @@ export class SolarSystemModule {
         // Don't include URL in cache key so texture persists across language changes
         const cacheKey = `${planetName.toLowerCase()}_texture_remote`;
         if (tex.image && tex.image instanceof HTMLImageElement && sourceType !== 'cached') {
-            // Convert image to data URL and cache it (skip if already from cache).
-            // Wrapped in its own try-catch: on memory-limited mobile devices, allocating
-            // a second full-res canvas + toDataURL() can throw an OutOfMemoryError or
-            // QuotaExceededError. We must not let a caching failure prevent the texture
-            // from being applied to the material below.
-            // Cache to IndexedDB for faster subsequent loads.
-            // On mobile, use lower quality and capped resolution to reduce memory pressure.
-            try {
-                const maxDim = IS_MOBILE ? 1024 : tex.image.width;
-                const scale = Math.min(1, maxDim / Math.max(tex.image.width, tex.image.height));
-                const canvas = document.createElement('canvas');
-                canvas.width = Math.round(tex.image.width * scale);
-                canvas.height = Math.round(tex.image.height * scale);
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(tex.image, 0, 0, canvas.width, canvas.height);
-                const quality = IS_MOBILE ? 0.7 : 0.95;
-                const dataURL = canvas.toDataURL('image/jpeg', quality);
-                TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {
-                    // Cache write failed - texture will be reloaded next time
-                });
-                if (DEBUG && DEBUG.TEXTURES) {
-                    console.log(`💾 Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB (${canvas.width}x${canvas.height})`);
-                }
-            } catch (cacheErr) {
-                // Out of memory, quota exceeded, or other — skip caching, texture still applies
-                if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} texture cache skipped (${cacheErr.message})`);
+            // Cache the original image source directly as a blob-based dataURL.
+            // IMPORTANT: We must NOT use canvas.drawImage(tex.image) here because
+            // after Three.js uploads the texture to the GPU, some browsers purge
+            // the decoded bitmap from the HTMLImageElement to save memory. Drawing
+            // a purged image onto a canvas produces partial/black pixels, which
+            // then get cached and served on subsequent loads.
+            // Instead, re-fetch the original file as a blob and cache that.
+            if (url && !url.startsWith('data:')) {
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.onerror = () => reject(reader.error);
+                            reader.readAsDataURL(blob);
+                        });
+                    })
+                    .then(dataURL => {
+                        TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+                        if (DEBUG && DEBUG.TEXTURES) {
+                            console.log(`💾 Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB (from blob)`);
+                        }
+                    })
+                    .catch(() => {
+                        // Fetch/cache failed — texture still displays from GPU
+                        if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} texture cache skipped (fetch failed)`);
+                    });
             }
         }
         

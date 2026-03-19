@@ -10,7 +10,7 @@ export class TextureCache {
  this.dbName = 'SolarSystemTextureCache';
  this.dbVersion = 1;
  this.storeName = 'textures';
- this.textureVersion = '2.10.119'; // Bump to invalidate all cached textures
+ this.textureVersion = '2.10.121'; // Bump to invalidate all cached textures
  this.db = null;
  this.initPromise = this.initDB();
  }
