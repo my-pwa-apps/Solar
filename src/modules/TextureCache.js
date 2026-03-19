@@ -10,6 +10,7 @@ export class TextureCache {
  this.dbName = 'SolarSystemTextureCache';
  this.dbVersion = 1;
  this.storeName = 'textures';
+ this.textureVersion = '2.10.119'; // Bump to invalidate all cached textures
  this.db = null;
  this.initPromise = this.initDB();
  }
@@ -21,7 +22,7 @@ export class TextureCache {
  request.onerror = () => reject(request.error);
  request.onsuccess = () => {
  this.db = request.result;
- resolve(this.db);
+ this._checkVersion().then(() => resolve(this.db)).catch(() => resolve(this.db));
  };
  
  request.onupgradeneeded = (event) => {
@@ -35,6 +36,38 @@ export class TextureCache {
  reject(new Error('IndexedDB blocked by another tab'));
  };
  });
+ }
+
+ async _checkVersion() {
+ try {
+ const tx = this.db.transaction([this.storeName], 'readonly');
+ const store = tx.objectStore(this.storeName);
+ const stored = await new Promise((resolve) => {
+ const req = store.get('__texture_cache_version__');
+ req.onsuccess = () => resolve(req.result);
+ req.onerror = () => resolve(null);
+ });
+ if (stored !== this.textureVersion) {
+ console.log(`[Cache] Texture version changed (${stored} → ${this.textureVersion}), clearing stale textures`);
+ const clearTx = this.db.transaction([this.storeName], 'readwrite');
+ const clearStore = clearTx.objectStore(this.storeName);
+ await new Promise((resolve) => {
+ const req = clearStore.clear();
+ req.onsuccess = () => resolve();
+ req.onerror = () => resolve();
+ });
+ const versionTx = this.db.transaction([this.storeName], 'readwrite');
+ const versionStore = versionTx.objectStore(this.storeName);
+ await new Promise((resolve) => {
+ const req = versionStore.put(this.textureVersion, '__texture_cache_version__');
+ req.onsuccess = () => resolve();
+ req.onerror = () => resolve();
+ });
+ this.cache.clear();
+ }
+ } catch (e) {
+ if (DEBUG && DEBUG.enabled) console.warn('[Cache] Version check error:', e);
+ }
  }
 
  async get(key) {
