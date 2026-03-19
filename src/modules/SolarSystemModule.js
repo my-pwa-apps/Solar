@@ -804,13 +804,13 @@ export class SolarSystemModule {
             { name: 'Haumea', radius: 0.125, color: 0xE0D6C8, distance: 2139, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: t('descHaumea'), funFact: 'Rotation period ~4 hours gives its triaxial ellipsoid shape.', realSize: '2322 × 1704 × 1026 km (triaxial diameters)' },
             { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2279, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: t('descMakemake'), funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
             { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2483, speed: 0.00004, rotationSpeed: 0.01, tilt: 78, description: t('descEris'), funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
-            { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2024, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: 'Pluto companion in 2:3 resonance.', funFact: 'Sometimes called anti-Pluto.', realSize: '~910 km est.' },
-            { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2189, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: 'Large Kuiper Belt object; possible ring.', funFact: 'Ring is unusually far out.', realSize: '1110 km diameter' },
-            { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 3457, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: 'Distant slow-rotating object (2007 OR10).', funFact: 'Named after Chinese water god.', realSize: '~1230 km est.' },
+            { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2024, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: t('descOrcus'), funFact: t('funFactOrcus'), realSize: '~910 km est.' },
+            { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2189, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: t('descQuaoar'), funFact: t('funFactQuaoar'), realSize: '1110 km diameter' },
+            { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 3457, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: t('descGonggong'), funFact: t('funFactGonggong'), realSize: '~1230 km est.' },
             { name: 'Sedna', radius: 0.078, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: t('descSedna'), funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars.', realSize: '~995 km diameter' },
-            { name: 'Salacia', radius: 0.067, color: 0x996655, distance: 2234, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: 'Dark Kuiper Belt object.', funFact: 'Named after Roman sea goddess.', realSize: '~850 km est.' },
-            { name: 'Varda', radius: 0.057, color: 0xAA8866, distance: 2328, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: 'Binary with moon Ilmarë.', funFact: 'Its satellite aids mass calculation.', realSize: '~720 km est.' },
-            { name: 'Varuna', radius: 0.052, color: 0xAA7755, distance: 2139, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: 'Rapidly rotating classical KBO.', funFact: 'Fast spin may make it oblate.', realSize: '~668 km est.' }
+            { name: 'Salacia', radius: 0.067, color: 0x996655, distance: 2234, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: t('descSalacia'), funFact: t('funFactSalacia'), realSize: '~850 km est.' },
+            { name: 'Varda', radius: 0.057, color: 0xAA8866, distance: 2328, speed: 0.000046, rotationSpeed: 0.01, tilt: 10, description: t('descVarda'), funFact: t('funFactVarda'), realSize: '~720 km est.' },
+            { name: 'Varuna', radius: 0.052, color: 0xAA7755, distance: 2139, speed: 0.000053, rotationSpeed: 0.04, tilt: 22, description: t('descVaruna'), funFact: t('funFactVaruna'), realSize: '~668 km est.' }
         ];
 
         catalog.forEach(cfg => {
@@ -1235,12 +1235,36 @@ export class SolarSystemModule {
     return placeholderTexture; // caller receives placeholder; will be swapped later
  }
 
+ _configureSphericalSurfaceTexture(tex, { colorSpace = null } = {}) {
+    if (!tex) return tex;
+
+    if (colorSpace) {
+        tex.colorSpace = colorSpace;
+    }
+
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 16;
+
+    const width = tex.image?.width || tex.source?.data?.width || 0;
+    if (width > 1) {
+        tex.offset.x = 0.5 / width;
+    }
+
+    tex.needsUpdate = true;
+    return tex;
+ }
+
  // Internal: apply successful remote texture
  _onPlanetTextureSuccess(planetName, tex, url, sourceType) {
     try {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.anisotropy = 16;
-        tex.needsUpdate = true;
+        if (planetName.toLowerCase() === 'earth') {
+            this._configureSphericalSurfaceTexture(tex, { colorSpace: THREE.SRGBColorSpace });
+        } else {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.anisotropy = 16;
+            tex.needsUpdate = true;
+        }
         
         // Cache the successfully loaded texture for future use (cache by planet name only)
         // Don't include URL in cache key so texture persists across language changes
@@ -1843,85 +1867,90 @@ export class SolarSystemModule {
  return texture;
  }
  
- createEarthNormalMap(size) {
- const cacheKey = `earth_normal_${size}`;
- const canvasCacheKey = `${cacheKey}_canvas`;
- 
- // Check MEMORY cache for pre-generated canvas (synchronous, instant)
- if (TEXTURE_CACHE.cache.has(canvasCacheKey)) {
- const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
- const texture = new THREE.CanvasTexture(cachedCanvas);
- texture.needsUpdate = true;
- if (DEBUG && DEBUG.TEXTURES) console.log(`✅ Earth normal map loaded from memory cache`);
- return texture;
- }
- 
- // Generate texture (no cache hit)
- if (DEBUG && DEBUG.TEXTURES) console.log(`🎨 Generating Earth normal map (${size}x${size})...`);
- const startTime = performance.now();
- // Normal map for mountain ranges and ocean trenches
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- const noise = (x, y, seed = 0) => {
- const angle = Math.sin(x * 12.9898 + y * 78.233 + seed * 43.758) * 43758.5453;
- return Math.abs(angle - Math.floor(angle));
- };
- 
- const turbulence = (x, y, size) => {
- let value = 0, initialSize = size;
- while (size >= 1) {
- value += noise(x / size, y / size) * size;
- size /= 2.0;
- }
- return value / initialSize;
- };
- 
- const imageData = ctx.createImageData(size, size);
- const data = imageData.data;
- 
- // Calculate normals from height map
- for (let y = 1; y < size - 1; y++) {
- for (let x = 1; x < size - 1; x++) {
- const idx = (y * size + x) * 4;
- const nx = x / size * 2, ny = y / size * 2;
- 
- // Sample height at neighboring pixels
- const h = turbulence(nx, ny, 128) / 128;
- const hL = turbulence((x - 1) / size * 2, ny, 128) / 128;
- const hR = turbulence((x + 1) / size * 2, ny, 128) / 128;
- const hU = turbulence(nx, (y - 1) / size * 2, 128) / 128;
- const hD = turbulence(nx, (y + 1) / size * 2, 128) / 128;
- 
- // Calculate gradients
- const dX = (hR - hL) * 2;
- const dY = (hD - hU) * 2;
- 
- // Convert to normal map RGB (blue = up, red = x, green = y)
- data[idx] = Math.floor((dX + 1) * 127.5); // R: -1 to 1 -> 0 to 255
- data[idx + 1] = Math.floor((dY + 1) * 127.5); // G: -1 to 1 -> 0 to 255
- data[idx + 2] = 200; // B: mostly pointing up
- data[idx + 3] = 255;
- }
- }
- 
- ctx.putImageData(imageData, 0, 0);
- 
- // Cache the canvas in memory for instant reuse (synchronous)
- TEXTURE_CACHE.cache.set(canvasCacheKey, canvas);
- 
- // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
- const dataURL = canvas.toDataURL('image/png');
- TEXTURE_CACHE.set(cacheKey, dataURL).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache write failed:', e); });
- 
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- if (DEBUG && DEBUG.TEXTURES) console.log(`⏱️ Earth normal map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
- return texture;
- }
- 
+    createEarthNormalMap(size) {
+        const cacheKey = `earth_normal_${size}`;
+        const canvasCacheKey = `${cacheKey}_canvas`;
+
+        // Check MEMORY cache for pre-generated canvas (synchronous, instant)
+        if (TEXTURE_CACHE.cache.has(canvasCacheKey)) {
+            const cachedCanvas = TEXTURE_CACHE.cache.get(canvasCacheKey);
+            const texture = new THREE.CanvasTexture(cachedCanvas);
+            texture.needsUpdate = true;
+            if (DEBUG && DEBUG.TEXTURES) console.log(`✅ Earth normal map loaded from memory cache`);
+            return texture;
+        }
+
+        // Generate texture (no cache hit)
+        if (DEBUG && DEBUG.TEXTURES) console.log(`🎨 Generating Earth normal map (${size}x${size})...`);
+        const startTime = performance.now();
+        // Normal map for mountain ranges and ocean trenches
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        const noise = (x, y, seed = 0) => {
+            const angle = Math.sin(x * 12.9898 + y * 78.233 + seed * 43.758) * 43758.5453;
+            return Math.abs(angle - Math.floor(angle));
+        };
+
+        const turbulence = (x, y, size) => {
+            let value = 0, initialSize = size;
+            while (size >= 1) {
+                value += noise(x / size, y / size) * size;
+                size /= 2.0;
+            }
+            return value / initialSize;
+        };
+
+        const imageData = ctx.createImageData(size, size);
+        const data = imageData.data;
+
+        // Calculate normals from height map with wrapped horizontal sampling so the
+        // equirectangular seam does not create a lighting split on the sphere.
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const idx = (y * size + x) * 4;
+                const nx = x / size * 2, ny = y / size * 2;
+                const leftX = (x - 1 + size) % size;
+                const rightX = (x + 1) % size;
+                const upY = Math.max(0, y - 1);
+                const downY = Math.min(size - 1, y + 1);
+
+                // Sample height at neighboring pixels
+                const h = turbulence(nx, ny, 128) / 128;
+                const hL = turbulence(leftX / size * 2, ny, 128) / 128;
+                const hR = turbulence(rightX / size * 2, ny, 128) / 128;
+                const hU = turbulence(nx, upY / size * 2, 128) / 128;
+                const hD = turbulence(nx, downY / size * 2, 128) / 128;
+
+                // Calculate gradients
+                const dX = (hR - hL) * 2;
+                const dY = (hD - hU) * 2;
+
+                // Convert to normal map RGB (blue = up, red = x, green = y)
+                data[idx] = Math.floor((dX + 1) * 127.5);     // R: -1 to 1 -> 0 to 255
+                data[idx + 1] = Math.floor((dY + 1) * 127.5); // G: -1 to 1 -> 0 to 255
+                data[idx + 2] = 200;                          // B: mostly pointing up
+                data[idx + 3] = 255;
+            }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+
+        // Cache the canvas in memory for instant reuse (synchronous)
+        TEXTURE_CACHE.cache.set(canvasCacheKey, canvas);
+
+        // Also cache as data URL in IndexedDB for persistence (async, non-blocking)
+        const dataURL = canvas.toDataURL('image/png');
+        TEXTURE_CACHE.set(cacheKey, dataURL).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache write failed:', e); });
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        if (DEBUG && DEBUG.TEXTURES) console.log(`⏱️ Earth normal map generated in ${(performance.now() - startTime).toFixed(0)}ms`);
+        return texture;
+    }
+
  createEarthSpecularMap(size) {
  const cacheKey = `earth_specular_${size}`;
  const canvasCacheKey = `${cacheKey}_canvas`;
@@ -2770,10 +2799,13 @@ export class SolarSystemModule {
  // Use quality-aware texture size: 1024 on mobile, 4096 on desktop
  const earthTexSize = CONFIG.QUALITY.textureSize;
  if (DEBUG.enabled) console.time('Earth Material Creation');
- const earthTexture = this.createEarthTextureRealFixed(earthTexSize);
- const earthBump = this.createEarthBumpMap(earthTexSize);
- const earthSpecular = this.createEarthSpecularMap(earthTexSize);
- const earthNormal = this.createEarthNormalMap(earthTexSize);
+ const earthTexture = this._configureSphericalSurfaceTexture(
+ this.createEarthTextureRealFixed(earthTexSize),
+ { colorSpace: THREE.SRGBColorSpace }
+ );
+ const earthBump = this._configureSphericalSurfaceTexture(this.createEarthBumpMap(earthTexSize));
+ const earthSpecular = this._configureSphericalSurfaceTexture(this.createEarthSpecularMap(earthTexSize));
+ const earthNormal = this._configureSphericalSurfaceTexture(this.createEarthNormalMap(earthTexSize));
  if (DEBUG.enabled) console.timeEnd('Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
@@ -2795,11 +2827,11 @@ export class SolarSystemModule {
  
  // Metalness (oceans have slight reflection)
  metalness: 0.1, // Reduced - Earth is not metallic
- 
+
  // NO emissive - let the sun's light create day/night naturally
  emissive: 0x000000,
  emissiveIntensity: 0,
- 
+
  // Advanced rendering
  envMapIntensity: 1.2,
  transparent: false,
@@ -5095,23 +5127,25 @@ export class SolarSystemModule {
  stars: [
  { name: 'Aldebaran', ra: 68.9, dec: 16.5, mag: 0.9, color: 0xFF6347 }, // 0 - Red giant (bull's eye)
  { name: 'Elnath', ra: 81.6, dec: 28.6, mag: 1.7, color: 0xE0FFFF }, // 1 - Northern horn tip
- { name: 'Alcyone', ra: 56.9, dec: 24.1, mag: 2.9, color: 0xE0FFFF }, // 2 - Pleiades brightest
+ { name: 'Gamma Tauri', ra: 64.9, dec: 15.6, mag: 3.6, color: 0xFFFFE0 }, // 2 - Hyades left side
  { name: 'Zeta Tauri', ra: 84.4, dec: 21.1, mag: 3.0, color: 0xFFFFE0 }, // 3 - Southern horn
  { name: 'Theta Tauri', ra: 67.2, dec: 15.9, mag: 3.4, color: 0xFFFFE0 }, // 4 - Hyades cluster
  { name: 'Epsilon Tauri', ra: 67.3, dec: 19.2, mag: 3.5, color: 0xFFA500 } // 5 - Hyades cluster
  ],
- lines: [[2,5], [5,0], [0,4], [0,1], [1,3]] // V-shaped face (Hyades) with horns
+ lines: [[2,4], [4,0], [0,5], [0,1], [0,3]] // Hyades V-shaped face with horns to Elnath and Zeta Tauri
  },
  {
  name: 'Gemini (The Twins)',
  description: t('descGemini'),
  stars: [
- { name: 'Pollux', ra: 116.3, dec: 28.0, mag: 1.2, color: 0xFFA500 },
- { name: 'Castor', ra: 113.6, dec: 31.9, mag: 1.6, color: 0xFFFFF0 },
- { name: 'Alhena', ra: 99.4, dec: 16.4, mag: 1.9, color: 0xFFFFF0 },
- { name: 'Mebsuta', ra: 101.0, dec: 25.1, mag: 3.0, color: 0xFFFFE0 }
+ { name: 'Pollux', ra: 116.3, dec: 28.0, mag: 1.2, color: 0xFFA500 }, // 0 - Twin 1 head
+ { name: 'Castor', ra: 113.6, dec: 31.9, mag: 1.6, color: 0xFFFFF0 }, // 1 - Twin 2 head
+ { name: 'Wasat', ra: 110.0, dec: 22.0, mag: 3.5, color: 0xFFFFF0 }, // 2 - Center body
+ { name: 'Mebsuta', ra: 101.0, dec: 25.1, mag: 3.0, color: 0xFFFFE0 }, // 3 - Left arm/shoulder
+ { name: 'Mekbuda', ra: 106.0, dec: 24.4, mag: 3.8, color: 0xFFFFE0 }, // 4 - Right torso
+ { name: 'Alhena', ra: 99.4, dec: 16.4, mag: 1.9, color: 0xFFFFF0 } // 5 - Foot
  ],
- lines: [[1,0], [0,2], [2,3], [3,1]] // Rectangle pattern showing the twin figures
+ lines: [[1,2], [2,5], [0,4], [4,3], [2,4]] // Two parallel twin figures sharing a central body connection
  },
  {
  name: 'Cancer (The Crab)',
@@ -5220,10 +5254,11 @@ export class SolarSystemModule {
  { name: 'Sadalmelik', ra: 331.4, dec: -0.3, mag: 3.0, color: 0xFFFFE0 }, // 1 - Lucky star of the king
  { name: 'Skat', ra: 346.2, dec: -15.8, mag: 3.3, color: 0xFFFFF0 }, // 2 - Shin/leg
  { name: 'Albali', ra: 315.9, dec: -9.5, mag: 3.8, color: 0xFFFFF0 }, // 3 - The swallower
- { name: 'Lambda Aquarii', ra: 343.2, dec: -7.6, mag: 3.7, color: 0xFFFFE0 }, // 4 - Water stream (λ Aqr, RA 22h 53m)
- { name: 'Phi Aquarii', ra: 359.6, dec: -6.0, mag: 4.2, color: 0xFFFFF0 }   // 5 - Water stream end (φ Aqr, RA 23h 58m)
+ { name: 'Sadachbia', ra: 335.4, dec: -1.4, mag: 3.8, color: 0xFFFFF0 }, // 4 - Urn corner (γ Aqr)
+ { name: 'Lambda Aquarii', ra: 343.2, dec: -7.6, mag: 3.7, color: 0xFFFFE0 }, // 5 - Water stream (λ Aqr, RA 22h 53m)
+ { name: 'Phi Aquarii', ra: 359.6, dec: -6.0, mag: 4.2, color: 0xFFFFF0 }   // 6 - Water stream end (φ Aqr, RA 23h 58m)
  ],
- lines: [[3,0], [0,1], [1,4], [4,5], [5,2]] // Water bearer with flowing water
+ lines: [[3,0], [0,4], [4,1], [1,5], [5,6], [5,2]] // Urn shape with a descending water stream
  },
  {
  name: 'Pisces (The Fish)',
@@ -5237,7 +5272,7 @@ export class SolarSystemModule {
  { name: 'Gamma Piscium', ra: 349.29, dec: 3.2, mag: 3.7, color: 0xFFFFE0 }, // 5 - Western fish body (γ Psc, RA 23h 17m)
  { name: 'Kappa Piscium', ra: 351.73, dec: 1.2, mag: 4.9, color: 0xFFFFF0 } // 6 - Western fish tail (κ Psc, RA 23h 27m)
  ],
- lines: [[4,0], [0,1], [1,5], [5,2], [2,6], [5,3]] // Two fish with connecting cord
+ lines: [[1,3], [3,0], [1,4], [4,5], [5,2], [2,6]] // Knot at Alrescha with eastern and western fish chains
  },
  
  // === FAMOUS NON-ZODIAC CONSTELLATIONS ===
@@ -5253,7 +5288,7 @@ export class SolarSystemModule {
  { name: 'Mintaka', ra: 83.0, dec: -0.3, mag: 2.2, color: 0xE0FFFF }, // Belt star 3
  { name: 'Saiph', ra: 86.9, dec: -9.7, mag: 2.1, color: 0xB0E0E6 }
  ],
- lines: [[2,0], [0,4], [4,1], [1,6], [6,5], [5,4], [4,3]] // Hourglass/bowtie shape with belt
+ lines: [[2,0], [2,5], [5,4], [4,3], [3,6], [6,1], [1,5]] // Common shoulder-belt-leg Orion figure
  },
  {
  name: 'Orion\'s Belt',
@@ -5290,12 +5325,11 @@ export class SolarSystemModule {
  ],
  lines: [
  [0,1], [1,2],          // Head & neck
- [2,6], [2,3],          // Neck to body top & chest
- [3,7],                 // Chest to body bottom
- [3,4], [4,5],          // Front legs
- [6,7], [7,8], [8,9],   // Bowl sides/bottom
- [9,10], [10,11], [11,12], // Handle (tail)
- [7,13], [13,14], [14,15]  // Hind legs
+ [2,6], [6,9],          // Neck into shoulders/back
+ [9,8], [8,7],          // Back to lower body
+ [2,3], [3,4], [4,5],   // Front legs
+ [9,10], [10,11], [11,12], // Tail
+ [8,13], [13,14], [14,15]  // Hind legs from rear body
  ]
  },
  {
@@ -5388,7 +5422,7 @@ export class SolarSystemModule {
  { name: 'Mu Andromedae', ra: 6.5, dec: 38.5, mag: 3.9, color: 0xFFFFF0 }, // 4 - Arm
  { name: 'Nu Andromedae', ra: 12.2, dec: 41.1, mag: 4.5, color: 0xFFFFE0 } // 5 - Chain
  ],
- lines: [[0,3], [3,4], [4,5], [5,1], [1,2]] // Princess chained figure
+ lines: [[0,1], [1,2], [1,4], [4,5], [0,3]] // Main Andromeda chain with a secondary branch
  },
  {
  name: 'Perseus (The Hero)',
@@ -5401,7 +5435,7 @@ export class SolarSystemModule {
  { name: 'Delta Persei', ra: 57.3, dec: 47.8, mag: 3.0, color: 0xE0FFFF }, // 4 - Arm
  { name: 'Epsilon Persei', ra: 59.0, dec: 40.0, mag: 2.9, color: 0xE0FFFF } // 5 - Sword tip
  ],
- lines: [[3,0], [0,4], [4,5], [5,2], [0,1]] // Hero with sword and Medusa's head
+ lines: [[1,0], [0,3], [0,4], [4,5], [5,2]] // Mirfak-centered hero figure with branching torso and sword arm
  },
  {
  name: 'Canis Major (The Great Dog)',
@@ -5430,7 +5464,7 @@ export class SolarSystemModule {
  { name: 'Lambda Aquilae', ra: 286.6, dec: -4.9, mag: 3.4, color: 0xE0FFFF }, // 5 - λ Aql
  { name: 'Zeta Aquilae', ra: 286.4, dec: 13.9, mag: 3.0, color: 0xFFFFE0 }  // 6 - ζ Aql (head)
  ],
- lines: [[6,1], [1,0], [0,2], [2,3], [4,0], [5,4]] // Eagle spread: head-body-tail, wings
+ lines: [[6,1], [1,0], [0,2], [0,4], [4,5], [2,3]] // Common Altair-centered eagle figure with wing and tail extensions
  },
  {
  name: 'Pegasus (The Winged Horse)',
@@ -7810,7 +7844,7 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'GPS Satellite (NAVSTAR)',
- distance: 3.16, // 20,180 km altitude = 3.16x Earth radius (more accurate)
+ distance: 4.17, // 20,180 km altitude; orbit radius from Earth center = (20,180 + 6,371) / 6,371 ≈ 4.17
  speed: 2.0,
  size: 0.015,
  color: 0x00FF00,
@@ -7969,7 +8003,7 @@ createHyperrealisticHubble(satData) {
  type: 'probe',
  description: t('descNewHorizons'),
  funFact: t('funFactNewHorizons'),
- realSize: '478 kg, 0.7 2.1 2.7m (piano-sized)',
+ realSize: '478 kg, 0.7 × 2.1 × 2.7m (piano-sized)',
  launched: 'January 19, 2006',
  status: 'Active in Kuiper Belt'
  },
@@ -8381,7 +8415,10 @@ createHyperrealisticHubble(satData) {
  rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
  }
 
- // Apply rotation (retrograde is naturally handled by axial tilts > 90)
+ // Apply rotation — explicit retrograde handling for planets with tilt > 90°
+ if (planet.userData.retrograde) {
+ rotationAngle = -rotationAngle;
+ }
  planet.rotation.y = rotationAngle;
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
  }
@@ -9450,11 +9487,7 @@ createHyperrealisticHubble(satData) {
  const translatedParent = (parentKey && window.t && window.t(parentKey) !== parentKey) ? t(parentKey) : userData.parentPlanet;
  distanceText = `${t('orbitsParent')} ${translatedParent}`;
  } else if (typeof userData.distance === 'number') {
- if (this.realisticScale) {
- distanceText = `${userData.distance.toFixed(1)} ${t('millionKmFromSun')}`;
- } else {
  distanceText = `${userData.distance.toFixed(1)} ${t('scaledUnitsFromSun')}`;
- }
  } else {
  distanceText = t('distanceVaries');
  }
@@ -9499,6 +9532,9 @@ createHyperrealisticHubble(satData) {
  focusOnObject(object, camera, controls) {
  // Store controls reference so onControlsInteractionStart can stop auto-orbit
  this._activeControls = controls;
+ // Re-enable damping for the fly-in animation (smooth landing feel).
+ // finalizeFocusTransition will disable it again if follow-mode is active.
+ controls.enableDamping = true;
  // Start a new focus transition scope; this invalidates any previous in-flight
  // focus animation loop and allows clean user-interrupt handling.
  const transitionToken = ++this._focusTransitionToken;
@@ -9635,11 +9671,15 @@ let actualRadius;
      this.cameraFollowMode = false;
      this.cameraCoRotateMode = false;
  } else if ((userData.orbitPlanet || userData.parentPlanet) && !isPlanetOrbitingSun) {
-     // All objects orbiting a planet (spacecraft, moons, etc.): enable chase-cam
+     // All objects orbiting a planet (spacecraft, moons, etc.): traditional tracking.
+     // Only controls.target follows the object each frame; OrbitControls maintains
+     // camera radius/angle relative to it so the user can still tilt/zoom/pan freely.
+     // Co-rotation (camera.position overwritten each frame) blocked user interaction
+     // and caused a position snap when the fly-in ended, so it is not used here.
      this.cameraFollowMode = true;
-     this.cameraCoRotateMode = true; // Chase-cam mode: camera orbits WITH object
+     this.cameraCoRotateMode = false;
      const objectType = userData.isSpacecraft ? 'spacecraft' : userData.type || 'orbiter';
-     if (DEBUG.enabled) console.log(` Chase-cam co-rotation enabled for ${object.userData.name} (${objectType})`);
+     if (DEBUG.enabled) console.log(` Traditional tracking enabled for ${object.userData.name} (${objectType})`);
  } else if (userData.type === 'planet' || userData.isPlanet) {
      // Planets orbiting the sun: traditional follow (no orbitPlanet field set, so
      // isOrbiter is false — handle explicitly so camera tracks the orbit)
@@ -9985,22 +10025,19 @@ let actualRadius;
  object.getWorldPosition(this._cameraFollowLastTargetPos);
  if (DEBUG.enabled) console.log(` Camera follow mode RESTORED: follow=${_desiredFollowMode}, coRotate=${_desiredCoRotateMode} for ${object.userData.name}`);
 
- // Auto-orbit around the focused object so the user immediately sees it from
- // all angles without needing to drag. Co-rotation mode drives camera.position
- // manually every frame and must NOT combine with autoRotate. Distant static
- // objects (constellations, galaxies, nebulae) are best viewed from a fixed
- // angle, so skip auto-orbit for those too.
- const isStaticOrCoRotate = _desiredCoRotateMode ||
- userData.type === 'constellation' ||
- userData.type === 'galaxy' ||
- userData.type === 'nebula';
- if (!isStaticOrCoRotate) {
- controls.autoRotate = true;
- // Slow gentle orbit — planets get 0.5 RPM, small/fast objects slightly faster
- const isSmallFastObject = userData.type === 'moon' || userData.isComet || userData.type === 'DwarfPlanet';
- controls.autoRotateSpeed = isSmallFastObject ? 1.0 : 0.5;
- if (DEBUG.enabled) console.log(` [Auto-orbit] Enabled at ${controls.autoRotateSpeed} RPM for ${object.userData.name}`);
- }
+ // Do NOT enable autoRotate — the camera must maintain its relative position
+ // to the focused object after the fly-in. User zoom/pan/tilt sets a deliberate
+ // viewing angle that should be preserved until the user changes it again.
+ controls.autoRotate = false;
+
+ // Disable OrbitControls damping for the duration of follow-mode tracking.
+ // With damping enabled, every user interaction (scroll, drag) accumulates
+ // sphericalDelta that decays over ~100 frames. At high time speeds those
+ // frames represent large ISS movement, making residual rotation very visible.
+ // With damping disabled, sphericalDelta is applied fully in one frame and
+ // immediately reset to zero — no drift at any speed. Damping is re-enabled
+ // at the next focusOnObject() call (fly-in).
+ controls.enableDamping = !_desiredFollowMode;
  };
  
  const animate = () => {
@@ -10068,29 +10105,22 @@ let actualRadius;
  if (this._focusTransitionActive) {
  this._focusTransitionCancelRequested = true;
  }
- // Manual drag should hand orbit angle control back to the user. Keep follow mode
- // so moving targets stay centered, but stop the chase-cam co-rotation path that
- // rewrites camera.position every frame and blocks tilt/orbit on moons.
- if (this.focusedObject && this.cameraCoRotateMode) {
- this.cameraCoRotateMode = false;
- this.cameraFollowMode = true;
- }
- // User grabbed manual control — stop auto-orbit so camera doesn't fight the drag
+ // User grabbed manual control — stop auto-orbit so camera doesn't fight the drag.
+ // cameraFollowMode stays true so the target keeps tracking the focused object.
  if (this._activeControls) {
  this._activeControls.autoRotate = false;
  }
  }
 
  // Called when the user zooms via scroll wheel (distinct from drag/pan).
- // Auto-orbit is kept running; we just cancel any in-flight fly-in and
- // sync focusedObjectDistance to the new camera radius so co-rotation
- // mode stays consistent with the zoomed position.
  onControlsZoom() {
  if (this._focusTransitionActive) {
  this._focusTransitionCancelRequested = true;
  }
- // Keep autoRotate — OrbitControls naturally orbits at the new radius
- // after a wheel zoom, so no extra work is needed here.
+ // Stop any auto-orbit so the zoomed viewing angle is preserved.
+ if (this._activeControls) {
+ this._activeControls.autoRotate = false;
+ }
  if (this._activeControls && this.focusedObject) {
  // Update tracked distance so co-rotation frame is consistent
  this.focusedObjectDistance = this._activeControls.object.position.distanceTo(
@@ -10201,15 +10231,31 @@ let actualRadius;
  this._cameraFollowLastTargetPos.copy(targetPosition);
  }
  } else {
- // TRADITIONAL TRACKING MODE: Only update controls.target to the planet's
- // current world position. controls.update() runs AFTER this callback
- // (see SceneManager.animate) and will position the camera using its
- // internal spherical coordinates (zoom/tilt/angle) relative to this target.
- // This is the correct way to keep zoom stable as the planet orbits.
- controls.target.copy(targetPosition);
+ // TRADITIONAL TRACKING MODE: Move both camera.position and controls.target by
+ // the same delta as the object moved since the previous frame.
+ // This locks the camera's relative position to the tracked object — fixing the
+ // drift bug where the camera stayed fixed in world space while the planet/moon
+ // orbited away from it.
+ // Moving BOTH by the same delta preserves OrbitControls' internal spherical
+ // state (zoom distance, tilt, azimuth) AND any user pan offset unchanged.
+
+ // Guard: initialize last-known position on the very first tracking frame
+ // (also triggered when focus switches to a different object).
+ if (this._cameraFollowObject !== object) {
+ this._cameraFollowLastTargetPos.copy(targetPosition);
+ }
+
+ // How much did the object move since the last frame?
+ const delta = this._trackOffset.copy(targetPosition).sub(this._cameraFollowLastTargetPos);
+
+ // Apply the same translation to both camera and target so relative position
+ // (zoom distance, viewing angle, pan offset) is fully preserved.
+ camera.position.add(delta);
+ controls.target.add(delta);
+
  this._cameraFollowObject = object;
  this._cameraFollowLastTargetPos.copy(targetPosition);
- // No controls.update() here; SceneManager.animate() calls it after callback.
+ // No controls.update() here; SceneManager.animate() calls it after this callback.
  }
  }
 
