@@ -1069,6 +1069,9 @@ this.camera.near = 10.0;
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
  ctx.fillText(`${curPage} / ${totalPages}`, EDGE + pAgW + COL_GAP + pMidW/2, PAG_Y + BTN_H/2);
  if (offset + PER < items.length) btn('Next \u25BA', 'scroll:next', EDGE + pAgW + COL_GAP + pMidW + COL_GAP, PAG_Y, pAgW, BTN_H);
+ 
+ const RESET_Y = PAG_Y + BTN_H + 20;
+ btn('\uD83D\uDE80 Reset to Solar System View', 'reset', EDGE, RESET_Y, W - EDGE*2, 70, { bg: '#1a2a40', bg2: '#0e1828', border: '#3a6a9a', font: 'bold 22px Arial' });
  }
 
  // ═══════════════════════════════════════════════════════════

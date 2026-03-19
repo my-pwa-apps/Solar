@@ -31,10 +31,10 @@
     </script>
 
     <!-- Capture beforeinstallprompt early, before heavy module scripts load -->
-    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.99"></script>
+    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.117"></script>
 
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.99" crossorigin="use-credentials">
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.117" crossorigin="use-credentials">
     <script type="module" src="./src/modules/LanguageManager.js"></script>
     
     <!-- Primary Meta Tags -->
@@ -110,16 +110,16 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.10.99" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.10.99" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.10.99" as="style">
+    <link rel="preload" href="./src/i18n.js?v=2.10.117" as="script">
+    <link rel="preload" href="./src/styles/main.css?v=2.10.117" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.10.117" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.99">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.99">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.117">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.117">
     
     <!-- Load translations early -->
-    <script src="./src/i18n.js?v=2.10.99"></script>
+    <script src="./src/i18n.js?v=2.10.117"></script>
 </head>
 <body>
     <header id="main-header" role="banner">
@@ -325,108 +325,6 @@
         <div id="speed-panel-content" class="panel-content">
             <input type="range" id="time-speed" min="0" max="100" value="50" step="1" aria-label="Animation speed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" />
             <span id="time-speed-label" data-i18n="realTime" aria-live="polite">1x</span>
-            <!-- Time Machine -->
-            <div id="time-machine" class="time-machine" role="region" aria-label="Time machine controls">
-                <div class="tm-date-row">
-                    <span id="sim-date-display" class="tm-date" aria-live="polite" title="Current simulated date">—</span>
-                    <button id="time-now" class="tm-now-btn" title="Jump to today (N)" aria-label="Jump to today">Now</button>
-                </div>
-                <div class="tm-step-row" role="group" aria-label="Time step controls">
-                    <button class="tm-step" id="time-step-back-decade" title="Back 10 years" aria-label="Back 10 years">−10y</button>
-                    <button class="tm-step" id="time-step-back-year"   title="Back 1 year"  aria-label="Back 1 year">−1y</button>
-                    <button class="tm-step" id="time-step-back-month"  title="Back 1 month" aria-label="Back 1 month">−1m</button>
-                    <button class="tm-reverse" id="time-reverse" aria-pressed="false" title="Play in reverse" aria-label="Reverse time">⏪</button>
-                    <button class="tm-step" id="time-step-fwd-month"   title="Forward 1 month" aria-label="Forward 1 month">+1m</button>
-                    <button class="tm-step" id="time-step-fwd-year"    title="Forward 1 year"  aria-label="Forward 1 year">+1y</button>
-                    <button class="tm-step" id="time-step-fwd-decade"  title="Forward 10 years" aria-label="Forward 10 years">+10y</button>
-                </div>
-                <div class="tm-seek-row">
-                    <input type="date" id="time-seek-input" class="tm-seek-input" aria-label="Jump to specific date" />
-                </div>
-                <div class="tm-events-row">
-                    <select id="notable-events" class="tm-events-select" aria-label="Jump to notable celestial event">
-                        <option value="">🌟 Notable Events…</option>
-
-                        <optgroup label="🌑 Solar Eclipses">
-                            <option value="2024-04-08" data-utc="2024-04-08T18:18:29Z" data-focus="moon">Apr 08, 2024 — Total Solar Eclipse (North America)</option>
-                            <option value="2025-03-29" data-utc="2025-03-29T10:48:36Z" data-focus="moon">Mar 29, 2025 — Partial Solar Eclipse (N Atlantic / Europe)</option>
-                            <option value="2026-02-17" data-utc="2026-02-17T12:13:06Z" data-focus="moon">Feb 17, 2026 — Annular Solar Eclipse (Antarctica / Patagonia)</option>
-                            <option value="2026-08-12" data-utc="2026-08-12T17:47:06Z" data-focus="moon">Aug 12, 2026 — Total Solar Eclipse (Spain / Iceland)</option>
-                            <option value="2027-08-02" data-utc="2027-08-02T10:07:50Z" data-focus="moon">Aug 02, 2027 — Total Solar Eclipse (N Africa / Arabia)</option>
-                            <option value="2028-07-22" data-utc="2028-07-22T02:56:40Z" data-focus="moon">Jul 22, 2028 — Total Solar Eclipse (Australia / NZ)</option>
-                            <option value="2030-06-01" data-utc="2030-06-01T06:29:13Z" data-focus="moon">Jun 01, 2030 — Annular Solar Eclipse (S Europe / N Africa)</option>
-                            <option value="2030-11-25" data-utc="2030-11-25T06:51:37Z" data-focus="moon">Nov 25, 2030 — Total Solar Eclipse (Southern Africa)</option>
-                            <option value="2033-03-30" data-utc="2033-03-30T18:02:36Z" data-focus="moon">Mar 30, 2033 — Total Solar Eclipse (Alaska / Siberia)</option>
-                            <option value="2035-09-02" data-utc="2035-09-02T01:56:46Z" data-focus="moon">Sep 02, 2035 — Total Solar Eclipse (China / Korea / Japan)</option>
-                        </optgroup>
-
-                        <optgroup label="🔴 Mars Oppositions">
-                            <option value="2025-01-16" data-focus="mars">Jan 16, 2025 — Mars at Opposition (closest since 2022)</option>
-                            <option value="2027-02-19" data-focus="mars">Feb 19, 2027 — Mars at Opposition</option>
-                            <option value="2029-03-29" data-focus="mars">Mar 29, 2029 — Mars at Opposition</option>
-                            <option value="2031-05-04" data-focus="mars">May 04, 2031 — Mars at Opposition (perihelic — exceptionally close)</option>
-                        </optgroup>
-
-                        <optgroup label="🟤 Outer Planet Oppositions">
-                            <option value="2024-11-16" data-focus="uranus">Nov 16, 2024 — Uranus at Opposition</option>
-                            <option value="2025-09-21" data-focus="saturn">Sep 21, 2025 — Saturn at Opposition</option>
-                            <option value="2025-09-23" data-focus="neptune">Sep 23, 2025 — Neptune at Opposition</option>
-                            <option value="2025-11-05" data-focus="jupiter">Nov 05, 2025 — Jupiter at Opposition</option>
-                            <option value="2025-11-21" data-focus="uranus">Nov 21, 2025 — Uranus at Opposition</option>
-                            <option value="2026-09-24" data-focus="neptune">Sep 24, 2026 — Neptune at Opposition</option>
-                            <option value="2026-10-04" data-focus="saturn">Oct 04, 2026 — Saturn at Opposition</option>
-                            <option value="2026-12-02" data-focus="uranus">Dec 02, 2026 — Uranus at Opposition</option>
-                            <option value="2026-12-07" data-focus="jupiter">Dec 07, 2026 — Jupiter at Opposition</option>
-                            <option value="2027-10-17" data-focus="saturn">Oct 17, 2027 — Saturn at Opposition</option>
-                            <option value="2028-01-10" data-focus="jupiter">Jan 10, 2028 — Jupiter at Opposition</option>
-                        </optgroup>
-
-                        <optgroup label="✨ Conjunctions &amp; Alignments">
-                            <option value="2020-12-21" data-focus="jupiter">Dec 21, 2020 — Great Jupiter–Saturn Conjunction (0.1° apart)</option>
-                            <option value="2022-06-24" data-focus="earth">Jun 24, 2022 — 5-Planet Alignment (Mercury–Saturn)</option>
-                            <option value="2023-03-01" data-focus="jupiter">Mar 01, 2023 — Jupiter–Venus Conjunction (0.5° apart)</option>
-                            <option value="2024-08-14" data-focus="mars">Aug 14, 2024 — Mars–Jupiter Conjunction</option>
-                            <option value="2025-02-01" data-focus="venus">Feb 01, 2025 — Venus–Saturn Close Conjunction</option>
-                            <option value="2025-08-12" data-focus="venus">Aug 12, 2025 — Venus–Jupiter Close Conjunction (0.9°)</option>
-                            <option value="2040-10-31" data-focus="jupiter">Oct 31, 2040 — Next Jupiter–Saturn Great Conjunction</option>
-                        </optgroup>
-
-                        <optgroup label="☄️ Famous Comets">
-                            <option value="1910-04-20" data-focus="sun">Apr 20, 1910 — Halley's Comet Perihelion (first photographed)</option>
-                            <option value="1986-02-09" data-focus="halley">Feb 09, 1986 — Halley's Comet Perihelion (Giotto mission)</option>
-                            <option value="1997-03-22" data-focus="sun">Mar 22, 1997 — Comet Hale-Bopp Perihelion (century's brightest)</option>
-                            <option value="2020-07-23" data-focus="sun">Jul 23, 2020 — Comet NEOWISE Closest Approach</option>
-                            <option value="2024-10-12" data-focus="sun">Oct 12, 2024 — Comet Tsuchinshan-ATLAS Closest Approach</option>
-                            <option value="2061-07-28" data-focus="sun">Jul 28, 2061 — Halley's Comet Next Perihelion</option>
-                        </optgroup>
-
-                        <optgroup label="🚀 Space Age Milestones">
-                            <option value="1957-10-04" data-focus="sputnik-1">Oct 04, 1957 — Sputnik 1 — First Artificial Satellite</option>
-                            <option value="1961-04-12" data-focus="earth">Apr 12, 1961 — Yuri Gagarin — First Human in Space</option>
-                            <option value="1969-07-20" data-focus="moon">Jul 20, 1969 — Apollo 11 — First Moon Landing</option>
-                            <option value="1972-12-07" data-focus="moon">Dec 07, 1972 — Apollo 17 — Last Moon Landing (so far)</option>
-                            <option value="1977-09-05" data-focus="earth">Sep 05, 1977 — Voyager 1 Launch</option>
-                            <option value="1990-02-14" data-focus="earth">Feb 14, 1990 — Voyager 1 — &quot;Pale Blue Dot&quot; Photo</option>
-                            <option value="1994-07-16" data-focus="jupiter">Jul 16, 1994 — Shoemaker-Levy 9 Impacts Jupiter</option>
-                            <option value="2006-01-19" data-focus="earth">Jan 19, 2006 — New Horizons Launch toward Pluto</option>
-                            <option value="2015-07-14" data-focus="pluto">Jul 14, 2015 — New Horizons — Pluto Flyby</option>
-                            <option value="2021-02-18" data-focus="mars">Feb 18, 2021 — Perseverance Rover — Mars Landing</option>
-                        </optgroup>
-
-                        <optgroup label="📜 Historic Discoveries">
-                            <option value="1543-05-24" data-focus="sun">May 24, 1543 — Copernicus Publishes Heliocentric Model</option>
-                            <option value="1066-04-24" data-focus="sun">Apr 24, 1066 — Halley's Comet — Battle of Hastings Era</option>
-                            <option value="1610-01-07" data-focus="jupiter">Jan 07, 1610 — Galileo Discovers Jupiter's Moons</option>
-                            <option value="1655-03-25" data-focus="titan">Mar 25, 1655 — Huygens Discovers Titan</option>
-                            <option value="1781-03-13" data-focus="uranus">Mar 13, 1781 — Herschel Discovers Uranus</option>
-                            <option value="1846-09-23" data-focus="neptune">Sep 23, 1846 — Discovery of Neptune</option>
-                            <option value="1930-02-18" data-focus="pluto">Feb 18, 1930 — Tombaugh Discovers Pluto</option>
-                            <option value="1979-03-05" data-focus="jupiter">Mar 05, 1979 — Voyager 1 — Jupiter Flyby (Io volcanism!)</option>
-                        </optgroup>
-
-                    </select>
-                </div>
-            </div>
         </div>
     </div>
     <!-- Bottom Bar -->
@@ -537,9 +435,9 @@
         </div>
     </div>
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=2.10.99"></script>
+    <script type="module" src="./src/main.js?v=2.10.117"></script>
     
     <!-- Initialize Modules -->
-    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.99"></script>
+    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.117"></script>
 </body>
 </html>

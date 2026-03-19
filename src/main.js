@@ -184,6 +184,11 @@ class App {
  this.setupSoundToggle();
  this.setupButtonSounds();
  this.setupTimeMachine();
+ this.syncLocalizedControlStates();
+
+ window.addEventListener('app-language-changed', () => {
+ this.syncLocalizedControlStates();
+ });
 
  // Pre-select Earth on first load for better first impression
  this.preSelectEarth();
@@ -269,11 +274,21 @@ class App {
  }
  
  // Restore constellations visibility
+ const savedConstellationsState = safeGetItem(STORAGE_KEYS.CONSTELLATIONS);
+ if (savedConstellationsState !== null) {
  this._restoreToggleState({
  storageKey: STORAGE_KEYS.CONSTELLATIONS,
  buttonId: UI_ELEMENTS.CONSTELLATIONS_BUTTON,
  toggleMethod: this.solarSystemModule.toggleConstellations
  });
+ } else {
+ const defaultConstellationsVisible = this.solarSystemModule?.constellationsVisible ?? false;
+ const constellationsButton = document.getElementById(UI_ELEMENTS.CONSTELLATIONS_BUTTON);
+ if (constellationsButton) {
+ constellationsButton.classList.toggle('toggle-on', defaultConstellationsVisible);
+ constellationsButton.setAttribute('aria-pressed', defaultConstellationsVisible.toString());
+ }
+ }
  
  // Restore labels visibility (special case: needs sceneManager property update)
  const savedLabelsState = safeGetItem(STORAGE_KEYS.LABELS);
@@ -281,6 +296,17 @@ class App {
  const labelsVisible = savedLabelsState === 'true';
  this.sceneManager.labelsVisible = labelsVisible;
  this.solarSystemModule.toggleLabels(labelsVisible);
+ const labelsButton = document.getElementById(UI_ELEMENTS.LABELS_BUTTON);
+ if (labelsButton) {
+ labelsButton.classList.toggle('toggle-on', labelsVisible);
+ labelsButton.setAttribute('aria-pressed', labelsVisible.toString());
+ const btnText = labelsButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
+ }
+ }
+ } else if (this.sceneManager) {
+ const labelsVisible = this.sceneManager.labelsVisible;
  const labelsButton = document.getElementById(UI_ELEMENTS.LABELS_BUTTON);
  if (labelsButton) {
  labelsButton.classList.toggle('toggle-on', labelsVisible);
@@ -305,6 +331,18 @@ class App {
  const savedScaleState = safeGetItem(STORAGE_KEYS.SCALE);
  if (savedScaleState !== null && this.solarSystemModule) {
  this.applyScaleMode(savedScaleState === 'true' ? 'scientific' : 'educational', { persist: false });
+ } else {
+ const scaleMode = this.getCurrentScaleMode();
+ const scientificMode = scaleMode === 'scientific';
+ const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
+ if (scaleButton) {
+ scaleButton.classList.toggle('active', scientificMode);
+ scaleButton.setAttribute('aria-pressed', scientificMode.toString());
+ const btnText = scaleButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = this.getScaleModeLabel(scaleMode);
+ }
+ }
  }
  }
  }
@@ -1293,8 +1331,6 @@ class App {
  const dateDisplay = document.getElementById('sim-date-display');
  const reverseBtn = document.getElementById('time-reverse');
  const nowBtn = document.getElementById('time-now');
- const seekInput = document.getElementById('time-seek-input');
- const eventsSelect = document.getElementById('notable-events');
 
  // Prevent duplicate listeners if setup is ever invoked more than once
  if (this._onSimulatedDateChanged) {
@@ -1327,11 +1363,6 @@ class App {
  lastIsoDate = iso;
 
  dateDisplay.textContent = _getDateFormatter().format(d);
- // Keep the date picker in sync (value must be YYYY-MM-DD)
- if (seekInput) {
- // Only update if the user isn't actively editing the input
- if (document.activeElement !== seekInput) seekInput.value = iso;
- }
  };
 
  // Listen for the date-changed event emitted by SolarSystemModule
@@ -1393,75 +1424,6 @@ class App {
  });
  }
 
- // ── Date picker ───────────────────────────────────────────────────────
- if (seekInput) {
- // Add logical min/max to prevent insane date strings
- seekInput.setAttribute('min', '1000-01-01');
- seekInput.setAttribute('max', '4000-12-31');
- 
- seekInput.addEventListener('change', (e) => {
- const val = e.target.value;
- if (!val) return;
- 
- const parsedDate = new Date(val + 'T12:00:00Z');
- if (!isNaN(parsedDate.getTime())) {
- ssm.seekToDate(parsedDate);
- }
- });
- }
-
- // ── Notable-events dropdown ───────────────────────────────────────────
- if (eventsSelect) {
- eventsSelect.addEventListener('change', (e) => {
- const val = e.target.value;
- if (!val) return;
- const selectedOption = e.target.options[e.target.selectedIndex];
- const rawLabel = selectedOption.text;
-
- // Strip leading date prefix "Apr 08, 2024 — " so toast shows only the event name
- const eventLabel = rawLabel.includes(' — ') ? rawLabel.split(' — ').slice(1).join(' — ') : rawLabel;
- const eventTimestamp = selectedOption.dataset.utc || `${val}T12:00:00Z`;
- const eventDate = new Date(eventTimestamp);
-
- // Pause BEFORE seeking so no animation frame can advance the date
- // past the target while the event handler is running.
- const speedSlider = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
- if (speedSlider && this.timeSpeed !== 0) {
- speedSlider.value = '0';
- speedSlider.dispatchEvent(new Event('input')); // triggers UIManager to sync labels + reset reverse flag
- }
-
- if (!isNaN(eventDate.getTime())) {
- ssm.seekToDate(eventDate);
- }
-
- // Move camera to the relevant body for this event (data-focus="earth" etc.)
- // initPositionsToDate now updates planet.position directly, so world positions
- // are correct immediately — no setTimeout needed.
- const focusKey = selectedOption.dataset.focus;
- const isPaleBlueDot = val === '1990-02-14' && rawLabel.includes('Pale Blue Dot');
-
- if (isPaleBlueDot) {
- // Special handling: position camera at Voyager 1's location, looking back toward Earth
- this._handlePaleBlueDot(ssm);
- } else if (focusKey) {
- const focusTarget = this.findObjectByNavigationValue(focusKey);
- if (focusTarget) {
- this.solarSystemModule.focusOnObject(
- focusTarget,
- this.sceneManager.camera,
- this.sceneManager.controls
- );
- }
- }
-
- // Show event-specific info in the info panel
- this._showEventInfo(val, eventLabel, focusKey);
-
- this.showEventToast(`⏸ ${eventLabel}`);
- e.target.value = ''; // reset so same event can be selected again
- });
- }
  }
 
  showEventToast(text) {
@@ -1800,6 +1762,52 @@ class App {
  audioManager.playClick();
  }
  });
+ }
+
+ syncLocalizedControlStates() {
+ this._updateOrbitButton(this.solarSystemModule?.orbitMode || 'all');
+
+ const labelsButton = document.getElementById(UI_ELEMENTS.LABELS_BUTTON);
+ if (labelsButton && this.sceneManager) {
+ const labelsVisible = this.sceneManager.labelsVisible;
+ labelsButton.classList.toggle('toggle-on', labelsVisible);
+ labelsButton.setAttribute('aria-pressed', labelsVisible.toString());
+ const btnText = labelsButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = labelsVisible ? t('toggleLabelsOn') : t('toggleLabels');
+ }
+ }
+
+ const scaleMode = this.getCurrentScaleMode();
+ const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
+ if (scaleButton) {
+ const scientificMode = scaleMode === 'scientific';
+ scaleButton.classList.toggle('active', scientificMode);
+ scaleButton.setAttribute('aria-pressed', scientificMode.toString());
+ const btnText = scaleButton.querySelector('.btn-text');
+ if (btnText) {
+ btnText.textContent = this.getScaleModeLabel(scaleMode);
+ }
+ }
+
+ const soundToggle = document.getElementById('sound-toggle');
+ if (soundToggle) {
+ const icon = soundToggle.querySelector('.btn-icon');
+ const btnText = soundToggle.querySelector('.btn-text');
+ if (audioManager.enabled) {
+ soundToggle.classList.remove('muted');
+ soundToggle.setAttribute('aria-pressed', 'true');
+ if (icon) icon.textContent = '🔊';
+ if (btnText) btnText.textContent = t('toggleSoundOn');
+ soundToggle.title = t('toggleSoundOn');
+ } else {
+ soundToggle.classList.add('muted');
+ soundToggle.setAttribute('aria-pressed', 'false');
+ if (icon) icon.textContent = '🔇';
+ if (btnText) btnText.textContent = t('toggleSoundOff');
+ soundToggle.title = t('toggleSoundOff');
+ }
+ }
  }
 
  /**
