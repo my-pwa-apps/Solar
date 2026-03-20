@@ -4177,7 +4177,7 @@ export class SolarSystemModule {
  innerOortColors[i * 3 + 1] = ice * 0.9;
  innerOortColors[i * 3 + 2] = ice;
  
- innerOortSizes[i] = 0.4 + Math.random() * 0.6;
+ innerOortSizes[i] = 3 + Math.random() * 5;
  }
  
  innerOortGeometry.setAttribute('position', new THREE.BufferAttribute(innerOortPositions, 3));
@@ -4188,7 +4188,7 @@ export class SolarSystemModule {
  vertexColors: true,
  sizeAttenuation: true,
  transparent: true,
- opacity: 0.5
+ opacity: 0.7
  });
  
  const innerOort = new THREE.Points(innerOortGeometry, innerOortMaterial);
@@ -4217,7 +4217,7 @@ export class SolarSystemModule {
  outerOortColors[i * 3 + 1] = faint * 0.88;
  outerOortColors[i * 3 + 2] = faint * 0.95;
  
- outerOortSizes[i] = 0.25 + Math.random() * 0.4;
+ outerOortSizes[i] = 2 + Math.random() * 4;
  }
  
  outerOortGeometry.setAttribute('position', new THREE.BufferAttribute(outerOortPositions, 3));
@@ -4228,7 +4228,7 @@ export class SolarSystemModule {
  vertexColors: true,
  sizeAttenuation: true,
  transparent: true,
- opacity: 0.35
+ opacity: 0.5
  });
  
  const outerOort = new THREE.Points(outerOortGeometry, outerOortMaterial);
@@ -4257,7 +4257,7 @@ export class SolarSystemModule {
  cometaryColors[i * 3 + 1] = bright * 0.92;
  cometaryColors[i * 3 + 2] = bright;
  
- cometarySizes[i] = 0.5 + Math.random() * 0.8;
+ cometarySizes[i] = 4 + Math.random() * 6;
  }
  
  cometaryGeometry.setAttribute('position', new THREE.BufferAttribute(cometaryPositions, 3));
@@ -4268,7 +4268,7 @@ export class SolarSystemModule {
  vertexColors: true,
  sizeAttenuation: true,
  transparent: true,
- opacity: 0.55
+ opacity: 0.7
  });
  
  const cometaryNuclei = new THREE.Points(cometaryGeometry, cometaryMaterial);
