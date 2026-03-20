@@ -8559,7 +8559,17 @@ createHyperrealisticHubble(satData) {
  if (this.comets) {
  this.comets.forEach(comet => {
  const userData = comet.userData;
- const cometMotionMultiplier = this.scientificMode ? 1 : 5; // Educational mode boost so motion is visible
+ // In scientific mode, comet speeds are derived from real orbital periods
+ // (up to 70,000 years for Hyakutake), resulting in near-zero speeds.
+ // Apply a large boost so they remain visible; scale with period length.
+ let cometMotionMultiplier;
+ if (this.scientificMode) {
+ // Comets with longer periods need bigger boosts to remain visible
+ const periodYears = (userData.orbitalPeriod || 365.25) / 365.25;
+ cometMotionMultiplier = Math.max(5, Math.sqrt(periodYears) * 2);
+ } else {
+ cometMotionMultiplier = 1; // Educational mode uses visual base speeds
+ }
  const meanAnomalyIncrement = userData.speed * orbitalSpeed * deltaTime * cometMotionMultiplier;
  if (!isNaN(meanAnomalyIncrement) && isFinite(meanAnomalyIncrement)) {
  userData.meanAnomaly = (userData.meanAnomaly || 0) + meanAnomalyIncrement;
