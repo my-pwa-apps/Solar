@@ -88,6 +88,7 @@ const translations = {
         navDistantStars: "Distant Stars",
         kuiperBelt: "Kuiper Belt",
         oortCloud: "Oort Cloud",
+        heliopause: "Heliopause",
         asteroidBelt: "Asteroid Belt",
         // Nebulae names
         orionNebula: 'Orion Nebula',
@@ -290,6 +291,7 @@ const translations = {
         creatingAsteroidBelt: 'Creating asteroid belt...',
         creatingKuiperBelt: 'Creating Kuiper belt...',
         creatingOortCloud: 'Creating Oort cloud...',
+        creatingHeliopause: 'Creating heliopause...',
         creatingStarfield: 'Creating starfield...',
         creatingMilkyWay: 'Creating Milky Way...',
         creatingOrbitalPaths: 'Creating orbital paths...',
@@ -508,11 +510,13 @@ const translations = {
         descAsteroidBelt: 'The asteroid belt contains millions of rocky objects between Mars and Jupiter. Ceres, the largest object here, is a dwarf planet! Most asteroids are leftover material from the formation of the solar system 4.6 billion years ago.',
         descKuiperBelt: 'The Kuiper Belt is a region beyond Neptune filled with icy bodies and dwarf planets including Pluto! It\'s like a giant donut of frozen objects left over from the solar system\'s formation. Short-period comets come from here!',
         descOortCloud: 'The Oort Cloud is a vast spherical shell of icy objects surrounding our entire solar system! It extends from about 50,000 to 200,000 AU from the Sun. Long-period comets like Hale-Bopp originate from this distant realm.',
+        descHeliopause: 'The heliopause is the boundary where the Sun\'s solar wind meets the interstellar medium — the edge of the Sun\'s sphere of influence! At about 120 AU from the Sun, this is where our solar system ends and interstellar space begins. Voyager 1 crossed it in August 2012 and Voyager 2 in November 2018.',
 
         // Fun facts for additional objects
         funFactAsteroidBelt: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
         funFactKuiperBelt: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
         funFactOortCloud: 'The Oort Cloud is so far away that light from the Sun takes over 1.5 years to reach its outer edge! It would take Voyager 1 about 300 years to reach the inner edge.',
+        funFactHeliopause: 'When Voyager 1 crossed the heliopause, it detected a 40-fold increase in cosmic ray intensity — confirming it had left the Sun\'s protective bubble! Beyond this boundary, the interstellar wind reigns.',
         funFactCeres: 'Ceres may host subsurface liquid water - making it a top candidate for finding life!',
         funFactHaumea: 'Rotation period ~4 hours gives Haumea its unique egg-like triaxial ellipsoid shape!',
         funFactMakemake: 'Discovered near Easter 2005, Makemake is named after the Rapa Nui creator deity!',
@@ -633,6 +637,7 @@ const translations = {
         navDistantStars: "Verre Sterren",
         kuiperBelt: "Kuipergordel",
         oortCloud: "Oortwolk",
+        heliopause: "Heliopauze",
         asteroidBelt: "Asteroïdengordel",
         // Nevels
         orionNebula: 'Orionnevel',
@@ -834,6 +839,7 @@ const translations = {
         creatingAsteroidBelt: 'Asteroïdengordel maken...',
         creatingKuiperBelt: 'Kuipergordel maken...',
         creatingOortCloud: 'Oortwolk maken...',
+        creatingHeliopause: 'Heliopauze maken...',
         creatingStarfield: 'Sterrenveld maken...',
         creatingMilkyWay: 'Melkweg maken...',
         creatingOrbitalPaths: 'Baanpaden maken...',
@@ -999,11 +1005,13 @@ const translations = {
         descAsteroidBelt: 'De asteroïdengordel bevat miljoenen rotsachtige objecten tussen Mars en Jupiter. Ceres, het grootste object hier, is een dwergplaneet! De meeste asteroïden zijn overgebleven materiaal van de vorming van het zonnestelsel 4,6 miljard jaar geleden.',
         descKuiperBelt: 'De Kuipergordel is een gebied voorbij Neptunus vol ijzige lichamen en dwergplaneten waaronder Pluto! Het is als een gigantische donut van bevroren objecten overgebleven van de vorming van het zonnestelsel. Kortperiodieke kometen komen hiervandaan!',
         descOortCloud: 'De Oortwolk is een uitgestrekte bolvormige schil van ijzige objecten die ons hele zonnestelsel omgeeft! Hij strekt zich uit van ongeveer 50.000 tot 200.000 AE van de Zon. Langperiodieke kometen zoals Hale-Bopp komen uit dit verre gebied.',
+        descHeliopause: 'De heliopauze is de grens waar de zonnewind van de Zon de interstellaire ruimte ontmoet — de rand van de invloedssfeer van de Zon! Op ongeveer 120 AE van de Zon is dit waar ons zonnestelsel eindigt en de interstellaire ruimte begint. Voyager 1 passeerde deze grens in augustus 2012 en Voyager 2 in november 2018.',
 
         // Wetenswaardigheden voor extra objecten
         funFactAsteroidBelt: 'In tegenstelling tot films zijn asteroïden heel ver van elkaar - ruimtevaartuigen kunnen er veilig doorheen vliegen!',
         funFactKuiperBelt: 'De Kuipergordel is 20 keer breder dan de asteroïdengordel en bevat miljarden objecten!',
         funFactOortCloud: 'De Oortwolk is zo ver weg dat licht van de Zon er meer dan 1,5 jaar over doet om de buitenrand te bereiken! Voyager 1 zou er zo\'n 300 jaar over doen om de binnenrand te bereiken.',
+        funFactHeliopause: 'Toen Voyager 1 de heliopauze passeerde, detecteerde het een 40-voudige toename van kosmische straling — het bewijs dat het de beschermende bubbel van de Zon had verlaten!',
         funFactCeres: 'Ceres heeft mogelijk vloeibaar water onder het oppervlak - een topkandidaat voor leven!',
         funFactHaumea: 'Een rotatieperiode van ~4 uur geeft Haumea zijn unieke eivormige triaxiale ellipsoïdevorm!',
         funFactMakemake: 'Ontdekt rond Pasen 2005, is Makemake vernoemd naar de scheppingsgod van de Rapa Nui!',
@@ -1174,6 +1182,7 @@ const translations = {
         navDistantStars: "Étoiles Lointaines",
         kuiperBelt: "Ceinture de Kuiper",
         oortCloud: "Nuage d'Oort",
+        heliopause: "Héliopause",
         asteroidBelt: "Ceinture d'Astéroïdes",
         // Nébuleuses
         orionNebula: "Nébuleuse d'Orion",
@@ -1368,6 +1377,7 @@ const translations = {
         creatingAsteroidBelt: 'Création de la ceinture d\'astéroïdes...',
         creatingKuiperBelt: 'Création de la ceinture de Kuiper...',
         creatingOortCloud: 'Création du nuage d\'Oort...',
+        creatingHeliopause: 'Création de l\'héliopause...',
         creatingStarfield: 'Création du champ d\'étoiles...',
         creatingMilkyWay: 'Création de la Voie lactée...',
         creatingOrbitalPaths: 'Création des trajectoires orbitales...',
@@ -1533,11 +1543,13 @@ const translations = {
         descAsteroidBelt: 'La ceinture d\'astéroïdes contient des millions d\'objets rocheux entre Mars et Jupiter. Cérès, le plus grand objet ici, est une planète naine! La plupart des astéroïdes sont des matériaux résiduels de la formation du système solaire il y a 4,6 milliards d\'années.',
         descKuiperBelt: 'La Ceinture de Kuiper est une région au-delà de Neptune remplie de corps glacés et de planètes naines dont Pluton! C\'est comme un gigantesque beignet d\'objets gelés restants de la formation du système solaire. Les comètes à courte période viennent d\'ici!',
         descOortCloud: 'Le nuage de Oort est une vaste enveloppe sphérique d\'objets glacés entourant tout notre système solaire! Il s\'étend d\'environ 50 000 à 200 000 UA du Soleil. Les comètes à longue période comme Hale-Bopp proviennent de ce domaine lointain.',
+        descHeliopause: 'L\'héliopause est la frontière où le vent solaire rencontre le milieu interstellaire — la limite de la sphère d\'influence du Soleil! À environ 120 UA du Soleil, c\'est là que notre système solaire se termine et que l\'espace interstellaire commence. Voyager 1 l\'a franchie en août 2012 et Voyager 2 en novembre 2018.',
 
         // Faits amusants pour les objets supplémentaires
         funFactAsteroidBelt: 'Contrairement aux films, les astéroïdes sont très éloignés - les sondes spatiales peuvent les traverser sans danger!',
         funFactKuiperBelt: 'La ceinture de Kuiper est 20 fois plus large que la ceinture d\'astéroïdes et contient des milliards d\'objets!',
         funFactOortCloud: 'Le nuage de Oort est si loin que la lumière du Soleil met plus d\'1,5 an pour atteindre sa lisière externe! Voyager 1 mettrait environ 300 ans pour atteindre la lisière interne.',
+        funFactHeliopause: 'Quand Voyager 1 a franchi l\'héliopause, elle a détecté une augmentation de 40 fois de l\'intensité des rayons cosmiques — confirmant qu\'elle avait quitté la bulle protectrice du Soleil!',
         funFactCeres: 'Cérès pourrait abriter de l\'eau liquide souterraine - un candidat de premier plan pour la vie!',
         funFactHaumea: 'Une période de rotation de ~4 heures donne à Hauméa sa forme unique d\'ellipsoïde triaxial en œuf!',
         funFactMakemake: 'Découverte près de Pâques 2005, Makemake est nommée d\'après le dieu créateur du peuple Rapa Nui!',
@@ -1708,6 +1720,7 @@ const translations = {
         navDistantStars: "Ferne Sterne",
         kuiperBelt: "Kuipergürtel",
         oortCloud: "Oort-Wolke",
+        heliopause: "Heliopause",
         asteroidBelt: "Asteroidengürtel",
         // Nebel
         orionNebula: 'Orionnebel',
@@ -1902,6 +1915,7 @@ const translations = {
         creatingAsteroidBelt: 'Asteroidengürtel wird erstellt...',
         creatingKuiperBelt: 'Kuipergürtel wird erstellt...',
         creatingOortCloud: 'Oortsche Wolke wird erstellt...',
+        creatingHeliopause: 'Heliopause wird erstellt...',
         creatingStarfield: 'Sternfeld wird erstellt...',
         creatingMilkyWay: 'Milchstraße wird erstellt...',
         creatingOrbitalPaths: 'Umlaufbahnen werden erstellt...',
@@ -2067,11 +2081,13 @@ const translations = {
         descAsteroidBelt: 'Der Asteroidengürtel enthält Millionen felsiger Objekte zwischen Mars und Jupiter. Ceres, das größte Objekt hier, ist ein Zwergplanet! Die meisten Asteroiden sind übrig gebliebenes Material aus der Entstehung des Sonnensystems vor 4,6 Milliarden Jahren.',
         descKuiperBelt: 'Der Kuiper-Gürtel ist eine Region jenseits von Neptun, gefüllt mit eisigen Körpern und Zwergplaneten, einschließlich Pluto! Es ist wie ein riesiger Donut gefrorener Objekte aus der Entstehung des Sonnensystems. Kurzperiodische Kometen kommen von hier!',
         descOortCloud: 'Die Oort-Wolke ist eine riesige kugelförmige Hülle aus eisigen Objekten, die unser gesamtes Sonnensystem umgibt! Sie erstreckt sich von etwa 50.000 bis 200.000 AE von der Sonne. Langperiodische Kometen wie Hale-Bopp stammen aus diesem fernen Reich.',
+        descHeliopause: 'Die Heliopause ist die Grenze, an der der Sonnenwind auf das interstellare Medium trifft — der Rand des Einflussbereichs der Sonne! Bei etwa 120 AE von der Sonne endet unser Sonnensystem und der interstellare Raum beginnt. Voyager 1 überquerte sie im August 2012 und Voyager 2 im November 2018.',
 
         // Wissenswertes für zusätzliche Objekte
         funFactAsteroidBelt: 'Entgegen Filmdarstellungen sind Asteroiden sehr weit voneinander entfernt - Raumfahrzeuge können sicher hindurchfliegen!',
         funFactKuiperBelt: 'Der Kuiper-Gürtel ist 20-mal breiter als der Asteroidengürtel und enthält Milliarden von Objekten!',
         funFactOortCloud: 'Die Oort-Wolke ist so weit entfernt, dass Licht der Sonne über 1,5 Jahre braucht, um ihren Außenrand zu erreichen! Voyager 1 würde etwa 300 Jahre brauchen, um den Innenrand zu erreichen.',
+        funFactHeliopause: 'Als Voyager 1 die Heliopause überquerte, stellte sie einen 40-fachen Anstieg der kosmischen Strahlung fest — ein Beweis, dass sie die schützende Blase der Sonne verlassen hatte!',
         funFactCeres: 'Ceres könnte unterirdisches flüssiges Wasser beherbergen - ein Spitzenkandidat für Leben!',
         funFactHaumea: 'Eine Rotationsperiode von ~4 Stunden verleiht Haumea seine einzigartige eiförmige dreiachsige Ellipsoidform!',
         funFactMakemake: 'In der Nähe von Ostern 2005 entdeckt, ist Makemake nach dem Schöpfergott des Rapa-Nui-Volkes benannt!',
@@ -2242,6 +2258,7 @@ const translations = {
         navDistantStars: "Estrellas Distantes",
         kuiperBelt: "Cinturón de Kuiper",
         oortCloud: "Nube de Oort",
+        heliopause: "Heliopausa",
         asteroidBelt: "Cinturón de Asteroides",
         // Nebulosas
         orionNebula: 'Nebulosa de Orión',
@@ -2436,6 +2453,7 @@ const translations = {
         creatingAsteroidBelt: 'Creando cinturón de asteroides...',
         creatingKuiperBelt: 'Creando cinturón de Kuiper...',
         creatingOortCloud: 'Creando nube de Oort...',
+        creatingHeliopause: 'Creando heliopausa...',
         creatingStarfield: 'Creando campo estelar...',
         creatingMilkyWay: 'Creando la Vía Láctea...',
         creatingOrbitalPaths: 'Creando trayectorias orbitales...',
@@ -2601,11 +2619,13 @@ const translations = {
         descAsteroidBelt: '¡El cinturón de asteroides contiene millones de objetos rocosos entre Marte y Júpiter. ¡Ceres, el objeto más grande aquí, es un planeta enano! La mayoría de los asteroides son material residual de la formación del sistema solar hace 4.600 millones de años.',
         descKuiperBelt: '¡El Cinturón de Kuiper es una región más allá de Neptuno llena de cuerpos helados y planetas enanos incluyendo Plutón! Es como una enorme dona de objetos congelados sobrantes de la formación del sistema solar. ¡Los cometas de período corto vienen de aquí!',
         descOortCloud: '¡La Nube de Oort es una vasta envoltura esférica de objetos helados que rodea todo nuestro sistema solar! Se extiende desde aproximadamente 50.000 hasta 200.000 UA del Sol. ¡Los cometas de período largo como Hale-Bopp se originan en este reino distante.',
+        descHeliopause: '¡La heliopausa es la frontera donde el viento solar se encuentra con el medio interestelar — el límite de la esfera de influencia del Sol! A unos 120 UA del Sol, aquí termina nuestro sistema solar y comienza el espacio interestelar. Voyager 1 la cruzó en agosto de 2012 y Voyager 2 en noviembre de 2018.',
 
         // Datos curiosos para objetos adicionales
         funFactAsteroidBelt: '¡Al contrario de lo que muestran las películas, los asteroides están muy lejos unos de otros - las naves espaciales pueden atravesarlos con seguridad!',
         funFactKuiperBelt: '¡El cinturón de Kuiper es 20 veces más ancho que el cinturón de asteroides y contiene miles de millones de objetos!',
         funFactOortCloud: '¡La nube de Oort está tan lejos que la luz del Sol tarda más de 1,5 años en alcanzar su borde exterior! Voyager 1 tardaría unos 300 años en alcanzar el borde interior.',
+        funFactHeliopause: 'Cuando Voyager 1 cruzó la heliopausa, detectó un aumento de 40 veces en la intensidad de rayos cósmicos — ¡confirmando que había abandonado la burbuja protectora del Sol!',
         funFactCeres: '¡Ceres podría albergar agua líquida subterránea - un candidato principal para la vida!',
         funFactHaumea: '¡Un período de rotación de ~4 horas le da a Haumea su forma única de elipsoide triaxial como un huevo!',
         funFactMakemake: '¡Descubierto cerca de la Pascua de 2005, Makemake lleva el nombre del dios creador del pueblo Rapa Nui!',
@@ -2776,6 +2796,7 @@ const translations = {
         navDistantStars: "Estrelas Distantes",
         kuiperBelt: "Cinturão de Kuiper",
         oortCloud: "Nuvem de Oort",
+        heliopause: "Heliopausa",
         asteroidBelt: "Cinturão de Asteroides",
         // Nebulosas
         orionNebula: 'Nebulosa de Órion',
@@ -2970,6 +2991,7 @@ const translations = {
         creatingAsteroidBelt: 'Criando cinturão de asteroides...',
         creatingKuiperBelt: 'Criando cinturão de Kuiper...',
         creatingOortCloud: 'Criando nuvem de Oort...',
+        creatingHeliopause: 'Criando heliopausa...',
         creatingStarfield: 'Criando campo estelar...',
         creatingMilkyWay: 'Criando a Via Láctea...',
         creatingOrbitalPaths: 'Criando trajetórias orbitais...',
@@ -3135,11 +3157,13 @@ const translations = {
         descAsteroidBelt: 'O cinturão de asteroides contém milhões de objetos rochosos entre Marte e Júpiter. Ceres, o maior objeto aqui, é um planeta anão! A maioria dos asteroides são materiais residuais da formação do sistema solar há 4,6 bilhões de anos.',
         descKuiperBelt: 'O Cinturão de Kuiper é uma região além de Netuno repleta de corpos gelados e planetas anões, incluindo Plutão! É como uma enorme rosca de objetos congelados restantes da formação do sistema solar. Cometas de período curto vêm daqui!',
         descOortCloud: 'A Nuvem de Oort é uma vasta concha esférica de objetos gelados que envolve todo o nosso sistema solar! Ela se estende de aproximadamente 50.000 a 200.000 UA do Sol. Cometas de longo período como Hale-Bopp se originam neste reino distante.',
+        descHeliopause: 'A heliopausa é a fronteira onde o vento solar encontra o meio interestelar — o limite da esfera de influência do Sol! A cerca de 120 UA do Sol, é aqui que o nosso sistema solar termina e o espaço interestelar começa. A Voyager 1 atravessou-a em agosto de 2012 e a Voyager 2 em novembro de 2018.',
 
         // Fatos divertidos para objetos adicionais
         funFactAsteroidBelt: 'Ao contrário do que os filmes mostram, os asteroides estão muito distantes uns dos outros - sondas espaciais podem passar com segurança!',
         funFactKuiperBelt: 'O cinturão de Kuiper é 20 vezes mais largo que o cinturão de asteroides e contém bilhões de objetos!',
         funFactOortCloud: 'A nuvem de Oort está tão distante que a luz do Sol leva mais de 1,5 ano para alcançar sua borda externa! A Voyager 1 levaria cerca de 300 anos para alcançar a borda interna.',
+        funFactHeliopause: 'Quando a Voyager 1 atravessou a heliopausa, detetou um aumento de 40 vezes na intensidade dos raios cósmicos — confirmando que tinha saído da bolha protetora do Sol!',
         funFactCeres: 'Ceres pode abrigar água líquida subterrânea - um candidato de topo para a vida!',
         funFactHaumea: 'Um período de rotação de ~4 horas dá a Haumea sua forma única de elipsoide triaxial semelhante a um ovo!',
         funFactMakemake: 'Descoberto perto da Páscoa de 2005, Makemake recebeu o nome do deus criador do povo Rapa Nui!',

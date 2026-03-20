@@ -22,6 +22,7 @@ export class SolarSystemModule {
  this.asteroidBelt = null;
  this.kuiperBelt = null;
  this.oortCloud = null;
+ this.heliopause = null;
  this.orbits = [];
  this.focusedObject = null;
  this.distantStars = [];
@@ -295,6 +296,7 @@ export class SolarSystemModule {
  { progress: 50, message: t('creatingDwarfPlanets'), task: async () => await this.createDwarfPlanets(scene) },
  { progress: 62, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
  { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
+ { progress: 66, message: t('creatingHeliopause'), task: () => this.createHeliopause(scene) },
  { progress: 67, message: t('creatingOortCloud'), task: () => this.createOortCloud(scene) },
  { progress: 69, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
  { progress: 70, message: t('creatingMilkyWay'), task: () => this.createMilkyWay(scene) },
@@ -4084,6 +4086,54 @@ export class SolarSystemModule {
  if (DEBUG.enabled) console.log(` Kuiper Belt: ${largeKBOCount + mediumKBOCount + smallKBOCount + scatteredCount} objects`);
  }
 
+ createHeliopause(scene) {
+ // ===== HELIOPAUSE =====
+ // The boundary where the solar wind meets the interstellar medium
+ // Real distance: ~120 AU (Voyager 1 crossed it at ~121 AU in Aug 2012)
+ // Voyager 2 crossed at ~119 AU in Nov 2018
+ const heliopauseRadius = 2700; // ~120 AU educational scale, inside Oort Cloud
+ 
+ // Create a translucent sphere to mark the boundary
+ const geometry = GeometryFactory.getSphereGeometry(heliopauseRadius, 64);
+ const material = new THREE.MeshBasicMaterial({
+ color: 0x4488cc,
+ transparent: true,
+ opacity: 0.03,
+ side: THREE.DoubleSide,
+ depthWrite: false
+ });
+ const heliopauseMesh = new THREE.Mesh(geometry, material);
+ heliopauseMesh.name = 'heliopause';
+
+ // Add a subtle wireframe ring at the equator for visibility
+ const ringGeometry = new THREE.RingGeometry(heliopauseRadius - 2, heliopauseRadius + 2, 128);
+ const ringMaterial = new THREE.MeshBasicMaterial({
+ color: 0x6699dd,
+ transparent: true,
+ opacity: 0.15,
+ side: THREE.DoubleSide,
+ depthWrite: false
+ });
+ const equatorRing = new THREE.Mesh(ringGeometry, ringMaterial);
+ equatorRing.rotation.x = Math.PI / 2;
+ heliopauseMesh.add(equatorRing);
+
+ heliopauseMesh.userData = {
+ name: t('heliopause'),
+ type: 'heliopause',
+ description: t('descHeliopause'),
+ funFact: t('funFactHeliopause'),
+ radius: heliopauseRadius,
+ realSize: '~240 AU diameter (~36 billion km)'
+ };
+
+ scene.add(heliopauseMesh);
+ this.heliopause = heliopauseMesh;
+ this.objects.push(heliopauseMesh);
+ 
+ if (DEBUG.enabled) console.log(`[HELIO] Heliopause sphere at radius ${heliopauseRadius}`);
+ }
+
  createOortCloud(scene) {
  // ===== HYPER-REALISTIC OORT CLOUD =====
  // A spherical shell of icy planetesimals surrounding the entire solar system
@@ -4095,10 +4145,11 @@ export class SolarSystemModule {
  
  // Scale distances appropriately
  // Realistic scale: 50,000 AU = 2,564,000 units, 200,000 AU = 10,256,000 units
- // Educational scale: Compressed to 5,000-15,000 units (far beyond Kuiper Belt at 2400)
+ // Educational scale: Compressed to sit INSIDE the constellation sphere (10,000 units)
+ // Oort Cloud must be between Kuiper Belt (~2,400) and constellations (10,000)
  // Using spherical shell distribution rather than disk
- const innerRadius = this.realisticScale ? 2564000 : 5000;
- const outerRadius = this.realisticScale ? 10256000 : 15000;
+ const innerRadius = this.realisticScale ? 2564000 : 3000;
+ const outerRadius = this.realisticScale ? 10256000 : 8000;
  
  // Inner Oort Cloud (Hills cloud) - denser concentration
  const innerOortCount = 800;
@@ -4226,7 +4277,7 @@ export class SolarSystemModule {
  description: t('descOortCloud'),
  funFact: t('funFactOortCloud'),
  count: innerOortCount + outerOortCount + cometaryCount,
- radius: this.realisticScale ? 10256000 : 15000
+ radius: this.realisticScale ? 10256000 : 8000
  };
  
  scene.add(oortCloudGroup);
@@ -9636,9 +9687,12 @@ let actualRadius;
  // Kuiper Belt: wide ring beyond Neptune — step back enough to see the sweep
  distance = actualRadius * 3;
  } else if (userData.type === 'oortCloud') {
- // Oort Cloud: spherical shell — position camera just outside the outer edge
- // so the full sphere is visible and particles surround the viewport
- distance = actualRadius * 1.2;
+ // Oort Cloud: spherical shell — position camera inside the cloud
+ // so particles surround the viewport (60% of radius)
+ distance = actualRadius * 0.6;
+ } else if (userData.type === 'heliopause') {
+ // Heliopause: position camera just inside the boundary
+ distance = actualRadius * 0.5;
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
