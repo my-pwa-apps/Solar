@@ -8994,6 +8994,9 @@ createHyperrealisticHubble(satData) {
  }
  
  // Milky Way galaxy disc fade: show when camera is far from origin
+ // As we transition to intergalactic view, fade out everything that's
+ // INSIDE the galaxy (stars, constellations, nebulae, starfield) and
+ // fade in the galaxy disc. Only other galaxies remain visible.
  if (this.milkyWayDisc && camera) {
  const camDist = camera.position.length();
  const fadeStart = 12000; // Start fading in beyond constellation sphere
@@ -9005,9 +9008,45 @@ createHyperrealisticHubble(satData) {
  this.milkyWayDisc.visible = true;
  const t = Math.min((camDist - fadeStart) / (fadeFull - fadeStart), 1);
  this.milkyWayDisc.material.opacity = t * 0.85;
- // Fade out the particle band as the disc fades in
+
+ // Fade out everything inside the galaxy as we zoom to intergalactic view
+ const fadeOut = 1 - t;
+
+ // Milky Way particle band
  if (this.milkyWay) {
- this.milkyWay.material.opacity = 0.65 * (1 - t * 0.8);
+ this.milkyWay.material.opacity = 0.65 * fadeOut;
+ }
+ // Starfield (background stars)
+ if (this.starfield) {
+ this.starfield.material.opacity = fadeOut;
+ }
+ // Distant named stars (Sirius, Betelgeuse, etc.)
+ if (this.distantStars) {
+ this.distantStars.forEach(star => {
+ if (star.material) star.material.opacity = 0.9 * fadeOut;
+ });
+ }
+ // Constellation lines and stars
+ if (this.constellations) {
+ this.constellations.forEach(constellation => {
+ constellation.traverse(child => {
+ if (child.material) child.material.opacity = fadeOut;
+ });
+ });
+ }
+ // Nebulae
+ if (this.nebulae) {
+ this.nebulae.forEach(nebula => {
+ nebula.traverse(child => {
+ if (child.material) child.material.opacity = fadeOut;
+ });
+ });
+ }
+ // Oort Cloud
+ if (this.oortCloud) {
+ this.oortCloud.traverse(child => {
+ if (child.material) child.material.opacity = 0.7 * fadeOut;
+ });
  }
  }
  }
