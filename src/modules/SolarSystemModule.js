@@ -4094,7 +4094,7 @@ export class SolarSystemModule {
  const heliopauseRadius = 2700; // ~120 AU educational scale, inside Oort Cloud
  
  // Create a translucent sphere to mark the boundary
- const geometry = GeometryFactory.getSphereGeometry(heliopauseRadius, 64);
+ const geometry = GeometryFactory.createSphere(heliopauseRadius, 64);
  const material = new THREE.MeshBasicMaterial({
  color: 0x4488cc,
  transparent: true,
