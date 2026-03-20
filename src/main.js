@@ -675,6 +675,9 @@ class App {
  // Oort Cloud (structure object)
  'oort-cloud': () => this.solarSystemModule.oortCloud,
 
+ // Heliopause (boundary sphere)
+ 'heliopause': () => this.solarSystemModule.heliopause,
+
  // Dwarf Planets (stored in planets registry)
  'ceres': () => this.solarSystemModule.planets.ceres,
  'haumea': () => this.solarSystemModule.planets.haumea,
