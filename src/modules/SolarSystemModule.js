@@ -5929,7 +5929,7 @@ export class SolarSystemModule {
  blending: THREE.AdditiveBlending,
  side: THREE.DoubleSide
  });
- const geo = new THREE.PlaneGeometry(galData.size * 2.5, galData.size * 2.5);
+ const geo = new THREE.PlaneGeometry(galData.size * 15, galData.size * 15);
  const mesh = new THREE.Mesh(geo, gMat);
  group.add(mesh);
  // Orient the plane toward the scene centre so it's visible from origin.
@@ -5946,8 +5946,11 @@ export class SolarSystemModule {
  }
 
  // Convert RA/Dec to 3D Cartesian coordinates (same as nebulae and constellations)
- // Galaxies should be positioned even farther out than nebulae
- const galaxyDistance = CONFIG.CONSTELLATION.DISTANCE * 2.0; // 2x constellation distance, 1.33x nebula distance
+ // Galaxies should be far beyond the Milky Way disc (50,000 units across)
+ // Educational scale: Andromeda ~2.5 Mly away, Milky Way ~100,000 ly across
+ // In our scale: MW disc = 50,000 units, so Andromeda should be ~25x that
+ // Compressed for educational visibility: place at 100,000-150,000 units
+ const galaxyDistance = 120000;
  const position = CoordinateUtils.sphericalToCartesian(
  galData.ra,
  galData.dec,
@@ -5978,6 +5981,98 @@ export class SolarSystemModule {
  this.objects.push(group);
  this.galaxies.push(group);
  }
+
+ // Add procedural background galaxies — scattered at intergalactic distances
+ this._createBackgroundGalaxies(scene);
+ }
+
+ _createBackgroundGalaxies(scene) {
+ // Create many small procedural galaxies at various distances to fill
+ // the intergalactic void when zoomed out very far
+ const bgGalaxyCount = IS_MOBILE ? 40 : 80;
+ 
+ for (let i = 0; i < bgGalaxyCount; i++) {
+ // Random spherical distribution at varying distances
+ const theta = Math.random() * Math.PI * 2;
+ const phi = Math.acos(2 * Math.random() - 1);
+ const dist = 80000 + Math.random() * 120000; // 80,000 to 200,000 units
+ 
+ const x = dist * Math.sin(phi) * Math.cos(theta);
+ const y = dist * Math.cos(phi);
+ const z = dist * Math.sin(phi) * Math.sin(theta);
+ 
+ // Generate a tiny galaxy sprite
+ const canvasSize = 64;
+ const canvas = document.createElement('canvas');
+ canvas.width = canvasSize;
+ canvas.height = canvasSize;
+ const ctx = canvas.getContext('2d');
+ 
+ const cx = canvasSize / 2;
+ const cy = canvasSize / 2;
+ const r = canvasSize * 0.35;
+ 
+ // Random galaxy type
+ const isSpiral = Math.random() > 0.4;
+ 
+ if (isSpiral) {
+ // Small spiral
+ const arms = 2 + Math.floor(Math.random() * 3);
+ for (let a = 0; a < arms; a++) {
+ const armOff = (a / arms) * Math.PI * 2;
+ for (let j = 0; j < 200; j++) {
+ const t = Math.random();
+ const angle = armOff + t * 2 * Math.PI;
+ const spread = (Math.random() - 0.5) * r * 0.2;
+ const px = cx + Math.cos(angle) * t * r + Math.cos(angle + Math.PI / 2) * spread;
+ const py = cy + Math.sin(angle) * t * r + Math.sin(angle + Math.PI / 2) * spread;
+ const b = 0.3 + Math.random() * 0.5;
+ ctx.fillStyle = `rgba(${180 + Math.random() * 75}, ${180 + Math.random() * 50}, ${190 + Math.random() * 65}, ${b})`;
+ ctx.fillRect(px, py, 1, 1);
+ }
+ }
+ } else {
+ // Elliptical glow
+ const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+ grad.addColorStop(0, `rgba(255, 240, 200, 0.6)`);
+ grad.addColorStop(0.5, `rgba(200, 190, 170, 0.2)`);
+ grad.addColorStop(1, 'rgba(150, 140, 130, 0)');
+ ctx.fillStyle = grad;
+ ctx.fillRect(0, 0, canvasSize, canvasSize);
+ }
+ 
+ // Core glow for both types
+ const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.2);
+ coreGrad.addColorStop(0, 'rgba(255, 250, 230, 0.7)');
+ coreGrad.addColorStop(1, 'rgba(255, 240, 200, 0)');
+ ctx.fillStyle = coreGrad;
+ ctx.fillRect(0, 0, canvasSize, canvasSize);
+ 
+ const texture = new THREE.CanvasTexture(canvas);
+ const size = 1500 + Math.random() * 4000; // Vary apparent sizes
+ const geo = new THREE.PlaneGeometry(size, size);
+ const mat = new THREE.MeshBasicMaterial({
+ map: texture,
+ transparent: true,
+ opacity: 0.4 + Math.random() * 0.4,
+ side: THREE.DoubleSide,
+ depthWrite: false,
+ blending: THREE.AdditiveBlending
+ });
+ 
+ const mesh = new THREE.Mesh(geo, mat);
+ mesh.position.set(x, y, z);
+ mesh.lookAt(0, 0, 0); // Face toward origin
+ // Random rotation around face normal for variety
+ mesh.rotation.z = Math.random() * Math.PI * 2;
+ mesh.frustumCulled = false;
+ mesh.userData = { type: 'backgroundGalaxy' };
+ 
+ scene.add(mesh);
+ this.galaxies.push(mesh);
+ }
+ 
+ if (DEBUG.enabled) console.log(`[Galaxies] Added ${bgGalaxyCount} background galaxies`);
  }
 
  // Loads a deep-sky image (nebula/galaxy) and post-processes it on a canvas:
@@ -10636,12 +10731,8 @@ let actualRadius;
  });
  }
  
- // Add labels to constellations
- if (this.constellations) {
- this.constellations.forEach(constellation => {
- createLabel(constellation, ` ${constellation.userData.name}`);
- });
- }
+ // Constellations: labels NOT created here — shown only on hover or when focused
+ // (constellation labels at 10,000 units distance would clutter the view)
  }
 
  toggleLabels(visible) {

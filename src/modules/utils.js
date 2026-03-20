@@ -34,7 +34,7 @@ export const CONFIG = {
  CAMERA: {
  fov: 75,
  near: 0.1,
- far: 50000,
+ far: 500000,
  // Start position adjusted for new proportional educational scale
  // Earth is at 51 units, so start at ~100 units for good overview
  startPos: { x: 0, y: 100, z: 200 }
@@ -42,7 +42,7 @@ export const CONFIG = {
  CONTROLS: {
  dampingFactor: 0.05,
  minDistance: 0.001, // Changed from 5 to 0.001 - allows extreme close-up of ISS and small objects
- maxDistance: 30000,
+ maxDistance: 200000,
  enablePan: true,
  zoomSpeed: 1.2
  },
