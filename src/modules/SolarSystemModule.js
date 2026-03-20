@@ -9684,18 +9684,17 @@ let actualRadius;
  distance = Math.max(actualRadius * 3, 0.6);
  if (DEBUG.enabled) console.log(` [Dwarf Planet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (radius: ${actualRadius.toFixed(3)})`);
  } else if (userData.type === 'asteroidBelt') {
- // Asteroid Belt: ring between Mars & Jupiter — overview from just inside the belt
- distance = actualRadius * 3;
+ // Asteroid Belt: ring between Mars & Jupiter — view from outside looking inward
+ distance = actualRadius * 1.5;
  } else if (userData.type === 'kuiperBelt') {
- // Kuiper Belt: wide ring beyond Neptune — step back enough to see the sweep
- distance = actualRadius * 3;
+ // Kuiper Belt: wide ring beyond Neptune — view from outside looking inward
+ distance = actualRadius * 1.5;
  } else if (userData.type === 'oortCloud') {
- // Oort Cloud: spherical shell — position camera inside the cloud
- // so particles surround the viewport (60% of radius)
- distance = actualRadius * 0.6;
+ // Oort Cloud: view from outside the outer edge looking inward toward Sun
+ distance = actualRadius * 1.3;
  } else if (userData.type === 'heliopause') {
- // Heliopause: position camera just inside the boundary
- distance = actualRadius * 0.5;
+ // Heliopause: view from outside the boundary looking inward
+ distance = actualRadius * 1.3;
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
@@ -10052,6 +10051,17 @@ let actualRadius;
      );
      controls.target.copy(targetPosition);
      if (DEBUG.enabled) console.log(` [Asteroid] Close dramatic angle for irregular shape showcase`);
+ } else if (userData.type === 'asteroidBelt' || userData.type === 'kuiperBelt' || userData.type === 'oortCloud' || userData.type === 'heliopause') {
+     // Structural objects centered at origin: position camera OUTSIDE looking inward
+     // Pick a viewing angle elevated above the ecliptic for a good overview
+     const viewAngle = Math.PI * 0.35; // ~63 degrees around
+     endPos = new THREE.Vector3(
+         Math.cos(viewAngle) * distance,
+         distance * 0.45, // Elevated view above ecliptic
+         Math.sin(viewAngle) * distance
+     );
+     controls.target.set(0, 0, 0); // Look toward Sun/center
+     if (DEBUG.enabled) console.log(` [${userData.type}] Outside-in view at distance ${distance.toFixed(0)}`);
  } else {
      // Other objects: Dynamic positioning with slight variation
      const variation = Math.random() * 0.2 - 0.1; // -0.1 to +0.1 variation
