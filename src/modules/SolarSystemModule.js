@@ -4658,6 +4658,22 @@ export class SolarSystemModule {
 
  this.milkyWayDisc = new THREE.Mesh(discGeometry, discMaterial);
  this.milkyWayDisc.name = 'milkyWayGalaxyDisc';
+
+ // Offset the disc so the solar system (at world origin) sits at the correct
+ // position within the galaxy — ~58% out from center in the Orion-Cygnus arm.
+ // The texture has the solar dot at angle solarAngle from center at 58% of maxR.
+ // maxR = texSize * 0.45, discSize = 50000, so world offset = 0.58 * 0.45 * discSize = 13050.
+ // We need to shift the disc CENTER AWAY from origin by that amount, in the
+ // opposite direction of the solar dot on the texture.
+ const solarAngle = Math.PI * 0.3 + 0.6 * 2.5 * Math.PI * 2; // Must match texture generation
+ const offsetDist = 13050;
+ // Apply offset BEFORE rotation — shift along the plane's local axes
+ this.milkyWayDisc.position.set(
+ -Math.cos(solarAngle) * offsetDist,
+ 0,
+ -Math.sin(solarAngle) * offsetDist
+ );
+
  // Tilt to match galactic plane (62.87° from celestial equator)
  this.milkyWayDisc.rotation.x = -Math.PI / 2; // Flat on ecliptic first
  this.milkyWayDisc.rotation.z = 62.87 * Math.PI / 180; // Galactic tilt
