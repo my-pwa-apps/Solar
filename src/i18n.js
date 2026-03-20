@@ -611,8 +611,8 @@ const translations = {
         proximaB: 'Proxima Centauri b', kepler452b: 'Kepler-452b',
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Andere sterrenbeelden
-        bigDipper: 'Grote Beer', littleDipper: 'Kleine Beer', southernCross: 'Zuiderkruis',
-        orionsBelt: 'Gordel van Orion', ursaMajor: 'Ursa Major',
+        bigDipper: 'Steelpannetje', littleDipper: 'Klein Steelpannetje', southernCross: 'Zuiderkruis',
+        orionsBelt: 'Gordel van Orion', ursaMajor: 'Grote Beer',
         canisMajor: 'Grote Hond', aquila: 'Adelaar', pegasus: 'Pegasus',
         // Ruimtevaartuigen
         iss: 'ISS', hubble: 'Hubble',
@@ -1157,7 +1157,7 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Autres constellations
         bigDipper: 'Grande Ourse', littleDipper: 'Petite Ourse', southernCross: 'Croix du Sud',
-        orionsBelt: 'Ceinture d\'Orion', ursaMajor: 'Ursa Major',
+        orionsBelt: 'Ceinture d\'Orion', ursaMajor: 'Grande Ourse',
         canisMajor: 'Grand Chien', aquila: 'Aigle', pegasus: 'Pégase',
         // Engins spatiaux
         iss: 'ISS', hubble: 'Hubble',
@@ -1695,7 +1695,7 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Andere Sternbilder
         bigDipper: 'Großer Wagen', littleDipper: 'Kleiner Wagen', southernCross: 'Kreuz des Südens',
-        orionsBelt: 'Gürtel des Orion', ursaMajor: 'Ursa Major',
+        orionsBelt: 'Gürtel des Orion', ursaMajor: 'Großer Bär',
         canisMajor: 'Großer Hund', aquila: 'Adler', pegasus: 'Pegasus',
         // Raumfahrzeuge
         iss: 'ISS', hubble: 'Hubble',
@@ -2233,7 +2233,7 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Otras constelaciones
         bigDipper: 'Osa Mayor', littleDipper: 'Osa Menor', southernCross: 'Cruz del Sur',
-        orionsBelt: 'Cinturón de Orión', ursaMajor: 'Ursa Major',
+        orionsBelt: 'Cinturón de Orión', ursaMajor: 'Osa Mayor',
         canisMajor: 'Can Mayor', aquila: 'Águila', pegasus: 'Pegaso',
         // Naves espaciales
         iss: 'ISS', hubble: 'Hubble',
@@ -2771,7 +2771,7 @@ const translations = {
         trappist1e: 'TRAPPIST-1e', kepler186f: 'Kepler-186f',
         // Outras constelações
         bigDipper: 'Ursa Maior', littleDipper: 'Ursa Menor', southernCross: 'Cruzeiro do Sul',
-        orionsBelt: 'Cinturão de Órion', ursaMajor: 'Ursa Major',
+        orionsBelt: 'Cinturão de Órion', ursaMajor: 'Ursa Maior',
         canisMajor: 'Cão Maior', aquila: 'Águia', pegasus: 'Pégaso',
         // Naves espaciais
         iss: 'ISS', hubble: 'Hubble',
