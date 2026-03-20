@@ -1552,21 +1552,24 @@ this.camera.near = 10.0;
  if (ud.type === 'constellation' || ud.type === 'galaxy' || ud.type === 'nebula') {
  distance = (ud.radius || 500) * 3;
  } else if (ud.isSpacecraft && ud.orbitPlanet) {
- distance = Math.max(radius * 15, 1.5);
+ distance = Math.max(radius * 8, 0.5);
  } else if (ud.type === 'moon' || ud.parentPlanet) {
- distance = Math.max(radius * 6, 2);
+ distance = Math.max(radius * 3, 0.3);
  } else if (ud.type === 'DwarfPlanet') {
- distance = Math.max(radius * 3, 0.8);
+ distance = Math.max(radius * 2, 0.3);
  } else if (ud.isComet) {
- distance = 80;
+ distance = 40;
  } else if (ud.isSpacecraft) {
- distance = Math.max(radius * 10, 3);
+ distance = Math.max(radius * 5, 1);
  } else if (ud.type === 'asteroidBelt' || ud.type === 'kuiperBelt') {
  distance = radius * 3;
  } else if (ud.type === 'oortCloud') {
- distance = radius * 1.2;
+ distance = radius * 0.6;
+ } else if (ud.type === 'heliopause') {
+ distance = radius * 0.5;
  } else {
- distance = Math.max(radius * 5, 10);
+ // Planets: allow close surface views (1.5x radius = just above surface)
+ distance = Math.max(radius * 2.5, 2);
  }
 
  // Direction from origin → target (planets orbit sun at origin, so this
@@ -1629,8 +1632,10 @@ this.camera.near = 10.0;
  */
  _billboardVRPanel() {
  if (!this.vrUIPanel) return;
- this.camera.getWorldPosition(this._vrBillboardPos);
- this.vrUIPanel.lookAt(this._vrBillboardPos);
+ // Panel is a child of dolly, so use dolly-local camera position for lookAt
+ const camLocalPos = this._vrBillboardPos;
+ camLocalPos.copy(this.camera.position); // camera.position is already dolly-local in XR
+ this.vrUIPanel.lookAt(camLocalPos);
  // Strip pitch/roll so panel stays vertical
  const yRot = this.vrUIPanel.rotation.y;
  this.vrUIPanel.rotation.set(0, yRot, 0);
