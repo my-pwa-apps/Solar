@@ -42,7 +42,7 @@ export const CONFIG = {
  CONTROLS: {
  dampingFactor: 0.05,
  minDistance: 0.001, // Changed from 5 to 0.001 - allows extreme close-up of ISS and small objects
- maxDistance: 10000,
+ maxDistance: 30000,
  enablePan: true,
  zoomSpeed: 1.2
  },
