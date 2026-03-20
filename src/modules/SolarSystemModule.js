@@ -4556,9 +4556,116 @@ export class SolarSystemModule {
  this.milkyWay.frustumCulled = false;
  scene.add(this.milkyWay);
 
+ // ===== MILKY WAY GALAXY DISC (visible when zoomed far out) =====
+ // A large spiral galaxy sprite that becomes visible when the camera
+ // is beyond the constellation sphere, showing our solar system within
+ // the Milky Way. Uses a procedurally generated spiral texture.
+ this._createMilkyWayGalaxyDisc(scene);
+
  if (DEBUG.enabled) {
  console.log(` Milky Way created with ${particleCount} particles (galactic-plane orientation)`);
  }
+ }
+
+ _createMilkyWayGalaxyDisc(scene) {
+ // Procedurally generate a top-down spiral galaxy texture
+ const texSize = IS_MOBILE ? 512 : 1024;
+ const canvas = document.createElement('canvas');
+ canvas.width = texSize;
+ canvas.height = texSize;
+ const ctx = canvas.getContext('2d');
+
+ // Black background (transparent edges)
+ ctx.fillStyle = 'rgba(0,0,0,0)';
+ ctx.fillRect(0, 0, texSize, texSize);
+
+ const cx = texSize / 2;
+ const cy = texSize / 2;
+ const maxR = texSize * 0.45;
+
+ // Draw galactic core glow
+ const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.15);
+ coreGrad.addColorStop(0, 'rgba(255, 240, 200, 0.9)');
+ coreGrad.addColorStop(0.5, 'rgba(255, 220, 160, 0.5)');
+ coreGrad.addColorStop(1, 'rgba(200, 180, 140, 0)');
+ ctx.fillStyle = coreGrad;
+ ctx.fillRect(0, 0, texSize, texSize);
+
+ // Draw spiral arms with many small dots
+ const armCount = 4; // Milky Way has ~4 major arms
+ const turns = 2.5;
+ for (let arm = 0; arm < armCount; arm++) {
+ const armOffset = (arm / armCount) * Math.PI * 2;
+ for (let i = 0; i < 8000; i++) {
+ const t = Math.random();
+ const r = t * maxR;
+ const theta = armOffset + t * turns * Math.PI * 2;
+ // Add spread perpendicular to the arm
+ const spread = (Math.random() - 0.5) * maxR * 0.12 * (0.3 + t * 0.7);
+ const px = cx + Math.cos(theta) * r + Math.cos(theta + Math.PI / 2) * spread;
+ const py = cy + Math.sin(theta) * r + Math.sin(theta + Math.PI / 2) * spread;
+
+ // Color: warm at center, blue-white at edges
+ const warmth = 1 - t;
+ const brightness = (0.4 + Math.random() * 0.6) * (0.3 + warmth * 0.7);
+ const red = Math.floor((180 + warmth * 75) * brightness);
+ const green = Math.floor((180 + warmth * 50) * brightness);
+ const blue = Math.floor((200 + t * 55) * brightness);
+
+ ctx.fillStyle = `rgba(${red},${green},${blue},${0.15 + Math.random() * 0.25})`;
+ const dotSize = 0.5 + Math.random() * 1.5;
+ ctx.fillRect(px - dotSize / 2, py - dotSize / 2, dotSize, dotSize);
+ }
+ }
+
+ // Diffuse galactic glow
+ const outerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+ outerGrad.addColorStop(0, 'rgba(200, 190, 170, 0.15)');
+ outerGrad.addColorStop(0.4, 'rgba(180, 175, 165, 0.08)');
+ outerGrad.addColorStop(1, 'rgba(100, 100, 120, 0)');
+ ctx.fillStyle = outerGrad;
+ ctx.fillRect(0, 0, texSize, texSize);
+
+ // Mark solar system position (~26,000 ly from center, ~halfway out)
+ // Place a tiny bright dot at ~60% radius on one arm
+ const solarAngle = Math.PI * 0.3 + 0.6 * turns * Math.PI * 2;
+ const solarR = maxR * 0.58;
+ const solarX = cx + Math.cos(solarAngle) * solarR;
+ const solarY = cy + Math.sin(solarAngle) * solarR;
+ ctx.fillStyle = 'rgba(100, 200, 255, 0.8)';
+ ctx.beginPath();
+ ctx.arc(solarX, solarY, 2, 0, Math.PI * 2);
+ ctx.fill();
+ // Tiny label
+ ctx.fillStyle = 'rgba(150, 220, 255, 0.6)';
+ ctx.font = `${Math.round(texSize / 80)}px sans-serif`;
+ ctx.fillText('☉', solarX + 4, solarY + 1);
+
+ const texture = new THREE.CanvasTexture(canvas);
+ texture.needsUpdate = true;
+
+ // Create the disc as a large plane
+ const discSize = 50000; // Very large, seen only from far out
+ const discGeometry = new THREE.PlaneGeometry(discSize, discSize);
+ const discMaterial = new THREE.MeshBasicMaterial({
+ map: texture,
+ transparent: true,
+ opacity: 0, // Starts invisible, fades in with distance
+ side: THREE.DoubleSide,
+ depthWrite: false,
+ blending: THREE.AdditiveBlending
+ });
+
+ this.milkyWayDisc = new THREE.Mesh(discGeometry, discMaterial);
+ this.milkyWayDisc.name = 'milkyWayGalaxyDisc';
+ // Tilt to match galactic plane (62.87° from celestial equator)
+ this.milkyWayDisc.rotation.x = -Math.PI / 2; // Flat on ecliptic first
+ this.milkyWayDisc.rotation.z = 62.87 * Math.PI / 180; // Galactic tilt
+ this.milkyWayDisc.frustumCulled = false;
+ this.milkyWayDisc.renderOrder = -1; // Behind everything
+ scene.add(this.milkyWayDisc);
+
+ if (DEBUG.enabled) console.log('[MilkyWay] Galaxy disc created (fades in at distance)');
  }
 
  async loadTextureWithFallback(url, fallbackColor) {
@@ -8886,6 +8993,25 @@ createHyperrealisticHubble(satData) {
  });
  }
  
+ // Milky Way galaxy disc fade: show when camera is far from origin
+ if (this.milkyWayDisc && camera) {
+ const camDist = camera.position.length();
+ const fadeStart = 12000; // Start fading in beyond constellation sphere
+ const fadeFull = 25000; // Fully visible at this distance
+ if (camDist < fadeStart) {
+ this.milkyWayDisc.material.opacity = 0;
+ this.milkyWayDisc.visible = false;
+ } else {
+ this.milkyWayDisc.visible = true;
+ const t = Math.min((camDist - fadeStart) / (fadeFull - fadeStart), 1);
+ this.milkyWayDisc.material.opacity = t * 0.85;
+ // Fade out the particle band as the disc fades in
+ if (this.milkyWay) {
+ this.milkyWay.material.opacity = 0.65 * (1 - t * 0.8);
+ }
+ }
+ }
+
  // Twinkle distant stars
  if (this.distantStars) {
  this._starTwinkleFrame = (this._starTwinkleFrame + 1) % 3;
