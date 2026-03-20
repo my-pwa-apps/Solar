@@ -10550,7 +10550,15 @@ let actualRadius;
  
  // Scale in world units — clamp so Sun labels aren't enormous and craft labels aren't invisible
  const r = object.userData.radius || 0.5;
- const h = Math.min(Math.max(r * 0.6, 0.3), 6);
+ const isDistantObject = object.userData.type === 'constellation' || 
+ object.userData.type === 'galaxy' || object.userData.type === 'nebula';
+ let h;
+ if (isDistantObject) {
+ // Constellations/galaxies/nebulae are at ~10,000 units — need much larger labels
+ h = Math.min(Math.max(r * 0.3, 50), 200);
+ } else {
+ h = Math.min(Math.max(r * 0.6, 0.3), 6);
+ }
  sprite.scale.set(h * 4.5, h, 1);
  sprite.position.set(0, r * 1.5 + h * 0.5, 0);
  sprite.visible = false;
