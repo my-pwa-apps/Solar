@@ -4129,7 +4129,9 @@ export class SolarSystemModule {
 
  scene.add(heliopauseMesh);
  this.heliopause = heliopauseMesh;
- this.objects.push(heliopauseMesh);
+ // NOT added to this.objects — the giant sphere would intercept all raycasts
+ // and show the "Heliopause" hover label everywhere. Navigation uses
+ // this.heliopause directly via the navigationMap in main.js.
  
  if (DEBUG.enabled) console.log(`[HELIO] Heliopause sphere at radius ${heliopauseRadius}`);
  }
