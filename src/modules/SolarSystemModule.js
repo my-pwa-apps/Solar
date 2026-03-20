@@ -9684,17 +9684,17 @@ let actualRadius;
  distance = Math.max(actualRadius * 3, 0.6);
  if (DEBUG.enabled) console.log(` [Dwarf Planet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (radius: ${actualRadius.toFixed(3)})`);
  } else if (userData.type === 'asteroidBelt') {
- // Asteroid Belt: ring between Mars & Jupiter — view from outside looking inward
- distance = actualRadius * 1.5;
+ // Asteroid Belt at ~125 units from Sun — position camera just outside the outer edge
+ distance = 170; // Just beyond the belt's outer edge (~150 units)
  } else if (userData.type === 'kuiperBelt') {
- // Kuiper Belt: wide ring beyond Neptune — view from outside looking inward
- distance = actualRadius * 1.5;
+ // Kuiper Belt at ~1600-2400 units — position camera just outside
+ distance = 2800; // Just beyond the belt's outer edge (~2400 units)
  } else if (userData.type === 'oortCloud') {
- // Oort Cloud: view from outside the outer edge looking inward toward Sun
- distance = actualRadius * 1.3;
+ // Oort Cloud outer edge at 9000 units — view from just outside
+ distance = 9500;
  } else if (userData.type === 'heliopause') {
- // Heliopause: view from outside the boundary looking inward
- distance = actualRadius * 1.3;
+ // Heliopause at 2700 units — view from just outside
+ distance = 3200;
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
