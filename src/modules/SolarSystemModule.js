@@ -4146,10 +4146,11 @@ export class SolarSystemModule {
  // Scale distances appropriately
  // Realistic scale: 50,000 AU = 2,564,000 units, 200,000 AU = 10,256,000 units
  // Educational scale: Compressed to sit INSIDE the constellation sphere (10,000 units)
- // Oort Cloud must be between Kuiper Belt (~2,400) and constellations (10,000)
+ // Oort Cloud must encompass all spacecraft (Voyager 1 at 8307) and stay
+ // inside the constellation sphere (10,000). Range: 3,000-9,000 units.
  // Using spherical shell distribution rather than disk
  const innerRadius = this.realisticScale ? 2564000 : 3000;
- const outerRadius = this.realisticScale ? 10256000 : 8000;
+ const outerRadius = this.realisticScale ? 10256000 : 9000;
  
  // Inner Oort Cloud (Hills cloud) - denser concentration
  const innerOortCount = 800;
@@ -4277,7 +4278,7 @@ export class SolarSystemModule {
  description: t('descOortCloud'),
  funFact: t('funFactOortCloud'),
  count: innerOortCount + outerOortCount + cometaryCount,
- radius: this.realisticScale ? 10256000 : 8000
+ radius: this.realisticScale ? 10256000 : 9000
  };
  
  scene.add(oortCloudGroup);
