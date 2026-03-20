@@ -391,9 +391,9 @@ export class SolarSystemModule {
  scene.add(sunLight);
  this.sun.userData.sunLight = sunLight;
  
- // Ambient light - subtle fill light for starlight reflection (not too bright!)
- // Lower value = more dramatic moon phases and realistic planet shadows
- const ambientLight = new THREE.AmbientLight(0x404050, 0.4); // Subtle starlight ambient
+ // Ambient light - very faint fill for starlight/earthshine reflection
+ // Keep LOW for realistic day/night contrast on planets
+ const ambientLight = new THREE.AmbientLight(0x202030, 0.08); // Minimal starlight ambient
  ambientLight.name = 'ambientLight';
  scene.add(ambientLight);
 

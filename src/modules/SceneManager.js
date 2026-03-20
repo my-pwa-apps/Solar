@@ -209,17 +209,17 @@ export class SceneManager {
  // Set scene background to dark space color
  this.scene.background = new THREE.Color(0x000011);
  
- // Ambient light - minimal fill so dark sides retain a hint of reflected starlight.
- // SolarSystemModule.createSun() adds its own ambient (0x404050, 0.4) on top of this.
- this.lights.ambient = new THREE.AmbientLight(0x222244, 0.2);
+ // Ambient light - very faint fill so dark sides aren't pure black.
+ // SolarSystemModule.createSun() adds its own ambient (0x202030, 0.08) on top.
+ this.lights.ambient = new THREE.AmbientLight(0x111122, 0.06);
  this.scene.add(this.lights.ambient);
 
- // Hemisphere light - very subtle top/bottom fill (stars above, deep space below)
- this.lights.hemisphere = new THREE.HemisphereLight(0x446688, 0x111133, 0.15);
+ // Hemisphere light - extremely subtle sky/ground tint
+ this.lights.hemisphere = new THREE.HemisphereLight(0x223344, 0x080811, 0.04);
  this.scene.add(this.lights.hemisphere);
 
- // Camera fill - faint; prevents totally-black dark sides during close-up inspections
- this.lights.camera = new THREE.PointLight(0x8899dd, 0.2, 1000, 2);
+ // Camera fill - very faint; just enough to see dark-side detail during close-ups
+ this.lights.camera = new THREE.PointLight(0x4455aa, 0.05, 500, 2);
  this.camera.add(this.lights.camera);
  this.scene.add(this.camera);
  
@@ -2393,13 +2393,13 @@ this.camera.near = 10.0;
 
  updateBrightness(multiplier) {
  if (this.lights.ambient) {
- this.lights.ambient.intensity = 0.05 + (multiplier * 0.5); // max ~0.55 at full brightness
+ this.lights.ambient.intensity = 0.02 + (multiplier * 0.1); // max ~0.12 at full brightness
  }
  if (this.lights.hemisphere) {
- this.lights.hemisphere.intensity = 0.05 + (multiplier * 0.3); // max ~0.35 at full brightness
+ this.lights.hemisphere.intensity = 0.01 + (multiplier * 0.06); // max ~0.07 at full brightness
  }
  if (this.lights.camera) {
- this.lights.camera.intensity = multiplier * 0.6; // max 0.6 at full brightness
+ this.lights.camera.intensity = multiplier * 0.15; // max 0.15 at full brightness
  }
  }
 
