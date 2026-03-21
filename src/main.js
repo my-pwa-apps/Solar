@@ -678,6 +678,9 @@ class App {
  // Heliopause (boundary sphere)
  'heliopause': () => this.solarSystemModule.heliopause,
 
+ // Milky Way Galaxy (zoom out to intergalactic view)
+ 'milky-way': () => this.solarSystemModule.milkyWayDisc,
+
  // Dwarf Planets (stored in planets registry)
  'ceres': () => this.solarSystemModule.planets.ceres,
  'haumea': () => this.solarSystemModule.planets.haumea,

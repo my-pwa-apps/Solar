@@ -433,6 +433,9 @@ const translations = {
         descNeowise: 'Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are "dirty snowballs" made of ice, dust, and rock from the solar system\'s formation.',
 
         // Galaxy descriptions
+        milkyWayGalaxy: 'Milky Way',
+        descMilkyWay: 'The Milky Way is our home galaxy — a barred spiral galaxy containing 100-400 billion stars! Our solar system sits in the Orion-Cygnus arm, about 26,000 light-years from the galactic center. It takes our Sun about 230 million years to complete one orbit around the galaxy — a "galactic year."',
+        funFactMilkyWay: 'The name "Milky Way" comes from its appearance as a milky band of light across the night sky. Ancient Greeks called it "galaxías kýklos" (milky circle), which gave us the word "galaxy"! You can see it best from dark locations far from city lights.',
         descAndromeda: 'The Andromeda Galaxy is our nearest large galactic neighbor, about 2.5 million light-years away! It likely contains around a trillion stars and is on a long-term collision course with the Milky Way (not for about 4.5 billion years).',
         descWhirlpool: 'The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.',
         descSombrero: 'The Sombrero Galaxy is famous for its broad-brimmed hat appearance! It has a bright nucleus, an unusually large central bulge, a prominent dust lane, and a rich system of globular clusters.',
@@ -928,7 +931,10 @@ const translations = {
         descNeowise: 'Komeet NEOWISE was een spectaculair gezicht in juli 2020! Hij keert pas over ongeveer 6.800 jaar terug. Kometen zijn "vuile sneeuwballen" van ijs, stof en rots uit de vorming van het zonnestelsel.',
 
         // Sterrenstelsels
-        descAndromeda: 'Het Andromedastelsel is ons dichtstbijzijnde grote buursterrenstelsel, op ongeveer 2,5 miljoen lichtjaar afstand! Het bevat waarschijnlijk ongeveer een biljoen sterren en ligt op een langzame botsingskoers met de Melkweg (pas over ongeveer 4,5 miljard jaar).',
+        descMilkyWay: 'De Melkweg is ons thuissterrenstelsel — een balkspiraalstelsel met 100-400 miljard sterren! Ons zonnestelsel bevindt zich in de Orion-Cygnusarm, op ongeveer 26.000 lichtjaar van het galactisch centrum. Het kost onze Zon zo\'n 230 miljoen jaar om één baan rond het sterrenstelsel te voltooien — een "galactisch jaar."',
+        funFactMilkyWay: 'De naam "Melkweg" komt van het melkachtige lichtband dat \'s nachts zichtbaar is aan de hemel. De oude Grieken noemden het "galaxías kýklos" (melkcirkel), wat ons het woord "galaxy" gaf! Je kunt het het best zien vanaf donkere plaatsen ver van stadsverlichting.',
+        milkyWayGalaxy: 'Melkweg',
+        descAndromeda: is ons dichtstbijzijnde grote buursterrenstelsel, op ongeveer 2,5 miljoen lichtjaar afstand! Het bevat waarschijnlijk ongeveer een biljoen sterren en ligt op een langzame botsingskoers met de Melkweg (pas over ongeveer 4,5 miljard jaar).',
         descWhirlpool: 'Het Wervelwindsterrenstelsel (M51) is beroemd om zijn prachtige spiraalarms! Het is in wisselwerking met een kleiner begeleidend sterrenstelsel, wat voor verbluffende getijdenkrachten en nieuwe stervorming zorgt.',
         descSombrero: 'Het Sombrerostelsel is beroemd om zijn hoedachtige vorm met brede rand! Het heeft een heldere kern, een uitzonderlijk grote centrale bol, een prominente stofbaan en een rijk systeem van bolvormige sterrenhopen.',
 
@@ -1466,7 +1472,10 @@ const translations = {
         descNeowise: 'La comète NEOWISE fut un spectacle spectaculaire en juillet 2020! Elle ne reviendra pas avant environ 6 800 ans. Les comètes sont des "boules de neige sales" composées de glace, poussière et roche de la formation du système solaire.',
 
         // Galaxies
-        descAndromeda: 'La galaxie d\'Andromède est notre plus proche grande voisine galactique, à environ 2,5 millions d\'années-lumière! Elle contient probablement autour d\'un billion d\'étoiles et suit une trajectoire de collision à long terme avec la Voie lactée (pas avant environ 4,5 milliards d\'années).',
+        descMilkyWay: 'La Voie lactée est notre galaxie — une galaxie spirale barrée contenant 100 à 400 milliards d\'étoiles! Notre système solaire se trouve dans le bras d\'Orion-Cygne, à environ 26 000 années-lumière du centre galactique. Il faut environ 230 millions d\'années à notre Soleil pour faire un tour complet — une "année galactique."',
+        funFactMilkyWay: 'Le nom "Voie lactée" vient de son apparence comme une bande laiteuse dans le ciel nocturne. Les Grecs anciens l\'appelaient "galaxías kýklos" (cercle laiteux), ce qui nous a donné le mot "galaxie"!',
+        milkyWayGalaxy: 'Voie lactée',
+        descAndromeda: est notre plus proche grande voisine galactique, à environ 2,5 millions d\'années-lumière! Elle contient probablement autour d\'un billion d\'étoiles et suit une trajectoire de collision à long terme avec la Voie lactée (pas avant environ 4,5 milliards d\'années).',
         descWhirlpool: 'La galaxie du Tourbillon (M51) est célèbre pour ses beaux bras spiraux! Elle interagit avec une galaxie compagne plus petite, créant de magnifiques forces de marée et une nouvelle formation d\'étoiles.',
         descSombrero: 'La galaxie du Sombrero est célèbre pour son apparence de chapeau à large bord! Elle possède un noyau lumineux, un renflement central exceptionnellement grand, une bande de poussière marquée et un riche système d\'amas globulaires.',
 
@@ -2004,7 +2013,10 @@ const translations = {
         descNeowise: 'Komet NEOWISE war im Juli 2020 ein spektakulärer Anblick! Er wird erst in etwa 6.800 Jahren wiederkommen. Kometen sind "schmutzige Schneebälle" aus Eis, Staub und Gestein von der Entstehung des Sonnensystems.',
 
         // Galaxien
-        descAndromeda: 'Die Andromeda-Galaxie ist unsere nächste große galaktische Nachbarin, etwa 2,5 Millionen Lichtjahre entfernt! Sie enthält wahrscheinlich rund eine Billion Sterne und befindet sich auf einem langfristigen Kollisionskurs mit der Milchstraße (nicht vor etwa 4,5 Milliarden Jahren).',
+        descMilkyWay: 'Die Milchstra\u00dfe ist unsere Heimatgalaxie — eine Balkenspiralgalaxie mit 100-400 Milliarden Sternen! Unser Sonnensystem befindet sich im Orion-Cygnus-Arm, etwa 26.000 Lichtjahre vom galaktischen Zentrum entfernt. Unsere Sonne braucht etwa 230 Millionen Jahre f\u00fcr eine Umrundung — ein "galaktisches Jahr."',
+        funFactMilkyWay: 'Der Name "Milchstra\u00dfe" kommt von ihrem Erscheinungsbild als milchiges Lichtband am Nachthimmel. Die alten Griechen nannten sie "galaxías kýklos" (Milchkreis), was uns das Wort "Galaxie" gab!',
+        milkyWayGalaxy: 'Milchstra\u00dfe',
+        descAndromeda: ist unsere nächste große galaktische Nachbarin, etwa 2,5 Millionen Lichtjahre entfernt! Sie enthält wahrscheinlich rund eine Billion Sterne und befindet sich auf einem langfristigen Kollisionskurs mit der Milchstraße (nicht vor etwa 4,5 Milliarden Jahren).',
         descWhirlpool: 'Die Whirlpool-Galaxie (M51) ist berühmt für ihre wunderschönen Spiralarme! Sie interagiert mit einer kleineren Begleitgalaxie und erzeugt atemberaubende Gezeitenkräfte und neue Sternentstehung.',
         descSombrero: 'Die Sombrero-Galaxie ist berühmt für ihr breitkrempiges, hutartiges Aussehen! Sie hat einen hellen Kern, einen ungewöhnlich großen zentralen Bulge, eine markante Staubbahn und ein reiches System von Kugelsternhaufen.',
 
@@ -2542,6 +2554,9 @@ const translations = {
         descNeowise: '¡El cometa NEOWISE fue un espectáculo espectacular en julio 2020! No regresará hasta dentro de unos 6.800 años. Los cometas son "bolas de nieve sucias" compuestas de hielo, polvo y roca de la formación del sistema solar.',
 
         // Galaxias
+        milkyWayGalaxy: 'Vía Láctea',
+        descMilkyWay: '¡La Vía Láctea es nuestra galaxia — una galaxia espiral barrada que contiene entre 100 y 400 mil millones de estrellas! Nuestro sistema solar se encuentra en el brazo de Orión-Cisne, a unos 26.000 años luz del centro galáctico. Nuestro Sol tarda unos 230 millones de años en completar una órbita — un "año galáctico."',
+        funFactMilkyWay: '¡El nombre "Vía Láctea" viene de su apariencia como una banda lechosa en el cielo nocturno. Los antiguos griegos la llamaban "galaxías kýklos" (círculo lechoso), lo que nos dio la palabra "galaxia"!',
         descAndromeda: '¡La galaxia de Andrómeda es nuestra gran vecina galáctica más cercana, a unos 2,5 millones de años luz! Probablemente contiene alrededor de 1 billón de estrellas y sigue una trayectoria de colisión a muy largo plazo con la Vía Láctea (no antes de unos 4,5 mil millones de años).',
         descWhirlpool: '¡La galaxia del Remolino (M51) es famosa por sus hermosos brazos espirales! Está interactuando con una galaxia compañera más pequeña, creando impresionantes fuerzas de marea y nueva formación de estrellas.',
         descSombrero: '¡La galaxia del Sombrero es famosa por su aspecto de sombrero de ala ancha! Tiene un núcleo brillante, un bulbo central inusualmente grande, una banda de polvo prominente y un rico sistema de cúmulos globulares.',
@@ -3080,6 +3095,9 @@ const translations = {
         descNeowise: 'O cometa NEOWISE foi um espetáculo espetacular em julho de 2020! Ele não voltará por cerca de 6.800 anos. Cometas são "bolas de neve sujas" compostas de gelo, poeira e rocha da formação do sistema solar.',
 
         // Galáxias
+        milkyWayGalaxy: 'Via Láctea',
+        descMilkyWay: 'A Via Láctea é a nossa galáxia — uma galáxia espiral barrada contendo 100 a 400 mil milhões de estrelas! O nosso sistema solar situa-se no braço de Órion-Cisne, a cerca de 26.000 anos-luz do centro galáctico. O nosso Sol leva cerca de 230 milhões de anos para completar uma órbita — um "ano galáctico."',
+        funFactMilkyWay: 'O nome "Via Láctea" vem da sua aparência como uma faixa leitosa no céu noturno. Os antigos gregos chamavam-na "galaxías kýklos" (círculo leitoso), o que nos deu a palavra "galáxia"!',
         descAndromeda: 'A Galáxia de Andrômeda é nossa grande vizinha galáctica mais próxima, a cerca de 2,5 milhões de anos-luz! Ela provavelmente contém em torno de 1 trilhão de estrelas e segue em uma trajetória de colisão de muito longo prazo com a Via Láctea (não antes de cerca de 4,5 bilhões de anos).',
         descWhirlpool: 'A Galáxia do Redemoinho (M51) é famosa por seus belos braços espirais! Está interagindo com uma galáxia companheira menor, criando forças de maré impressionantes e nova formação de estrelas.',
         descSombrero: 'A Galáxia do Sombrero é famosa por sua aparência de chapéu de aba larga! Tem um núcleo brilhante, um bulbo central invulgarmente grande, uma faixa de poeira proeminente e um rico sistema de aglomerados globulares.',

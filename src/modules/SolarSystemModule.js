@@ -4681,6 +4681,16 @@ export class SolarSystemModule {
  this.milkyWayDisc.rotation.z = 62.87 * Math.PI / 180; // Galactic tilt
  this.milkyWayDisc.frustumCulled = false;
  this.milkyWayDisc.renderOrder = -1; // Behind everything
+
+ this.milkyWayDisc.userData = {
+ name: t('milkyWayGalaxy'),
+ type: 'milkyWay',
+ radius: 25000, // Half of discSize (50000)
+ description: t('descMilkyWay'),
+ funFact: t('funFactMilkyWay'),
+ realSize: '100,000 light-years diameter (~200,000 including halo)'
+ };
+
  scene.add(this.milkyWayDisc);
 
  if (DEBUG.enabled) console.log('[MilkyWay] Galaxy disc created (fades in at distance)');
@@ -10069,6 +10079,9 @@ let actualRadius;
  } else if (userData.type === 'heliopause') {
  // Heliopause at 2700 units — view from just outside
  distance = 3200;
+ } else if (userData.type === 'milkyWay') {
+ // Milky Way: zoom out to see the entire galaxy disc
+ distance = 40000;
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
@@ -10429,7 +10442,7 @@ let actualRadius;
      );
      controls.target.copy(targetPosition);
      if (DEBUG.enabled) console.log(` [Asteroid] Close dramatic angle for irregular shape showcase`);
- } else if (userData.type === 'asteroidBelt' || userData.type === 'kuiperBelt' || userData.type === 'oortCloud' || userData.type === 'heliopause') {
+ } else if (userData.type === 'asteroidBelt' || userData.type === 'kuiperBelt' || userData.type === 'oortCloud' || userData.type === 'heliopause' || userData.type === 'milkyWay') {
      // Structural objects centered at origin: position camera OUTSIDE looking inward
      // Pick a viewing angle elevated above the ecliptic for a good overview
      const viewAngle = Math.PI * 0.35; // ~63 degrees around
