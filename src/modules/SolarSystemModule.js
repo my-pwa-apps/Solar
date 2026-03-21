@@ -113,13 +113,13 @@ export class SolarSystemModule {
  rotationPeriod: 16.11, // hours
  axialTilt: 28.32, // degrees
  retrograde: false,
- orbitalPeriod: 60190 // Earth days (~164.8 years)
+ orbitalPeriod: 60182 // Earth days (~164.8 years)
  },
  pluto: {
  rotationPeriod: 153.293, // hours (6.387 Earth days - retrograde)
  axialTilt: 122.53, // degrees
  retrograde: true,
- orbitalPeriod: 90560 // Earth days (~248 years)
+ orbitalPeriod: 90520 // Earth days (~248 years)
  },
  moon: {
  rotationPeriod: 655.7, // hours (27.3 Earth days - tidally locked)
@@ -133,16 +133,16 @@ export class SolarSystemModule {
  // or where we want explicit moon period data for scientific-mode speed derivation.
  this.SCIENTIFIC_ORBITAL_PERIODS = {
  ceres: 1680.0,
- haumea: 103774.0,
+ haumea: 103813.0,
  makemake: 113201.0,
  eris: 203830.0,
  orcus: 90441.0,
- quaoar: 104089.0,
+ quaoar: 104137.0,
  gonggong: 202780.0,
- sedna: 4163700.0,
+ sedna: 4134991.0,
  salacia: 100684.0,
- varda: 113688.0,
- varuna: 102164.0
+ varda: 114305.0,
+ varuna: 103018.0
  };
 
  this.SCIENTIFIC_MOON_ORBITAL_PERIODS = {
@@ -8132,7 +8132,7 @@ createHyperrealisticHubble(satData) {
  description: t('descHubble'),
  funFact: t('funFactHubble'),
  realSize: '13.2m long 4.2m diameter, 11,110 kg',
- orbitTime: '95 minutes'
+ orbitTime: '96 minutes'
  },
  {
  name: 'GPS Satellite (NAVSTAR)',
