@@ -9156,12 +9156,42 @@ createHyperrealisticHubble(satData) {
  }
 
  if (camDist < solarFadeStart) {
- // Ensure all solar system objects are visible when inside the galaxy
+ // Restore ALL solar system objects when inside the galaxy
  if (this.sun) this.sun.visible = true;
  Object.values(this.planets).forEach(p => { if (p) p.visible = true; });
  if (this.comets) this.comets.forEach(c => { c.visible = true; });
  if (this.spacecraft) this.spacecraft.forEach(s => { s.visible = true; });
  if (this.satellites) this.satellites.forEach(s => { s.visible = true; });
+ // Restore opacities that were faded to 0
+ if (this.milkyWay) this.milkyWay.material.opacity = 0.65;
+ if (this.starfield) this.starfield.material.opacity = 1;
+ if (this.distantStars) this.distantStars.forEach(star => {
+ if (star.material) star.material.opacity = 0.9;
+ });
+ if (this.constellations) this.constellations.forEach(c => {
+ c.traverse(child => { if (child.material) child.material.opacity = 1; });
+ });
+ if (this.nebulae) this.nebulae.forEach(n => {
+ n.traverse(child => { if (child.material) child.material.opacity = 1; });
+ });
+ if (this.oortCloud) this.oortCloud.traverse(child => {
+ if (child.material) child.material.opacity = 0.7;
+ });
+ if (this.orbits) this.orbits.forEach(o => {
+ if (o.material) o.material.opacity = 1;
+ });
+ if (this.cometOrbits) this.cometOrbits.forEach(o => {
+ if (o.material) o.material.opacity = 1;
+ });
+ if (this.asteroidBelt) this.asteroidBelt.traverse(child => {
+ if (child.material) child.material.opacity = 1;
+ });
+ if (this.kuiperBelt) this.kuiperBelt.traverse(child => {
+ if (child.material) child.material.opacity = 1;
+ });
+ if (this.heliopause) this.heliopause.traverse(child => {
+ if (child.material) child.material.opacity = 0.03;
+ });
  } else {
  // Use solarFadeOut for all objects inside the galaxy (phase 1: 12k-20k)
  // The galaxy disc is handled separately above (phase 2: 20k-35k)
