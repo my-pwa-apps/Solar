@@ -934,7 +934,7 @@ const translations = {
         descMilkyWay: 'De Melkweg is ons thuissterrenstelsel — een balkspiraalstelsel met 100-400 miljard sterren! Ons zonnestelsel bevindt zich in de Orion-Cygnusarm, op ongeveer 26.000 lichtjaar van het galactisch centrum. Het kost onze Zon zo\'n 230 miljoen jaar om één baan rond het sterrenstelsel te voltooien — een "galactisch jaar."',
         funFactMilkyWay: 'De naam "Melkweg" komt van het melkachtige lichtband dat \'s nachts zichtbaar is aan de hemel. De oude Grieken noemden het "galaxías kýklos" (melkcirkel), wat ons het woord "galaxy" gaf! Je kunt het het best zien vanaf donkere plaatsen ver van stadsverlichting.',
         milkyWayGalaxy: 'Melkweg',
-        descAndromeda: is ons dichtstbijzijnde grote buursterrenstelsel, op ongeveer 2,5 miljoen lichtjaar afstand! Het bevat waarschijnlijk ongeveer een biljoen sterren en ligt op een langzame botsingskoers met de Melkweg (pas over ongeveer 4,5 miljard jaar).',
+        descAndromeda: 'Het Andromedastelsel is ons dichtstbijzijnde grote buursterrenstelsel, op ongeveer 2,5 miljoen lichtjaar afstand! Het bevat waarschijnlijk ongeveer een biljoen sterren en ligt op een langzame botsingskoers met de Melkweg (pas over ongeveer 4,5 miljard jaar).',
         descWhirlpool: 'Het Wervelwindsterrenstelsel (M51) is beroemd om zijn prachtige spiraalarms! Het is in wisselwerking met een kleiner begeleidend sterrenstelsel, wat voor verbluffende getijdenkrachten en nieuwe stervorming zorgt.',
         descSombrero: 'Het Sombrerostelsel is beroemd om zijn hoedachtige vorm met brede rand! Het heeft een heldere kern, een uitzonderlijk grote centrale bol, een prominente stofbaan en een rijk systeem van bolvormige sterrenhopen.',
 
