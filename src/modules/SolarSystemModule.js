@@ -2832,17 +2832,17 @@ export class SolarSystemModule {
  
  // Roughness map (water = smooth/shiny, land = rough)
  roughnessMap: earthSpecular,
- roughness: 0.4, // Increased for better light response
+ roughness: 0.75, // Higher = more diffuse sunlight reflection
  
- // Metalness (oceans have slight reflection)
- metalness: 0.1, // Reduced - Earth is not metallic
+ // Metalness (Earth's surface is not metallic)
+ metalness: 0.0, // Zero - rock, water, and ice are dielectrics
 
  // NO emissive - let the sun's light create day/night naturally
  emissive: 0x000000,
  emissiveIntensity: 0,
 
  // Advanced rendering
- envMapIntensity: 1.2,
+ envMapIntensity: 0.0,
  transparent: false,
  side: THREE.FrontSide,
  flatShading: false,
@@ -2876,8 +2876,8 @@ export class SolarSystemModule {
  return new THREE.MeshStandardMaterial({
  map: venusTexture,
  color: 0xe8c468,
- roughness: 0.3,
- metalness: 0.05,
+ roughness: 0.8,
+ metalness: 0.0,
  emissive: 0x000000,
  emissiveIntensity: 0
  });
@@ -2921,7 +2921,7 @@ export class SolarSystemModule {
  map: saturnTexture,
  bumpMap: saturnBump,
  bumpScale: 0.015,
- roughness: 0.55,
+ roughness: 0.65,
  metalness: 0.0,
  emissive: 0x000000,
  emissiveIntensity: 0
@@ -2932,8 +2932,8 @@ export class SolarSystemModule {
  const uranusTexture = this.createUranusTextureReal(2048);
  return new THREE.MeshStandardMaterial({
  map: uranusTexture,
- roughness: 0.3,
- metalness: 0.1,
+ roughness: 0.7,
+ metalness: 0.0,
  emissive: 0x000000,
  emissiveIntensity: 0
  });
@@ -2943,8 +2943,8 @@ export class SolarSystemModule {
  const neptuneTexture = this.createNeptuneTextureReal(2048);
  return new THREE.MeshStandardMaterial({
  map: neptuneTexture,
- roughness: 0.3,
- metalness: 0.1,
+ roughness: 0.7,
+ metalness: 0.0,
  emissive: 0x000000,
  emissiveIntensity: 0
  });
