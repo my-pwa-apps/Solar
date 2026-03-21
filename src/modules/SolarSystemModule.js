@@ -5907,10 +5907,10 @@ export class SolarSystemModule {
  },
  { 
  name: 'Sombrero Galaxy', id: 'sombreroGalaxy',
- ra: 189.5,   // 12h 39m 59s - In Virgo constellation, western edge
+ ra: 189.99,  // 12h 39m 59s - In Virgo constellation, western edge
  dec: -11.6,  // -11° 37' 23" - Southern declination, visible from both hemispheres
  size: 350, 
- type: 'elliptical',
+ type: 'lenticular',
  angularSize: 9, // 9 arcminutes
  description: t('descSombrero')
  }
@@ -5960,12 +5960,16 @@ export class SolarSystemModule {
  this._buildProceduralGalaxy(group, galData);
  }
 
- // Convert RA/Dec to 3D Cartesian coordinates (same as nebulae and constellations)
- // Galaxies should be far beyond the Milky Way disc (50,000 units across)
- // Educational scale: Andromeda ~2.5 Mly away, Milky Way ~100,000 ly across
- // In our scale: MW disc = 50,000 units, so Andromeda should be ~25x that
- // Compressed for educational visibility: place at 100,000-150,000 units
- const galaxyDistance = 120000;
+ // Convert RA/Dec to 3D Cartesian coordinates
+ // Place galaxies at distances proportional to their real distances:
+ // Andromeda: 2.5 Mly, Whirlpool: 23 Mly, Sombrero: 29.3 Mly
+ // Scale: 1 Mly ≈ 20,000 units (MW disc = 50,000 units ≈ 100,000 ly)
+ const realDistances = {
+ 'Andromeda Galaxy': 50000,   // 2.5 Mly - closest large galaxy
+ 'Whirlpool Galaxy': 130000,  // 23 Mly - compressed from 460k for visibility
+ 'Sombrero Galaxy': 150000    // 29.3 Mly - compressed from 586k for visibility
+ };
+ const galaxyDistance = realDistances[galData.name] || 120000;
  const position = CoordinateUtils.sphericalToCartesian(
  galData.ra,
  galData.dec,
