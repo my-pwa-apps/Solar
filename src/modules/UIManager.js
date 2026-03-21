@@ -356,18 +356,18 @@ export class UIManager {
  });
 
  // Make the panel draggable by its header
- this._setupPanelDrag(speedControl, speedToggle);
+ const panelHeader = speedControl?.querySelector('.panel-header');
+ this._setupPanelDrag(speedControl, panelHeader, speedToggle);
  }
 
- _setupPanelDrag(panel, handle) {
+ _setupPanelDrag(panel, handle, toggleBtn) {
  if (!panel || !handle) return;
  let dragging = false;
  let dragMoved = false;
  let startX, startY, origLeft, origTop;
 
  const onStart = (e) => {
- // Don't start drag from interactive children
- if (e.target.closest('svg') || e.target.closest('.collapse-chevron')) return;
+ // Only start from the header background, not from child buttons directly
  dragging = true;
  dragMoved = false;
  const point = e.touches ? e.touches[0] : e;
@@ -381,7 +381,6 @@ export class UIManager {
  panel.style.top = origTop + 'px';
  panel.style.right = 'auto';
  panel.style.transition = 'none';
- e.preventDefault();
  };
 
  const onMove = (e) => {
@@ -390,22 +389,32 @@ export class UIManager {
  const dx = point.clientX - startX;
  const dy = point.clientY - startY;
  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
+ if (dragMoved) {
  panel.style.left = (origLeft + dx) + 'px';
  panel.style.top = (origTop + dy) + 'px';
+ }
  };
 
  const onEnd = () => {
- if (!dragging) return;
  dragging = false;
  panel.style.transition = '';
- // If it was a click (no movement), let the click event through
  };
 
  handle.addEventListener('mousedown', onStart);
- handle.addEventListener('touchstart', onStart, { passive: false });
+ handle.addEventListener('touchstart', onStart, { passive: true });
  document.addEventListener('mousemove', onMove);
- document.addEventListener('touchmove', onMove, { passive: false });
+ document.addEventListener('touchmove', onMove, { passive: true });
  document.addEventListener('mouseup', onEnd);
  document.addEventListener('touchend', onEnd);
+
+ // Suppress toggle click when we actually dragged
+ if (toggleBtn) {
+ toggleBtn.addEventListener('click', (e) => {
+ if (dragMoved) {
+ e.stopImmediatePropagation();
+ dragMoved = false;
+ }
+ }, true); // Use capture phase to intercept before the toggle handler
+ }
  }
 }

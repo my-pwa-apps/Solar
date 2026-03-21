@@ -358,7 +358,12 @@
     padding: 8px;
     display: flex;
     justify-content: center;
-    cursor: move;
+    cursor: grab;
+    user-select: none;
+}
+
+#speed-control .panel-header:active {
+    cursor: grabbing;
 }
 
 /* Speed toggle button (compact label + chevron) */
