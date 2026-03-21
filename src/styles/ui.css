@@ -359,6 +359,7 @@
     display: flex;
     justify-content: center;
     cursor: grab;
+    -webkit-user-select: none;
     user-select: none;
 }
 
