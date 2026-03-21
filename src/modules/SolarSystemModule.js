@@ -9129,11 +9129,33 @@ createHyperrealisticHubble(satData) {
  // fade in the galaxy disc. Only other galaxies remain visible.
  if (this.milkyWayDisc && camera) {
  const camDist = camera.position.length();
- const fadeStart = 12000; // Start fading in beyond constellation sphere
- const fadeFull = 25000; // Fully visible at this distance
- if (camDist < fadeStart) {
+ // Phase 1: Fade out all solar system/galactic objects (12k-20k)
+ // Phase 2: Fade in the Milky Way disc (20k-35k)
+ // This ensures the Kuiper Belt, Oort Cloud, orbits, and stars are
+ // completely gone BEFORE the galaxy spiral appears — avoiding the
+ // visual impossibility of seeing both a belt AND a galaxy arm.
+ const solarFadeStart = 12000;
+ const solarFadeEnd = 20000;
+ const galaxyFadeStart = 20000; // Disc appears only after everything is dark
+ const galaxyFadeFull = 35000;
+
+ // Calculate fade factors
+ const solarFadeT = camDist < solarFadeStart ? 0 :
+ Math.min((camDist - solarFadeStart) / (solarFadeEnd - solarFadeStart), 1);
+ const solarFadeOut = 1 - solarFadeT;
+ const galaxyT = camDist < galaxyFadeStart ? 0 :
+ Math.min((camDist - galaxyFadeStart) / (galaxyFadeFull - galaxyFadeStart), 1);
+
+ // Show/hide the galaxy disc
+ if (galaxyT <= 0) {
  this.milkyWayDisc.material.opacity = 0;
  this.milkyWayDisc.visible = false;
+ } else {
+ this.milkyWayDisc.visible = true;
+ this.milkyWayDisc.material.opacity = galaxyT * 0.85;
+ }
+
+ if (camDist < solarFadeStart) {
  // Ensure all solar system objects are visible when inside the galaxy
  if (this.sun) this.sun.visible = true;
  Object.values(this.planets).forEach(p => { if (p) p.visible = true; });
@@ -9141,32 +9163,28 @@ createHyperrealisticHubble(satData) {
  if (this.spacecraft) this.spacecraft.forEach(s => { s.visible = true; });
  if (this.satellites) this.satellites.forEach(s => { s.visible = true; });
  } else {
- this.milkyWayDisc.visible = true;
- const t = Math.min((camDist - fadeStart) / (fadeFull - fadeStart), 1);
- this.milkyWayDisc.material.opacity = t * 0.85;
-
- // Fade out everything inside the galaxy as we zoom to intergalactic view
- const fadeOut = 1 - t;
+ // Use solarFadeOut for all objects inside the galaxy (phase 1: 12k-20k)
+ // The galaxy disc is handled separately above (phase 2: 20k-35k)
 
  // Milky Way particle band
  if (this.milkyWay) {
- this.milkyWay.material.opacity = 0.65 * fadeOut;
+ this.milkyWay.material.opacity = 0.65 * solarFadeOut;
  }
  // Starfield (background stars)
  if (this.starfield) {
- this.starfield.material.opacity = fadeOut;
+ this.starfield.material.opacity = solarFadeOut;
  }
  // Distant named stars (Sirius, Betelgeuse, etc.)
  if (this.distantStars) {
  this.distantStars.forEach(star => {
- if (star.material) star.material.opacity = 0.9 * fadeOut;
+ if (star.material) star.material.opacity = 0.9 * solarFadeOut;
  });
  }
  // Constellation lines and stars
  if (this.constellations) {
  this.constellations.forEach(constellation => {
  constellation.traverse(child => {
- if (child.material) child.material.opacity = fadeOut;
+ if (child.material) child.material.opacity = solarFadeOut;
  });
  });
  }
@@ -9174,65 +9192,65 @@ createHyperrealisticHubble(satData) {
  if (this.nebulae) {
  this.nebulae.forEach(nebula => {
  nebula.traverse(child => {
- if (child.material) child.material.opacity = fadeOut;
+ if (child.material) child.material.opacity = solarFadeOut;
  });
  });
  }
  // Oort Cloud
  if (this.oortCloud) {
  this.oortCloud.traverse(child => {
- if (child.material) child.material.opacity = 0.7 * fadeOut;
+ if (child.material) child.material.opacity = 0.7 * solarFadeOut;
  });
  }
  // Orbital paths (planet orbits, comet orbits)
  if (this.orbits) {
  this.orbits.forEach(orbit => {
- if (orbit.material) orbit.material.opacity = fadeOut;
+ if (orbit.material) orbit.material.opacity = solarFadeOut;
  });
  }
  if (this.cometOrbits) {
  this.cometOrbits.forEach(orbit => {
- if (orbit.material) orbit.material.opacity = fadeOut;
+ if (orbit.material) orbit.material.opacity = solarFadeOut;
  });
  }
  // Asteroid Belt
  if (this.asteroidBelt) {
  this.asteroidBelt.traverse(child => {
- if (child.material) child.material.opacity = fadeOut;
+ if (child.material) child.material.opacity = solarFadeOut;
  });
  }
  // Kuiper Belt
  if (this.kuiperBelt) {
  this.kuiperBelt.traverse(child => {
- if (child.material) child.material.opacity = fadeOut;
+ if (child.material) child.material.opacity = solarFadeOut;
  });
  }
  // Heliopause
  if (this.heliopause) {
  this.heliopause.traverse(child => {
- if (child.material) child.material.opacity = 0.03 * fadeOut;
+ if (child.material) child.material.opacity = 0.03 * solarFadeOut;
  });
  }
  // Sun and planets (entire solar system)
- if (this.sun) this.sun.visible = fadeOut > 0.01;
+ if (this.sun) this.sun.visible = solarFadeOut > 0.01;
  Object.values(this.planets).forEach(planet => {
- if (planet) planet.visible = fadeOut > 0.01;
+ if (planet) planet.visible = solarFadeOut > 0.01;
  });
  // Comets
  if (this.comets) {
  this.comets.forEach(comet => {
- comet.visible = fadeOut > 0.01;
+ comet.visible = solarFadeOut > 0.01;
  });
  }
  // Spacecraft and satellites
  if (this.spacecraft) {
  this.spacecraft.forEach(craft => {
- craft.visible = fadeOut > 0.01;
+ craft.visible = solarFadeOut > 0.01;
  });
  }
  if (this.satellites) {
  this.satellites.forEach(sat => {
- sat.visible = fadeOut > 0.01;
+ sat.visible = solarFadeOut > 0.01;
  });
  }
  }
