@@ -218,9 +218,9 @@ export class SceneManager {
  this.lights.hemisphere = new THREE.HemisphereLight(0x223344, 0x080811, 0.04);
  this.scene.add(this.lights.hemisphere);
 
- // Camera fill - very faint; just enough to see dark-side detail during close-ups
- this.lights.camera = new THREE.PointLight(0x4455aa, 0.05, 500, 2);
- this.camera.add(this.lights.camera);
+ // No camera-attached fill light — it creates a visible specular
+ // hotspot on whatever surface the user is looking at directly.
+ // The Sun PointLight + ambient provide sufficient illumination.
  this.scene.add(this.camera);
  
  if (DEBUG && DEBUG.enabled) {
@@ -2415,7 +2415,7 @@ this.camera.near = 10.0;
  this.lights.hemisphere.intensity = 0.01 + (multiplier * 0.06); // max ~0.07 at full brightness
  }
  if (this.lights.camera) {
- this.lights.camera.intensity = multiplier * 0.15; // max 0.15 at full brightness
+ this.lights.camera.intensity = 0; // Camera light removed
  }
  }
 
