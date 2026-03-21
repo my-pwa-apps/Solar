@@ -4628,10 +4628,14 @@ export class SolarSystemModule {
  ctx.fillStyle = outerGrad;
  ctx.fillRect(0, 0, texSize, texSize);
 
- // Mark solar system position (~26,000 ly from center, ~halfway out)
- // Place a tiny bright dot at ~60% radius on one arm
- const solarAngle = Math.PI * 0.3 + 0.6 * turns * Math.PI * 2;
- const solarR = maxR * 0.58;
+ // Mark solar system position (~26,000 ly from center, ~58% out)
+ // Place the dot ON an arm by using the exact same spiral formula:
+ // theta = armOffset + t * turns * 2π, with t = 0.58
+ // Use arm index 1 (the Orion-Cygnus arm, between Sagittarius and Perseus)
+ const solarT = 0.58;
+ const solarArmOffset = (1 / armCount) * Math.PI * 2; // Arm #1
+ const solarAngle = solarArmOffset + solarT * turns * Math.PI * 2;
+ const solarR = maxR * solarT;
  const solarX = cx + Math.cos(solarAngle) * solarR;
  const solarY = cy + Math.sin(solarAngle) * solarR;
  ctx.fillStyle = 'rgba(100, 200, 255, 0.8)';
@@ -4661,13 +4665,12 @@ export class SolarSystemModule {
  this.milkyWayDisc = new THREE.Mesh(discGeometry, discMaterial);
  this.milkyWayDisc.name = 'milkyWayGalaxyDisc';
 
- // Offset the disc so the solar system (at world origin) sits at the correct
- // position within the galaxy — ~58% out from center in the Orion-Cygnus arm.
- // The texture has the solar dot at angle solarAngle from center at 58% of maxR.
- // maxR = texSize * 0.45, discSize = 50000, so world offset = 0.58 * 0.45 * discSize = 13050.
- // We need to shift the disc CENTER AWAY from origin by that amount, in the
- // opposite direction of the solar dot on the texture.
- const discSolarAngle = Math.PI * 0.3 + 0.6 * 2.5 * Math.PI * 2; // Must match texture generation
+ // Offset the disc so the solar system (at world origin) sits on the
+ // Orion-Cygnus arm — ~58% out from center.
+ // Must use the EXACT same spiral formula as the texture dot:
+ // solarAngle = (1/4) * 2π + 0.58 * 2.5 * 2π (arm #1, t=0.58, turns=2.5)
+ const discSolarArmOffset = (1 / 4) * Math.PI * 2;
+ const discSolarAngle = discSolarArmOffset + 0.58 * 2.5 * Math.PI * 2;
  const offsetDist = 13050;
  // Apply offset BEFORE rotation — shift along the plane's local axes
  this.milkyWayDisc.position.set(
