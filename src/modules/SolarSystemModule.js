@@ -10105,11 +10105,8 @@ let actualRadius;
  if (DEBUG.enabled) console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 15, min 1.0) for ISS viewing`);
  } else if (userData.type === 'moon' && userData.parentPlanet) {
  // Moons: View showing moon with parent planet visible in background
- // Distance should be proportional to the moon's orbit distance from its parent,
- // not just the moon's tiny radius — otherwise small moons like Enceladus (r=0.04)
- // get a camera so close that the parent planet is out of frame
  const moonOrbitDistance = userData.distance || 4;
- distance = Math.max(moonOrbitDistance * 0.4, actualRadius * 6, 1);
+ distance = Math.max(moonOrbitDistance * 0.15, actualRadius * 8, 1.5);
  if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for "${userData.name}" (orbit: ${moonOrbitDistance}, radius: ${actualRadius.toFixed(3)}) around ${userData.parentPlanet}`);
  } else if (userData.isSpacecraft) {
  // Other spacecraft: moderate zoom
