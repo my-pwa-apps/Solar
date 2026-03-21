@@ -1599,9 +1599,14 @@ this.camera.near = 10.0;
  this.dolly.rotation.set(0, facing, 0);
  this.dolly.updateMatrixWorld(true);
 
+ // Adjust near clip plane for small objects in VR (prevents "donut" clipping)
+ const nearForVR = Math.min(10.0, Math.max(radius * 0.5, 0.01));
+ this.camera.near = nearForVR;
+ this.camera.updateProjectionMatrix();
+
  const name = ud.name || object.name || 'object';
  if (DEBUG.VR) {
- console.log(`[VR] Teleported to "${name}" — dolly (${newDollyPos.x.toFixed(1)}, ${newDollyPos.y.toFixed(1)}, ${newDollyPos.z.toFixed(1)}), dist=${distance.toFixed(1)}, facing ${(facing * 180 / Math.PI).toFixed(1)}°`);
+ console.log(`[VR] Teleported to "${name}" — dolly (${newDollyPos.x.toFixed(1)}, ${newDollyPos.y.toFixed(1)}, ${newDollyPos.z.toFixed(1)}), dist=${distance.toFixed(1)}, near=${nearForVR.toFixed(3)}, facing ${(facing * 180 / Math.PI).toFixed(1)}°`);
  }
  }
 

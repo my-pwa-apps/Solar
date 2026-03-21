@@ -3289,10 +3289,10 @@ export class SolarSystemModule {
  const europaTexture = this.createEuropaTextureReal(2048);
  moonMaterial = MaterialFactory.createStandardMaterial({
  map: europaTexture,
- roughness: 0.25, // Very smooth ice surface
- metalness: 0.15, // Ice has slight reflectivity
+ roughness: 0.65, // Icy but cracked surface, not mirror-smooth
+ metalness: 0.0, // Ice is not metallic
  emissive: 0xccddff,
- emissiveIntensity: 0.02 // Very subtle ice glow
+ emissiveIntensity: 0.02
  });
  if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Europa photorealistic texture (2048)`);
  } else if (moonId.includes('ganymede')) {
@@ -3329,10 +3329,10 @@ export class SolarSystemModule {
  const enceladusTexture = this.createEnceladusTextureReal(2048);
  moonMaterial = MaterialFactory.createStandardMaterial({
  map: enceladusTexture,
- roughness: 0.2, // Extremely smooth fresh ice
- metalness: 0.2, // Reflective ice surface
+ roughness: 0.7, // Icy but not mirror-smooth
+ metalness: 0.0, // Ice is not metallic
  emissive: 0xeeffff,
- emissiveIntensity: 0.05 // Bright reflective ice
+ emissiveIntensity: 0.03 // Slight brightness for icy albedo
  });
  if (DEBUG && DEBUG.enabled) console.log(`[Moon Texture] Loading Enceladus photorealistic texture (2048)`);
  } else if (moonId.includes('rhea')) {
