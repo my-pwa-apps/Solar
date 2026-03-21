@@ -2252,6 +2252,9 @@ this.camera.near = 10.0;
  // Restore default zoom limits (focusOnObject may have changed them)
  this.controls.minDistance = CONFIG.CONTROLS.minDistance;
  this.controls.maxDistance = CONFIG.CONTROLS.maxDistance;
+ // Restore default near clip plane (focusOnObject may have reduced it for small objects)
+ this.camera.near = CONFIG.CAMERA.near;
+ this.camera.updateProjectionMatrix();
  this.controls.update();
  }
 

@@ -10264,6 +10264,12 @@ let actualRadius;
  controls.minDistance = minDist;
  controls.maxDistance = maxDist;
  
+ // Adjust camera near clip plane for small objects to prevent "donut" clipping
+ // Default near=0.1 clips through objects smaller than ~0.1 radius when zoomed in close
+ const nearForObject = Math.min(0.1, actualRadius * 0.1);
+ camera.near = Math.max(nearForObject, 0.001); // Never below 0.001 (depth buffer precision)
+ camera.updateProjectionMatrix();
+ 
  // Configure controls based on object type
  controls.enableRotate = true;
  controls.enableZoom = true;
