@@ -9117,6 +9117,12 @@ createHyperrealisticHubble(satData) {
  if (camDist < fadeStart) {
  this.milkyWayDisc.material.opacity = 0;
  this.milkyWayDisc.visible = false;
+ // Ensure all solar system objects are visible when inside the galaxy
+ if (this.sun) this.sun.visible = true;
+ Object.values(this.planets).forEach(p => { if (p) p.visible = true; });
+ if (this.comets) this.comets.forEach(c => { c.visible = true; });
+ if (this.spacecraft) this.spacecraft.forEach(s => { s.visible = true; });
+ if (this.satellites) this.satellites.forEach(s => { s.visible = true; });
  } else {
  this.milkyWayDisc.visible = true;
  const t = Math.min((camDist - fadeStart) / (fadeFull - fadeStart), 1);
@@ -9159,6 +9165,57 @@ createHyperrealisticHubble(satData) {
  if (this.oortCloud) {
  this.oortCloud.traverse(child => {
  if (child.material) child.material.opacity = 0.7 * fadeOut;
+ });
+ }
+ // Orbital paths (planet orbits, comet orbits)
+ if (this.orbits) {
+ this.orbits.forEach(orbit => {
+ if (orbit.material) orbit.material.opacity = fadeOut;
+ });
+ }
+ if (this.cometOrbits) {
+ this.cometOrbits.forEach(orbit => {
+ if (orbit.material) orbit.material.opacity = fadeOut;
+ });
+ }
+ // Asteroid Belt
+ if (this.asteroidBelt) {
+ this.asteroidBelt.traverse(child => {
+ if (child.material) child.material.opacity = fadeOut;
+ });
+ }
+ // Kuiper Belt
+ if (this.kuiperBelt) {
+ this.kuiperBelt.traverse(child => {
+ if (child.material) child.material.opacity = fadeOut;
+ });
+ }
+ // Heliopause
+ if (this.heliopause) {
+ this.heliopause.traverse(child => {
+ if (child.material) child.material.opacity = 0.03 * fadeOut;
+ });
+ }
+ // Sun and planets (entire solar system)
+ if (this.sun) this.sun.visible = fadeOut > 0.01;
+ Object.values(this.planets).forEach(planet => {
+ if (planet) planet.visible = fadeOut > 0.01;
+ });
+ // Comets
+ if (this.comets) {
+ this.comets.forEach(comet => {
+ comet.visible = fadeOut > 0.01;
+ });
+ }
+ // Spacecraft and satellites
+ if (this.spacecraft) {
+ this.spacecraft.forEach(craft => {
+ craft.visible = fadeOut > 0.01;
+ });
+ }
+ if (this.satellites) {
+ this.satellites.forEach(sat => {
+ sat.visible = fadeOut > 0.01;
  });
  }
  }
