@@ -10205,10 +10205,6 @@ let actualRadius;
  maxDist = Math.max(actualRadius * 100, 1000); // Allow zooming far out
  }
  
- // Never restrict maxDistance below the global config — user should
- // always be able to zoom out to see the full Milky Way galaxy disc
- maxDist = Math.max(maxDist, CONFIG.CONTROLS.maxDistance);
- 
  controls.minDistance = minDist;
  controls.maxDistance = maxDist;
  

@@ -2249,6 +2249,9 @@ this.camera.near = 10.0;
  const { x, y, z } = CONFIG.CAMERA.startPos;
  this.camera.position.set(x, y, z);
  this.controls.target.set(0, 0, 0);
+ // Restore default zoom limits (focusOnObject may have changed them)
+ this.controls.minDistance = CONFIG.CONTROLS.minDistance;
+ this.controls.maxDistance = CONFIG.CONTROLS.maxDistance;
  this.controls.update();
  }
 
