@@ -362,18 +362,24 @@ export class UIManager {
  _setupPanelDrag(panel, handle) {
  if (!panel || !handle) return;
  let dragging = false;
+ let dragMoved = false;
  let startX, startY, origLeft, origTop;
 
  const onStart = (e) => {
- // Don't drag when clicking the toggle chevron/label itself
+ // Don't start drag from interactive children
  if (e.target.closest('svg') || e.target.closest('.collapse-chevron')) return;
  dragging = true;
+ dragMoved = false;
  const point = e.touches ? e.touches[0] : e;
  startX = point.clientX;
  startY = point.clientY;
  const rect = panel.getBoundingClientRect();
  origLeft = rect.left;
  origTop = rect.top;
+ // Switch from right-anchored to left-anchored positioning
+ panel.style.left = origLeft + 'px';
+ panel.style.top = origTop + 'px';
+ panel.style.right = 'auto';
  panel.style.transition = 'none';
  e.preventDefault();
  };
@@ -383,15 +389,16 @@ export class UIManager {
  const point = e.touches ? e.touches[0] : e;
  const dx = point.clientX - startX;
  const dy = point.clientY - startY;
+ if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
  panel.style.left = (origLeft + dx) + 'px';
  panel.style.top = (origTop + dy) + 'px';
- panel.style.right = 'auto';
  };
 
  const onEnd = () => {
  if (!dragging) return;
  dragging = false;
  panel.style.transition = '';
+ // If it was a click (no movement), let the click event through
  };
 
  handle.addEventListener('mousedown', onStart);
