@@ -10262,7 +10262,9 @@ let actualRadius;
  }
  
  controls.minDistance = minDist;
- controls.maxDistance = maxDist;
+ // Always allow zooming out to the global maximum (intergalactic view)
+ // even when focused on a specific object
+ controls.maxDistance = Math.max(maxDist, CONFIG.CONTROLS.maxDistance);
  
  // Adjust camera near clip plane for small objects to prevent "donut" clipping
  // Default near=0.1 clips through objects smaller than ~0.1 radius when zoomed in close
