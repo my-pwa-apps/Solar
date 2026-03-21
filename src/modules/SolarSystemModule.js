@@ -4101,7 +4101,7 @@ export class SolarSystemModule {
  color: 0x4488cc,
  transparent: true,
  opacity: 0.03,
- side: THREE.DoubleSide,
+ side: THREE.BackSide,
  depthWrite: false
  });
  const heliopauseMesh = new THREE.Mesh(geometry, material);
@@ -4113,7 +4113,7 @@ export class SolarSystemModule {
  color: 0x6699dd,
  transparent: true,
  opacity: 0.15,
- side: THREE.DoubleSide,
+ side: THREE.BackSide,
  depthWrite: false
  });
  const equatorRing = new THREE.Mesh(ringGeometry, ringMaterial);
