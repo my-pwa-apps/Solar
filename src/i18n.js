@@ -1475,7 +1475,7 @@ const translations = {
         descMilkyWay: 'La Voie lactée est notre galaxie — une galaxie spirale barrée contenant 100 à 400 milliards d\'étoiles! Notre système solaire se trouve dans le bras d\'Orion-Cygne, à environ 26 000 années-lumière du centre galactique. Il faut environ 230 millions d\'années à notre Soleil pour faire un tour complet — une "année galactique."',
         funFactMilkyWay: 'Le nom "Voie lactée" vient de son apparence comme une bande laiteuse dans le ciel nocturne. Les Grecs anciens l\'appelaient "galaxías kýklos" (cercle laiteux), ce qui nous a donné le mot "galaxie"!',
         milkyWayGalaxy: 'Voie lactée',
-        descAndromeda: est notre plus proche grande voisine galactique, à environ 2,5 millions d\'années-lumière! Elle contient probablement autour d\'un billion d\'étoiles et suit une trajectoire de collision à long terme avec la Voie lactée (pas avant environ 4,5 milliards d\'années).',
+        descAndromeda: 'La galaxie d\'Andromède est notre plus proche grande voisine galactique, à environ 2,5 millions d\'années-lumière! Elle contient probablement autour d\'un billion d\'étoiles et suit une trajectoire de collision à long terme avec la Voie lactée (pas avant environ 4,5 milliards d\'années).',
         descWhirlpool: 'La galaxie du Tourbillon (M51) est célèbre pour ses beaux bras spiraux! Elle interagit avec une galaxie compagne plus petite, créant de magnifiques forces de marée et une nouvelle formation d\'étoiles.',
         descSombrero: 'La galaxie du Sombrero est célèbre pour son apparence de chapeau à large bord! Elle possède un noyau lumineux, un renflement central exceptionnellement grand, une bande de poussière marquée et un riche système d\'amas globulaires.',
 
@@ -2016,7 +2016,7 @@ const translations = {
         descMilkyWay: 'Die Milchstra\u00dfe ist unsere Heimatgalaxie — eine Balkenspiralgalaxie mit 100-400 Milliarden Sternen! Unser Sonnensystem befindet sich im Orion-Cygnus-Arm, etwa 26.000 Lichtjahre vom galaktischen Zentrum entfernt. Unsere Sonne braucht etwa 230 Millionen Jahre f\u00fcr eine Umrundung — ein "galaktisches Jahr."',
         funFactMilkyWay: 'Der Name "Milchstra\u00dfe" kommt von ihrem Erscheinungsbild als milchiges Lichtband am Nachthimmel. Die alten Griechen nannten sie "galaxías kýklos" (Milchkreis), was uns das Wort "Galaxie" gab!',
         milkyWayGalaxy: 'Milchstra\u00dfe',
-        descAndromeda: ist unsere nächste große galaktische Nachbarin, etwa 2,5 Millionen Lichtjahre entfernt! Sie enthält wahrscheinlich rund eine Billion Sterne und befindet sich auf einem langfristigen Kollisionskurs mit der Milchstraße (nicht vor etwa 4,5 Milliarden Jahren).',
+        descAndromeda: 'Die Andromeda-Galaxie ist unsere nächste große galaktische Nachbarin, etwa 2,5 Millionen Lichtjahre entfernt! Sie enthält wahrscheinlich rund eine Billion Sterne und befindet sich auf einem langfristigen Kollisionskurs mit der Milchstraße (nicht vor etwa 4,5 Milliarden Jahren).',
         descWhirlpool: 'Die Whirlpool-Galaxie (M51) ist berühmt für ihre wunderschönen Spiralarme! Sie interagiert mit einer kleineren Begleitgalaxie und erzeugt atemberaubende Gezeitenkräfte und neue Sternentstehung.',
         descSombrero: 'Die Sombrero-Galaxie ist berühmt für ihr breitkrempiges, hutartiges Aussehen! Sie hat einen hellen Kern, einen ungewöhnlich großen zentralen Bulge, eine markante Staubbahn und ein reiches System von Kugelsternhaufen.',
 
