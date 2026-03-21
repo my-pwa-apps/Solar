@@ -407,7 +407,7 @@
     flex-direction: column;
     gap: 12px;
     align-items: center;
-    overflow: hidden;
+    overflow: visible;
     max-height: 250px;
     transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
 }
@@ -500,6 +500,7 @@
     cursor: grab;
     box-shadow: 0 2px 8px var(--accent-glow);
     transition: transform 0.15s ease;
+    margin-top: -7px; /* Center 20px thumb on 6px track: -(20-6)/2 */
 }
 
 #speed-control input[type="range"]::-webkit-slider-thumb:hover {
