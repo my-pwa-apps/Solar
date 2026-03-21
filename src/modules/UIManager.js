@@ -2,6 +2,7 @@
 // UI MANAGER MODULE
 // ===========================
 import { DEBUG } from './utils.js';
+import { safeGetItem, safeSetItem } from './storage.js';
 
 export class UIManager {
  constructor() {
@@ -10,6 +11,7 @@ export class UIManager {
  loading: document.getElementById('loading'),
  infoPanel: document.getElementById('info-panel'),
  helpModal: document.getElementById('help-modal'),
+ settingsModal: document.getElementById('settings-modal'),
  objectName: document.getElementById('object-name'),
  objectType: document.getElementById('object-type'),
  objectDistance: document.getElementById('object-distance'),
@@ -102,6 +104,14 @@ export class UIManager {
  }
  }
 
+ showSettings() {
+ if (this.elements.settingsModal) {
+ this.elements.settingsModal.classList.remove('hidden');
+ this.elements.settingsModal.setAttribute('aria-hidden', 'false');
+ this._trapFocus(this.elements.settingsModal);
+ }
+ }
+
  _buildSafeHelpNodes(content) {
  const parser = new DOMParser();
  const doc = parser.parseFromString(`<div>${content || ''}</div>`, 'text/html');
@@ -148,6 +158,14 @@ export class UIManager {
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.add('hidden');
  this.elements.helpModal.setAttribute('aria-hidden', 'true');
+ this._releaseFocusTrap();
+ }
+ }
+
+ closeSettingsModal() {
+ if (this.elements.settingsModal) {
+ this.elements.settingsModal.classList.add('hidden');
+ this.elements.settingsModal.setAttribute('aria-hidden', 'true');
  this._releaseFocusTrap();
  }
  }
@@ -324,12 +342,8 @@ export class UIManager {
  
  if (!speedToggle || !speedPanelContent) return;
  
- // Safe localStorage helpers — Safari private mode, quota exceeded, or disabled storage
- const safeGet = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
- const safeSet = (key, value) => { try { localStorage.setItem(key, value); } catch { /* ignore */ } };
- 
  // Load collapsed state from localStorage
- const isCollapsed = safeGet('speed_panel_collapsed') === 'true';
+ const isCollapsed = safeGetItem('speed_panel_collapsed') === 'true';
  if (isCollapsed) {
  speedPanelContent.classList.add('collapsed');
  speedControl?.classList.add('collapsed');
@@ -343,7 +357,7 @@ export class UIManager {
  speedToggle.setAttribute('aria-expanded', wasCollapsed ? 'true' : 'false');
  
  // Save state
- safeSet('speed_panel_collapsed', !wasCollapsed);
+ safeSetItem('speed_panel_collapsed', !wasCollapsed);
 
  // Play audio feedback
  if (window.audioManager) {

@@ -141,6 +141,7 @@ const translations = {
         tooltipReset: "Reset camera to default view (R)",
         tooltipDiscover: "Surprise me! Jump to a random object",
         tooltipHelp: "Show controls and features (H)",
+        tooltipSettings: "Open settings",
         
         // Onboarding
         welcomeToSpace: "🚀 Welcome to Space Voyage!",
@@ -188,7 +189,13 @@ const translations = {
         
         // Help modal
         help: "Help",
+        settings: "Settings",
         helpTitle: "Space Voyage - Controls & Features",
+        settingsTitle: "Settings",
+        languageSetting: "Language",
+        languageSettingDescription: "Choose the interface language. This is saved for future visits.",
+        soundSetting: "Sound Effects",
+        soundSettingDescription: "Enable or disable UI sound effects.",
         controls: "Controls",
         mouseControls: "Mouse Controls:",
         leftClick: "Left Click + Drag: Rotate view",
@@ -238,7 +245,7 @@ const translations = {
         errorMessage: "Please refresh the page to try again.",
 
         // Help content
-        helpContent: '<h3>🖱️ Controls</h3><p>🖱️ <strong>Click & Drag:</strong> Rotate view around selected object</p><p>🖱️ <strong>Scroll:</strong> Zoom in/out</p><p>🖱️ <strong>Right Click & Drag:</strong> Pan camera position</p><p>👆 <strong>Click Objects:</strong> Select and focus on object</p><h3>⌨️ Keyboard Shortcuts</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset <span class="keyboard-shortcut">O</span> Orbits <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Scale mode</p><p><span class="keyboard-shortcut">Space</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Speed <span class="keyboard-shortcut">ESC</span> Close</p><h3>🔍 Object Inspection</h3><p>Drag to rotate, scroll to zoom, camera tracks orbiting objects</p><h3>🥽 VR Mode</h3><p>Click "Enter VR" — left stick moves, right stick turns, trigger selects, grip opens menu</p><h3>💡 Tips</h3><p>Use speed slider for fast-forward • Click objects or use explorer panel • Zoom in for surface details</p>',
+        helpContent: '<h3>Controls</h3><p><strong>Click &amp; Drag:</strong> Rotate view around the selected object</p><p><strong>Scroll wheel:</strong> Zoom in and out</p><p><strong>Right-click &amp; Drag:</strong> Pan the camera</p><p><strong>Click any object:</strong> Select and fly to it</p><h3>Keyboard Shortcuts</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset view <span class="keyboard-shortcut">O</span> Cycle orbit modes <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Scale mode</p><p><span class="keyboard-shortcut">Space</span> Pause / Resume <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager 1 <span class="keyboard-shortcut">+/-</span> Speed <span class="keyboard-shortcut">ESC</span> Close panel</p><h3>Navigation</h3><p>Use the search bar or dropdown to jump to any of 100+ objects: planets, moons, dwarf planets, comets, spacecraft, constellations, nebulae, and galaxies.</p><p>The <strong>Discover</strong> button picks a random object. The <strong>Time Machine</strong> lets you step through dates and witness historic events.</p><h3>Object Inspection</h3><p>After selecting an object the camera tracks it automatically. Drag to orbit around it, scroll to zoom. An info panel shows physical data and fun facts.</p><h3>VR / AR Mode</h3><p>Click <strong>Enter VR</strong> on a compatible headset. Left stick moves, right stick turns, trigger selects objects, <strong>X</strong> opens the menu, grip drags the UI panel.</p><h3>Tips</h3><p>Use the speed slider to fast-forward orbits. Toggle between educational and scientific scale modes. Zoom out far enough and the Milky Way galaxy disc appears with our solar system marked on it. Open Settings (gear icon, top-right) to change language or toggle sound.</p>',
         
         // Footer
         madeWith: "Made with",
@@ -310,6 +317,8 @@ const translations = {
         
         // System text
         centerSolarSystem: 'Center of Solar System',
+        solarSystemMarker: 'Solar System',
+        solarSystemMarkerSubtext: 'Orion Spur / Local Arm',
         orbitsParent: 'Orbits',
         millionKmFromSun: 'million km from Sun',
         scaledUnitsFromSun: 'scaled units from Sun',
@@ -435,7 +444,7 @@ const translations = {
 
         // Galaxy descriptions
         milkyWayGalaxy: 'Milky Way',
-        descMilkyWay: 'The Milky Way is our home galaxy — a barred spiral galaxy containing 100-400 billion stars! Our solar system sits in the Orion-Cygnus arm, about 26,000 light-years from the galactic center. It takes our Sun about 230 million years to complete one orbit around the galaxy — a "galactic year."',
+        descMilkyWay: 'The Milky Way is our home galaxy — a barred spiral galaxy containing 100-400 billion stars! Our solar system sits in the Orion Spur, also called the Local Arm, about 26,000 light-years from the galactic center. It takes our Sun about 230 million years to complete one orbit around the galaxy — a "galactic year."',
         funFactMilkyWay: 'The name "Milky Way" comes from its appearance as a milky band of light across the night sky. Ancient Greeks called it "galaxías kýklos" (milky circle), which gave us the word "galaxy"! You can see it best from dark locations far from city lights.',
         descAndromeda: 'The Andromeda Galaxy is our nearest large galactic neighbor, about 2.5 million light-years away! It likely contains around a trillion stars and is on a long-term collision course with the Milky Way (not for about 4.5 billion years).',
         descWhirlpool: 'The Whirlpool Galaxy (M51) is famous for its beautiful spiral arms! It\'s interacting with a smaller companion galaxy, creating stunning tidal forces and new star formation.',
@@ -699,6 +708,7 @@ const translations = {
         tooltipReset: "Camera terugzetten naar standaardweergave (R)",
         tooltipDiscover: "Verras me! Spring naar een willekeurig object",
         tooltipHelp: "Bedieningselementen en functies tonen (H)",
+        tooltipSettings: "Instellingen openen",
         
         // Onboarding
         welcomeToSpace: "🚀 Welkom bij Ruimtereis!",
@@ -746,7 +756,13 @@ const translations = {
         
         // Help modal
         help: "Hulp",
+        settings: "Instellingen",
         helpTitle: "Ruimtereis - Besturing & Functies",
+        settingsTitle: "Instellingen",
+        languageSetting: "Taal",
+        languageSettingDescription: "Kies de interfacetaal. Deze keuze wordt opgeslagen voor volgende bezoeken.",
+        soundSetting: "Geluidseffecten",
+        soundSettingDescription: "Schakel UI-geluidseffecten in of uit.",
         controls: "Besturing",
         mouseControls: "Muisbediening:",
         leftClick: "Linker Klik + Slepen: Draai weergave",
@@ -790,7 +806,7 @@ const translations = {
         errorLoading: "Fout bij laden Ruimtereis",
         errorMessage: "Ververs de pagina om het opnieuw te proberen.",
 
-        helpContent: '<h3>🖱️ Bediening</h3><p>🖱️ <strong>Klik & sleep:</strong> Draai het zicht rond geselecteerd object</p><p>🖱️ <strong>Scrollen:</strong> In-/uitzoomen</p><p>🖱️ <strong>Rechtsklik & sleep:</strong> Camera verschuiven</p><p>👆 <strong>Klik objecten:</strong> Selecteren en focussen</p><h3>⌨️ Sneltoetsen</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset <span class="keyboard-shortcut">O</span> Banen <span class="keyboard-shortcut">C</span> Sterrenbeelden <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Schaalmodus</p><p><span class="keyboard-shortcut">Spatie</span> Pauze <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Snelheid <span class="keyboard-shortcut">ESC</span> Sluiten</p><h3>🔍 Objectinspectie</h3><p>Sleep om te draaien, scroll om te zoomen, camera volgt ronddraaiende objecten</p><h3>🥽 VR-modus</h3><p>Klik "Enter VR" — linker stick beweegt, rechter stick draait, trigger selecteert, grip opent menu</p><h3>💡 Tips</h3><p>Gebruik snelheidsschuif voor versneld afspelen • Klik objecten of gebruik verkennerpaneel • Zoom in voor oppervlaktedetails</p>',
+        helpContent: '<h3>Bediening</h3><p><strong>Klik &amp; sleep:</strong> Draai het zicht rond het geselecteerde object</p><p><strong>Scrollwiel:</strong> In- en uitzoomen</p><p><strong>Rechtsklik &amp; sleep:</strong> Camera verschuiven</p><p><strong>Klik op een object:</strong> Selecteren en ernaartoe vliegen</p><h3>Sneltoetsen</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset <span class="keyboard-shortcut">O</span> Banen <span class="keyboard-shortcut">C</span> Sterrenbeelden <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Schaalmodus</p><p><span class="keyboard-shortcut">Spatie</span> Pauze <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Snelheid <span class="keyboard-shortcut">ESC</span> Paneel sluiten</p><h3>Navigatie</h3><p>Gebruik de zoekbalk of het keuzemenu om naar 100+ objecten te springen: planeten, manen, dwergplaneten, kometen, ruimtevaartuigen, sterrenbeelden, nevels en sterrenstelsels.</p><p>De knop <strong>Ontdek</strong> kiest een willekeurig object. De <strong>Tijdmachine</strong> laat je door datums stappen en historische gebeurtenissen bekijken.</p><h3>Objectinspectie</h3><p>Na het selecteren van een object volgt de camera het automatisch. Sleep om eromheen te draaien, scroll om te zoomen. Een infopaneel toont fysieke gegevens en leuke weetjes.</p><h3>VR / AR-modus</h3><p>Klik <strong>Enter VR</strong> op een compatibele headset. Linker stick beweegt, rechter stick draait, trigger selecteert objecten, <strong>X</strong> opent het menu, grip sleept het UI-paneel.</p><h3>Tips</h3><p>Gebruik de snelheidsschuif om banen te versnellen. Wissel tussen educatieve en wetenschappelijke schaalmodus. Zoom ver genoeg uit en de Melkwegschijf verschijnt met ons zonnestelsel erop gemarkeerd. Open Instellingen (tandwiel, rechtsboven) om de taal te wijzigen of geluid in te schakelen.</p>',
         
         // Footer
         madeWith: "Gemaakt met",
@@ -862,6 +878,8 @@ const translations = {
         
         // Systeem tekst
         centerSolarSystem: 'Centrum van Zonnestelsel',
+        solarSystemMarker: 'Zonnestelsel',
+        solarSystemMarkerSubtext: 'Orionspoor / Lokale Arm',
         orbitsParent: 'Draait om',
         millionKmFromSun: 'miljoen km van de Zon',
         scaledUnitsFromSun: 'geschaalde eenheden vanaf de Zon',
@@ -933,7 +951,7 @@ const translations = {
         descNeowise: 'Komeet NEOWISE was een spectaculair gezicht in juli 2020! Hij keert pas over ongeveer 6.800 jaar terug. Kometen zijn "vuile sneeuwballen" van ijs, stof en rots uit de vorming van het zonnestelsel.',
 
         // Sterrenstelsels
-        descMilkyWay: 'De Melkweg is ons thuissterrenstelsel — een balkspiraalstelsel met 100-400 miljard sterren! Ons zonnestelsel bevindt zich in de Orion-Cygnusarm, op ongeveer 26.000 lichtjaar van het galactisch centrum. Het kost onze Zon zo\'n 230 miljoen jaar om één baan rond het sterrenstelsel te voltooien — een "galactisch jaar."',
+        descMilkyWay: 'De Melkweg is ons thuissterrenstelsel — een balkspiraalstelsel met 100-400 miljard sterren! Ons zonnestelsel bevindt zich in de Orionspoor, ook wel de Lokale Arm genoemd, op ongeveer 26.000 lichtjaar van het galactisch centrum. Het kost onze Zon zo\'n 230 miljoen jaar om één baan rond het sterrenstelsel te voltooien — een "galactisch jaar."',
         funFactMilkyWay: 'De naam "Melkweg" komt van het melkachtige lichtband dat \'s nachts zichtbaar is aan de hemel. De oude Grieken noemden het "galaxías kýklos" (melkcirkel), wat ons het woord "galaxy" gaf! Je kunt het het best zien vanaf donkere plaatsen ver van stadsverlichting.',
         milkyWayGalaxy: 'Melkweg',
         descAndromeda: 'Het Andromedastelsel is ons dichtstbijzijnde grote buursterrenstelsel, op ongeveer 2,5 miljoen lichtjaar afstand! Het bevat waarschijnlijk ongeveer een biljoen sterren en ligt op een langzame botsingskoers met de Melkweg (pas over ongeveer 4,5 miljard jaar).',
@@ -1249,6 +1267,7 @@ const translations = {
         tooltipReset: "Réinitialiser la caméra (R)",
         tooltipDiscover: "Surprenez-moi ! Saut vers un objet aléatoire",
         tooltipHelp: "Afficher les commandes et fonctionnalités (H)",
+        tooltipSettings: "Ouvrir les paramètres",
         
         // Embarquement
         welcomeToSpace: "🚀 Bienvenue dans Voyage Spatial!",
@@ -1294,7 +1313,15 @@ const translations = {
         
         // Aide
         help: "Aide",
+        settings: "Paramètres",
         helpTitle: "Voyage Spatial - Contrôles et Fonctionnalités",
+        settingsTitle: "Paramètres",
+        languageSetting: "Langue",
+        languageSettingDescription: "Choisissez la langue de l'interface. Ce choix est enregistré pour les prochaines visites.",
+        soundSetting: "Effets sonores",
+        soundSettingDescription: "Activer ou désactiver les effets sonores de l'interface.",
+        soundSetting: "Effets sonores",
+        soundSettingDescription: "Activer ou désactiver les effets sonores de l'interface.",
         controls: "Contrôles",
         mouseControls: "Contrôles Souris:",
         leftClick: "Clic Gauche + Glisser: Rotation de la vue",
@@ -1332,7 +1359,7 @@ const translations = {
         errorLoading: "Erreur de chargement de Voyage Spatial",
         errorMessage: "Veuillez actualiser la page pour réessayer.",
 
-        helpContent: '<h3>🖱️ Commandes</h3><p>🖱️ <strong>Cliquer & glisser :</strong> Tourner la vue autour de l\'objet</p><p>🖱️ <strong>Molette :</strong> Zoom avant/arrière</p><p>🖱️ <strong>Clic droit & glisser :</strong> Déplacer la caméra</p><p>👆 <strong>Cliquer objets :</strong> Sélectionner et focaliser</p><h3>⌨️ Raccourcis clavier</h3><p><span class="keyboard-shortcut">H</span> Aide <span class="keyboard-shortcut">R</span> Réinitialiser <span class="keyboard-shortcut">O</span> Orbites <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Étiquettes <span class="keyboard-shortcut">S</span> Mode</p><p><span class="keyboard-shortcut">Espace</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Vitesse <span class="keyboard-shortcut">Échap</span> Fermer</p><h3>🔍 Inspection</h3><p>Glissez pour tourner, scrollez pour zoomer, caméra suit les objets en orbite</p><h3>🥽 Mode VR</h3><p>Cliquez "Enter VR" — stick gauche bouge, stick droit tourne, gâchette sélectionne, grip ouvre le menu</p><h3>💡 Astuces</h3><p>Curseur de vitesse pour accélérer • Cliquez objets ou utilisez le panneau explorateur • Zoomez pour les détails de surface</p>',
+        helpContent: '<h3>Commandes</h3><p><strong>Cliquer &amp; glisser :</strong> Tourner la vue autour de l\'objet</p><p><strong>Molette :</strong> Zoom avant/arrière</p><p><strong>Clic droit &amp; glisser :</strong> Déplacer la caméra</p><p><strong>Cliquer un objet :</strong> Sélectionner et focaliser</p><h3>Raccourcis clavier</h3><p><span class="keyboard-shortcut">H</span> Aide <span class="keyboard-shortcut">R</span> Réinitialiser <span class="keyboard-shortcut">O</span> Orbites <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Étiquettes <span class="keyboard-shortcut">S</span> Mode</p><p><span class="keyboard-shortcut">Espace</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Vitesse <span class="keyboard-shortcut">Échap</span> Fermer</p><h3>Inspection</h3><p>Glissez pour tourner, scrollez pour zoomer, caméra suit les objets en orbite</p><h3>Mode VR</h3><p>Cliquez "Enter VR" — stick gauche bouge, stick droit tourne, gâchette sélectionne, grip ouvre le menu</p><h3>Astuces</h3><p>Curseur de vitesse pour accélérer • Cliquez objets ou utilisez le panneau explorateur • Zoomez pour les détails de surface</p>',
         
         // Pied de page
         madeWith: "Fait avec",
@@ -1404,6 +1431,8 @@ const translations = {
         
         // Texte système
         centerSolarSystem: 'Centre du Système Solaire',
+        solarSystemMarker: 'Système solaire',
+        solarSystemMarkerSubtext: 'Éperon d\'Orion / bras local',
         orbitsParent: 'Orbite',
         millionKmFromSun: 'millions de km du Soleil',
         scaledUnitsFromSun: 'unités mises à l\'échelle depuis le Soleil',
@@ -1475,7 +1504,7 @@ const translations = {
         descNeowise: 'La comète NEOWISE fut un spectacle spectaculaire en juillet 2020! Elle ne reviendra pas avant environ 6 800 ans. Les comètes sont des "boules de neige sales" composées de glace, poussière et roche de la formation du système solaire.',
 
         // Galaxies
-        descMilkyWay: 'La Voie lactée est notre galaxie — une galaxie spirale barrée contenant 100 à 400 milliards d\'étoiles! Notre système solaire se trouve dans le bras d\'Orion-Cygne, à environ 26 000 années-lumière du centre galactique. Il faut environ 230 millions d\'années à notre Soleil pour faire un tour complet — une "année galactique."',
+        descMilkyWay: 'La Voie lactée est notre galaxie — une galaxie spirale barrée contenant 100 à 400 milliards d\'étoiles! Notre système solaire se trouve dans l\'éperon d\'Orion, aussi appelé bras local, à environ 26 000 années-lumière du centre galactique. Il faut environ 230 millions d\'années à notre Soleil pour faire un tour complet — une "année galactique."',
         funFactMilkyWay: 'Le nom "Voie lactée" vient de son apparence comme une bande laiteuse dans le ciel nocturne. Les Grecs anciens l\'appelaient "galaxías kýklos" (cercle laiteux), ce qui nous a donné le mot "galaxie"!',
         milkyWayGalaxy: 'Voie lactée',
         descAndromeda: 'La galaxie d\'Andromède est notre plus proche grande voisine galactique, à environ 2,5 millions d\'années-lumière! Elle contient probablement autour d\'un billion d\'étoiles et suit une trajectoire de collision à long terme avec la Voie lactée (pas avant environ 4,5 milliards d\'années).',
@@ -1791,6 +1820,7 @@ const translations = {
         tooltipReset: "Kamera zurücksetzen (R)",
         tooltipDiscover: "Überrasch mich! Zu einem zufälligen Objekt springen",
         tooltipHelp: "Steuerung und Funktionen anzeigen (H)",
+        tooltipSettings: "Einstellungen öffnen",
         
         // Onboarding
         welcomeToSpace: "🚀 Willkommen bei Weltraumreise!",
@@ -1836,7 +1866,13 @@ const translations = {
         
         // Hilfe
         help: "Hilfe",
+        settings: "Einstellungen",
         helpTitle: "Weltraumreise - Steuerung & Funktionen",
+        settingsTitle: "Einstellungen",
+        languageSetting: "Sprache",
+        languageSettingDescription: "Wählen Sie die Sprache der Benutzeroberfläche. Diese Auswahl wird für zukünftige Besuche gespeichert.",
+        soundSetting: "Soundeffekte",
+        soundSettingDescription: "UI-Soundeffekte ein- oder ausschalten.",
         controls: "Steuerung",
         mouseControls: "Maussteuerung:",
         leftClick: "Linksklick + Ziehen: Ansicht drehen",
@@ -1874,7 +1910,7 @@ const translations = {
         errorLoading: "Fehler beim Laden der Weltraumreise",
         errorMessage: "Bitte aktualisieren Sie die Seite, um es erneut zu versuchen.",
 
-        helpContent: '<h3>🖱️ Steuerung</h3><p>🖱️ <strong>Klicken & ziehen:</strong> Ansicht um ausgew\u00e4hltes Objekt drehen</p><p>🖱️ <strong>Scrollen:</strong> Rein-/Rauszoomen</p><p>🖱️ <strong>Rechtsklick & ziehen:</strong> Kamera verschieben</p><p>👆 <strong>Objekte klicken:</strong> Ausw\u00e4hlen und fokussieren</p><h3>⌨️ Tastaturk\u00fcrzel</h3><p><span class="keyboard-shortcut">H</span> Hilfe <span class="keyboard-shortcut">R</span> Zur\u00fccksetzen <span class="keyboard-shortcut">O</span> Bahnen <span class="keyboard-shortcut">C</span> Sternbilder <span class="keyboard-shortcut">D</span> Beschriftungen <span class="keyboard-shortcut">S</span> Skalenmodus</p><p><span class="keyboard-shortcut">Leertaste</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Geschwindigkeit <span class="keyboard-shortcut">ESC</span> Schlie\u00dfen</p><h3>🔍 Objektinspektion</h3><p>Ziehen zum Drehen, Scrollen zum Zoomen, Kamera folgt umlaufenden Objekten</p><h3>🥽 VR-Modus</h3><p>"Enter VR" klicken \u2014 linker Stick bewegt, rechter Stick dreht, Trigger w\u00e4hlt aus, Grip \u00f6ffnet Men\u00fc</p><h3>💡 Tipps</h3><p>Geschwindigkeitsregler f\u00fcr Zeitraffer \u2022 Objekte klicken oder Explorer-Panel nutzen \u2022 Reinzoomen f\u00fcr Oberfl\u00e4chendetails</p>',
+        helpContent: '<h3>Steuerung</h3><p><strong>Klicken &amp; ziehen:</strong> Ansicht um ausgew\u00e4hltes Objekt drehen</p><p><strong>Scrollen:</strong> Rein-/Rauszoomen</p><p><strong>Rechtsklick &amp; ziehen:</strong> Kamera verschieben</p><p><strong>Objekt anklicken:</strong> Ausw\u00e4hlen und fokussieren</p><h3>Tastaturk\u00fcrzel</h3><p><span class="keyboard-shortcut">H</span> Hilfe <span class="keyboard-shortcut">R</span> Zur\u00fccksetzen <span class="keyboard-shortcut">O</span> Bahnen <span class="keyboard-shortcut">C</span> Sternbilder <span class="keyboard-shortcut">D</span> Beschriftungen <span class="keyboard-shortcut">S</span> Skalenmodus</p><p><span class="keyboard-shortcut">Leertaste</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Geschwindigkeit <span class="keyboard-shortcut">ESC</span> Schlie\u00dfen</p><h3>Objektinspektion</h3><p>Ziehen zum Drehen, Scrollen zum Zoomen, Kamera folgt umlaufenden Objekten</p><h3>VR-Modus</h3><p>"Enter VR" klicken \u2014 linker Stick bewegt, rechter Stick dreht, Trigger w\u00e4hlt aus, Grip \u00f6ffnet Men\u00fc</p><h3>Tipps</h3><p>Geschwindigkeitsregler f\u00fcr Zeitraffer \u2022 Objekte klicken oder Explorer-Panel nutzen \u2022 Reinzoomen f\u00fcr Oberfl\u00e4chendetails</p>',
         
         // Fußzeile
         madeWith: "Erstellt mit",
@@ -1946,6 +1982,8 @@ const translations = {
         
         // Systemtext
         centerSolarSystem: 'Zentrum des Sonnensystems',
+        solarSystemMarker: 'Sonnensystem',
+        solarSystemMarkerSubtext: 'Orion-Sporn / Lokaler Arm',
         orbitsParent: 'Umkreist',
         millionKmFromSun: 'Millionen km von der Sonne',
         scaledUnitsFromSun: 'skalierte Einheiten von der Sonne',
@@ -2017,7 +2055,7 @@ const translations = {
         descNeowise: 'Komet NEOWISE war im Juli 2020 ein spektakulärer Anblick! Er wird erst in etwa 6.800 Jahren wiederkommen. Kometen sind "schmutzige Schneebälle" aus Eis, Staub und Gestein von der Entstehung des Sonnensystems.',
 
         // Galaxien
-        descMilkyWay: 'Die Milchstra\u00dfe ist unsere Heimatgalaxie — eine Balkenspiralgalaxie mit 100-400 Milliarden Sternen! Unser Sonnensystem befindet sich im Orion-Cygnus-Arm, etwa 26.000 Lichtjahre vom galaktischen Zentrum entfernt. Unsere Sonne braucht etwa 230 Millionen Jahre f\u00fcr eine Umrundung — ein "galaktisches Jahr."',
+        descMilkyWay: 'Die Milchstra\u00dfe ist unsere Heimatgalaxie — eine Balkenspiralgalaxie mit 100-400 Milliarden Sternen! Unser Sonnensystem befindet sich im Orion-Sporn, auch Lokaler Arm genannt, etwa 26.000 Lichtjahre vom galaktischen Zentrum entfernt. Unsere Sonne braucht etwa 230 Millionen Jahre f\u00fcr eine Umrundung — ein "galaktisches Jahr."',
         funFactMilkyWay: 'Der Name "Milchstra\u00dfe" kommt von ihrem Erscheinungsbild als milchiges Lichtband am Nachthimmel. Die alten Griechen nannten sie "galaxías kýklos" (Milchkreis), was uns das Wort "Galaxie" gab!',
         milkyWayGalaxy: 'Milchstra\u00dfe',
         descAndromeda: 'Die Andromeda-Galaxie ist unsere nächste große galaktische Nachbarin, etwa 2,5 Millionen Lichtjahre entfernt! Sie enthält wahrscheinlich rund eine Billion Sterne und befindet sich auf einem langfristigen Kollisionskurs mit der Milchstraße (nicht vor etwa 4,5 Milliarden Jahren).',
@@ -2333,6 +2371,7 @@ const translations = {
         tooltipReset: "Restablecer cámara a vista predeterminada (R)",
         tooltipDiscover: "¡Sorpréndeme! Saltar a un objeto aleatorio",
         tooltipHelp: "Mostrar controles y funciones (H)",
+        tooltipSettings: "Abrir ajustes",
         
         // Incorporación
         welcomeToSpace: "🚀 ¡Bienvenido a Viaje Espacial!",
@@ -2378,7 +2417,13 @@ const translations = {
         
         // Ayuda
         help: "Ayuda",
+        settings: "Ajustes",
         helpTitle: "Viaje Espacial - Controles y Funciones",
+        settingsTitle: "Ajustes",
+        languageSetting: "Idioma",
+        languageSettingDescription: "Elige el idioma de la interfaz. Esta elección se guarda para futuras visitas.",
+        soundSetting: "Efectos de sonido",
+        soundSettingDescription: "Activar o desactivar los efectos de sonido de la interfaz.",
         controls: "Controles",
         mouseControls: "Controles del Ratón:",
         leftClick: "Clic Izquierdo + Arrastrar: Rotar vista",
@@ -2416,7 +2461,7 @@ const translations = {
         errorLoading: "Error al cargar Viaje Espacial",
         errorMessage: "Por favor, actualiza la página para intentarlo de nuevo.",
 
-        helpContent: '<h3>🖱️ Controles</h3><p>🖱️ <strong>Clic y arrastrar:</strong> Rotar vista alrededor del objeto</p><p>🖱️ <strong>Scroll:</strong> Acercar/alejar</p><p>🖱️ <strong>Clic derecho y arrastrar:</strong> Mover cámara</p><p>👆 <strong>Clic en objetos:</strong> Seleccionar y enfocar</p><h3>⌨️ Atajos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ayuda <span class="keyboard-shortcut">R</span> Restablecer <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelaciones <span class="keyboard-shortcut">D</span> Etiquetas <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espacio</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidad <span class="keyboard-shortcut">ESC</span> Cerrar</p><h3>🔍 Inspección</h3><p>Arrastrar para rotar, scroll para zoom, cámara sigue objetos en órbita</p><h3>🥽 Modo VR</h3><p>Clic "Enter VR" — stick izquierdo mueve, stick derecho gira, gatillo selecciona, grip abre menú</p><h3>💡 Consejos</h3><p>Control de velocidad para avance rápido • Clic en objetos o usar panel explorador • Acercar para detalles de superficie</p>',
+        helpContent: '<h3>Controles</h3><p><strong>Clic y arrastrar:</strong> Rotar la vista alrededor del objeto seleccionado</p><p><strong>Rueda del ratón:</strong> Acercar y alejar</p><p><strong>Clic derecho y arrastrar:</strong> Desplazar cámara</p><p><strong>Clic en un objeto:</strong> Seleccionar y volar hacia él</p><h3>Atajos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ayuda <span class="keyboard-shortcut">R</span> Restablecer <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelaciones <span class="keyboard-shortcut">D</span> Etiquetas <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espacio</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidad <span class="keyboard-shortcut">ESC</span> Cerrar</p><h3>Inspección</h3><p>Arrastrar para rotar, scroll para zoom, cámara sigue objetos en órbita</p><h3>Modo VR</h3><p>Clic "Enter VR" — stick izquierdo mueve, stick derecho gira, gatillo selecciona, grip abre menú</p><h3>Consejos</h3><p>Control de velocidad para avance rápido • Clic en objetos o usar panel explorador • Acercar para detalles de superficie</p>',
         
         // Pie de página
         madeWith: "Hecho con",
@@ -2488,6 +2533,8 @@ const translations = {
         
         // Texto del sistema
         centerSolarSystem: 'Centro del Sistema Solar',
+        solarSystemMarker: 'Sistema Solar',
+        solarSystemMarkerSubtext: 'Espolón de Orión / brazo local',
         orbitsParent: 'Orbita',
         millionKmFromSun: 'millones de km del Sol',
         scaledUnitsFromSun: 'unidades escaladas desde el Sol',
@@ -2560,7 +2607,7 @@ const translations = {
 
         // Galaxias
         milkyWayGalaxy: 'Vía Láctea',
-        descMilkyWay: '¡La Vía Láctea es nuestra galaxia — una galaxia espiral barrada que contiene entre 100 y 400 mil millones de estrellas! Nuestro sistema solar se encuentra en el brazo de Orión-Cisne, a unos 26.000 años luz del centro galáctico. Nuestro Sol tarda unos 230 millones de años en completar una órbita — un "año galáctico."',
+        descMilkyWay: '¡La Vía Láctea es nuestra galaxia — una galaxia espiral barrada que contiene entre 100 y 400 mil millones de estrellas! Nuestro sistema solar se encuentra en el Espolón de Orión, también llamado brazo local, a unos 26.000 años luz del centro galáctico. Nuestro Sol tarda unos 230 millones de años en completar una órbita — un "año galáctico."',
         funFactMilkyWay: '¡El nombre "Vía Láctea" viene de su apariencia como una banda lechosa en el cielo nocturno. Los antiguos griegos la llamaban "galaxías kýklos" (círculo lechoso), lo que nos dio la palabra "galaxia"!',
         descAndromeda: '¡La galaxia de Andrómeda es nuestra gran vecina galáctica más cercana, a unos 2,5 millones de años luz! Probablemente contiene alrededor de 1 billón de estrellas y sigue una trayectoria de colisión a muy largo plazo con la Vía Láctea (no antes de unos 4,5 mil millones de años).',
         descWhirlpool: '¡La galaxia del Remolino (M51) es famosa por sus hermosos brazos espirales! Está interactuando con una galaxia compañera más pequeña, creando impresionantes fuerzas de marea y nueva formación de estrellas.',
@@ -2875,6 +2922,7 @@ const translations = {
         tooltipReset: "Redefinir câmera para vista padrão (R)",
         tooltipDiscover: "Surpreenda-me! Saltar para um objeto aleatório",
         tooltipHelp: "Mostrar controles e funcionalidades (H)",
+        tooltipSettings: "Abrir definições",
         
         // Integração
         welcomeToSpace: "🚀 Bem-vindo à Viagem Espacial!",
@@ -2920,7 +2968,13 @@ const translations = {
         
         // Ajuda
         help: "Ajuda",
+        settings: "Definições",
         helpTitle: "Viagem Espacial - Controles e Recursos",
+        settingsTitle: "Definições",
+        languageSetting: "Idioma",
+        languageSettingDescription: "Escolha o idioma da interface. Esta escolha é guardada para visitas futuras.",
+        soundSetting: "Efeitos sonoros",
+        soundSettingDescription: "Ativar ou desativar efeitos sonoros da interface.",
         controls: "Controles",
         mouseControls: "Controles do Mouse:",
         leftClick: "Clique Esquerdo + Arrastar: Girar visualização",
@@ -2958,7 +3012,7 @@ const translations = {
         errorLoading: "Erro ao carregar Viagem Espacial",
         errorMessage: "Por favor, atualize a página para tentar novamente.",
 
-        helpContent: '<h3>🖱️ Controles</h3><p>🖱️ <strong>Clicar e arrastar:</strong> Rotacionar vista ao redor do objeto</p><p>🖱️ <strong>Scroll:</strong> Aproximar/afastar</p><p>🖱️ <strong>Clique direito e arrastar:</strong> Mover câmera</p><p>👆 <strong>Clicar objetos:</strong> Selecionar e focar</p><h3>⌨️ Atalhos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ajuda <span class="keyboard-shortcut">R</span> Resetar <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelações <span class="keyboard-shortcut">D</span> Rótulos <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espaço</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidade <span class="keyboard-shortcut">ESC</span> Fechar</p><h3>🔍 Inspeção</h3><p>Arraste para rotacionar, scroll para zoom, câmera segue objetos em órbita</p><h3>🥽 Modo VR</h3><p>Clique "Enter VR" — stick esquerdo move, stick direito gira, gatilho seleciona, grip abre menu</p><h3>💡 Dicas</h3><p>Controle de velocidade para avanço rápido • Clique objetos ou use painel explorador • Aproxime para detalhes de superfície</p>',
+        helpContent: '<h3>Controles</h3><p><strong>Clicar e arrastar:</strong> Rotacionar a vista ao redor do objeto selecionado</p><p><strong>Roda do rato:</strong> Aproximar e afastar</p><p><strong>Clique direito e arrastar:</strong> Mover a câmera</p><p><strong>Clicar num objeto:</strong> Selecionar e voar até ele</p><h3>Atalhos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ajuda <span class="keyboard-shortcut">R</span> Resetar <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelações <span class="keyboard-shortcut">D</span> Rótulos <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espaço</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidade <span class="keyboard-shortcut">ESC</span> Fechar</p><h3>Inspeção</h3><p>Arraste para rotacionar, scroll para zoom, câmera segue objetos em órbita</p><h3>Modo VR</h3><p>Clique "Enter VR" — stick esquerdo move, stick direito gira, gatilho seleciona, grip abre menu</p><h3>Dicas</h3><p>Controle de velocidade para avanço rápido • Clique objetos ou use painel explorador • Aproxime para detalhes de superfície</p>',
         
         // Rodapé
         madeWith: "Feito com",
@@ -3030,6 +3084,8 @@ const translations = {
         
         // Texto do sistema
         centerSolarSystem: 'Centro do Sistema Solar',
+        solarSystemMarker: 'Sistema Solar',
+        solarSystemMarkerSubtext: 'Esporão de Órion / braço local',
         orbitsParent: 'Órbita',
         millionKmFromSun: 'milhões de km do Sol',
         scaledUnitsFromSun: 'unidades escaladas a partir do Sol',
@@ -3102,7 +3158,7 @@ const translations = {
 
         // Galáxias
         milkyWayGalaxy: 'Via Láctea',
-        descMilkyWay: 'A Via Láctea é a nossa galáxia — uma galáxia espiral barrada contendo 100 a 400 mil milhões de estrelas! O nosso sistema solar situa-se no braço de Órion-Cisne, a cerca de 26.000 anos-luz do centro galáctico. O nosso Sol leva cerca de 230 milhões de anos para completar uma órbita — um "ano galáctico."',
+        descMilkyWay: 'A Via Láctea é a nossa galáxia — uma galáxia espiral barrada contendo 100 a 400 mil milhões de estrelas! O nosso sistema solar situa-se no Esporão de Órion, também chamado braço local, a cerca de 26.000 anos-luz do centro galáctico. O nosso Sol leva cerca de 230 milhões de anos para completar uma órbita — um "ano galáctico."',
         funFactMilkyWay: 'O nome "Via Láctea" vem da sua aparência como uma faixa leitosa no céu noturno. Os antigos gregos chamavam-na "galaxías kýklos" (círculo leitoso), o que nos deu a palavra "galáxia"!',
         descAndromeda: 'A Galáxia de Andrômeda é nossa grande vizinha galáctica mais próxima, a cerca de 2,5 milhões de anos-luz! Ela provavelmente contém em torno de 1 trilhão de estrelas e segue em uma trajetória de colisão de muito longo prazo com a Via Láctea (não antes de cerca de 4,5 bilhões de anos).',
         descWhirlpool: 'A Galáxia do Redemoinho (M51) é famosa por seus belos braços espirais! Está interagindo com uma galáxia companheira menor, criando forças de maré impressionantes e nova formação de estrelas.',
@@ -3389,6 +3445,14 @@ function applyTranslations() {
         }
     });
 
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
+        const key = element.getAttribute('data-i18n-aria-label');
+        const translation = t(key);
+        if (translation && translation !== key) {
+            element.setAttribute('aria-label', translation);
+        }
+    });
+
     // Update document title
     document.title = t('appTitle') + ' - ' + t('subtitle');
 
@@ -3437,7 +3501,7 @@ function setLanguage(lang) {
 
     const manifestLink = document.querySelector('link[rel="manifest"]');
     if (manifestLink) {
-        manifestLink.href = `${manifestFiles[lang] || './manifest.json'}?v=2.10.117`;
+        manifestLink.href = `${manifestFiles[lang] || './manifest.json'}?v=2.10.173`;
     }
 
     applyTranslations();
@@ -3477,9 +3541,12 @@ function initLanguage() {
             });
         }
 
-        selector.addEventListener('change', (e) => {
-            setLanguage(e.target.value);
-        });
+        if (!selector.dataset.languageBound) {
+            selector.addEventListener('change', (e) => {
+                setLanguage(e.target.value);
+            });
+            selector.dataset.languageBound = 'true';
+        }
     }
 
     applyTranslations();

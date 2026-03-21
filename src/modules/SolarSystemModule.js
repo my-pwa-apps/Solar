@@ -19,6 +19,7 @@ export class SolarSystemModule {
  this.sun = null;
  this.starfield = null;
  this.milkyWay = null;
+ this.milkyWaySolarLocator = null;
  this.asteroidBelt = null;
  this.kuiperBelt = null;
  this.oortCloud = null;
@@ -4665,23 +4666,22 @@ export class SolarSystemModule {
  this.milkyWayDisc = new THREE.Mesh(discGeometry, discMaterial);
  this.milkyWayDisc.name = 'milkyWayGalaxyDisc';
 
- // Offset the disc so the solar system (at world origin) sits on the
- // Orion-Cygnus arm — ~58% out from center.
- // Must use the EXACT same spiral formula as the texture dot:
- // solarAngle = (1/4) * 2π + 0.58 * 2.5 * 2π (arm #1, t=0.58, turns=2.5)
- const discSolarArmOffset = (1 / 4) * Math.PI * 2;
- const discSolarAngle = discSolarArmOffset + 0.58 * 2.5 * Math.PI * 2;
- const offsetDist = 13050;
- // Apply offset BEFORE rotation — shift along the plane's local axes
- this.milkyWayDisc.position.set(
- -Math.cos(discSolarAngle) * offsetDist,
- 0,
- -Math.sin(discSolarAngle) * offsetDist
- );
-
  // Tilt to match galactic plane (62.87° from celestial equator)
  this.milkyWayDisc.rotation.x = -Math.PI / 2; // Flat on ecliptic first
  this.milkyWayDisc.rotation.z = 62.87 * Math.PI / 180; // Galactic tilt
+
+ // Compute the exact local position of the sun dot on the plane geometry
+ const sunLocalX = (solarX / texSize - 0.5) * discSize;
+ const sunLocalY = -(solarY / texSize - 0.5) * discSize; // Texture Y is down, Plane Y is up
+ const sunLocalPos = new THREE.Vector3(sunLocalX, sunLocalY, 0);
+
+ // Rotate that local position by the disc's orientation to get the world displacement
+ sunLocalPos.applyEuler(this.milkyWayDisc.rotation);
+
+ // Shift the entire disc by the inverse of that displacement
+ // This perfectly anchors the sun dot to world origin (0, 0, 0)
+ this.milkyWayDisc.position.copy(sunLocalPos).negate();
+
  this.milkyWayDisc.frustumCulled = false;
  this.milkyWayDisc.renderOrder = -1; // Behind everything
 
@@ -4694,10 +4694,137 @@ export class SolarSystemModule {
  realSize: '100,000 light-years diameter (~200,000 including halo)'
  };
 
+ this._createMilkyWaySolarLocator(discSize, texSize, solarX, solarY);
+
  scene.add(this.milkyWayDisc);
  this.objects.push(this.milkyWayDisc);
 
  if (DEBUG.enabled) console.log('[MilkyWay] Galaxy disc created (fades in at distance)');
+ }
+
+ _createMilkyWaySolarLocator(discSize, texSize, solarX, solarY) {
+ const localX = ((solarX / texSize) - 0.5) * discSize;
+ const localY = (0.5 - (solarY / texSize)) * discSize;
+ const locatorGroup = new THREE.Group();
+ locatorGroup.name = 'milkyWaySolarLocator';
+ locatorGroup.position.set(localX, localY, 0);
+
+ const ring = new THREE.Mesh(
+  new THREE.RingGeometry(420, 640, 48),
+  new THREE.MeshBasicMaterial({
+   color: 0x6FD6FF,
+   transparent: true,
+   opacity: 0.7,
+   side: THREE.DoubleSide,
+   depthWrite: false,
+   blending: THREE.AdditiveBlending
+  })
+ );
+ ring.renderOrder = 3;
+ locatorGroup.add(ring);
+
+ const beaconLine = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([
+   new THREE.Vector3(0, 0, -250),
+   new THREE.Vector3(0, 0, 1800)
+  ]),
+  new THREE.LineBasicMaterial({
+   color: 0x8FE7FF,
+   transparent: true,
+   opacity: 0.65,
+   depthWrite: false,
+   blending: THREE.AdditiveBlending
+  })
+ );
+ beaconLine.renderOrder = 3;
+ locatorGroup.add(beaconLine);
+
+ const glowCanvas = document.createElement('canvas');
+ glowCanvas.width = 128;
+ glowCanvas.height = 128;
+ const glowCtx = glowCanvas.getContext('2d');
+ const glowGrad = glowCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+ glowGrad.addColorStop(0, 'rgba(255,255,255,0.95)');
+ glowGrad.addColorStop(0.18, 'rgba(170,230,255,0.95)');
+ glowGrad.addColorStop(0.45, 'rgba(90,200,255,0.4)');
+ glowGrad.addColorStop(1, 'rgba(90,200,255,0)');
+ glowCtx.fillStyle = glowGrad;
+ glowCtx.fillRect(0, 0, 128, 128);
+ const glowTexture = new THREE.CanvasTexture(glowCanvas);
+ const glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTexture,
+  transparent: true,
+  opacity: 0.9,
+  depthTest: false,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  sizeAttenuation: true
+ }));
+ glowSprite.scale.set(1600, 1600, 1);
+ glowSprite.position.set(0, 0, 150);
+ glowSprite.renderOrder = 4;
+ locatorGroup.add(glowSprite);
+
+ const labelTexture = this._buildMilkyWaySolarLabelTexture();
+ const labelSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: labelTexture,
+  transparent: true,
+  opacity: 0.92,
+  depthTest: false,
+  depthWrite: false,
+  sizeAttenuation: true
+ }));
+ labelSprite.scale.set(5200, 1080, 1);
+ labelSprite.position.set(0, 0, 2750);
+ labelSprite.renderOrder = 4;
+ locatorGroup.add(labelSprite);
+
+ locatorGroup.userData = {
+  ring,
+  beaconLine,
+  glowSprite,
+    labelSprite,
+    labelTexture
+ };
+
+ this.milkyWayDisc.add(locatorGroup);
+ this.milkyWaySolarLocator = locatorGroup;
+ }
+
+ _buildMilkyWaySolarLabelTexture() {
+ const labelCanvas = document.createElement('canvas');
+ labelCanvas.width = 768;
+ labelCanvas.height = 160;
+ const labelCtx = labelCanvas.getContext('2d');
+ labelCtx.fillStyle = 'rgba(4, 12, 20, 0.82)';
+ labelCtx.beginPath();
+ if (labelCtx.roundRect) labelCtx.roundRect(8, 18, 752, 106, 24);
+ else labelCtx.rect(8, 18, 752, 106);
+ labelCtx.fill();
+ labelCtx.strokeStyle = 'rgba(111, 214, 255, 0.7)';
+ labelCtx.lineWidth = 3;
+ labelCtx.stroke();
+ labelCtx.fillStyle = 'rgba(220, 245, 255, 0.96)';
+ labelCtx.font = 'bold 54px "Segoe UI", sans-serif';
+ labelCtx.textAlign = 'center';
+ labelCtx.textBaseline = 'middle';
+ labelCtx.fillText(t('solarSystemMarker'), 384, 72);
+ labelCtx.fillStyle = 'rgba(155, 216, 240, 0.9)';
+ labelCtx.font = '28px "Segoe UI", sans-serif';
+ labelCtx.fillText(t('solarSystemMarkerSubtext'), 384, 112);
+ return new THREE.CanvasTexture(labelCanvas);
+ }
+
+ refreshLocalizedAssets() {
+ const labelSprite = this.milkyWaySolarLocator?.userData?.labelSprite;
+ if (!labelSprite?.material) return;
+
+ const nextTexture = this._buildMilkyWaySolarLabelTexture();
+ const previousTexture = labelSprite.material.map;
+ labelSprite.material.map = nextTexture;
+ labelSprite.material.needsUpdate = true;
+ this.milkyWaySolarLocator.userData.labelTexture = nextTexture;
+ if (previousTexture) previousTexture.dispose();
  }
 
  async loadTextureWithFallback(url, fallbackColor) {
@@ -9151,9 +9278,24 @@ createHyperrealisticHubble(satData) {
  if (galaxyT <= 0) {
  this.milkyWayDisc.material.opacity = 0;
  this.milkyWayDisc.visible = false;
+ if (this.milkyWaySolarLocator) this.milkyWaySolarLocator.visible = false;
  } else {
  this.milkyWayDisc.visible = true;
  this.milkyWayDisc.material.opacity = galaxyT * 0.85;
+ if (this.milkyWaySolarLocator) {
+ this.milkyWaySolarLocator.visible = true;
+ const pulse = 0.8 + Math.sin(now * 0.004) * 0.2;
+ const locatorOpacity = galaxyT * pulse;
+ const { ring, beaconLine, glowSprite, labelSprite } = this.milkyWaySolarLocator.userData;
+ if (ring?.material) ring.material.opacity = 0.45 * locatorOpacity;
+ if (beaconLine?.material) beaconLine.material.opacity = 0.55 * locatorOpacity;
+ if (glowSprite?.material) glowSprite.material.opacity = 0.8 * locatorOpacity;
+ if (labelSprite?.material) labelSprite.material.opacity = 0.9 * galaxyT;
+ const ringScale = 1 + Math.sin(now * 0.0025) * 0.08;
+ if (ring) ring.scale.set(ringScale, ringScale, 1);
+ const glowScale = 1 + Math.sin(now * 0.0035) * 0.12;
+ if (glowSprite) glowSprite.scale.set(1600 * glowScale, 1600 * glowScale, 1);
+ }
  }
 
  if (camDist < solarFadeStart) {
@@ -9364,6 +9506,21 @@ createHyperrealisticHubble(satData) {
 
  // Clean up Milky Way galaxy disc
  if (this.milkyWayDisc) {
+ this.milkyWayDisc.traverse(child => {
+ if (child === this.milkyWayDisc) return;
+ if (child.geometry) child.geometry.dispose();
+ if (child.material) {
+ if (Array.isArray(child.material)) {
+ child.material.forEach(mat => {
+ if (mat.map) mat.map.dispose();
+ mat.dispose();
+ });
+ } else {
+ if (child.material.map) child.material.map.dispose();
+ child.material.dispose();
+ }
+ }
+ });
  if (this.milkyWayDisc.geometry) this.milkyWayDisc.geometry.dispose();
  if (this.milkyWayDisc.material) {
  if (this.milkyWayDisc.material.map) this.milkyWayDisc.material.map.dispose();
@@ -9401,6 +9558,7 @@ createHyperrealisticHubble(satData) {
  this.sun = null;
  this.starfield = null;
  this.milkyWay = null;
+ this.milkyWaySolarLocator = null;
  this.asteroidBelt = null;
  this.kuiperBelt = null;
  this.oortCloud = null;
@@ -10054,6 +10212,8 @@ createHyperrealisticHubble(satData) {
  if (DEBUG.enabled) console.warn(' Cannot focus on invalid object');
  return;
  }
+
+ const previousFocusedObject = this.focusedObject;
  
  if (DEBUG.enabled) {
  console.log(` [Focus] Focusing on: ${object.userData.name}, type: ${object.userData.type}, isComet: ${object.userData.isComet}`);
@@ -10163,6 +10323,11 @@ let actualRadius;
  // Reset constellation highlighting if focusing on non-constellation
  this.resetConstellationHighlight();
  object.getWorldPosition(targetPosition);
+ // For Milky Way: targetPosition = origin (solar system) so the
+ // camera look-at always tracks through the anchor point.
+ if (userData.type === 'milkyWay') {
+ targetPosition.set(0, 0, 0);
+ }
  }
 
 // Store reference for tracking
@@ -10287,6 +10452,9 @@ let actualRadius;
  const startPos = new THREE.Vector3().copy(camera.position);
  const startTarget = new THREE.Vector3().copy(controls.target);
  const focusScratch = this._focusScratch;
+ const requiresSolarAnchorTransit = userData.type === 'milkyWay' || previousFocusedObject?.userData?.type === 'milkyWay';
+ const solarAnchorTarget = new THREE.Vector3(0, 0, 0);
+ const solarAnchorCameraPos = new THREE.Vector3();
  
  // For fast orbiters (like ISS), do NOT use relative offset if isSpacecraft
  let useRelativeOffset = false;
@@ -10502,16 +10670,35 @@ let actualRadius;
      );
      controls.target.copy(targetPosition);
      if (DEBUG.enabled) console.log(` [Asteroid] Close dramatic angle for irregular shape showcase`);
- } else if (userData.type === 'asteroidBelt' || userData.type === 'kuiperBelt' || userData.type === 'oortCloud' || userData.type === 'heliopause' || userData.type === 'milkyWay') {
+ } else if (userData.type === 'milkyWay') {
+     // Milky Way: ascend from the solar system (world origin) along the
+     // disc's face normal so the transition feels like rising out of /
+     // descending back into our position in the galaxy.
+     // PlaneGeometry faces local +Z; apply the disc's rotation to get the
+     // world-space normal pointing "up" from the disc surface.
+     const discNormal = new THREE.Vector3(0, 0, 1);
+     discNormal.applyQuaternion(this.milkyWayDisc.quaternion).normalize();
+     // Camera placed exactly above the solar system (origin) along disc normal,
+     // so we strictly enter and exit precisely at the star anchor rather than
+     // slanted towards the galaxy center.
+     endPos = new THREE.Vector3(
+         discNormal.x * distance * 0.8,
+         discNormal.y * distance * 0.8,
+         discNormal.z * distance * 0.8
+     );
+     // Look at the solar system (origin) — the anchor point
+     controls.target.set(0, 0, 0);
+     if (DEBUG.enabled) console.log(` [milkyWay] Solar-system anchor exit along disc normal at distance ${distance.toFixed(0)}`);
+ } else if (userData.type === 'asteroidBelt' || userData.type === 'kuiperBelt' || userData.type === 'oortCloud' || userData.type === 'heliopause') {
      // Structural objects centered at origin: position camera OUTSIDE looking inward
      // Pick a viewing angle elevated above the ecliptic for a good overview
      const viewAngle = Math.PI * 0.35; // ~63 degrees around
      endPos = new THREE.Vector3(
-         Math.cos(viewAngle) * distance,
-         distance * 0.45, // Elevated view above ecliptic
-         Math.sin(viewAngle) * distance
+         targetPosition.x + Math.cos(viewAngle) * distance,
+         targetPosition.y + distance * 0.45, // Elevated view above ecliptic
+         targetPosition.z + Math.sin(viewAngle) * distance
      );
-     controls.target.set(0, 0, 0); // Look toward Sun/center
+     controls.target.copy(targetPosition); // Look toward the actual solar-system anchor
      if (DEBUG.enabled) console.log(` [${userData.type}] Outside-in view at distance ${distance.toFixed(0)}`);
  } else {
      // Other objects: Dynamic positioning with slight variation
@@ -10540,8 +10727,24 @@ let actualRadius;
 
  // For moving objects: capture the camera-end offset once so we can update endPos every
  // frame as the object moves, preventing a stale landing position.
- const isStaticTarget = (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula');
+ const isStaticTarget = (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula' || userData.type === 'milkyWay');
  const endOffset = isStaticTarget ? null : new THREE.Vector3().copy(endPos).sub(targetPosition);
+
+ if (requiresSolarAnchorTransit) {
+ const isLeaving = userData.type === 'milkyWay';
+ const anchorDirection = new THREE.Vector3();
+ if (isLeaving) {
+ anchorDirection.copy(endPos);
+ } else {
+ anchorDirection.copy(startPos);
+ }
+ if (anchorDirection.lengthSq() < 1e-6) {
+ anchorDirection.set(0, 1, 0);
+ }
+ anchorDirection.normalize();
+ // Position anchor far enough out to encompass outer planets (~2400 units)
+ solarAnchorCameraPos.copy(anchorDirection).multiplyScalar(2400);
+ }
 
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
  const startTime = performance.now();
@@ -10580,7 +10783,11 @@ let actualRadius;
  // the current camera offset to the object's latest world position and hand
  // control to steady follow tracking. This prevents zoom detach.
  if (this._focusTransitionCancelRequested) {
+ if (userData.type === 'milkyWay') {
+ targetPosition.set(0, 0, 0);
+ } else {
  object.getWorldPosition(targetPosition);
+ }
  const userOffset = this._trackOffset.copy(camera.position).sub(controls.target);
  controls.target.copy(targetPosition);
  camera.position.copy(targetPosition).add(userOffset);
@@ -10593,9 +10800,9 @@ let actualRadius;
  const eased = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
  
  // Update target position differently based on object type
- if (userData.type === 'constellation') {
- // Constellations: keep static target (don't update position)
- // targetPosition already set to constellation center
+ if (isStaticTarget) {
+ // Static targets keep their precomputed targetPosition for the full animation.
+ // For Milky Way this must remain at the solar-system anchor (world origin).
  } else if (useRelativeOffset && progress < 1) {
  // For fast orbiters during transition: maintain relative offset from parent
  targetPosition.copy(parentPlanet.position).add(relativeOffset);
@@ -10612,10 +10819,27 @@ let actualRadius;
  if (endOffset) endPos.copy(targetPosition).add(endOffset);
  }
  
+ if (requiresSolarAnchorTransit) {
+ // Use the global 'eased' value (0 to 1) to ensure continuous apparent speed
+ // without stopping at the anchor point.
+ const t = eased;
+ let segmentT;
+
+ if (t < 0.5) {
+ segmentT = t * 2;
+ camera.position.lerpVectors(startPos, solarAnchorCameraPos, segmentT);
+ controls.target.lerpVectors(startTarget, solarAnchorTarget, segmentT);
+ } else {
+ segmentT = (t - 0.5) * 2;
+ camera.position.lerpVectors(solarAnchorCameraPos, endPos, segmentT);
+ controls.target.lerpVectors(solarAnchorTarget, targetPosition, segmentT);
+ }
+ } else {
  camera.position.lerpVectors(startPos, endPos, eased);
- 
+
  // Smoothly interpolate controls target from start to current target position
  controls.target.lerpVectors(startTarget, targetPosition, eased);
+ }
  
  // For constellations and distant objects, ensure camera orientation is maintained
  if (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula') {

@@ -3,11 +3,13 @@
  * Manages installation prompts, offline detection, shortcuts, and platform-specific behaviors
  */
 import { DEBUG } from './utils.js';
+import { safeGetItem, safeSetItem } from './storage.js';
 
 export class PWAManager {
     constructor() {
         this.deferredPrompt = null;
         this.installPromptShown = false;
+        this.installPromptTimer = null;
         this.INSTALL_DELAY_MS = 30000; // 30s delay before auto showing prompt (desktop)
         this.INSTALL_DELAY_ANDROID_MS = 10000; // 10s delay for Android
         
@@ -51,8 +53,10 @@ export class PWAManager {
             
             if (!navigator.onLine) {
                 offlineIndicator.classList.remove('hidden');
+                offlineIndicator.setAttribute('aria-hidden', 'false');
             } else {
                 offlineIndicator.classList.add('hidden');
+                offlineIndicator.setAttribute('aria-hidden', 'true');
             }
         };
         
@@ -91,10 +95,37 @@ export class PWAManager {
      * Called when we have a valid deferred prompt and want to show it.
      */
     scheduleInstallPrompt() {
-        if (localStorage.getItem('installPromptDismissed')) return;
+        if (safeGetItem('installPromptDismissed')) return;
         const delay = this.platform.isAndroid ? this.INSTALL_DELAY_ANDROID_MS : this.INSTALL_DELAY_MS;
         if (DEBUG && DEBUG.enabled) console.log(`[PWA] Scheduling install prompt in ${delay}ms`);
-        setTimeout(() => this.showInstallPrompt(), delay);
+        if (this.installPromptTimer) {
+            clearTimeout(this.installPromptTimer);
+        }
+        this.installPromptTimer = window.setTimeout(() => {
+            this.installPromptTimer = null;
+            this.showInstallPrompt();
+        }, delay);
+    }
+
+    setInstallPromptVisibility(isVisible) {
+        const promptElement = document.getElementById('install-prompt');
+        if (!promptElement) return null;
+
+        promptElement.classList.toggle('hidden', !isVisible);
+        promptElement.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+
+        if (isVisible) {
+            requestAnimationFrame(() => {
+                const acceptButton = document.getElementById('install-accept');
+                const dismissButton = document.getElementById('install-dismiss');
+                const target = acceptButton && acceptButton.style.display !== 'none'
+                    ? acceptButton
+                    : dismissButton;
+                target?.focus();
+            });
+        }
+
+        return promptElement;
     }
 
     /**
@@ -142,18 +173,20 @@ export class PWAManager {
         });
 
         // Handle iOS manually (beforeinstallprompt never fires on iOS)
-        if (this.platform.isIOS && !this.isPWA() && !localStorage.getItem('installPromptDismissed')) {
+        if (this.platform.isIOS && !this.isPWA() && !safeGetItem('installPromptDismissed')) {
             setTimeout(() => this.showIOSInstructions(), this.INSTALL_DELAY_MS);
         }
 
         // Track installation
         window.addEventListener('appinstalled', () => {
             if (DEBUG && DEBUG.enabled) console.log('[PWA] App was installed successfully');
-            const promptElement = document.getElementById('install-prompt');
-            if (promptElement) {
-                promptElement.classList.add('hidden');
-            }
+            this.setInstallPromptVisibility(false);
             this.deferredPrompt = null;
+            this.installPromptShown = false;
+            if (this.installPromptTimer) {
+                clearTimeout(this.installPromptTimer);
+                this.installPromptTimer = null;
+            }
             
             if (window.gtag) {
                 gtag('event', 'pwa_installed', {
@@ -182,11 +215,10 @@ export class PWAManager {
         // Must have a deferred prompt event to trigger native install
         if (!this.deferredPrompt) return;
         
-        const promptElement = document.getElementById('install-prompt');
+        const promptElement = this.setInstallPromptVisibility(true);
         if (!promptElement) return;
         
         this.installPromptShown = true;
-        promptElement.classList.remove('hidden');
         
         // Accept button
         const acceptBtn = document.getElementById('install-accept');
@@ -196,20 +228,21 @@ export class PWAManager {
                 : acceptBtn.textContent;
             
             acceptBtn.addEventListener('click', async () => {
-                promptElement.classList.add('hidden');
+                this.setInstallPromptVisibility(false);
                 if (this.deferredPrompt) {
                     this.deferredPrompt.prompt();
                     const { outcome } = await this.deferredPrompt.userChoice;
                     if (DEBUG && DEBUG.enabled) console.log('[PWA] UserChoice:', outcome);
                     this.deferredPrompt = null;
+                    this.installPromptShown = false;
                 }
             }, { once: true });
         }
         
         // Dismiss button
         document.getElementById('install-dismiss')?.addEventListener('click', () => {
-            promptElement.classList.add('hidden');
-            localStorage.setItem('installPromptDismissed', 'true');
+            this.setInstallPromptVisibility(false);
+            safeSetItem('installPromptDismissed', 'true');
             this.installPromptShown = false;
         }, { once: true });
     }
@@ -221,10 +254,8 @@ export class PWAManager {
         if (this.installPromptShown || this.isPWA()) return;
         
         this.installPromptShown = true;
-        const promptElement = document.getElementById('install-prompt');
+        const promptElement = this.setInstallPromptVisibility(true);
         if (!promptElement) return;
-        
-        promptElement.classList.remove('hidden');
         
         const iconDiv = promptElement.querySelector('.install-icon');
         if (iconDiv) iconDiv.textContent = '🧭';
@@ -276,6 +307,7 @@ export class PWAManager {
             const installPrompt = document.getElementById('install-prompt');
             if (installPrompt) {
                 installPrompt.classList.add('hidden');
+                installPrompt.setAttribute('aria-hidden', 'true');
             }
             
             // Track PWA usage

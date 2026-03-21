@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.118
+// Version 2.10.173
 
-const CACHE_VERSION = '2.10.169';
+const CACHE_VERSION = '2.10.179';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -17,6 +17,8 @@ const STATIC_CACHE_FILES = [
   './',
   './index.html',
   './src/main.js',
+    './src/modules/storage.js',
+    './src/modules/AppFeatures.js',
   './src/i18n.js',
   './src/bootstrap/installPromptCapture.js',
   './src/bootstrap/initManagers.js',
@@ -29,6 +31,7 @@ const STATIC_CACHE_FILES = [
   './src/modules/ServiceWorkerManager.js',
   './src/modules/LanguageManager.js',
   './src/modules/AudioManager.js',
+  './src/modules/storage.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
@@ -153,7 +156,31 @@ self.addEventListener('activate', (event) => {
 });
 
 // Helper function to determine cache strategy
-function getCacheStrategy(url) {
+function isNavigationRequest(request) {
+  return request.mode === 'navigate' || request.destination === 'document';
+}
+
+function shouldNormalizeCacheKey(request, url) {
+  if (url.origin !== location.origin) {
+    return false;
+  }
+
+  if (isNavigationRequest(request)) {
+    return true;
+  }
+
+  if (['script', 'style', 'image', 'font', 'manifest', 'worker'].includes(request.destination)) {
+    return true;
+  }
+
+  return /\.(css|js|mjs|json|woff2?|ttf|eot|jpg|jpeg|png|gif|webp|svg|ico)$/i.test(url.pathname);
+}
+
+function getCacheKey(request, url) {
+  return shouldNormalizeCacheKey(request, url) ? `${url.origin}${url.pathname}` : request;
+}
+
+function getCacheStrategy(request, url) {
   // Images - cache first with size limit
   if (url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i)) {
     return { cache: IMAGE_CACHE, strategy: 'cache-first', limit: CACHE_LIMITS.images };
@@ -166,7 +193,7 @@ function getCacheStrategy(url) {
   }
   
   // HTML - network first (for updates)
-  if (url.pathname.match(/\.html?$/i) || url.pathname === '/') {
+  if (isNavigationRequest(request) || url.pathname.match(/\.html?$/i) || url.pathname === '/' || url.pathname.endsWith('/')) {
     return { cache: CACHE_NAME, strategy: 'network-first' };
   }
   
@@ -197,7 +224,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
-        const { cache, strategy, limit } = getCacheStrategy(url);
+        const { cache, strategy, limit } = getCacheStrategy(request, url);
+        const cacheKey = getCacheKey(request, url);
         
         if (strategy === 'network-first') {
           // Try network first, fallback to cache
@@ -205,11 +233,11 @@ self.addEventListener('fetch', (event) => {
             const networkResponse = await fetch(request);
             if (networkResponse && networkResponse.status === 200) {
               const cacheStorage = await caches.open(cache);
-              await cacheStorage.put(request, networkResponse.clone());
+              await cacheStorage.put(cacheKey, networkResponse.clone());
             }
             return networkResponse;
           } catch (error) {
-            const cachedResponse = await caches.match(request, { ignoreSearch: true });
+            const cachedResponse = await caches.match(cacheKey);
             if (cachedResponse) {
               return cachedResponse;
             }
@@ -219,13 +247,13 @@ self.addEventListener('fetch', (event) => {
           // Cache first strategy (default)
           // ignoreSearch: true allows versioned URLs (e.g. ?v=2.10.6) to match
           // plain paths stored in the SW install cache, ensuring offline reliability
-          const cachedResponse = await caches.match(request, { ignoreSearch: true });
+          const cachedResponse = await caches.match(cacheKey);
           if (cachedResponse) {
             // Return cached version and update in background
             // Skip revalidation for immutable CDN resources (versioned URLs can't change)
             const reqUrl = new URL(request.url);
             if (!reqUrl.hostname.includes('jsdelivr.net')) {
-              event.waitUntil(updateCache(request, cache));
+              event.waitUntil(updateCache(request, cache, cacheKey));
             }
             return cachedResponse;
           }
@@ -236,7 +264,7 @@ self.addEventListener('fetch', (event) => {
           // Cache successful responses
           if (networkResponse && networkResponse.status === 200) {
             const cacheStorage = await caches.open(cache);
-            await cacheStorage.put(request, networkResponse.clone());
+            await cacheStorage.put(cacheKey, networkResponse.clone());
             
             // Enforce cache limits if specified
             if (limit) {
@@ -248,6 +276,10 @@ self.addEventListener('fetch', (event) => {
         }
       } catch (error) {
         // console.error('[SW] Fetch failed:', error);
+
+        if (!isNavigationRequest(request)) {
+          return Response.error();
+        }
         
         // If offline and no cache, return offline page
         const cache = await caches.open(CACHE_NAME);
@@ -321,12 +353,12 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Update cache in background (stale-while-revalidate)
-async function updateCache(request, cacheName = CACHE_NAME) {
+async function updateCache(request, cacheName = CACHE_NAME, cacheKey = request) {
   try {
     const response = await fetch(request);
     if (response && response.status === 200) {
       const cache = await caches.open(cacheName);
-      await cache.put(request, response);
+      await cache.put(cacheKey, response);
     }
   } catch (error) {
     // Silently fail - we're already serving from cache
@@ -374,4 +406,6 @@ function broadcastMessage(message) {
     }
   });
 }
+
+
 

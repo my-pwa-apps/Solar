@@ -67,6 +67,7 @@
 .header-controls {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     flex: 1 1 0;
     min-width: 0;
@@ -1186,6 +1187,118 @@
     margin: 8px 0;
 }
 
+.settings-modal-content {
+    max-width: 520px;
+}
+
+.settings-section {
+    display: grid;
+    gap: 12px;
+}
+
+.settings-label {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.settings-description {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.settings-language-selector {
+    width: 100%;
+    max-width: none;
+}
+
+/* Settings toggle switch */
+.settings-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.settings-toggle input {
+    display: none;
+}
+
+.settings-toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--fluent-bg-secondary, rgba(255,255,255,0.08));
+    border: 1px solid var(--fluent-border, rgba(255,255,255,0.12));
+    border-radius: 12px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.settings-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--text-secondary, rgba(255,255,255,0.5));
+    border-radius: 50%;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.settings-toggle input:checked + .settings-toggle-slider {
+    background: rgba(96, 165, 250, 0.25);
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.settings-toggle input:checked + .settings-toggle-slider::after {
+    transform: translateX(20px);
+    background: rgb(96, 165, 250);
+}
+
+.settings-toggle-label {
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+/* Header settings button */
+.header-settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md, 6px);
+    color: var(--text-secondary, rgba(255,255,255,0.6));
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.header-settings-btn:hover {
+    background: var(--fluent-bg-hover, rgba(255,255,255,0.06));
+    border-color: var(--fluent-border, rgba(255,255,255,0.12));
+    color: var(--text-primary, #fff);
+}
+
+.header-settings-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.settings-section + .settings-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--fluent-border, rgba(255,255,255,0.1));
+}
+
 /* Fluent Keyboard hints */
 .keyboard-shortcut {
     display: inline-block;
@@ -1800,6 +1913,15 @@ select {
 .footer-controls button .btn-icon {
     font-size: 18px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-controls button .btn-icon svg {
+    width: 18px;
+    height: 18px;
+    color: inherit;
 }
 
 /* Hide text visually but keep for tooltip */

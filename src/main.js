@@ -1,4 +1,4 @@
-﻿// ===========================
+// ===========================
 // SPACE VOYAGE - MODULAR VERSION
 // Main Application Entry Point
 // ===========================
@@ -11,6 +11,8 @@ import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
 import { SolarSystemModule } from './modules/SolarSystemModule.js';
 import { audioManager } from './modules/AudioManager.js';
+import { safeGetItem, safeSetItem } from './modules/storage.js';
+import { setupOnboarding } from './modules/AppFeatures.js';
 
 // Make audio manager globally accessible
 window.audioManager = audioManager;
@@ -18,10 +20,6 @@ window.audioManager = audioManager;
 // i18n.js is loaded globally in index.html. Use a late-binding wrapper so calls always use
 // the fully-initialised translation function rather than capturing window.t at import time.
 const t = (key) => (window.t || ((k) => k))(key);
-
-// Safe localStorage helpers — Safari private mode, quota exceeded, or disabled storage
-function safeGetItem(key) { try { return localStorage.getItem(key); } catch { return null; } }
-function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch { /* ignore */ } }
 
 // ===========================
 // CONSTANTS
@@ -35,6 +33,7 @@ const UI_ELEMENTS = {
  SCALE_BUTTON: 'toggle-scale',
  RESET_VIEW: 'reset-view',
  HELP_BUTTON: 'help-button',
+ SETTINGS_BUTTON: 'settings-button',
  FPS_COUNTER: 'fps-counter',
  HOVER_LABEL: 'hover-label',
  DROPDOWN: 'object-dropdown',
@@ -177,7 +176,7 @@ class App {
  this.uiManager.hideLoading();
  
  // Setup new UX features
- this.setupOnboarding();
+ setupOnboarding(this.uiManager);
  this.setupRandomDiscovery();
  this.setupNavigationSearch();
  this.setupMobileGestureHints();
@@ -188,6 +187,12 @@ class App {
 
  window.addEventListener('app-language-changed', () => {
  this.syncLocalizedControlStates();
+ if (this.solarSystemModule?.refreshLocalizedAssets) {
+ this.solarSystemModule.refreshLocalizedAssets();
+ }
+ if (!this.uiManager?.elements?.helpModal?.classList.contains('hidden')) {
+ this.uiManager.showHelp(t('helpContent'));
+ }
  });
 
  // Pre-select Earth on first load for better first impression
@@ -455,10 +460,20 @@ class App {
  this.uiManager.closeHelpModal();
  };
 
+ // Close settings modal
+ window.closeSettingsModal = () => {
+ this.uiManager.closeSettingsModal();
+ };
+
  // Wire up help close button (replaces inline onclick)
  const helpCloseBtn = document.getElementById('help-close-btn');
  if (helpCloseBtn) {
  helpCloseBtn.addEventListener('click', () => this.uiManager.closeHelpModal());
+ }
+
+ const settingsCloseBtn = document.getElementById('settings-close-btn');
+ if (settingsCloseBtn) {
+ settingsCloseBtn.addEventListener('click', () => this.uiManager.closeSettingsModal());
  }
  
  // Setup info panel close button with proper event listener
@@ -491,6 +506,13 @@ class App {
  if (helpButton) {
  helpButton.addEventListener('click', () => {
  this.uiManager.showHelp(t('helpContent'));
+ }, { passive: true });
+ }
+
+ const settingsButton = document.getElementById(UI_ELEMENTS.SETTINGS_BUTTON);
+ if (settingsButton) {
+ settingsButton.addEventListener('click', () => {
+ this.uiManager.showSettings();
  }, { passive: true });
  }
  
@@ -1123,6 +1145,7 @@ class App {
  case 'escape':
  this.uiManager.closeInfoPanel();
  this.uiManager.closeHelpModal();
+ this.uiManager.closeSettingsModal();
  break;
  case ' ': {
  // SPACE = Toggle between Paused and Normal speed (50 = 1x)
@@ -1224,76 +1247,6 @@ class App {
  safeSetItem('space_voyage_visited', 'true');
  }, 500);
  }
- }
- 
- setupOnboarding() {
- const overlay = document.getElementById('onboarding-overlay');
- const nextBtn = document.getElementById('onboarding-next');
- const startBtn = document.getElementById('onboarding-start');
- const skipBtn = document.getElementById('onboarding-skip');
- const dots = document.querySelectorAll('.onboarding-dots .dot');
- const steps = document.querySelectorAll('.onboarding-step');
- 
- if (!overlay) return;
- 
- // Check if first visit
- const hasSeenOnboarding = safeGetItem('space_voyage_onboarding_complete');
- 
- if (!hasSeenOnboarding) {
- // Show onboarding after a brief delay
- setTimeout(() => {
- overlay.classList.remove('hidden');
- this.uiManager?._trapFocus(overlay);
- }, 1000);
- }
- 
- let currentStep = 1;
- const totalSteps = 3;
- 
- const updateStep = (step) => {
- currentStep = step;
- 
- // Update steps
- steps.forEach(s => s.classList.remove('active'));
- const activeStep = document.querySelector(`.onboarding-step[data-step="${step}"]`);
- if (activeStep) activeStep.classList.add('active');
- 
- // Update dots
- dots.forEach(d => d.classList.remove('active'));
- const activeDot = document.querySelector(`.onboarding-dots .dot[data-step="${step}"]`);
- if (activeDot) activeDot.classList.add('active');
- 
- // Show/hide buttons
- if (step === totalSteps) {
- nextBtn?.classList.add('hidden');
- startBtn?.classList.remove('hidden');
- } else {
- nextBtn?.classList.remove('hidden');
- startBtn?.classList.add('hidden');
- }
- };
- 
- const closeOnboarding = () => {
- overlay.classList.add('hidden');
- this.uiManager?._releaseFocusTrap();
- safeSetItem('space_voyage_onboarding_complete', 'true');
- };
- 
- nextBtn?.addEventListener('click', () => {
- if (currentStep < totalSteps) {
- updateStep(currentStep + 1);
- }
- });
- 
- startBtn?.addEventListener('click', closeOnboarding);
- skipBtn?.addEventListener('click', closeOnboarding);
- 
- dots.forEach(dot => {
- dot.addEventListener('click', () => {
- const step = parseInt(dot.dataset.step, 10);
- if (step) updateStep(step);
- });
- });
  }
  
  setupRandomDiscovery() {
@@ -1736,37 +1689,19 @@ class App {
  // Load saved preference
  const soundEnabled = safeGetItem('space_voyage_sound') !== 'false';
  audioManager.enabled = soundEnabled;
+ soundToggle.checked = soundEnabled;
 
- // Update button appearance
- const updateSoundButton = () => {
- const icon = soundToggle.querySelector('.btn-icon');
- const btnText = soundToggle.querySelector('.btn-text');
- if (audioManager.enabled) {
- soundToggle.classList.remove('muted');
- soundToggle.setAttribute('aria-pressed', 'true');
- if (icon) icon.textContent = '🔊';
- if (btnText) btnText.textContent = t('toggleSoundOn');
- soundToggle.title = t('toggleSoundOn');
- } else {
- soundToggle.classList.add('muted');
- soundToggle.setAttribute('aria-pressed', 'false');
- if (icon) icon.textContent = '🔇';
- if (btnText) btnText.textContent = t('toggleSoundOff');
- soundToggle.title = t('toggleSoundOff');
- }
+ const updateLabel = () => {
+ const label = soundToggle.closest('.settings-toggle')?.querySelector('.settings-toggle-label');
+ if (label) label.textContent = audioManager.enabled ? t('toggleSoundOn') : t('toggleSoundOff');
  };
+ updateLabel();
 
- updateSoundButton();
-
- soundToggle.addEventListener('click', () => {
- audioManager.toggle();
+ soundToggle.addEventListener('change', () => {
+ audioManager.enabled = soundToggle.checked;
  safeSetItem('space_voyage_sound', audioManager.enabled);
- updateSoundButton();
-
- // Play a click to confirm sound is on
- if (audioManager.enabled) {
- audioManager.playClick();
- }
+ updateLabel();
+ if (audioManager.enabled) audioManager.playClick();
  });
  }
 
@@ -1798,21 +1733,8 @@ class App {
 
  const soundToggle = document.getElementById('sound-toggle');
  if (soundToggle) {
- const icon = soundToggle.querySelector('.btn-icon');
- const btnText = soundToggle.querySelector('.btn-text');
- if (audioManager.enabled) {
- soundToggle.classList.remove('muted');
- soundToggle.setAttribute('aria-pressed', 'true');
- if (icon) icon.textContent = '🔊';
- if (btnText) btnText.textContent = t('toggleSoundOn');
- soundToggle.title = t('toggleSoundOn');
- } else {
- soundToggle.classList.add('muted');
- soundToggle.setAttribute('aria-pressed', 'false');
- if (icon) icon.textContent = '🔇';
- if (btnText) btnText.textContent = t('toggleSoundOff');
- soundToggle.title = t('toggleSoundOff');
- }
+ const label = soundToggle.closest('.settings-toggle')?.querySelector('.settings-toggle-label');
+ if (label) label.textContent = audioManager.enabled ? t('toggleSoundOn') : t('toggleSoundOff');
  }
  }
 
@@ -1851,3 +1773,4 @@ if (document.readyState === 'loading') {
 } else {
  new App();
 }
+

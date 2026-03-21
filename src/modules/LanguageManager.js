@@ -3,6 +3,7 @@
  * This module must load before other modules to set document.lang correctly
  */
 import { DEBUG } from './utils.js';
+import { safeGetItem, safeSetItem } from './storage.js';
 
 class LanguageManager {
     constructor() {
@@ -32,8 +33,7 @@ class LanguageManager {
     detectAndSetLanguage() {
         const urlParams = new URLSearchParams(window.location.search);
         const urlLang = urlParams.get('lang');
-        let storedLang;
-        try { storedLang = localStorage.getItem('appLanguage'); } catch { storedLang = null; }
+        const storedLang = safeGetItem('appLanguage');
         const userLang = navigator.language || navigator.userLanguage;
         
         let langCode;
@@ -55,7 +55,7 @@ class LanguageManager {
         
         // Store the language preference for future sessions
         if (!storedLang) {
-            try { localStorage.setItem('appLanguage', langCode); } catch { /* Safari private mode */ }
+            safeSetItem('appLanguage', langCode);
         }
         
         // Set HTML lang attribute
@@ -78,7 +78,7 @@ class LanguageManager {
         const manifestLink = document.getElementById('pwa-manifest');
         if (manifestLink) {
             const manifestFile = this.manifestFiles[langCode] || './manifest.json';
-            manifestLink.href = manifestFile + '?v=2.10.117';
+            manifestLink.href = manifestFile + '?v=2.10.173';
         }
     }
 }

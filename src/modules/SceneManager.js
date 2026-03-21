@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { CONFIG, DEBUG, IS_MOBILE } from './utils.js';
+import { safeSetItem } from './storage.js';
 
 // Properties that MeshBasicMaterial does NOT support as uniforms.
 // If any are truthy on a MeshBasicMaterial, Three.js refreshUniformsCommon crashes.
@@ -1782,7 +1783,7 @@ this.camera.near = 10.0;
  const am = window.audioManager;
  if (am) {
  am.enabled = !am.enabled;
- try { localStorage.setItem('space_voyage_sound', am.enabled ? 'true' : 'false'); } catch(_) {}
+ safeSetItem('space_voyage_sound', am.enabled ? 'true' : 'false');
  this.updateVRStatus(am.enabled ? '🔊 Sound ON' : '🔇 Sound OFF');
  } else {
  this.updateVRStatus('⚠️ Audio not available');

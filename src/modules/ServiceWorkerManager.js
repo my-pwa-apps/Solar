@@ -73,6 +73,10 @@ export class ServiceWorkerManager {
     setupControllerChangeListener() {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (DEBUG && DEBUG.enabled) console.log('New Service Worker activated');
+            if (!this._reloadTriggered) {
+                this._reloadTriggered = true;
+                window.location.reload();
+            }
         });
     }
 
@@ -132,3 +136,4 @@ export class ServiceWorkerManager {
 
 // Create singleton instance
 export const serviceWorkerManager = new ServiceWorkerManager();
+

@@ -1,4 +1,5 @@
 import { DEBUG } from './utils.js';
+import { safeGetItem, safeSetItem, safeRemoveItem } from './storage.js';
 
 /**
  * PanelManager - Handles draggable panel functionality
@@ -61,7 +62,7 @@ export class PanelManager {
 
         // Restore saved position from localStorage
         const panelId = panelElement.id;
-        const savedPosition = localStorage.getItem(`panel-position-${panelId}`);
+        const savedPosition = safeGetItem(`panel-position-${panelId}`);
         
         // Try to restore saved position for ALL panels (including info-panel)
         if (savedPosition) {
@@ -184,7 +185,7 @@ export class PanelManager {
             } else {
                 // Invalid saved position - clear and use CSS default
                 if (DEBUG && DEBUG.enabled) console.warn(`Invalid saved position for ${panelId} (x: ${x}, y: ${y}). Resetting.`);
-                localStorage.removeItem(`panel-position-${panelId}`);
+                safeRemoveItem(`panel-position-${panelId}`);
                 const position = this.applyCSSDefaults(panelElement);
                 callback(position.x, position.y);
             }
@@ -235,7 +236,7 @@ export class PanelManager {
      */
     savePosition(panelId, x, y) {
         try {
-            localStorage.setItem(`panel-position-${panelId}`, JSON.stringify({ x, y }));
+            safeSetItem(`panel-position-${panelId}`, JSON.stringify({ x, y }));
         } catch (e) {
             if (DEBUG && DEBUG.enabled) console.warn(`Failed to save position for ${panelId}:`, e);
         }
