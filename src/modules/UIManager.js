@@ -354,5 +354,51 @@ export class UIManager {
  }
  }
  });
+
+ // Make the panel draggable by its header
+ this._setupPanelDrag(speedControl, speedToggle);
+ }
+
+ _setupPanelDrag(panel, handle) {
+ if (!panel || !handle) return;
+ let dragging = false;
+ let startX, startY, origLeft, origTop;
+
+ const onStart = (e) => {
+ // Don't drag when clicking the toggle chevron/label itself
+ if (e.target.closest('svg') || e.target.closest('.collapse-chevron')) return;
+ dragging = true;
+ const point = e.touches ? e.touches[0] : e;
+ startX = point.clientX;
+ startY = point.clientY;
+ const rect = panel.getBoundingClientRect();
+ origLeft = rect.left;
+ origTop = rect.top;
+ panel.style.transition = 'none';
+ e.preventDefault();
+ };
+
+ const onMove = (e) => {
+ if (!dragging) return;
+ const point = e.touches ? e.touches[0] : e;
+ const dx = point.clientX - startX;
+ const dy = point.clientY - startY;
+ panel.style.left = (origLeft + dx) + 'px';
+ panel.style.top = (origTop + dy) + 'px';
+ panel.style.right = 'auto';
+ };
+
+ const onEnd = () => {
+ if (!dragging) return;
+ dragging = false;
+ panel.style.transition = '';
+ };
+
+ handle.addEventListener('mousedown', onStart);
+ handle.addEventListener('touchstart', onStart, { passive: false });
+ document.addEventListener('mousemove', onMove);
+ document.addEventListener('touchmove', onMove, { passive: false });
+ document.addEventListener('mouseup', onEnd);
+ document.addEventListener('touchend', onEnd);
  }
 }

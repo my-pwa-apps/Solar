@@ -45,7 +45,7 @@
     background: var(--glass-bg);
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
-    padding: 6px 12px;
+    padding: 8px 14px;
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
@@ -359,6 +359,7 @@
     padding: 8px;
     display: flex;
     justify-content: center;
+    cursor: move;
 }
 
 /* Speed toggle button (compact label + chevron) */
