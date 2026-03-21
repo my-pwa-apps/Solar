@@ -1294,7 +1294,9 @@ export class SolarSystemModule {
                         });
                     })
                     .then(dataURL => {
-                        TEXTURE_CACHE.set(cacheKey, dataURL).catch(() => {});
+                        TEXTURE_CACHE.set(cacheKey, dataURL).catch((err) => {
+                            if (DEBUG && DEBUG.TEXTURES) console.warn(`[TEX] Cache write failed for ${cacheKey}:`, err.message);
+                        });
                         if (DEBUG && DEBUG.TEXTURES) {
                             console.log(`💾 Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB (from blob)`);
                         }
@@ -9226,6 +9228,45 @@ createHyperrealisticHubble(satData) {
  // Remove sun light
  const sunLight = scene.getObjectByName('sunLight');
  if (sunLight) scene.remove(sunLight);
+
+ // Clean up heliopause
+ if (this.heliopause) {
+ this.heliopause.traverse(child => {
+ if (child.geometry) child.geometry.dispose();
+ if (child.material) child.material.dispose();
+ });
+ scene.remove(this.heliopause);
+ this.heliopause = null;
+ }
+
+ // Clean up Milky Way galaxy disc
+ if (this.milkyWayDisc) {
+ if (this.milkyWayDisc.geometry) this.milkyWayDisc.geometry.dispose();
+ if (this.milkyWayDisc.material) {
+ if (this.milkyWayDisc.material.map) this.milkyWayDisc.material.map.dispose();
+ this.milkyWayDisc.material.dispose();
+ }
+ scene.remove(this.milkyWayDisc);
+ this.milkyWayDisc = null;
+ }
+
+ // Clean up galaxies (including procedural background galaxies)
+ if (this.galaxies) {
+ this.galaxies.forEach(galaxy => {
+ galaxy.traverse(child => {
+ if (child.geometry) child.geometry.dispose();
+ if (child.material) {
+ if (child.material.map) child.material.map.dispose();
+ if (Array.isArray(child.material)) {
+ child.material.forEach(mat => mat.dispose());
+ } else {
+ child.material.dispose();
+ }
+ }
+ });
+ scene.remove(galaxy);
+ });
+ }
 
  // Dispose cached geometries when fully cleaning up
  this.geometryCache.forEach(geo => geo.dispose());

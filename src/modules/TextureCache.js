@@ -10,7 +10,7 @@ export class TextureCache {
  this.dbName = 'SolarSystemTextureCache';
  this.dbVersion = 1;
  this.storeName = 'textures';
- this.textureVersion = '2.10.121'; // Bump to invalidate all cached textures
+ this.textureVersion = '2.10.141'; // Bump to invalidate all cached textures
  this.db = null;
  this.initPromise = this.initDB();
  }
@@ -48,7 +48,7 @@ export class TextureCache {
  req.onerror = () => resolve(null);
  });
  if (stored !== this.textureVersion) {
- console.log(`[Cache] Texture version changed (${stored} → ${this.textureVersion}), clearing stale textures`);
+ if (DEBUG && DEBUG.enabled) console.log(`[Cache] Texture version changed (${stored} → ${this.textureVersion}), clearing stale textures`);
  const clearTx = this.db.transaction([this.storeName], 'readwrite');
  const clearStore = clearTx.objectStore(this.storeName);
  await new Promise((resolve) => {
