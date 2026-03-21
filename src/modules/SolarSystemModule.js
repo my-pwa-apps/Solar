@@ -4695,6 +4695,7 @@ export class SolarSystemModule {
  };
 
  scene.add(this.milkyWayDisc);
+ this.objects.push(this.milkyWayDisc);
 
  if (DEBUG.enabled) console.log('[MilkyWay] Galaxy disc created (fades in at distance)');
  }
