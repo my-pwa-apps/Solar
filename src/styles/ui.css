@@ -1,37 +1,67 @@
-/* Fluent Design Variables */
+/* Modern Glassmorphism Design System */
 :root {
-    --fluent-bg-primary: rgba(32, 32, 32, 0.8);
-    --fluent-bg-secondary: rgba(44, 44, 44, 0.7);
-    --fluent-bg-acrylic: rgba(60, 60, 60, 0.4);
-    --fluent-accent: #0078D4;
-    --fluent-accent-hover: #106EBE;
-    --fluent-accent-pressed: #005A9E;
-    --fluent-text-primary: #FFFFFF;
-    --fluent-text-secondary: #E0E0E0;
-    --fluent-border: rgba(255, 255, 255, 0.08);
-    --fluent-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --glass-bg: rgba(15, 15, 25, 0.55);
+    --glass-bg-hover: rgba(25, 25, 40, 0.65);
+    --glass-bg-solid: rgba(20, 20, 35, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-hover: rgba(255, 255, 255, 0.15);
+    --glass-blur: blur(20px) saturate(180%);
+    --accent: #4da6ff;
+    --accent-hover: #6db8ff;
+    --accent-glow: rgba(77, 166, 255, 0.3);
+    --accent-subtle: rgba(77, 166, 255, 0.08);
+    --text-primary: #f0f0f5;
+    --text-secondary: rgba(240, 240, 245, 0.65);
+    --text-dim: rgba(240, 240, 245, 0.4);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 20px rgba(77, 166, 255, 0.15);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+    --transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Legacy aliases for components that still reference old names */
+    --fluent-bg-primary: var(--glass-bg-solid);
+    --fluent-bg-secondary: var(--glass-bg);
+    --fluent-bg-acrylic: var(--glass-bg);
+    --fluent-accent: var(--accent);
+    --fluent-accent-hover: var(--accent-hover);
+    --fluent-accent-pressed: #3a8de0;
+    --fluent-text-primary: var(--text-primary);
+    --fluent-text-secondary: var(--text-secondary);
+    --fluent-border: var(--glass-border);
+    --fluent-shadow: var(--shadow-lg);
 }
 
-/* Fluent Header */
+/* Glass Header */
 #main-header {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 12px;
+    left: 12px;
+    right: 12px;
     z-index: 100;
-    background: var(--fluent-bg-acrylic);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
-    backdrop-filter: blur(30px) saturate(150%);
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--fluent-border);
-    box-shadow: var(--fluent-shadow);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    padding: 8px 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    flex-wrap: nowrap; /* single row — children must shrink */
+    gap: 10px;
+    flex-wrap: nowrap;
     min-width: 0;
     overflow: hidden;
+    transition: all var(--transition);
+}
+
+#main-header:hover {
+    border-color: var(--glass-border-hover);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
 }
 
 .header-controls {
@@ -67,18 +97,18 @@
 
 .nav-dropdown,
 .language-selector {
-    background: var(--fluent-bg-secondary);
-    color: var(--fluent-text-primary);
-    border: 1px solid var(--fluent-border);
-    border-radius: 4px;
-    padding: 10px 32px 10px 16px;
-    font-size: 14px;
-    font-weight: 400;
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-pill);
+    padding: 8px 32px 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
     font-family: 'Segoe UI', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', system-ui, sans-serif;
     line-height: 1.4;
-    height: 44px;
-    min-height: 44px;
-    max-height: 44px;
+    height: 38px;
+    min-height: 38px;
+    max-height: 38px;
     box-sizing: border-box;
     cursor: pointer;
     -webkit-appearance: none;
@@ -232,36 +262,43 @@
     min-width: auto;
 }
 
-/* Fluent Info Panel - Floating Card */
+/* Glass Info Panel - Floating Card */
 #info-panel {
-    bottom: 70px; /* Just above bottom bar (~48px footer + 22px margin) */
-    left: clamp(20px, 4vw, 30px); /* Responsive left padding: 20px mobile to 30px desktop */
-    top: auto; /* Override top positioning */
-    max-width: min(320px, calc(100vw - 60px)); /* Responsive width */
-    max-height: 40vh; /* Limit height to 40% of viewport */
-    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    bottom: 80px;
+    left: clamp(16px, 3vw, 24px);
+    top: auto;
+    max-width: min(340px, calc(100vw - 48px));
+    max-height: 45vh;
+    transition: all var(--transition);
     z-index: 50;
     font-size: 14px;
-    overflow: hidden; /* Prevent content overflow */
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg-solid);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: var(--shadow-lg);
 }
 
 #info-panel:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    border-color: var(--glass-border-hover);
 }
 
 #info-panel h2 {
-    margin-bottom: 8px; /* Reduced from 12px */
-    color: var(--fluent-text-primary);
-    font-size: 16px; /* Reduced from 20px - matches panel header size */
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-size: 17px;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
 .info-content p {
-    margin: 6px 0;
+    margin: 5px 0;
     font-size: 13px;
     line-height: 1.5;
     word-wrap: break-word;
@@ -269,22 +306,25 @@
 }
 
 .info-content strong {
-    color: var(--fluent-accent);
+    color: var(--accent);
     font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .info-content span {
-    color: var(--fluent-text-secondary);
+    color: var(--text-secondary);
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
 .description-box {
-    margin-top: 12px;
+    margin-top: 10px;
     padding: 12px;
-    background: var(--fluent-bg-secondary);
-    border-radius: 4px;
-    border-left: 3px solid var(--fluent-accent);
+    background: var(--accent-subtle);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent);
     font-style: normal;
     font-size: 13px;
     line-height: 1.6;
@@ -294,10 +334,10 @@
 }
 
 .info-content {
-    padding: 16px;
+    padding: 14px;
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(40vh - 40px); /* Account for close button */
+    max-height: calc(45vh - 40px);
 }
 
 /* Floating Speed Control Panel (Collapsible) */
@@ -487,59 +527,65 @@
 
 .close-btn {
     position: relative;
-    background: var(--fluent-bg-secondary);
-    border: 1px solid var(--fluent-border);
-    color: var(--fluent-text-primary);
-    width: 36px;
-    height: 36px;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    transition: all var(--transition);
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     -webkit-user-select: none;
     user-select: none;
     flex-shrink: 0;
-    /* Better touch target size for mobile */
     min-width: 44px;
     min-height: 44px;
-    z-index: 10; /* Higher z-index within parent */
-    pointer-events: auto; /* Ensure it's always clickable */
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .close-btn:hover {
-    background: rgba(255, 0, 0, 0.8);
-    border-color: rgba(255, 0, 0, 0.8);
-    transform: scale(1.05);
+    background: rgba(255, 60, 60, 0.7);
+    border-color: rgba(255, 60, 60, 0.5);
+    color: white;
+    transform: scale(1.1);
 }
 
 .close-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.9);
 }
 
-/* Fluent Bottom Bar / Footer */
+/* Glass Bottom Bar / Footer */
 #main-footer {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
     z-index: 100;
-    background: var(--fluent-bg-acrylic);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
-    backdrop-filter: blur(30px) saturate(150%);
-    padding: 12px 24px;
-    border-top: 1px solid var(--fluent-border);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.3);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    padding: 8px 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+    gap: 8px;
     flex-wrap: wrap;
-    animation: slideUp 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all var(--transition);
+}
+
+#main-footer:hover {
+    border-color: var(--glass-border-hover);
 }
 
 @keyframes slideUp {
@@ -616,21 +662,21 @@
 
 /* time-speed-label styles consolidated in #speed-control section */
 
-/* Fluent Buttons */
+/* Glass Pill Buttons */
 .footer-controls button,
 .footer-controls select {
-    background: var(--fluent-bg-secondary);
-    color: var(--fluent-text-primary);
-    border: 1px solid var(--fluent-border);
-    padding: 10px 20px;
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    padding: 8px 16px;
     margin: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 400;
+    font-size: 13px;
+    font-weight: 500;
     font-family: 'Segoe UI', system-ui, sans-serif;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    transition: all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition);
     white-space: nowrap;
     position: relative;
     overflow: visible;
@@ -640,20 +686,19 @@
     user-select: none;
 }
 
-/* Fluent Reveal Effect */
+/* Subtle glow on hover */
 .footer-controls button::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, rgba(77, 166, 255, 0.15), transparent 50%);
     opacity: 0;
     transition: opacity 0.3s;
     pointer-events: none;
-    border-radius: 4px;
-    overflow: hidden;
+    border-radius: var(--radius-pill);
 }
 
 .footer-controls button:hover::before {
@@ -662,28 +707,29 @@
 
 .footer-controls button:hover,
 .footer-controls select:hover {
-    background: var(--fluent-bg-primary);
-    border-color: var(--fluent-accent);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md), var(--shadow-glow);
 }
 
 .footer-controls button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(0) scale(0.97);
+    box-shadow: var(--shadow-sm);
 }
 
 .footer-controls button.toggle-on,
 .footer-controls button.active {
-    background: var(--fluent-accent);
-    border-color: var(--fluent-accent);
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    border-color: var(--accent);
     color: white;
+    box-shadow: var(--shadow-sm), 0 0 12px var(--accent-glow);
 }
 
 .footer-controls button.toggle-on:hover,
 .footer-controls button.active:hover {
-    background: var(--fluent-accent-hover);
-    border-color: var(--fluent-accent-hover);
+    background: linear-gradient(135deg, var(--accent-hover), #80c8ff);
+    box-shadow: var(--shadow-md), 0 0 20px var(--accent-glow);
 }
 
 .footer-controls button.toggle-on:active,
@@ -1806,30 +1852,33 @@ select {
 }
 
 .nav-search {
-    background: var(--fluent-bg-secondary);
-    color: var(--fluent-text-primary);
-    border: 1px solid var(--fluent-border);
-    border-radius: 4px;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 400;
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-pill);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
     font-family: 'Segoe UI', system-ui, sans-serif;
     line-height: 1.4;
-    height: 44px;
-    min-height: 44px;
-    max-height: 44px;
+    height: 38px;
+    min-height: 38px;
+    max-height: 38px;
     box-sizing: border-box;
-    /* grows to fill available space, bounded by min/max */
     flex: 1 1 auto;
     min-width: 100px;
     max-width: 260px;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: all var(--transition);
 }
 
 .nav-search:focus {
     outline: none;
-    border-color: var(--fluent-accent);
-    box-shadow: 0 0 0 2px rgba(0,120,212,0.25);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.nav-search::placeholder {
+    color: var(--text-dim);
 }
 
 /* Enhanced Loading Screen */
