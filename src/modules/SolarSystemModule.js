@@ -1019,9 +1019,9 @@ export class SolarSystemModule {
  // ===== HYPERREALISTIC TEXTURE GENERATORS =====
  
  createSunTextureReal(size) {
- // Request sun.jpg - use a transparent tiny texture if it fails
+ // Request sun.webp - use a transparent tiny texture if it fails
  const primary = [
- './textures/planets/sun.jpg'
+ './textures/planets/sun.webp'
  ];
  return this.loadPlanetTextureReal('Sun', primary, () => {
  const canvas = document.createElement('canvas');
@@ -1390,7 +1390,7 @@ export class SolarSystemModule {
  // Mercury real texture loader
  createMercuryTextureReal(size) {
  const primary = [
- './textures/planets/mercury.jpg'
+ './textures/planets/mercury.webp'
  ];
  const pluginFallbacks = [];
  return this.loadPlanetTextureReal('Mercury', primary, this.createMercuryTexture, size, pluginFallbacks);
@@ -1399,7 +1399,7 @@ export class SolarSystemModule {
  // Venus real texture loader
  createVenusTextureReal(size) {
  const primary = [
- './textures/planets/venus.jpg'
+ './textures/planets/venus.webp'
  ];
  return this.loadPlanetTextureReal('Venus', primary, this.createVenusTexture, size, []);
  }
@@ -1407,11 +1407,11 @@ export class SolarSystemModule {
  // Earth real texture loader - Optimized with reliable fallback chain
  createEarthTextureRealFixed(size) {
  // Use local self-hosted textures.
- // NOTE: earth_atmos_2k.jpg is the atmosphere/cloud overlay — do NOT use it
+ // NOTE: earth_atmos_2k is the atmosphere/cloud overlay — do NOT use it
  // as a color-map fallback; it would make Earth appear as an all-white cloud
  // ball. If the surface texture fails, fall through to the procedural generator.
  const primary = [
- './textures/planets/earth_1k.jpg'
+ './textures/planets/earth_1k.webp'
  ];
  // No external fallbacks - use procedural if local fails
  const pluginFallbacks = [];
@@ -1421,7 +1421,7 @@ export class SolarSystemModule {
  // Mars real texture loader
  createMarsTextureReal(size) {
  const primary = [
- './textures/planets/mars_1k.jpg'
+ './textures/planets/mars_1k.webp'
  ];
  return this.loadPlanetTextureReal('Mars', primary, this.createMarsTexture, size, []);
  }
@@ -1429,7 +1429,7 @@ export class SolarSystemModule {
  // Jupiter real texture loader
  createJupiterTextureReal(size) {
  const primary = [
- './textures/planets/jupiter.jpg'
+ './textures/planets/jupiter.webp'
  ];
  return this.loadPlanetTextureReal('Jupiter', primary, this.createJupiterTexture, size, []);
  }
@@ -1437,7 +1437,7 @@ export class SolarSystemModule {
  // Saturn real texture loader
  createSaturnTextureReal(size) {
  const primary = [
- './textures/planets/saturn.jpg'
+ './textures/planets/saturn.webp'
  ];
  return this.loadPlanetTextureReal('Saturn', primary, this.createSaturnTexture, size, []);
  }
@@ -1445,7 +1445,7 @@ export class SolarSystemModule {
  // Uranus real texture loader
  createUranusTextureReal(size) {
  const primary = [
- './textures/planets/uranus.jpg'
+ './textures/planets/uranus.webp'
  ];
  return this.loadPlanetTextureReal('Uranus', primary, this.createUranusTexture, size, []);
  }
@@ -1453,7 +1453,7 @@ export class SolarSystemModule {
  // Neptune real texture loader
  createNeptuneTextureReal(size) {
  const primary = [
- './textures/planets/neptune.jpg'
+ './textures/planets/neptune.webp'
  ];
  return this.loadPlanetTextureReal('Neptune', primary, this.createNeptuneTexture, size, []);
  }
@@ -1462,8 +1462,8 @@ export class SolarSystemModule {
  createMoonTextureReal(size) {
  const primary = [
  // Local self-hosted textures
- './textures/moons/moon_1k.jpg',
- './textures/moons/moon_threejs_1k.jpg'
+ './textures/moons/moon_1k.webp',
+ './textures/moons/moon_threejs_1k.webp'
  ];
  const pluginFallbacks = [];
  return this.loadPlanetTextureReal('Moon', primary, this.createMoonTexture, size, pluginFallbacks);
@@ -1472,7 +1472,7 @@ export class SolarSystemModule {
  // Pluto texture loader - self-hosted texture
  createPlutoTextureReal(size) {
     const primary = [
-        './textures/dwarf-planets/pluto_2k.jpg'
+        './textures/dwarf-planets/pluto_2k.webp'
     ];
     return this.loadPlanetTextureReal('Pluto', primary, this.createPlutoTexture, size, []);
  }
@@ -1480,7 +1480,7 @@ export class SolarSystemModule {
  // Ceres texture loader - self-hosted texture (Dawn mission style cratered surface)
  createCeresTextureReal(size) {
     const primary = [
-        './textures/dwarf-planets/ceres_2k.jpg'
+        './textures/dwarf-planets/ceres_2k.webp'
     ];
     // Use Mercury-style cratered texture as fallback since Ceres is rocky and heavily cratered
     return this.loadPlanetTextureReal('Ceres', primary, this.createMercuryTexture, size, []);
@@ -1489,7 +1489,7 @@ export class SolarSystemModule {
  // Io texture loader - Volcanic surface with sulfur deposits (NASA Voyager/Galileo)
  createIoTextureReal(size) {
     const primary = [
-        './textures/moons/io_2k.jpg'
+        './textures/moons/io_2k.webp'
     ];
     return this.loadPlanetTextureReal('Io', primary, this.createIoTexture, size, []);
  }
@@ -1497,7 +1497,7 @@ export class SolarSystemModule {
  // Europa texture loader - NASA Galileo/Juno icy surface with reddish cracks
  createEuropaTextureReal(size) {
     const primary = [
-        './textures/moons/europa_2k.jpg'
+        './textures/moons/europa_2k.webp'
     ];
     return this.loadPlanetTextureReal('Europa', primary, this.createEuropaTexture, size, []);
  }
@@ -1505,7 +1505,7 @@ export class SolarSystemModule {
  // Ganymede texture loader - Largest moon in solar system (NASA Voyager/Galileo)
  createGanymedeTextureReal(size) {
     const primary = [
-        './textures/moons/ganymede_2k.jpg'
+        './textures/moons/ganymede_2k.webp'
     ];
     return this.loadPlanetTextureReal('Ganymede', primary, this.createMoonTexture, size, []);
  }
@@ -1513,7 +1513,7 @@ export class SolarSystemModule {
  // Callisto texture loader - Ancient cratered surface (NASA Voyager/Galileo)
  createCallistoTextureReal(size) {
     const primary = [
-        './textures/moons/callisto_2k.jpg'
+        './textures/moons/callisto_2k.webp'
     ];
     return this.loadPlanetTextureReal('Callisto', primary, this.createMoonTexture, size, []);
  }
@@ -1521,7 +1521,7 @@ export class SolarSystemModule {
  // Titan texture loader - Saturn's largest moon with thick orange atmosphere (NASA Cassini)
  createTitanTextureReal(size) {
     const primary = [
-        './textures/moons/titan_2k.jpg'
+        './textures/moons/titan_2k.webp'
     ];
     return this.loadPlanetTextureReal('Titan', primary, this.createTitanTexture, size, []);
  }
@@ -1529,7 +1529,7 @@ export class SolarSystemModule {
  // Enceladus texture loader - Saturn's icy geologically active moon (NASA Cassini)
  createEnceladusTextureReal(size) {
     const primary = [
-        './textures/moons/enceladus_2k.jpg'
+        './textures/moons/enceladus_2k.webp'
     ];
     return this.loadPlanetTextureReal('Enceladus', primary, this.createMoonTexture, size, []);
  }
@@ -1537,7 +1537,7 @@ export class SolarSystemModule {
  // Rhea texture loader - Saturn's second-largest moon (NASA Cassini)
  createRheaTextureReal(size) {
     const primary = [
-        './textures/moons/rhea_2k.jpg'
+        './textures/moons/rhea_2k.webp'
     ];
     return this.loadPlanetTextureReal('Rhea', primary, this.createMoonTexture, size, []);
  }
@@ -1545,7 +1545,7 @@ export class SolarSystemModule {
 // Phobos texture loader - Mars moon (NASA JPL PIA10368)
  createPhobosTextureReal(size) {
  const primary = [
- './textures/moons/phobos_2k.jpg'
+ './textures/moons/phobos_2k.webp'
  ];
  return this.loadPlanetTextureReal('Phobos', primary, this.createPhobosTexture, size, []);
  }
@@ -1553,7 +1553,7 @@ export class SolarSystemModule {
  // Deimos texture loader - Mars moon (Wikimedia/NASA)
  createDeimosTextureReal(size) {
     const primary = [
-        './textures/moons/deimos_2k.jpg'
+        './textures/moons/deimos_2k.webp'
     ];
     return this.loadPlanetTextureReal('Deimos', primary, this.createDeimosTexture, size, []);
  }
@@ -1561,7 +1561,7 @@ export class SolarSystemModule {
  // Triton texture loader - Neptune's largest moon, retrograde orbit (NASA Voyager)
  createTritonTextureReal(size) {
     const primary = [
-        './textures/moons/triton_2k.jpg'
+        './textures/moons/triton_2k.webp'
     ];
     return this.loadPlanetTextureReal('Triton', primary, this.createMoonTexture, size, []);
  }
@@ -1569,7 +1569,7 @@ export class SolarSystemModule {
  // Titania texture loader - Uranus's largest moon (NASA Voyager)
  createTitaniaTextureReal(size) {
     const primary = [
-        './textures/moons/titania_2k.jpg'
+        './textures/moons/titania_2k.webp'
     ];
     return this.loadPlanetTextureReal('Titania', primary, this.createMoonTexture, size, []);
  }
@@ -1577,7 +1577,7 @@ export class SolarSystemModule {
  // Miranda texture loader - Uranus's smallest major moon with dramatic terrain (NASA Voyager)
  createMirandaTextureReal(size) {
     const primary = [
-        './textures/moons/miranda_2k.jpg'
+        './textures/moons/miranda_2k.webp'
     ];
     return this.loadPlanetTextureReal('Miranda', primary, this.createMoonTexture, size, []);
  }
@@ -1585,7 +1585,7 @@ export class SolarSystemModule {
  // Charon texture loader - Pluto's largest moon (NASA New Horizons)
  createCharonTextureReal(size) {
     const primary = [
-        './textures/moons/charon_2k.jpg'
+        './textures/moons/charon_2k.webp'
     ];
     return this.loadPlanetTextureReal('Charon', primary, this.createMoonTexture, size, []);
  }
@@ -1593,7 +1593,7 @@ export class SolarSystemModule {
  // Haumea texture loader - Fast-spinning elongated dwarf planet (CC BY 4.0 Solar System Scope)
  createHaumeaTextureReal(size) {
     const primary = [
-        './textures/dwarf-planets/haumea_2k.jpg'
+        './textures/dwarf-planets/haumea_2k.webp'
     ];
     return this.loadPlanetTextureReal('Haumea', primary, this.createMoonTexture, size, []);
  }
@@ -1601,7 +1601,7 @@ export class SolarSystemModule {
  // Makemake texture loader - Bright Kuiper Belt dwarf planet (CC BY 4.0 Solar System Scope)
  createMakemakeTextureReal(size) {
     const primary = [
-        './textures/dwarf-planets/makemake_2k.jpg'
+        './textures/dwarf-planets/makemake_2k.webp'
     ];
     return this.loadPlanetTextureReal('Makemake', primary, this.createMoonTexture, size, []);
  }
@@ -1609,7 +1609,7 @@ export class SolarSystemModule {
  // Eris texture loader - Massive scattered disk dwarf planet (CC BY 4.0 Solar System Scope)
  createErisTextureReal(size) {
     const primary = [
-        './textures/dwarf-planets/eris_2k.jpg'
+        './textures/dwarf-planets/eris_2k.webp'
     ];
     return this.loadPlanetTextureReal('Eris', primary, this.createMoonTexture, size, []);
  }
@@ -4576,7 +4576,7 @@ export class SolarSystemModule {
  // Try to load NASA Milky Way image, fall back to procedural generation
  const loader = new THREE.TextureLoader();
  loader.load(
- './textures/galaxies/milky_way_nasa.jpg',
+ './textures/galaxies/milky_way_nasa.webp',
  (nasaTexture) => {
  if (DEBUG.TEXTURES) console.log(' Loaded NASA Milky Way texture');
  // The NASA illustration shows a face-on spiral centered in the image.
@@ -5017,9 +5017,9 @@ export class SolarSystemModule {
 
  // Real image texture paths for nebulae (fall back to procedural if missing)
  const nebulaeTextures = {
- 'Orion Nebula': './textures/nebulae/orion_nebula.jpg',
- 'Crab Nebula':  './textures/nebulae/crab_nebula.jpg',
- 'Ring Nebula':  './textures/nebulae/ring_nebula.jpg'
+ 'Orion Nebula': './textures/nebulae/orion_nebula.webp',
+ 'Crab Nebula':  './textures/nebulae/crab_nebula.webp',
+ 'Ring Nebula':  './textures/nebulae/ring_nebula.webp'
  };
 
  for (const nebData of nebulaeData) {
@@ -6074,9 +6074,9 @@ export class SolarSystemModule {
  // Real image texture paths for galaxies
  // Real image texture paths for galaxies
  const galaxyTextures = {
- 'Andromeda Galaxy': './textures/galaxies/andromeda_galaxy.jpg',
- 'Whirlpool Galaxy': './textures/galaxies/whirlpool_galaxy.jpg',
- 'Sombrero Galaxy':  './textures/galaxies/sombrero_galaxy.jpg'
+ 'Andromeda Galaxy': './textures/galaxies/andromeda_galaxy.webp',
+ 'Whirlpool Galaxy': './textures/galaxies/whirlpool_galaxy.webp',
+ 'Sombrero Galaxy':  './textures/galaxies/sombrero_galaxy.webp'
  };
 
  for (const galData of galaxiesData) {

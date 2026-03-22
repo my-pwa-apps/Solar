@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
 // Version 2.10.173
 
-const CACHE_VERSION = '2.10.194';
+const CACHE_VERSION = '2.10.195';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -57,49 +57,49 @@ const STATIC_CACHE_FILES = [
   './icons/manifest-icon-192.maskable.png',
   './icons/manifest-icon-512.maskable.png',
   // Planet textures (self-hosted)
-  './textures/planets/sun.jpg',
-  './textures/planets/mercury.jpg',
-  './textures/planets/venus.jpg',
-  './textures/planets/earth_1k.jpg',
-  './textures/planets/mars_1k.jpg',
-  './textures/planets/jupiter.jpg',
-  './textures/planets/saturn.jpg',
-  './textures/planets/uranus.jpg',
-  './textures/planets/neptune.jpg',
+  './textures/planets/sun.webp',
+  './textures/planets/mercury.webp',
+  './textures/planets/venus.webp',
+  './textures/planets/earth_1k.webp',
+  './textures/planets/mars_1k.webp',
+  './textures/planets/jupiter.webp',
+  './textures/planets/saturn.webp',
+  './textures/planets/uranus.webp',
+  './textures/planets/neptune.webp',
   // Moon textures
-  './textures/moons/moon_1k.jpg',
-  './textures/moons/moon_threejs_1k.jpg',
-  './textures/moons/io_2k.jpg',
-  './textures/moons/europa_2k.jpg',
-  './textures/moons/ganymede_2k.jpg',
-  './textures/moons/callisto_2k.jpg',
-  './textures/moons/titan_2k.jpg',
-  './textures/moons/enceladus_2k.jpg',
-  './textures/moons/rhea_2k.jpg',
-  './textures/moons/triton_2k.jpg',
-  './textures/moons/titania_2k.jpg',
-  './textures/moons/miranda_2k.jpg',
-  './textures/moons/charon_2k.jpg',
+  './textures/moons/moon_1k.webp',
+  './textures/moons/moon_threejs_1k.webp',
+  './textures/moons/io_2k.webp',
+  './textures/moons/europa_2k.webp',
+  './textures/moons/ganymede_2k.webp',
+  './textures/moons/callisto_2k.webp',
+  './textures/moons/titan_2k.webp',
+  './textures/moons/enceladus_2k.webp',
+  './textures/moons/rhea_2k.webp',
+  './textures/moons/triton_2k.webp',
+  './textures/moons/titania_2k.webp',
+  './textures/moons/miranda_2k.webp',
+  './textures/moons/charon_2k.webp',
   // Mars moons - real textures
-  './textures/moons/phobos_2k.jpg',
-  './textures/moons/deimos_2k.jpg',
+  './textures/moons/phobos_2k.webp',
+  './textures/moons/deimos_2k.webp',
   // Saturn ring texture
   './textures/rings/saturn_ring_alpha.png',
   // Nebulae - real Hubble imagery
-  './textures/nebulae/orion_nebula.jpg',
-  './textures/nebulae/crab_nebula.jpg',
-  './textures/nebulae/ring_nebula.jpg',
+  './textures/nebulae/orion_nebula.webp',
+  './textures/nebulae/crab_nebula.webp',
+  './textures/nebulae/ring_nebula.webp',
   // Galaxies - real imagery
-  './textures/galaxies/andromeda_galaxy.jpg',
-  './textures/galaxies/whirlpool_galaxy.jpg',
-  './textures/galaxies/sombrero_galaxy.jpg',
-  './textures/galaxies/milky_way_nasa.jpg',
+  './textures/galaxies/andromeda_galaxy.webp',
+  './textures/galaxies/whirlpool_galaxy.webp',
+  './textures/galaxies/sombrero_galaxy.webp',
+  './textures/galaxies/milky_way_nasa.webp',
   // Dwarf planet textures
-  './textures/dwarf-planets/pluto_2k.jpg',
-  './textures/dwarf-planets/ceres_2k.jpg',
-  './textures/dwarf-planets/haumea_2k.jpg',
-  './textures/dwarf-planets/makemake_2k.jpg',
-  './textures/dwarf-planets/eris_2k.jpg'
+  './textures/dwarf-planets/pluto_2k.webp',
+  './textures/dwarf-planets/ceres_2k.webp',
+  './textures/dwarf-planets/haumea_2k.webp',
+  './textures/dwarf-planets/makemake_2k.webp',
+  './textures/dwarf-planets/eris_2k.webp'
 ];
 
 // CDN files to cache (Three.js and dependencies)
