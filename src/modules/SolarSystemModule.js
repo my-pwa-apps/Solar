@@ -6950,8 +6950,8 @@ export class SolarSystemModule {
  cometGroup.add(jet);
  }
  
- // Visual radius: large enough to see in the solar-system overview (real coma ~100,000 km)
- const visualRadius = Math.max(cometData.size * 800, 2.0);
+ // Visual radius: visible in solar-system overview but not planet-sized (real coma ~100,000 km)
+ const visualRadius = Math.max(cometData.size * 400, 1.0);
 
  // ===== REALISTIC COMA: layered smooth sprite halos =====
  // Sprites always face the camera (no polygon edges) and use pre-built
@@ -6973,7 +6973,7 @@ export class SolarSystemModule {
  depthWrite: false,
  opacity: 0.70
  }));
- outerComa.scale.set(visualRadius * 5, visualRadius * 5, 1);
+ outerComa.scale.set(visualRadius * 3.5, visualRadius * 3.5, 1);
  cometGroup.add(outerComa);
  
  // ===== SPECTACULAR DUST TAIL =====
@@ -6995,7 +6995,7 @@ export class SolarSystemModule {
  dustTailPositions[i * 3 + 2] = (Math.random() - 0.5) * spread * 0.8;
  
  // Size decreases with distance, with variation
- dustTailSizes[i] = (0.1 + Math.random() * 0.05) * (1 - t * 0.8);
+ dustTailSizes[i] = (0.05 + Math.random() * 0.025) * (1 - t * 0.8);
  
  // Gradient: bright white-yellow → orange-red → dark
  const brightness = 0.45 - t * 0.3;
@@ -7048,7 +7048,7 @@ export class SolarSystemModule {
  
  // Size variation with brilliant streaks
  const ionBrightness = Math.pow(1 - t, 0.4) * (0.6 + Math.random() * 0.3);
- ionTailSizes[i] = (0.08 + Math.random() * 0.1) * ionBrightness;
+ ionTailSizes[i] = (0.04 + Math.random() * 0.05) * ionBrightness;
  
  // Electric blue plasma gradient - brilliant cyan-blue
  const intensity = (1 - t * 0.5) * ionBrightness * 0.35; // Further dimmed ion emission
@@ -9257,15 +9257,14 @@ createHyperrealisticHubble(satData) {
  // fade in the galaxy disc. Only other galaxies remain visible.
  if (this.milkyWayDisc && camera) {
  const camDist = camera.position.length();
- // Phase 1: Fade out all solar system/galactic objects (12k-20k)
- // Phase 2: Fade in the Milky Way disc (20k-35k)
- // This ensures the Kuiper Belt, Oort Cloud, orbits, and stars are
- // completely gone BEFORE the galaxy spiral appears — avoiding the
- // visual impossibility of seeing both a belt AND a galaxy arm.
- const solarFadeStart = 12000;
- const solarFadeEnd = 20000;
- const galaxyFadeStart = 20000; // Disc appears only after everything is dark
- const galaxyFadeFull = 35000;
+ // Phase 1: Fade out all solar system/galactic objects (14k-22k)
+ // Phase 2: Fade in the Milky Way disc (22k-42k)
+ // Kuiper Belt extends to ~8250, Oort Cloud to ~9000 (educational scale),
+ // so fading must not begin until the camera is well past both.
+ const solarFadeStart = 14000;
+ const solarFadeEnd = 22000;
+ const galaxyFadeStart = 22000; // Disc appears only after everything is dark
+ const galaxyFadeFull = 42000;
 
  // Calculate fade factors
  const solarFadeT = camDist < solarFadeStart ? 0 :
@@ -10297,7 +10296,7 @@ let actualRadius;
  distance = 3200;
  } else if (userData.type === 'milkyWay') {
  // Milky Way: zoom out to see the entire galaxy disc
- distance = 40000;
+ distance = 55000;
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
@@ -10742,8 +10741,8 @@ let actualRadius;
  anchorDirection.set(0, 1, 0);
  }
  anchorDirection.normalize();
- // Position anchor far enough out to encompass outer planets (~2400 units)
- solarAnchorCameraPos.copy(anchorDirection).multiplyScalar(2400);
+ // Position anchor close to solar system so zoom starts near the sun
+ solarAnchorCameraPos.copy(anchorDirection).multiplyScalar(1200);
  }
 
  const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters

@@ -56,6 +56,7 @@ export class SceneManager {
  this._vrTargetPos = new THREE.Vector3(); // For zoomToObject / teleportVRToObject
  this._vrDirScratch = new THREE.Vector3(); // For zoomToObject / teleportVRToObject
  this._vrPosScratch = new THREE.Vector3(); // For zoomToObject / teleportVRToObject
+ this._vrNearCheckPos = new THREE.Vector3(); // For dynamic VR near-plane adjustment
  this._vrLaserFrame = 0; // For throttling expensive laser raycasts
  this._vrIntersections = []; // Reused raycast results buffer (avoids per-frame array alloc)
 
@@ -2018,11 +2019,15 @@ this.camera.near = 10.0;
  if (!gamepad) continue;
  
  // ============================================
- // X BUTTON (Button 4 on LEFT controller) - TOGGLE VR MENU
+ // MENU TOGGLE (X on LEFT btn4, or A on RIGHT btn4)
+ // Both buttons open/close the VR menu for reliability
  // ============================================
- if (handedness === 'left' && gamepad.buttons[4]) {
- const xButton = gamepad.buttons[4];
- if (xButton.pressed) {
+ const isMenuButton = (handedness === 'left' && gamepad.buttons[4]) ||
+ (handedness === 'right' && gamepad.buttons[4]) ||
+ (handedness === 'none' && gamepad.buttons[4]);
+ if (isMenuButton) {
+ const menuBtn = gamepad.buttons[4];
+ if (menuBtn.pressed) {
  // Check if this is a new press (not held from previous frame)
  const prevState = this.previousButtonStates[i][4] || false;
  if (!prevState) {
@@ -2149,11 +2154,7 @@ this.camera.near = 10.0;
  this.dolly.position.y += -stickY * vertSpeed;
  }
  
- // UP/DOWN with A/B buttons
- if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
- // A button: Move DOWN
- this.dolly.position.y -= 0.2 * sprintMultiplier;
- }
+ // UP/DOWN with B button (A button is now menu toggle)
  if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
  // B button: Move UP
  this.dolly.position.y += 0.2 * sprintMultiplier;
@@ -2187,6 +2188,45 @@ this.camera.near = 10.0;
  
  // Update last position for next frame
  this.grabRotateState.lastPosition.copy(currentPosition);
+ }
+ }
+
+ // ── Dynamic VR near-plane: prevent clipping when flying close to objects ──
+ // Check distance to nearest planet/moon and lower near plane accordingly.
+ // Throttled to every 10th frame to keep hot-path cheap.
+ if ((this._vrLaserFrame & 0xF) === 0) { // every 16 frames
+ const solarSystem = window.app?.solarSystemModule;
+ if (solarSystem?.planets) {
+ this.camera.getWorldPosition(this._vrNearCheckPos);
+ let minDist = Infinity;
+ // Check sun
+ if (solarSystem.sun?.position) {
+ solarSystem.sun.getWorldPosition(this._vrPosScratch);
+ const d = this._vrNearCheckPos.distanceTo(this._vrPosScratch);
+ const r = solarSystem.sun.userData?.radius || solarSystem.sun.geometry?.boundingSphere?.radius || 5;
+ minDist = Math.max(d - r, 0.01);
+ }
+ // Check all planets and moons
+ const collections = [solarSystem.planets, solarSystem.moons];
+ for (const coll of collections) {
+ if (!coll) continue;
+ for (const key in coll) {
+ const mesh = coll[key];
+ if (!mesh?.position) continue;
+ mesh.getWorldPosition(this._vrPosScratch);
+ const d = this._vrNearCheckPos.distanceTo(this._vrPosScratch);
+ const r = mesh.userData?.radius || mesh.geometry?.boundingSphere?.radius || 1;
+ // Surface distance (subtract radius so near scales from surface, not center)
+ const surfaceDist = Math.max(d - r, 0.01);
+ if (surfaceDist < minDist) minDist = surfaceDist;
+ }
+ }
+ // Near = 5% of surface distance, clamped between 0.01 and 10.0
+ const newNear = Math.min(10.0, Math.max(0.01, minDist * 0.05));
+ if (Math.abs(this.camera.near - newNear) > 0.005) {
+ this.camera.near = newNear;
+ this.camera.updateProjectionMatrix();
+ }
  }
  }
 
