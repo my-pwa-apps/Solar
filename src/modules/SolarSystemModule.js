@@ -4571,8 +4571,31 @@ export class SolarSystemModule {
  }
 
  _createMilkyWayGalaxyDisc(scene) {
- // Procedurally generate a top-down spiral galaxy texture
  const texSize = IS_MOBILE ? 512 : 1024;
+
+ // Try to load NASA Milky Way image, fall back to procedural generation
+ const loader = new THREE.TextureLoader();
+ loader.load(
+ './textures/galaxies/milky_way_nasa.jpg',
+ (nasaTexture) => {
+ if (DEBUG.TEXTURES) console.log(' Loaded NASA Milky Way texture');
+ // The NASA illustration shows a face-on spiral centered in the image.
+ // The Sun sits on the Orion Arm, ~26,000 ly from center (~58% out).
+ // In this image the Sun is approximately at 67% right, 38% down.
+ const solarX = texSize * 0.67;
+ const solarY = texSize * 0.38;
+ this._buildMilkyWayDisc(scene, nasaTexture, texSize, solarX, solarY);
+ },
+ undefined,
+ () => {
+ if (DEBUG.TEXTURES) console.warn(' NASA Milky Way texture failed, using procedural');
+ const { texture, solarX, solarY } = this._generateProceduralMilkyWay(texSize);
+ this._buildMilkyWayDisc(scene, texture, texSize, solarX, solarY);
+ }
+ );
+ }
+
+ _generateProceduralMilkyWay(texSize) {
  const canvas = document.createElement('canvas');
  canvas.width = texSize;
  canvas.height = texSize;
@@ -4651,6 +4674,10 @@ export class SolarSystemModule {
  const texture = new THREE.CanvasTexture(canvas);
  texture.needsUpdate = true;
 
+ return { texture, solarX, solarY };
+ }
+
+ _buildMilkyWayDisc(scene, texture, texSize, solarX, solarY) {
  // Create the disc as a large plane
  const discSize = 50000; // Very large, seen only from far out
  const discGeometry = new THREE.PlaneGeometry(discSize, discSize);

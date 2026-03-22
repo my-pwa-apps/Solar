@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
 // Version 2.10.173
 
-const CACHE_VERSION = '2.10.193';
+const CACHE_VERSION = '2.10.194';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -89,10 +89,11 @@ const STATIC_CACHE_FILES = [
   './textures/nebulae/orion_nebula.jpg',
   './textures/nebulae/crab_nebula.jpg',
   './textures/nebulae/ring_nebula.jpg',
-  // Galaxies - real Hubble imagery
+  // Galaxies - real imagery
   './textures/galaxies/andromeda_galaxy.jpg',
   './textures/galaxies/whirlpool_galaxy.jpg',
   './textures/galaxies/sombrero_galaxy.jpg',
+  './textures/galaxies/milky_way_nasa.jpg',
   // Dwarf planet textures
   './textures/dwarf-planets/pluto_2k.jpg',
   './textures/dwarf-planets/ceres_2k.jpg',
