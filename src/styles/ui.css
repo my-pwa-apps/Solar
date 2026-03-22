@@ -2320,6 +2320,10 @@ body.xr-active .event-toast {
 /* Standalone PWA: avoid OS window controls overlapping the header */
 @media (display-mode: standalone) {
     #main-header {
-        right: 148px; /* Leave room for Windows title bar controls */
+        right: 150px; /* Leave room for Windows title bar controls (min/max/close ~138px) */
+    }
+
+    #speed-control {
+        right: 150px;
     }
 }
