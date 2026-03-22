@@ -2316,3 +2316,10 @@ body.xr-active .event-toast {
     backdrop-filter: none !important;
     background: rgba(20, 20, 28, 0.94) !important;
 }
+
+/* Standalone PWA: avoid OS window controls overlapping the header */
+@media (display-mode: standalone) {
+    #main-header {
+        right: 148px; /* Leave room for Windows title bar controls */
+    }
+}
