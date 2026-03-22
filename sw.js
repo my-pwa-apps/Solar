@@ -84,7 +84,7 @@ const STATIC_CACHE_FILES = [
   './textures/moons/phobos_2k.webp',
   './textures/moons/deimos_2k.webp',
   // Saturn ring texture
-  './textures/rings/saturn_ring_alpha.png',
+  './textures/rings/saturn_ring_alpha.webp',
   // Nebulae - real Hubble imagery
   './textures/nebulae/orion_nebula.webp',
   './textures/nebulae/crab_nebula.webp',

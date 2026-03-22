@@ -3087,7 +3087,7 @@ export class SolarSystemModule {
  const ringGeometry = new THREE.RingGeometry(innerR, outerR, 128);
 
  // Three.js RingGeometry UVs are wrong for radial ring textures — remap them.
- // The ring texture (saturn_ring_alpha.png) is a horizontal 1-D strip where
+ // The ring texture (saturn_ring_alpha.webp) is a horizontal 1-D strip where
  // left edge = inner ring, right edge = outer ring. We need U to represent how
  // far a vertex is between inner and outer radius, and V to be the angle.
  const pos = ringGeometry.attributes.position;
@@ -3123,7 +3123,7 @@ export class SolarSystemModule {
  if (config.prominentRings) {
  const ringLoader = new THREE.TextureLoader();
  try {
- ringMap = ringLoader.load('./textures/rings/saturn_ring_alpha.png');
+ ringMap = ringLoader.load('./textures/rings/saturn_ring_alpha.webp');
  } catch(e) { ringMap = null; }
  }
  const ringMaterial = ringMap
