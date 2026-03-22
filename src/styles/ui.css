@@ -1265,34 +1265,6 @@
     font-size: 14px;
 }
 
-/* Header settings button */
-.header-settings-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-md, 6px);
-    color: var(--text-secondary, rgba(255,255,255,0.6));
-    cursor: pointer;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
-}
-
-.header-settings-btn:hover {
-    background: var(--fluent-bg-hover, rgba(255,255,255,0.06));
-    border-color: var(--fluent-border, rgba(255,255,255,0.12));
-    color: var(--text-primary, #fff);
-}
-
-.header-settings-btn svg {
-    width: 20px;
-    height: 20px;
-}
-
 .settings-section + .settings-section {
     margin-top: 20px;
     padding-top: 20px;
@@ -2317,13 +2289,4 @@ body.xr-active .event-toast {
     background: rgba(20, 20, 28, 0.94) !important;
 }
 
-/* PWA: avoid OS window controls overlapping the header */
-@media (display-mode: standalone), (display-mode: window-controls-overlay) {
-    #main-header {
-        right: 150px; /* Leave room for Windows title bar controls (min/max/close ~138px) */
-    }
 
-    #speed-control {
-        right: 150px;
-    }
-}

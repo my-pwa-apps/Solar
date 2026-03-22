@@ -10418,6 +10418,10 @@ let actualRadius;
  // Planets: allow very close surface inspection (just above the surface)
  minDist = actualRadius * 0.15; // ~15% of radius — tight orbit view
  maxDist = Math.max(actualRadius * 100, 1000);
+ } else if (userData.type === 'milkyWay') {
+ // Milky Way: allow zooming all the way back into the solar system
+ minDist = CONFIG.CONTROLS.minDistance;
+ maxDist = Math.max(actualRadius * 4, CONFIG.CONTROLS.maxDistance);
  } else {
  // Scale floor proportionally so small objects (Enceladus r=0.04) are reachable
  // Large objects keep the 0.5 floor; small moons get a floor of ~3× their radius
