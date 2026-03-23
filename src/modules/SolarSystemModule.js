@@ -1090,21 +1090,27 @@ export class SolarSystemModule {
                 const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
                 if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: cache=${cachedDataURL ? 'HIT (' + cachedDataURL.length + ' chars)' : 'MISS'}, phase=${phase}, idx=${primaryIndex}`);
                 if (cachedDataURL) {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    img.onload = () => {
-                        if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: cached image loaded OK`);
-                        const tex = new THREE.Texture(img);
-                        tex.needsUpdate = true;
-                        this._onPlanetTextureSuccess(planetName, tex, url, 'cached');
-                    };
-                    img.onerror = () => {
-                        console.warn(`[TEX] ${planetName}: cached image CORRUPT, clearing & retrying`);
-                        // Cached texture is corrupted, clear it and retry the same URL from network
-                        TEXTURE_CACHE.set(cacheKey, null).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache clear failed:', e); });
-                        tryNext();
-                    };
-                    img.src = cachedDataURL;
+                    // On mobile wide-gamut displays (Pixel, Quest 3S), loading via HTMLImageElement
+                    // applies browser colour-management (sRGB → P3), inflating texture brightness.
+                    // ACES tone-mapping then compresses the lit side while ambient keeps the dark
+                    // side bright, producing "inverted lighting" on every refresh after the first.
+                    // Fix: use createImageBitmap with colorSpaceConversion:'none' — the same
+                    // internal path THREE.TextureLoader uses — so pixels reach the GPU
+                    // byte-for-byte identical to a fresh network load from the SW-cached webp.
+                    fetch(cachedDataURL)
+                        .then(r => r.blob())
+                        .then(blob => createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }))
+                        .then(bitmap => {
+                            if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: cached ImageBitmap loaded OK`);
+                            const tex = new THREE.Texture(bitmap);
+                            tex.needsUpdate = true;
+                            this._onPlanetTextureSuccess(planetName, tex, url, 'cached');
+                        })
+                        .catch(() => {
+                            console.warn(`[TEX] ${planetName}: cached ImageBitmap failed, clearing cache and retrying from network`);
+                            TEXTURE_CACHE.set(cacheKey, null).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache clear failed:', e); });
+                            tryNext();
+                        });
                     return;
                 }
                 meta.phase = 'primary';
@@ -5012,14 +5018,94 @@ export class SolarSystemModule {
  innerRadius: 0.4,       // Ring proportions
  outerRadius: 0.7,
  description: t('descRingNebula')
+ },
+ {
+ name: 'Eagle Nebula', id: 'eagleNebula',
+ ra: 274.7,  // 18h 18m - In Serpens Cauda, near Messier 16
+ dec: -13.8, // -13° 47' - Southern equatorial sky
+ size: 420,
+ type: 'emission', // Star-forming emission nebula (Pillars of Creation)
+ colors: {
+ hydrogen: 0xFF2244,    // H-alpha - Deep red
+ oxygen: 0x00CCAA,      // O-III - Teal-green
+ sulfur: 0xFF8833,      // S-II - Orange
+ continuum: 0xCCDDFF    // Young star light
+ },
+ brightness: 1.0,
+ density: 0.65,
+ turbulence: 0.5,
+ centralStars: 8,
+ description: t('descEagleNebula')
+ },
+ {
+ name: 'Helix Nebula', id: 'helixNebula',
+ ra: 337.4,  // 22h 29m - In Aquarius constellation
+ dec: -20.8, // -20° 50' - Southern autumn sky
+ size: 350,
+ type: 'planetary', // Closest large planetary nebula — the 'Eye of God'
+ colors: {
+ oxygen: 0x00EEBB,     // O-III inner zone - Blue-green
+ hydrogen: 0xFF3355,   // H-alpha outer ring - Red
+ helium: 0xFFBB88,     // He-II - Orange
+ continuum: 0xDDEEFF   // Central white dwarf
+ },
+ brightness: 0.8,
+ density: 0.45,
+ turbulence: 0.15,
+ ringStructure: true,
+ centralStar: true,
+ innerRadius: 0.3,
+ outerRadius: 0.65,
+ description: t('descHelixNebula')
+ },
+ {
+ name: 'Lagoon Nebula', id: 'lagoonNebula',
+ ra: 271.1,  // 18h 03m - In Sagittarius constellation
+ dec: -24.4, // -24° 23' - Southern summer sky, near galactic centre
+ size: 450,
+ type: 'emission', // Active star-forming region
+ colors: {
+ hydrogen: 0xFF2244,   // H-alpha - Deep red
+ oxygen: 0x00CC88,     // O-III - Cyan-green
+ sulfur: 0xFF7733,     // S-II - Orange-red
+ continuum: 0xBBCCEE  // Background starlight
+ },
+ brightness: 1.1,
+ density: 0.75,
+ turbulence: 0.45,
+ centralStars: 6,
+ description: t('descLagoonNebula')
+ },
+ {
+ name: 'Butterfly Nebula', id: 'butterflyNebula',
+ ra: 261.0,  // 17h 13m - In Scorpius constellation
+ dec: -37.1, // -37° 06' - Far southern sky
+ size: 280,
+ type: 'planetary', // Extreme bipolar planetary nebula (Bug / Butterfly)
+ colors: {
+ oxygen: 0x44DDCC,    // O-III hot lobes - Cyan
+ hydrogen: 0xFF4422,  // H-alpha outer wings - Orange-red
+ helium: 0xFFDD88,    // He-II - Yellow-orange
+ continuum: 0xFFFFFF  // Extremely hot central star — one of Milky Way's hottest
+ },
+ brightness: 0.85,
+ density: 0.4,
+ turbulence: 0.55,
+ ringStructure: false,
+ centralStar: true,
+ description: t('descButterflyNebula')
  }
  ];
 
  // Real image texture paths for nebulae (fall back to procedural if missing)
  const nebulaeTextures = {
- 'Orion Nebula': './textures/nebulae/orion_nebula.webp',
- 'Crab Nebula':  './textures/nebulae/crab_nebula.webp',
- 'Ring Nebula':  './textures/nebulae/ring_nebula.webp'
+ 'Orion Nebula':     './textures/nebulae/orion_nebula.webp',
+ 'Crab Nebula':      './textures/nebulae/crab_nebula.webp',
+ 'Ring Nebula':      './textures/nebulae/ring_nebula.webp',
+ 'Eagle Nebula':     './textures/nebulae/eagle_nebula.webp',
+ 'Helix Nebula':     './textures/nebulae/helix_nebula.webp',
+ 'Lagoon Nebula':    './textures/nebulae/lagoon_nebula.webp',
+ 'Butterfly Nebula': './textures/nebulae/butterfly_nebula.webp'
  };
 
  for (const nebData of nebulaeData) {
@@ -5076,9 +5162,15 @@ export class SolarSystemModule {
  radius: nebData.size,
  description: nebData.description,
  distance: 'Thousands of light-years',
- funFact: nebData.id === 'orionNebula' ? t('funFactOrionNebula') :
- nebData.id === 'crabNebula' ? t('funFactCrabNebula') :
- t('funFactRingNebula'),
+ funFact: ({
+ orionNebula:     t('funFactOrionNebula'),
+ crabNebula:      t('funFactCrabNebula'),
+ ringNebula:      t('funFactRingNebula'),
+ eagleNebula:     t('funFactEagleNebula'),
+ helixNebula:     t('funFactHelixNebula'),
+ lagoonNebula:    t('funFactLagoonNebula'),
+ butterflyNebula: t('funFactButterflyNebula'),
+ })[nebData.id] || t('funFactRingNebula'),
  ra: nebData.ra,
  dec: nebData.dec,
  basePosition: { x: position.x, y: position.y, z: position.z }
@@ -6068,15 +6160,94 @@ export class SolarSystemModule {
  type: 'lenticular',
  angularSize: 9, // 9 arcminutes
  description: t('descSombrero')
+ },
+ {
+ name: 'Triangulum Galaxy', id: 'triangulumGalaxy',
+ ra: 23.46,   // 1h 33m 50.9s - In Triangulum constellation
+ dec: 30.66,  // +30° 39' 37" - Northern autumn sky
+ size: 500,
+ type: 'spiral',
+ angularSize: 73, // 73 arcminutes - almost as large as Andromeda!
+ description: t('descTriangulum')
+ },
+ {
+ name: 'Pinwheel Galaxy', id: 'pinwheelGalaxy',
+ ra: 210.80,  // 14h 03m 12.6s - In Ursa Major, near Big Dipper handle
+ dec: 54.35,  // +54° 20' 57" - Northern spring sky
+ size: 420,
+ type: 'spiral',
+ angularSize: 29, // 28.8 arcminutes
+ description: t('descPinwheel')
+ },
+ {
+ name: "Bode's Galaxy", id: 'bodesGalaxy',
+ ra: 148.89,  // 9h 55m 33.2s - In Ursa Major
+ dec: 69.07,  // +69° 03' 55" - Far northern sky
+ size: 380,
+ type: 'spiral',
+ angularSize: 27, // 26.9 arcminutes
+ description: t('descBodesGalaxy')
+ },
+ {
+ name: 'Cigar Galaxy', id: 'cigarGalaxy',
+ ra: 148.97,  // 9h 55m 52.7s - In Ursa Major, companion to M81
+ dec: 69.68,  // +69° 40' 47" - Far northern sky, very close to Bode's
+ size: 320,
+ type: 'starburst',
+ angularSize: 11, // 11 arcminutes
+ description: t('descCigarGalaxy')
+ },
+ {
+ name: 'Sculptor Galaxy', id: 'sculptorGalaxy',
+ ra: 11.89,   // 0h 47m 33.1s - In Sculptor constellation
+ dec: -25.29, // -25° 17' 18" - Southern hemisphere sky
+ size: 380,
+ type: 'spiral',
+ angularSize: 28, // 27.5 arcminutes - edge-on view
+ description: t('descSculptor')
+ },
+ {
+ name: 'Centaurus A', id: 'centaurusAGalaxy',
+ ra: 201.37,  // 13h 25m 27.6s - In Centaurus constellation
+ dec: -43.02, // -43° 01' 09" - Southern sky
+ size: 420,
+ type: 'radio',
+ angularSize: 26, // 25.7 arcminutes
+ description: t('descCentaurusA')
+ },
+ {
+ name: 'Large Magellanic Cloud', id: 'largeMagellanicCloud',
+ ra: 80.9,   // 5h 23m - In Dorado/Mensa constellations
+ dec: -69.8, // -69° 45' - Far southern sky, circumpolar from southern hemisphere
+ size: 700,
+ type: 'irregular',
+ angularSize: 650, // ~10.75° × 9.17° — largest angular extent of any galaxy
+ description: t('descLargeMagellanicCloud')
+ },
+ {
+ name: 'Small Magellanic Cloud', id: 'smallMagellanicCloud',
+ ra: 13.2,   // 0h 52m - In Tucana constellation
+ dec: -72.8, // -72° 49' - Far southern sky, circumpolar from southern hemisphere
+ size: 500,
+ type: 'irregular',
+ angularSize: 318, // ~5.3° × 3.05°
+ description: t('descSmallMagellanicCloud')
  }
  ];
 
- // Real image texture paths for galaxies
- // Real image texture paths for galaxies
+ // Real image texture paths for galaxies (NASA public domain imagery)
  const galaxyTextures = {
- 'Andromeda Galaxy': './textures/galaxies/andromeda_galaxy.webp',
- 'Whirlpool Galaxy': './textures/galaxies/whirlpool_galaxy.webp',
- 'Sombrero Galaxy':  './textures/galaxies/sombrero_galaxy.webp'
+ 'Andromeda Galaxy':  './textures/galaxies/andromeda_galaxy.webp',
+ 'Whirlpool Galaxy':  './textures/galaxies/whirlpool_galaxy.webp',
+ 'Sombrero Galaxy':   './textures/galaxies/sombrero_galaxy.webp',
+ 'Triangulum Galaxy': './textures/galaxies/m33_triangulum_galaxy.webp',
+ 'Pinwheel Galaxy':   './textures/galaxies/m101_pinwheel_galaxy.webp',
+ "Bode's Galaxy":     './textures/galaxies/m81_bodes_galaxy.webp',
+ 'Cigar Galaxy':      './textures/galaxies/m82_cigar_galaxy.webp',
+ 'Sculptor Galaxy':        './textures/galaxies/ngc253_sculptor_galaxy.webp',
+ 'Centaurus A':            './textures/galaxies/ngc5128_centaurus_a.webp',
+ 'Large Magellanic Cloud': './textures/galaxies/lmc_galaxy.webp',
+ 'Small Magellanic Cloud': './textures/galaxies/smc_galaxy.webp'
  };
 
  for (const galData of galaxiesData) {
@@ -6120,9 +6291,17 @@ export class SolarSystemModule {
  // Andromeda: 2.5 Mly, Whirlpool: 23 Mly, Sombrero: 29.3 Mly
  // Scale: 1 Mly ≈ 20,000 units (MW disc = 50,000 units ≈ 100,000 ly)
  const realDistances = {
- 'Andromeda Galaxy': 50000,   // 2.5 Mly - closest large galaxy
- 'Whirlpool Galaxy': 130000,  // 23 Mly - compressed from 460k for visibility
- 'Sombrero Galaxy': 150000    // 29.3 Mly - compressed from 586k for visibility
+ 'Andromeda Galaxy':  50000,   // 2.5 Mly  - closest large galaxy
+ 'Triangulum Galaxy': 60000,   // 2.73 Mly - third Local Group member
+ 'Whirlpool Galaxy':  130000,  // 23 Mly   - compressed from 460k for visibility
+ 'Sombrero Galaxy':   150000,  // 29.3 Mly - compressed from 586k for visibility
+ "Bode's Galaxy":     110000,  // 11.7 Mly - compressed for visibility
+ 'Cigar Galaxy':      110500,  // 12 Mly   - slightly offset from Bode's companion
+ 'Sculptor Galaxy':   110000,  // 11.4 Mly - Silver Dollar galaxy
+ 'Pinwheel Galaxy':         125000,  // 21 Mly   - compressed for visibility
+ 'Centaurus A':             120000,  // 12 Mly   - closest radio galaxy
+ 'Large Magellanic Cloud':   35000,  // 160 kly  - Milky Way satellite
+ 'Small Magellanic Cloud':   38000   // 200 kly  - Milky Way satellite
  };
  const galaxyDistance = realDistances[galData.name] || 120000;
  const position = CoordinateUtils.sphericalToCartesian(
@@ -6145,9 +6324,19 @@ export class SolarSystemModule {
  angularSize: galData.angularSize, // Angular size in arcminutes
  ra: galData.ra,
  dec: galData.dec,
- funFact: galData.id === 'andromedaGalaxy' ? t('funFactAndromedaGalaxy') :
- galData.id === 'whirlpoolGalaxy' ? t('funFactWhirlpoolGalaxy') :
- t('funFactSombreroGalaxy'),
+ funFact: ({
+ andromedaGalaxy:  t('funFactAndromedaGalaxy'),
+ whirlpoolGalaxy:  t('funFactWhirlpoolGalaxy'),
+ sombreroGalaxy:   t('funFactSombreroGalaxy'),
+ triangulumGalaxy: t('funFactTriangulumGalaxy'),
+ pinwheelGalaxy:   t('funFactPinwheelGalaxy'),
+ bodesGalaxy:      t('funFactBodesGalaxy'),
+ cigarGalaxy:      t('funFactCigarGalaxy'),
+ sculptorGalaxy:   t('funFactSculptorGalaxy'),
+ centaurusAGalaxy:      t('funFactCentaurusA'),
+ largeMagellanicCloud:  t('funFactLargeMagellanicCloud'),
+ smallMagellanicCloud:  t('funFactSmallMagellanicCloud'),
+ })[galData.id] || t('funFactSombreroGalaxy'),
  basePosition: { x: position.x, y: position.y, z: position.z }
  };
  
@@ -6253,7 +6442,15 @@ export class SolarSystemModule {
  //   alpha = luminanceCurve(pixel) × radialFade(position)
  // Near-black backgrounds become fully transparent; bright nebula/galaxy
  // pixels stay visible; edges dissolve naturally into the starfield.
- // Uses a nested row/column loop to avoid per-pixel division and Math.floor.
+ //
+ // Key improvements over a pure-luminance approach:
+ //  1. Corner sampling: averages small patches at all 4 corners to detect the
+ //     background colour (handles WISE/Spitzer false-colour infrared images
+ //     whose backgrounds are not pure black but dark orange/teal/grey).
+ //  2. Background subtraction: subtracts that colour before the luminance curve
+ //     so infrared "glow" is neutralised before any transparency decision.
+ //  3. Radial fade starts at 60% (was 70%) so edges dissolve over a wider
+ //     band with a smoother quadratic rolloff — less hard "picture frame" edge.
  _loadDeepSkySprite(imagePath, onSuccess, onError) {
  const img = new window.Image();
  img.crossOrigin = 'anonymous';
@@ -6267,12 +6464,26 @@ export class SolarSystemModule {
  const d = imageData.data;
  const cx = w / 2, cy = h / 2;
  const maxR = Math.sqrt(cx * cx + cy * cy);
- // Black-point: with AdditiveBlending the dark background adds nothing to
- // the scene, so we only need a low floor (0.08) to suppress pure-black
- // compression artefacts while keeping faint outer spiral arms and halos.
- // The radial fade now starts at 70% so the full extent of large galaxies
- // like Andromeda stays visible.
- const blackPoint = 0.08; // very low floor – additive blending handles the rest
+
+ // --- Step 1: detect background colour from the four corners ---
+ // Sample a small square patch (up to 24 px, min 4 px) at each corner.
+ const s = Math.max(4, Math.min(24, Math.floor(Math.min(w, h) * 0.015)));
+ let bgR = 0, bgG = 0, bgB = 0, bgN = 0;
+ for (const [ox, oy] of [[0, 0], [w - s, 0], [0, h - s], [w - s, h - s]]) {
+ for (let sy = oy; sy < oy + s; sy++) {
+ for (let sx = ox; sx < ox + s; sx++) {
+ const si = (sy * w + sx) << 2;
+ bgR += d[si]; bgG += d[si + 1]; bgB += d[si + 2]; bgN++;
+ }
+ }
+ }
+ bgR /= bgN * 255; bgG /= bgN * 255; bgB /= bgN * 255;
+
+ // --- Step 2: per-pixel alpha assignment ---
+ // Black-point applied after background subtraction; with AdditiveBlending
+ // the dark background won't add colour to the scene, so 0.10 is enough
+ // to suppress JPEG compression artefacts while keeping faint halos.
+ const blackPoint = 0.10;
  const whiteStretch = 1 / (1 - blackPoint);
  for (let py = 0; py < h; py++) {
  const dy = py - cy;
@@ -6280,14 +6491,17 @@ export class SolarSystemModule {
  for (let px = 0; px < w; px++) {
  const i = (rowOff + px) << 2;
  const dx = px - cx;
- // Luminance with black-point removal
- const lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
+ // Subtract detected background colour → dark infrared glow → 0
+ const r = Math.max(0, d[i]     / 255 - bgR);
+ const g = Math.max(0, d[i + 1] / 255 - bgG);
+ const b = Math.max(0, d[i + 2] / 255 - bgB);
+ const lum = r * 0.299 + g * 0.587 + b * 0.114;
  const lumAdj = Math.max(0, lum - blackPoint) * whiteStretch;
  const lumAlpha = Math.pow(Math.min(1, lumAdj * 3.5), 1.4);
- // Radial fade: full inside 70% radius, smooth rolloff to 0 at corner
+ // Radial fade: full inside 60% radius, smooth quadratic rolloff to 0
  const dist = Math.sqrt(dx * dx + dy * dy) / maxR;
- const radial = dist < 0.7 ? 1.0
- : Math.max(0, 1 - ((dist - 0.7) / 0.3) ** 1.6);
+ const radial = dist < 0.60 ? 1.0
+ : Math.max(0, 1 - ((dist - 0.60) / 0.40) ** 2.0);
  d[i + 3] = Math.round(255 * lumAlpha * radial);
  }
  }
@@ -10291,10 +10505,15 @@ let actualRadius;
  distance = Math.max(actualRadius * 15, 1.0);
  if (DEBUG.enabled) console.log(` [Satellite Chase-Cam] Camera distance: ${distance.toFixed(2)} (${actualRadius.toFixed(3)} × 15, min 1.0) for ISS viewing`);
  } else if (userData.type === 'moon' && userData.parentPlanet) {
- // Moons: View showing moon with parent planet visible in background
+ // Moons: View showing moon with parent planet visible in background.
+ // Problem: moonOrbitDistance * 0.15 dominates for small moons like Enceladus
+ // (radius=0.04, orbit=22 → gives 3.3 = 82× radius, moon appears as a speck).
+ // Fix: cap the orbit-distance contribution to actualRadius * 12 so tiny moons
+ // are always zoomed in relative to their own size (same experience as Ganymede).
  const moonOrbitDistance = userData.distance || 4;
- distance = Math.max(moonOrbitDistance * 0.15, actualRadius * 8, 1.5);
- if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for "${userData.name}" (orbit: ${moonOrbitDistance}, radius: ${actualRadius.toFixed(3)}) around ${userData.parentPlanet}`);
+ const orbitFactor = Math.min(moonOrbitDistance * 0.15, actualRadius * 12);
+ distance = Math.max(orbitFactor, actualRadius * 8, 0.3);
+ if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Close distance: ${distance.toFixed(2)} for "${userData.name}" (orbit: ${moonOrbitDistance}, radius: ${actualRadius.toFixed(3)}, orbitFactor: ${orbitFactor.toFixed(2)}) around ${userData.parentPlanet}`);
  } else if (userData.isSpacecraft) {
  // Other spacecraft: moderate zoom
  distance = Math.max(actualRadius * 8, 3);
@@ -10576,33 +10795,18 @@ let actualRadius;
      );
      controls.target.copy(targetPosition);
  } else if (userData.type === 'moon' && userData.parentPlanet) {
-     // Moons: Chase-cam perspective showing moon and parent planet surface
-     parentPlanet = this.planets[userData.parentPlanet.toLowerCase()];
-     if (parentPlanet) {
-         // Calculate moon direction from planet
-         const moonDirection = focusScratch.moonDirection.copy(targetPosition).sub(parentPlanet.position).normalize();
-         
-         // Position camera behind and slightly above moon for chase-cam effect
-         const offsetDistance = distance;
-         endPos = new THREE.Vector3(
-             targetPosition.x - moonDirection.x * offsetDistance * 0.5, // Behind moon
-             targetPosition.y + offsetDistance * 0.3, // Above
-             targetPosition.z - moonDirection.z * offsetDistance * 0.5
-         );
-         
-         controls.target.copy(targetPosition); // Look at moon
-         if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Camera positioned behind ${userData.name} for parent planet flyover`);
-     } else {
-         // Fallback: static angle
-         const angle = Math.random() * Math.PI * 2;
-         const elevation = 0.4;
-         endPos = new THREE.Vector3(
-             targetPosition.x + Math.cos(angle) * distance,
-             targetPosition.y + distance * elevation,
-             targetPosition.z + Math.sin(angle) * distance
-         );
-         controls.target.copy(targetPosition);
-     }
+     // Moons: position camera at a simple consistent offset relative to moon world position.
+     // We avoid computing a moonDirection vector entirely — any normalize() on a zero-length
+     // vector (e.g. if world matrices are stale at call time) would produce NaN in endPos,
+     // breaking both the animation and OrbitControls zoom. A fixed angular offset is safe
+     // and centers the moon the same way planets are centered.
+     endPos = new THREE.Vector3(
+         targetPosition.x + distance * 0.6,
+         targetPosition.y + distance * 0.5,
+         targetPosition.z + distance * 0.8
+     );
+     controls.target.copy(targetPosition); // Look at moon
+     if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Camera at fixed offset from ${userData.name}, distance=${distance.toFixed(3)}}`);
  } else if (userData.type === 'planet' || userData.isPlanet) {
      // Planets: Cinematic angles that showcase their features
      const planetName = (userData.id || userData.name).toLowerCase();
@@ -10833,7 +11037,7 @@ let actualRadius;
  if (isStaticTarget) {
  // Static targets keep their precomputed targetPosition for the full animation.
  // For Milky Way this must remain at the solar-system anchor (world origin).
- } else if (useRelativeOffset && progress < 1) {
+ } else if (useRelativeOffset) {
  // For fast orbiters during transition: maintain relative offset from parent
  targetPosition.copy(parentPlanet.position).add(relativeOffset);
  endPos.set(
@@ -10841,11 +11045,14 @@ let actualRadius;
  targetPosition.y + distance * 0.3,
  targetPosition.z + distance
  );
- } else if (progress < 1) {
- // For regular objects or final frame: use actual position
+ } else {
+ // For all moving objects incl. final frame: use fresh world position.
+ // CRITICAL: must also run at progress===1 (the last frame) so that the
+ // camera lands on the object's CURRENT position, not one frame stale.
+ // For fast small moons (Enceladus speed=1.5, orbit=22) one stale frame
+ // = 0.53 units of error, larger than the total camera-offset of 0.48,
+ // which points the camera 45° away from the moon after landing.
  object.getWorldPosition(targetPosition);
- // Keep endPos tracking the object so the camera lands at the RIGHT spot
- // even when the object has moved since the navigation was triggered
  if (endOffset) endPos.copy(targetPosition).add(endOffset);
  }
  

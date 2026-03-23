@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
 // Version 2.10.173
 
-const CACHE_VERSION = '2.10.195';
+const CACHE_VERSION = '2.10.205';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -89,11 +89,23 @@ const STATIC_CACHE_FILES = [
   './textures/nebulae/orion_nebula.webp',
   './textures/nebulae/crab_nebula.webp',
   './textures/nebulae/ring_nebula.webp',
-  // Galaxies - real imagery
+  './textures/nebulae/eagle_nebula.webp',
+  './textures/nebulae/helix_nebula.webp',
+  './textures/nebulae/lagoon_nebula.webp',
+  './textures/nebulae/butterfly_nebula.webp',
+  // Galaxies - real NASA imagery
   './textures/galaxies/andromeda_galaxy.webp',
   './textures/galaxies/whirlpool_galaxy.webp',
   './textures/galaxies/sombrero_galaxy.webp',
   './textures/galaxies/milky_way_nasa.webp',
+  './textures/galaxies/m33_triangulum_galaxy.webp',
+  './textures/galaxies/m101_pinwheel_galaxy.webp',
+  './textures/galaxies/m81_bodes_galaxy.webp',
+  './textures/galaxies/m82_cigar_galaxy.webp',
+  './textures/galaxies/ngc253_sculptor_galaxy.webp',
+  './textures/galaxies/ngc5128_centaurus_a.webp',
+  './textures/galaxies/lmc_galaxy.webp',
+  './textures/galaxies/smc_galaxy.webp',
   // Dwarf planet textures
   './textures/dwarf-planets/pluto_2k.webp',
   './textures/dwarf-planets/ceres_2k.webp',

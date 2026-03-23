@@ -106,7 +106,7 @@ export class SceneManager {
  this.renderer.setPixelRatio(this._adaptivePixelRatio);
  this.renderer.xr.enabled = true;
  this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
- this.renderer.shadowMap.type = IS_MOBILE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; // Soft shadows on desktop
+ this.renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap deprecated in Three.js r167
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
  this.renderer.toneMappingExposure = 1.35; // Slightly higher to compensate for darker ambient lights
  
