@@ -1085,37 +1085,9 @@ export class SolarSystemModule {
             if (primaryIndex < primaryTextureURLs.length) {
                 const url = primaryTextureURLs[primaryIndex];
                 
-                // Check cache first (cache by planet name only, not URL)
-                const cacheKey = `${planetName.toLowerCase()}_texture_remote`;
-                const cachedDataURL = await TEXTURE_CACHE.get(cacheKey);
-                if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: cache=${cachedDataURL ? 'HIT (' + cachedDataURL.length + ' chars)' : 'MISS'}, phase=${phase}, idx=${primaryIndex}`);
-                if (cachedDataURL) {
-                    // On mobile wide-gamut displays (Pixel, Quest 3S), loading via HTMLImageElement
-                    // applies browser colour-management (sRGB → P3), inflating texture brightness.
-                    // ACES tone-mapping then compresses the lit side while ambient keeps the dark
-                    // side bright, producing "inverted lighting" on every refresh after the first.
-                    // Fix: use createImageBitmap with colorSpaceConversion:'none' — the same
-                    // internal path THREE.TextureLoader uses — so pixels reach the GPU
-                    // byte-for-byte identical to a fresh network load from the SW-cached webp.
-                    fetch(cachedDataURL)
-                        .then(r => r.blob())
-                        .then(blob => createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }))
-                        .then(bitmap => {
-                            if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: cached ImageBitmap loaded OK`);
-                            const tex = new THREE.Texture(bitmap);
-                            tex.needsUpdate = true;
-                            this._onPlanetTextureSuccess(planetName, tex, url, 'cached');
-                        })
-                        .catch(() => {
-                            console.warn(`[TEX] ${planetName}: cached ImageBitmap failed, clearing cache and retrying from network`);
-                            TEXTURE_CACHE.set(cacheKey, null).catch((e) => { if (DEBUG && DEBUG.TEXTURES) console.warn('[TEX] Cache clear failed:', e); });
-                            tryNext();
-                        });
-                    return;
-                }
                 meta.phase = 'primary';
                 
-                if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: loading from network: ${url}`);
+                if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: loading from SW cache / network: ${url}`);
                 // Timeout per texture load attempt (longer on mobile)
                 let loadTimedOut = false;
                 currentTimeout = setTimeout(() => {
@@ -1276,44 +1248,10 @@ export class SolarSystemModule {
         }
         
         // Cache the successfully loaded texture for future use (cache by planet name only)
-        // Don't include URL in cache key so texture persists across language changes
-        const cacheKey = `${planetName.toLowerCase()}_texture_remote`;
-        if (tex.image && tex.image instanceof HTMLImageElement && sourceType !== 'cached') {
-            // Cache the original image source directly as a blob-based dataURL.
-            // IMPORTANT: We must NOT use canvas.drawImage(tex.image) here because
-            // after Three.js uploads the texture to the GPU, some browsers purge
-            // the decoded bitmap from the HTMLImageElement to save memory. Drawing
-            // a purged image onto a canvas produces partial/black pixels, which
-            // then get cached and served on subsequent loads.
-            // Instead, re-fetch the original file as a blob and cache that.
-            if (url && !url.startsWith('data:')) {
-                fetch(url)
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        return response.blob();
-                    })
-                    .then(blob => {
-                        return new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.onerror = () => reject(reader.error);
-                            reader.readAsDataURL(blob);
-                        });
-                    })
-                    .then(dataURL => {
-                        TEXTURE_CACHE.set(cacheKey, dataURL).catch((err) => {
-                            if (DEBUG && DEBUG.TEXTURES) console.warn(`[TEX] Cache write failed for ${cacheKey}:`, err.message);
-                        });
-                        if (DEBUG && DEBUG.TEXTURES) {
-                            console.log(`💾 Cached ${planetName} texture: ${(dataURL.length / 1024 / 1024).toFixed(2)}MB (from blob)`);
-                        }
-                    })
-                    .catch(() => {
-                        // Fetch/cache failed — texture still displays from GPU
-                        if (DEBUG && DEBUG.TEXTURES) console.warn(`⚠️ ${planetName} texture cache skipped (fetch failed)`);
-                    });
-            }
-        }
+        // NOTE: Planet textures are served from SW cache on every load — the IndexedDB
+        // layer was removed because decoding a data URL via HTMLImageElement or createImageBitmap
+        // produces subtly different GPU-uploaded values compared to THREE.TextureLoader loading
+        // directly from the SW-cached file, causing lighting discrepancies on wide-gamut displays.
         
         // Find the object: check sun, planets, and moons
         const lowerName = planetName.toLowerCase();
@@ -2820,8 +2758,6 @@ export class SolarSystemModule {
  { colorSpace: THREE.SRGBColorSpace }
  );
  const earthBump = this._configureSphericalSurfaceTexture(this.createEarthBumpMap(earthTexSize));
- const earthSpecular = this._configureSphericalSurfaceTexture(this.createEarthSpecularMap(earthTexSize));
- const earthNormal = this._configureSphericalSurfaceTexture(this.createEarthNormalMap(earthTexSize));
  if (DEBUG.enabled) console.timeEnd('Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
@@ -2829,26 +2765,21 @@ export class SolarSystemModule {
  const earthMaterial = new THREE.MeshStandardMaterial({
  map: earthTexture,
  
- // Normal map for surface detail (mountains, valleys)
- normalMap: earthNormal,
- normalScale: new THREE.Vector2(1.2, 1.2),
- 
- // Bump map for elevation
+ // Bump map for elevation (normalMap removed — procedural version had bad gradients)
  bumpMap: earthBump,
  bumpScale: 0.08,
  
- // Roughness map (water = smooth/shiny, land = rough)
- roughnessMap: earthSpecular,
- roughness: 0.75, // Higher = more diffuse sunlight reflection
+ // Uniform roughness — the procedural roughnessMap (createEarthSpecularMap) used
+ // FBM noise that didn't align with the actual texture's oceans/continents, causing
+ // a random shiny/matte split across the globe. A uniform value is far better.
+ roughness: 0.55,
  
  // Metalness (Earth's surface is not metallic)
- metalness: 0.0, // Zero - rock, water, and ice are dielectrics
+ metalness: 0.0,
 
- // NO emissive - let the sun's light create day/night naturally
  emissive: 0x000000,
  emissiveIntensity: 0,
 
- // Advanced rendering
  envMapIntensity: 0.0,
  transparent: false,
  side: THREE.FrontSide,
@@ -3792,6 +3723,7 @@ export class SolarSystemModule {
  
  const largeMaterial = new THREE.PointsMaterial({
  vertexColors: true,
+ size: 1.2,
  sizeAttenuation: true,
  transparent: true,
  opacity: 0.9
@@ -3831,6 +3763,7 @@ export class SolarSystemModule {
  
  const mediumMaterial = new THREE.PointsMaterial({
  vertexColors: true,
+ size: 0.6,
  sizeAttenuation: true,
  transparent: true,
  opacity: 0.75
@@ -3869,6 +3802,7 @@ export class SolarSystemModule {
  
  const dustMaterial = new THREE.PointsMaterial({
  vertexColors: true,
+ size: 0.25,
  sizeAttenuation: true,
  transparent: true,
  opacity: 0.5
