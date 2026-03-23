@@ -273,6 +273,8 @@
     z-index: 50;
     font-size: 14px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     border-radius: var(--radius-lg);
     border: 1px solid var(--glass-border);
     background: var(--glass-bg-solid);
@@ -337,7 +339,8 @@
     padding: 14px;
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(45vh - 40px);
+    flex: 1;
+    min-height: 0;
 }
 
 /* Floating Speed Control Panel (Collapsible) */

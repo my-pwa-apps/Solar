@@ -176,9 +176,17 @@ export class SceneManager {
  // Track the last wheel timestamp so we can distinguish a zoom-only
  // interaction from a drag/pan — wheel zoom should keep auto-orbit running.
  this._lastWheelTime = 0;
+ // Capture phase fires before OrbitControls' bubble-phase wheel handler, so
+ // zoomSpeed is updated before OrbitControls reads it for the current tick.
+ // Logarithmic adaptive factor: full speed at <=100 units, ~0.43x at 44000 units,
+ // preventing the imprecise "too fast" feeling when zooming back from the Milky Way.
  this.renderer.domElement.addEventListener('wheel', () => {
  this._lastWheelTime = performance.now();
- }, { passive: true });
+ const dist = this.camera.position.distanceTo(this.controls.target);
+ const base = Math.max(dist, 100);
+ const logFactor = Math.log10(100) / Math.log10(base);
+ this.controls.zoomSpeed = CONFIG.CONTROLS.zoomSpeed * Math.max(0.2, logFactor);
+ }, { capture: true, passive: true });
 
  // Add event listeners to detect user interaction with controls
  // Note: Do not toggle follow/co-rotate modes on controls input here.

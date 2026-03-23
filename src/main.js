@@ -774,9 +774,13 @@ class App {
  'pioneer': ['Pioneer'],
  }},
  { prefix: '', array: 'nebulae', exactMatch: 'exact', patterns: {
- 'orion-nebula': ['orionNebula'],
- 'crab-nebula': ['crabNebula'],
- 'ring-nebula': ['ringNebula'],
+ 'orion-nebula':     ['orionNebula'],
+ 'crab-nebula':      ['crabNebula'],
+ 'ring-nebula':      ['ringNebula'],
+ 'eagle-nebula':     ['eagleNebula'],
+ 'helix-nebula':     ['helixNebula'],
+ 'lagoon-nebula':    ['lagoonNebula'],
+ 'butterfly-nebula': ['butterflyNebula'],
  }},
  { prefix: '', array: 'galaxies', exactMatch: 'exact', patterns: {
  'andromeda-galaxy': ['andromedaGalaxy'],

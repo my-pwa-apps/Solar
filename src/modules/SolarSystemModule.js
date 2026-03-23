@@ -9489,7 +9489,7 @@ createHyperrealisticHubble(satData) {
  c.traverse(child => { if (child.material) child.material.opacity = 1; });
  });
  if (this.nebulae) this.nebulae.forEach(n => {
- n.traverse(child => { if (child.material) child.material.opacity = 1; });
+ n.traverse(child => { if (child.material) child.material.opacity = 0.95; });
  });
  if (this.oortCloud) this.oortCloud.traverse(child => {
  if (child.material) child.material.opacity = 0.7;
@@ -9535,14 +9535,10 @@ createHyperrealisticHubble(satData) {
  });
  });
  }
- // Nebulae
- if (this.nebulae) {
- this.nebulae.forEach(nebula => {
- nebula.traverse(child => {
- if (child.material) child.material.opacity = solarFadeOut;
- });
- });
- }
+ // Nebulae: deep-sky objects — do NOT apply solarFadeOut here.
+ // In realistic scale nebulae sit at 37 500 units (> solarFadeEnd=22k), so
+ // applying solarFadeOut=0 would make them completely invisible on navigation.
+ // Galaxies are treated the same way — never faded by this loop.
  // Oort Cloud
  if (this.oortCloud) {
  this.oortCloud.traverse(child => {
@@ -10598,10 +10594,21 @@ let actualRadius;
  // Planets: allow very close surface inspection (just above the surface)
  minDist = actualRadius * 0.15; // ~15% of radius — tight orbit view
  maxDist = Math.max(actualRadius * 100, 1000);
+ } else if (userData.type === 'nebula' || userData.type === 'galaxy') {
+ // Deep-sky objects: allow zooming all the way back to the solar system.
+ // They are placed at 15 000–37 500 units from origin and the camera ends
+ // up just outside their radius, so minDist must be near 0 not actualRadius.
+ minDist = CONFIG.CONTROLS.minDistance;
+ maxDist = Math.max(distance * 2, CONFIG.CONTROLS.maxDistance);
  } else if (userData.type === 'milkyWay') {
  // Milky Way: allow zooming all the way back into the solar system
  minDist = CONFIG.CONTROLS.minDistance;
  maxDist = Math.max(actualRadius * 4, CONFIG.CONTROLS.maxDistance);
+ } else if (userData.type === 'oortCloud' || userData.type === 'kuiperBelt'
+ || userData.type === 'asteroidBelt' || userData.type === 'heliopause') {
+ // Shell/ring structures centred on the Sun — must allow zooming all the way back to the origin
+ minDist = CONFIG.CONTROLS.minDistance;
+ maxDist = Math.max(distance * 2, CONFIG.CONTROLS.maxDistance);
  } else {
  // Scale floor proportionally so small objects (Enceladus r=0.04) are reachable
  // Large objects keep the 0.5 floor; small moons get a floor of ~3× their radius
