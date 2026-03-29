@@ -888,58 +888,68 @@ this.camera.near = 10.0;
  const H = this.vrUICanvas.height;  // 1000
  const state = this.getVRMenuState();
 
- // ─────────────────── layout constants ──────────────────────
- const EDGE = 26, COL_GAP = 14;
- const COLS = 4;
- const COL_W = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS);
- const colX = c => EDGE + c * (COL_W + COL_GAP);
- const BTN_H = 96, ROW_GAP = 12;
- const rowY  = r => 162 + r * (BTN_H + ROW_GAP);
- const CONTENT_Y = 162;
- const FOOT_Y    = H - 88 - 108;
- const closeW    = Math.floor((W - EDGE * 2 - COL_GAP) / 2);
+ // ── Layout constants ────────────────────────────────────────
+ const EDGE = 28, GAP = 14, COLS = 4;
+ const COL_GAP = GAP; // alias kept for compat
+ const COL_W = Math.floor((W - EDGE * 2 - GAP * (COLS - 1)) / COLS);
+ const colX = c => EDGE + c * (COL_W + GAP);
+ const BTN_H = 96, ROW_GAP = 10;
+ const TITLE_H = 72, TAB_H = 64, STATUS_H = 56, FOOT_H = 108;
+ const CONTENT_Y = TITLE_H + TAB_H;
+ const FOOT_Y    = H - STATUS_H - FOOT_H;
+ const rowY  = r => CONTENT_Y + 10 + r * (BTN_H + ROW_GAP);
+ const closeW = Math.floor((W - EDGE * 2 - GAP) / 2);
+
+ // ── Design tokens ───────────────────────────────────────────
+ const CLR = {
+ accentBlue: '#4A90D9', accentCyan: '#00D4FF', accentPurple: '#A855F7',
+ timeColor: '#F59E0B', displayColor: '#3B82F6', locomotionColor: '#10B981',
+ textPrimary: '#E8F4FF', textSecondary: '#5a85a8',
+ };
 
  this.vrButtons = [];
 
- // ─────────────────── btn() helper ──────────────────────────
+ // ── btn() helper — glassmorphism style ─────────────────────
  const btn = (label, action, x, y, w, h, opts = {}) => {
  const isActive   = opts.active   ?? false;
  const isDanger   = opts.danger   ?? false;
  const isSuccess  = opts.success  ?? false;
  const isFlashing = state.flashAction === action;
-
+ const accent     = opts.accent   || CLR.accentBlue;
  ctx.save();
 
+ // Glow shadow under key states
+ if (isFlashing)      { ctx.shadowColor = '#FFD600'; ctx.shadowBlur = 20; }
+ else if (isActive)   { ctx.shadowColor = accent;    ctx.shadowBlur = 14; }
+ else if (isDanger)   { ctx.shadowColor = '#EF4444'; ctx.shadowBlur = 8;  }
+
+ // Background
  let topCol, botCol, bdrCol, txtCol;
- if (isFlashing) {
- topCol = '#FFF176'; botCol = '#FFD600'; bdrCol = '#FF8F00'; txtCol = '#1a0e00';
- } else if (isDanger) {
- topCol = opts.bg  || '#2e0d0d'; botCol = opts.bg2 || '#1a0606';
- bdrCol = opts.border || '#882222'; txtCol = opts.text || '#FFAAAA';
- } else if (isSuccess) {
- topCol = '#0e2a0e'; botCol = '#061606';
- bdrCol = '#2a8822'; txtCol = '#AAFFAA';
- } else if (isActive) {
- topCol = '#1e5a98'; botCol = '#0d2d50';
- bdrCol = '#5BC0F5'; txtCol = '#FFFFFF';
- } else {
- topCol = opts.bg  || '#162030'; botCol = opts.bg2 || '#0c1420';
- bdrCol = opts.border || '#2a4060'; txtCol = opts.text || '#B0D4F0';
- }
+ if (isFlashing)     { topCol = '#FFF176'; botCol = '#FFD600'; bdrCol = '#FF8F00'; txtCol = '#1a0e00'; }
+ else if (isDanger)  { topCol = opts.bg  || '#2e0d0d'; botCol = opts.bg2 || '#1a0606'; bdrCol = opts.border || '#882222'; txtCol = opts.text || '#FFAAAA'; }
+ else if (isSuccess) { topCol = opts.bg  || '#0e2a18'; botCol = opts.bg2 || '#071510'; bdrCol = opts.border || '#1a7a44'; txtCol = opts.text || '#AAFFCC'; }
+ else if (isActive)  { topCol = '#1a4a90'; botCol = '#0c2450'; bdrCol = accent; txtCol = '#FFFFFF'; }
+ else                { topCol = opts.bg  || '#0e1e32'; botCol = opts.bg2 || '#070f1e'; bdrCol = opts.border || '#1a3050'; txtCol = opts.text || CLR.textPrimary; }
 
  const fg = ctx.createLinearGradient(x, y, x, y + h);
  fg.addColorStop(0, topCol); fg.addColorStop(1, botCol);
  ctx.fillStyle = fg;
- ctx.beginPath(); ctx.roundRect(x, y, w, h, 10); ctx.fill();
+ ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fill();
 
- if (isActive) { ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 14; }
+ ctx.shadowBlur = 0;
  ctx.strokeStyle = bdrCol;
  ctx.lineWidth = isActive ? 1.5 : 1;
- ctx.beginPath(); ctx.roundRect(x, y, w, h, 10); ctx.stroke();
- ctx.shadowBlur = 0;
+ ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.stroke();
+
+ // Active top-glow accent stripe
+ if (isActive) {
+ const gl = ctx.createLinearGradient(x, y, x + w, y);
+ gl.addColorStop(0, 'rgba(74,144,217,0)'); gl.addColorStop(0.5, accent); gl.addColorStop(1, 'rgba(74,144,217,0)');
+ ctx.fillStyle = gl; ctx.fillRect(x + 2, y, w - 4, 2);
+ }
 
  if (opts.sublabel) {
- ctx.fillStyle = isActive ? 'rgba(255,255,255,0.6)' : 'rgba(130,170,200,0.7)';
+ ctx.fillStyle = isActive ? 'rgba(255,255,255,0.55)' : 'rgba(100,140,170,0.7)';
  ctx.font = '14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
  ctx.fillText(opts.sublabel, x + w / 2, y + h * 0.68, w - 12);
  ctx.fillStyle = txtCol;
@@ -956,122 +966,128 @@ this.camera.near = 10.0;
  if (action) this.vrButtons.push({ x, y, w, h, label, action });
  };
 
- // ─────────────────── section label helper ──────────────────
- const sectionLabel = (text, lx, ly, lw) => {
- const m = ctx.measureText(text);
- ctx.fillStyle = '#243040';
- ctx.fillRect(lx, ly + 9, lw, 1);
- ctx.fillStyle = '#0c1828';
- ctx.fillRect(lx, ly - 2, m.width + 14, 20);
- ctx.fillStyle = '#4a7a9a';
- ctx.font = 'bold 14px Arial';
+ // ── Section label with accent-bar + separator ───────────────
+ const sectionLabel = (text, lx, ly, lw, color = CLR.accentBlue) => {
+ ctx.save();
+ ctx.fillStyle = color; ctx.fillRect(lx, ly - 2, 3, 18);
+ ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(lx + 8, ly + 7, lw - 8, 1);
+ ctx.fillStyle = color; ctx.font = 'bold 13px Arial';
  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
- ctx.fillText(text, lx, ly - 1);
+ ctx.fillText(text, lx + 10, ly - 1);
+ ctx.restore();
  };
 
- // ─────────────────── background + stars ────────────────────
+ // ═══════════════════════════════════════════════════════
+ // BACKGROUND — deep space with dual aurora glows
+ // ═══════════════════════════════════════════════════════
  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
- bgGrad.addColorStop(0, '#060a14');
- bgGrad.addColorStop(0.5, '#08101e');
- bgGrad.addColorStop(1, '#04080f');
+ bgGrad.addColorStop(0, '#020611'); bgGrad.addColorStop(0.45, '#040a16'); bgGrad.addColorStop(1, '#030710');
  ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
 
- // nebula accent glow
- const nebGrad = ctx.createRadialGradient(W * 0.78, H * 0.22, 0, W * 0.78, H * 0.22, W * 0.45);
- nebGrad.addColorStop(0, 'rgba(60, 20, 100, 0.12)');
- nebGrad.addColorStop(0.5, 'rgba(20, 10, 60, 0.06)');
- nebGrad.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = nebGrad; ctx.fillRect(0, 0, W, H);
+ const aur1 = ctx.createRadialGradient(W * 0.15, H * 0.08, 0, W * 0.15, H * 0.08, W * 0.42);
+ aur1.addColorStop(0, 'rgba(74,144,217,0.10)'); aur1.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = aur1; ctx.fillRect(0, 0, W, H);
 
- // deterministic star field (seeded LCG)
+ const aur2 = ctx.createRadialGradient(W * 0.88, H * 0.9, 0, W * 0.88, H * 0.9, W * 0.40);
+ aur2.addColorStop(0, 'rgba(120,40,200,0.08)'); aur2.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = aur2; ctx.fillRect(0, 0, W, H);
+
+ // Deterministic star field
  let sr = 98273;
  const srand = () => { sr = (sr * 1103515245 + 12345) & 0x7fffffff; return sr / 0x7fffffff; };
- for (let i = 0; i < 90; i++) {
- const sx = srand() * W, sy = srand() * (H - 100) + 5;
- const sa = 0.12 + srand() * 0.55;
- const ss = 0.4 + srand() * 1.4;
- ctx.fillStyle = `rgba(180,210,255,${sa.toFixed(2)})`;
+ for (let i = 0; i < 80; i++) {
+ const sx = srand() * W, sy = srand() * (H - 80) + 5;
+ const sa = 0.08 + srand() * 0.45, ss = 0.3 + srand() * 1.1;
+ ctx.fillStyle = `rgba(180,220,255,${sa.toFixed(2)})`;
  ctx.beginPath(); ctx.arc(sx, sy, ss, 0, Math.PI * 2); ctx.fill();
  }
 
- // ─────────────────── title bar ─────────────────────────────
- const hdrGrad = ctx.createLinearGradient(0, 0, W, 0);
- hdrGrad.addColorStop(0, '#08101e'); hdrGrad.addColorStop(0.5, '#0e1e34'); hdrGrad.addColorStop(1, '#08101e');
- ctx.fillStyle = hdrGrad; ctx.fillRect(0, 0, W, 74);
-
+ // Outer panel border glow
  ctx.save();
- const titleGrad = ctx.createLinearGradient(W/2 - 220, 0, W/2 + 220, 0);
- titleGrad.addColorStop(0, '#8EC5FC');
- titleGrad.addColorStop(0.45, '#D0EAFF');
- titleGrad.addColorStop(0.75, '#C8B8FF');
- titleGrad.addColorStop(1, '#E0C3FC');
- ctx.fillStyle = titleGrad;
- ctx.font = 'bold 34px Arial';
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 18;
- ctx.fillText('\uD83C\uDF0C Space Voyage VR', W / 2, 37);
+ ctx.strokeStyle = 'rgba(74,144,217,0.20)'; ctx.lineWidth = 2;
+ ctx.beginPath(); ctx.roundRect(2, 2, W - 4, H - 4, 14); ctx.stroke();
  ctx.restore();
 
- // ✕ close button — always visible in top-right of title bar
- btn('\u2715', 'hide', W - 74, 8, 58, 58, { danger: true, font: 'bold 26px Arial' });
+ // ═══════════════════════════════════════════════════════
+ // TITLE BAR
+ // ═══════════════════════════════════════════════════════
+ const hdrGrad = ctx.createLinearGradient(0, 0, W, 0);
+ hdrGrad.addColorStop(0, '#050e1e'); hdrGrad.addColorStop(0.5, '#0b1e36'); hdrGrad.addColorStop(1, '#050e1e');
+ ctx.fillStyle = hdrGrad; ctx.fillRect(0, 0, W, TITLE_H);
 
- // Grab hint (tiny, right side of title bar, left of close button)
- ctx.fillStyle = 'rgba(70,110,160,0.65)';
- ctx.font = '12px Arial'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
- ctx.fillText('\uD83E\uDD1A right grip: move', W - 84, 60);
-
- // glowing title divider
- const divGrad = ctx.createLinearGradient(0, 74, W, 74);
- divGrad.addColorStop(0, 'rgba(74,144,217,0)');
- divGrad.addColorStop(0.3, 'rgba(74,144,217,0.9)');
- divGrad.addColorStop(0.7, 'rgba(123,184,245,0.9)');
- divGrad.addColorStop(1, 'rgba(74,144,217,0)');
- ctx.fillStyle = divGrad; ctx.fillRect(0, 74, W, 2);
-
- // ─────────────────── page tabs ─────────────────────────────
- // (_VR_TABS is a module-level constant — not reallocated each redraw)
- const TW = Math.floor(W / _VR_TABS.length);
- _VR_TABS.forEach((tab, i) => {
- const active = state.currentPage === tab.id;
- const tabBg = ctx.createLinearGradient(i * TW, 80, i * TW, 152);
- if (active) { tabBg.addColorStop(0, '#0f2640'); tabBg.addColorStop(1, '#0a1a2e'); }
- else        { tabBg.addColorStop(0, '#080f1a'); tabBg.addColorStop(1, '#060c14'); }
- ctx.fillStyle = tabBg;
- ctx.fillRect(i * TW, 80, TW - 2, 72);
-
- if (active) {
  ctx.save();
- const glowGrad = ctx.createLinearGradient(i * TW, 148, (i + 1) * TW - 2, 148);
- glowGrad.addColorStop(0, 'rgba(74,144,217,0.2)');
- glowGrad.addColorStop(0.5, '#5BC0F5');
- glowGrad.addColorStop(1, 'rgba(74,144,217,0.2)');
- ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 8;
- ctx.fillStyle = glowGrad; ctx.fillRect(i * TW, 148, TW - 2, 4);
+ const titleGrad = ctx.createLinearGradient(W / 2 - 210, 0, W / 2 + 210, 0);
+ titleGrad.addColorStop(0, '#7EC8F8'); titleGrad.addColorStop(0.4, '#D0EAFF');
+ titleGrad.addColorStop(0.72, '#C0AAFF'); titleGrad.addColorStop(1, '#E0C3FC');
+ ctx.fillStyle = titleGrad;
+ ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 20;
+ ctx.fillText('\uD83C\uDF0C Space Voyage VR', W / 2, TITLE_H / 2);
+ ctx.restore();
+
+ // ✕ close button
+ btn('\u2715', 'hide', W - 70, 9, 54, 54, { danger: true, font: 'bold 24px Arial' });
+
+ ctx.fillStyle = 'rgba(60,90,130,0.6)';
+ ctx.font = '11px Arial'; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+ ctx.fillText('\uD83E\uDD1A grip: move panel', W - 84, TITLE_H - 4);
+
+ // Title divider
+ const divGrad = ctx.createLinearGradient(0, TITLE_H, W, TITLE_H);
+ divGrad.addColorStop(0, 'rgba(74,144,217,0)'); divGrad.addColorStop(0.3, 'rgba(74,144,217,0.75)');
+ divGrad.addColorStop(0.7, 'rgba(123,184,245,0.75)'); divGrad.addColorStop(1, 'rgba(74,144,217,0)');
+ ctx.fillStyle = divGrad; ctx.fillRect(0, TITLE_H - 1, W, 2);
+
+ // ═══════════════════════════════════════════════════════
+ // TAB BAR — pill-style active indicator
+ // ═══════════════════════════════════════════════════════
+ const _VR_TABS_MODERN = [
+ { id: 'controls', label: '\u2699\uFE0F  Controls' },
+ { id: 'navigate', label: '\uD83E\uDDED  Navigate' },
+ { id: 'info',     label: 'i\uFE0F  Info' }
+ ];
+ const TW = Math.floor(W / _VR_TABS_MODERN.length);
+ _VR_TABS_MODERN.forEach((tab, i) => {
+ const active = state.currentPage === tab.id;
+ const tx = i * TW, ty = TITLE_H;
+ const tabBg = ctx.createLinearGradient(tx, ty, tx, ty + TAB_H);
+ tabBg.addColorStop(0, active ? '#0a2040' : '#050c18');
+ tabBg.addColorStop(1, active ? '#061428' : '#030810');
+ ctx.fillStyle = tabBg; ctx.fillRect(tx, ty, TW - 2, TAB_H);
+ if (active) {
+ ctx.save(); ctx.shadowColor = CLR.accentBlue; ctx.shadowBlur = 10;
+ const pillW = (TW - 2) * 0.6, pillX = tx + ((TW - 2) - pillW) / 2;
+ const pillGrad = ctx.createLinearGradient(pillX, 0, pillX + pillW, 0);
+ pillGrad.addColorStop(0, 'rgba(74,144,217,0.3)');
+ pillGrad.addColorStop(0.5, CLR.accentBlue);
+ pillGrad.addColorStop(1, 'rgba(74,144,217,0.3)');
+ ctx.fillStyle = pillGrad;
+ ctx.beginPath(); ctx.roundRect(pillX, ty + TAB_H - 5, pillW, 5, 3); ctx.fill();
  ctx.restore();
  }
-
- ctx.fillStyle = active ? '#E8F4FF' : '#4a6a8a';
- ctx.font = active ? 'bold 26px Arial' : '24px Arial';
+ ctx.fillStyle = active ? '#DDEEFF' : '#2a5070';
+ ctx.font = active ? 'bold 20px Arial' : '18px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(tab.label, i * TW + TW / 2, 116);
- this.vrButtons.push({ x: i * TW, y: 80, w: TW - 2, h: 68, label: tab.label, action: `page:${tab.id}` });
+ ctx.fillText(tab.label, tx + TW / 2, ty + TAB_H / 2 - 2);
+ this.vrButtons.push({ x: tx, y: ty, w: TW - 2, h: TAB_H, label: tab.label, action: `page:${tab.id}` });
  });
- ctx.fillStyle = '#1a2a3a'; ctx.fillRect(0, 152, W, 2);
+ ctx.fillStyle = '#0e1e30'; ctx.fillRect(0, TITLE_H + TAB_H - 1, W, 2);
 
- // ─────────────────── status bar ────────────────────────────
- const stBarGrad = ctx.createLinearGradient(0, H-88, 0, H);
- stBarGrad.addColorStop(0, '#0c1520'); stBarGrad.addColorStop(1, '#080e18');
- ctx.fillStyle = stBarGrad; ctx.fillRect(0, H - 88, W, 88);
- ctx.fillStyle = '#1e3040'; ctx.fillRect(0, H - 88, W, 1);
+ // ═══════════════════════════════════════════════════════
+ // STATUS BAR (bottom strip)
+ // ═══════════════════════════════════════════════════════
+ const sbY = H - STATUS_H;
+ ctx.fillStyle = '#050d1a'; ctx.fillRect(0, sbY, W, STATUS_H);
+ ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(0, sbY, W, 1);
  const msg = state.statusMessage || '\u2728 Ready';
- const msgColor = msg.includes('\u26A0') ? '#FFB347' : msg.includes('\u2714') ? '#66CC88' : '#7AAACE';
- ctx.fillStyle = msgColor;
- ctx.font = '21px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(msg, W / 2, H - 44);
+ const msgCol = msg.includes('\u26A0') ? CLR.timeColor : msg.includes('\u2714') ? '#34D399' : '#7AAACE';
+ ctx.fillStyle = msgCol; ctx.font = '20px Arial';
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(msg, W / 2, sbY + STATUS_H / 2);
 
- // ─────────────────── shared footer buttons ─────────────────
- btn('\uD83D\uDEAA Close Menu', 'hide', EDGE, FOOT_Y, closeW, BTN_H);
- btn('\u274C Exit VR', 'exitvr', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H, { danger: true });
+ // ── Shared footer buttons ───────────────────────────────────
+ btn('\uD83D\uDEAA  Close Menu', 'hide', EDGE, FOOT_Y, closeW, BTN_H, { bg: '#0c1e38', bg2: '#060f1e', border: '#1e3a5a' });
+ btn('\u274C  Exit VR', 'exitvr', EDGE + closeW + GAP, FOOT_Y, closeW, BTN_H, { danger: true });
 
  // ═══════════════════════════════════════════════════════════
  // CONTROLS PAGE
@@ -1080,27 +1096,30 @@ this.camera.near = 10.0;
  const spd = state.timeSpeed;
  const s0 = spd === 0, s1 = spd === 1, s10 = spd === 10, s100 = spd >= 100;
 
- sectionLabel('TIME SCALE', EDGE, rowY(0) - 22, W - EDGE * 2);
- btn('\u23F8 Pause', 'speed0',  colX(0), rowY(0), COL_W, BTN_H, { active: s0,   sublabel: '0\u00D7' });
- btn('\u25B6 Play',  'speed1',  colX(1), rowY(0), COL_W, BTN_H, { active: s1,   sublabel: '1\u00D7' });
- btn('\u23E9 Fast',  'speed10', colX(2), rowY(0), COL_W, BTN_H, { active: s10,  sublabel: '10\u00D7' });
- btn('\u23E9\u23E9 Max', 'speed100', colX(3), rowY(0), COL_W, BTN_H, { active: s100, sublabel: '100\u00D7' });
+ // — TIME SCALE ——————————————————————————————————————
+ sectionLabel('TIME SCALE', EDGE, rowY(0) - 24, W - EDGE * 2, CLR.timeColor);
+ btn('\u23F8  Pause', 'speed0',  colX(0), rowY(0), COL_W, BTN_H, { active: s0,   sublabel: '0\u00D7', accent: CLR.timeColor });
+ btn('\u25B6  Play',  'speed1',  colX(1), rowY(0), COL_W, BTN_H, { active: s1,   sublabel: '1\u00D7', accent: CLR.timeColor });
+ btn('\u23E9  Fast',  'speed10', colX(2), rowY(0), COL_W, BTN_H, { active: s10,  sublabel: '10\u00D7', accent: CLR.timeColor });
+ btn('\u23E9\u23E9 Max', 'speed100', colX(3), rowY(0), COL_W, BTN_H, { active: s100, sublabel: '100\u00D7', accent: CLR.timeColor });
 
- sectionLabel('TOOLS', EDGE, rowY(1) - 22, W - EDGE * 2);
- btn('\uD83D\uDD04 Reset',    'reset',       colX(0), rowY(1), COL_W, BTN_H);
- btn('\uD83C\uDFB2 Discover', 'discover',    colX(1), rowY(1), COL_W, BTN_H);
- btn(state.audioEnabled ? '\uD83D\uDD0A Sound' : '\uD83D\uDD07 Sound',
- 'sound', colX(2), rowY(1), COL_W, BTN_H, { active: state.audioEnabled });
- btn('\uD83C\uDFAF Lasers', 'togglelasers', colX(3), rowY(1), COL_W, BTN_H, { active: state.lasersVisible });
+ // — DISPLAY ————————————————————————————————————————
+ sectionLabel('DISPLAY', EDGE, rowY(1) - 24, W - EDGE * 2, CLR.displayColor);
+ btn('\uD83E\uDE90  Orbits',         'orbits',        colX(0), rowY(1), COL_W, BTN_H, { active: state.orbitsVisible,         accent: CLR.displayColor });
+ btn('\uD83C\uDFF7\uFE0F  Labels',   'labels',         colX(1), rowY(1), COL_W, BTN_H, { active: state.labelsVisible,         accent: CLR.displayColor });
+ btn('\u2B50  Stars',                'constellations', colX(2), rowY(1), COL_W, BTN_H, { active: state.constellationsVisible,  accent: CLR.displayColor });
+ btn('\uD83D\uDCCF  Scale',          'scale',          colX(3), rowY(1), COL_W, BTN_H, { active: state.realisticScale,        accent: CLR.displayColor });
 
- sectionLabel('DISPLAY', EDGE, rowY(2) - 22, W - EDGE * 2);
- btn('\uD83E\uDE90 Orbits',       'orbits',         colX(0), rowY(2), COL_W, BTN_H, { active: state.orbitsVisible });
- btn('\uD83C\uDFF7\uFE0F Labels', 'labels',          colX(1), rowY(2), COL_W, BTN_H, { active: state.labelsVisible });
- btn('\u2B50 Stars',              'constellations',  colX(2), rowY(2), COL_W, BTN_H, { active: state.constellationsVisible });
- btn('\uD83D\uDCCF Scale',        'scale',           colX(3), rowY(2), COL_W, BTN_H, { active: state.realisticScale });
+ // — TOOLS ——————————————————————————————————————————
+ sectionLabel('TOOLS', EDGE, rowY(2) - 24, W - EDGE * 2, CLR.accentPurple);
+ btn('\uD83D\uDD04  Reset',    'reset',        colX(0), rowY(2), COL_W, BTN_H, { accent: CLR.accentPurple });
+ btn('\uD83C\uDFB2  Discover', 'discover',     colX(1), rowY(2), COL_W, BTN_H, { accent: CLR.accentPurple });
+ btn(state.audioEnabled ? '\uD83D\uDD0A  Sound' : '\uD83D\uDD07  Sound',
+ 'sound', colX(2), rowY(2), COL_W, BTN_H, { active: state.audioEnabled, accent: CLR.accentPurple });
+ btn('\uD83C\uDFAF  Lasers', 'togglelasers', colX(3), rowY(2), COL_W, BTN_H, { active: state.lasersVisible, accent: CLR.accentPurple });
 
- // ── LOCOMOTION: Starship Mode (full-width warp-drive button) ──────────
- sectionLabel('LOCOMOTION', EDGE, rowY(3) - 22, W - EDGE * 2);
+ // — LOCOMOTION: Starship Mode ——————————————————————————
+ sectionLabel('LOCOMOTION', EDGE, rowY(3) - 24, W - EDGE * 2, CLR.locomotionColor);
  {
  const shipX = colX(0), shipY = rowY(3);
  const shipW = 4 * COL_W + 3 * COL_GAP, shipH = BTN_H;
@@ -1186,30 +1205,34 @@ this.camera.near = 10.0;
  // ═══════════════════════════════════════════════════════════
  else if (state.currentPage === 'navigate') {
  const catalog = this.getVRNavCatalog();
- const CAT_H = 50;
- const catW  = Math.floor(W / catalog.length);
+ const CAT_H = 54, CAT_GAP = 10;
+ const catPillW = Math.floor((W - EDGE * 2 - CAT_GAP * (catalog.length - 1)) / catalog.length);
 
  catalog.forEach((cat, i) => {
  const active = state.currentCategory === cat.id;
- const cbg = active
- ? (() => { const g = ctx.createLinearGradient(i*catW, CONTENT_Y, i*catW, CONTENT_Y+CAT_H); g.addColorStop(0,'#12304e'); g.addColorStop(1,'#0a1e32'); return g; })()
- : (() => { const g = ctx.createLinearGradient(i*catW, CONTENT_Y, i*catW, CONTENT_Y+CAT_H); g.addColorStop(0,'#0a1220'); g.addColorStop(1,'#060c16'); return g; })();
- ctx.fillStyle = cbg;
- ctx.fillRect(i * catW, CONTENT_Y, catW - 1, CAT_H);
+ const px = EDGE + i * (catPillW + CAT_GAP), py = CONTENT_Y + 10;
+ ctx.save();
+ const pbg = ctx.createLinearGradient(px, py, px, py + CAT_H);
+ pbg.addColorStop(0, active ? '#122040' : '#0a1020');
+ pbg.addColorStop(1, active ? '#0a1428' : '#050810');
+ ctx.fillStyle = pbg;
+ ctx.beginPath(); ctx.roundRect(px, py, catPillW, CAT_H, CAT_H / 2); ctx.fill();
 
  if (active) {
- ctx.save();
- ctx.shadowColor = '#3A80D0'; ctx.shadowBlur = 8;
- const cbdr = ctx.createLinearGradient(i*catW, 0, (i+1)*catW, 0);
- cbdr.addColorStop(0,'rgba(74,144,217,0.3)'); cbdr.addColorStop(0.5,'#4A90D9'); cbdr.addColorStop(1,'rgba(74,144,217,0.3)');
- ctx.fillStyle = cbdr; ctx.fillRect(i * catW, CONTENT_Y + CAT_H - 3, catW - 1, 3);
- ctx.restore();
+ ctx.shadowColor = CLR.accentBlue; ctx.shadowBlur = 10;
+ ctx.strokeStyle = CLR.accentBlue; ctx.lineWidth = 1.5;
+ } else {
+ ctx.strokeStyle = '#14283c'; ctx.lineWidth = 1;
  }
- ctx.fillStyle = active ? '#D8EEFF' : '#3a5a7a';
- ctx.font = active ? 'bold 18px Arial' : '16px Arial';
+ ctx.beginPath(); ctx.roundRect(px, py, catPillW, CAT_H, CAT_H / 2); ctx.stroke();
+ ctx.shadowBlur = 0;
+
+ ctx.fillStyle = active ? '#D8EEFF' : '#2a4e6a';
+ ctx.font = active ? 'bold 18px Arial' : '17px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(cat.label, i * catW + catW / 2, CONTENT_Y + CAT_H / 2);
- this.vrButtons.push({ x: i*catW, y: CONTENT_Y, w: catW-1, h: CAT_H, label: cat.label, action: `cat:${cat.id}` });
+ ctx.fillText(cat.label, px + catPillW / 2, py + CAT_H / 2);
+ ctx.restore();
+ this.vrButtons.push({ x: px, y: py, w: catPillW, h: CAT_H, label: cat.label, action: `cat:${cat.id}` });
  });
 
  const curCat = catalog.find(c => c.id === state.currentCategory) || catalog[0];
@@ -1218,30 +1241,34 @@ this.camera.near = 10.0;
  const offset = state.scrollOffset || 0;
  const page = items.slice(offset, offset + PER);
  const ITEM_H = 72, ITEM_GAP = 8;
- const GRID_Y = CONTENT_Y + CAT_H + 10;
- const ITEM_W = Math.floor((W - EDGE * 2 - COL_GAP * (COLS - 1)) / COLS);
+ const GRID_Y = CONTENT_Y + CAT_H + 22;
+ const ITEM_W = Math.floor((W - EDGE * 2 - GAP * (COLS - 1)) / COLS);
 
  page.forEach((item, idx) => {
  const col = idx % COLS, row = Math.floor(idx / COLS);
- const ix = EDGE + col * (ITEM_W + COL_GAP);
+ const ix = EDGE + col * (ITEM_W + GAP);
  const iy = GRID_Y + row * (ITEM_H + ITEM_GAP);
- btn(item.label, `navigate-to:${item.id}`, ix, iy, ITEM_W, ITEM_H, { font: 'bold 19px Arial' });
+ btn(item.label, `navigate-to:${item.id}`, ix, iy, ITEM_W, ITEM_H, {
+ font: 'bold 19px Arial', bg: '#0c1e32', bg2: '#06101e', border: '#1a3050'
+ });
  });
 
  const totalPages = Math.ceil(items.length / PER);
  const curPage = Math.floor(offset / PER) + 1;
- const PAG_Y = GRID_Y + 4 * (ITEM_H + ITEM_GAP) + 8;
- const pAgW  = Math.floor((W - EDGE*2 - COL_GAP*2) / 3);
- const pMidW = W - EDGE*2 - pAgW*2 - COL_GAP*2;
+ const PAG_Y = GRID_Y + 4 * (ITEM_H + ITEM_GAP) + 10;
+ const pAgW  = Math.floor((W - EDGE * 2 - GAP * 2) / 3);
+ const pMidW = W - EDGE * 2 - pAgW * 2 - GAP * 2;
 
- if (offset > 0) btn('\u25C4 Prev', 'scroll:prev', EDGE, PAG_Y, pAgW, BTN_H);
- ctx.fillStyle = '#4a7090'; ctx.font = '20px Arial';
+ if (offset > 0) btn('\u25C4  Prev', 'scroll:prev', EDGE, PAG_Y, pAgW, BTN_H);
+ ctx.fillStyle = '#3a6080'; ctx.font = 'bold 20px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(`${curPage} / ${totalPages}`, EDGE + pAgW + COL_GAP + pMidW/2, PAG_Y + BTN_H/2);
- if (offset + PER < items.length) btn('Next \u25BA', 'scroll:next', EDGE + pAgW + COL_GAP + pMidW + COL_GAP, PAG_Y, pAgW, BTN_H);
- 
- const RESET_Y = PAG_Y + BTN_H + 20;
- btn('\uD83D\uDE80 Reset to Solar System View', 'reset', EDGE, RESET_Y, W - EDGE*2, 70, { bg: '#1a2a40', bg2: '#0e1828', border: '#3a6a9a', font: 'bold 22px Arial' });
+ ctx.fillText(`${curPage} / ${totalPages}`, EDGE + pAgW + GAP + pMidW / 2, PAG_Y + BTN_H / 2);
+ if (offset + PER < items.length) btn('Next  \u25BA', 'scroll:next', EDGE + pAgW + GAP + pMidW + GAP, PAG_Y, pAgW, BTN_H);
+
+ const RESET_Y = PAG_Y + BTN_H + 16;
+ btn('\uD83D\uDE80  Reset to Solar System View', 'reset', EDGE, RESET_Y, W - EDGE * 2, 70, {
+ bg: '#0e1e38', bg2: '#070f1e', border: '#1e3a60', font: 'bold 22px Arial'
+ });
  }
 
  // ═══════════════════════════════════════════════════════════
@@ -1376,28 +1403,24 @@ this.camera.near = 10.0;
  if (line && lineY + 24 < DESC_Y + DESC_H - 10) ctx.fillText(line, EDGE + 16, lineY);
 
  } else {
- // No info – placeholder with gentle animation hint
- const cx = W/2, cy = CONTENT_Y + 260;
- const phGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 160);
+ // No info – empty state
+ const cx = W / 2, cy = CONTENT_Y + 250;
+ const phGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 180);
  phGlow.addColorStop(0, 'rgba(60,120,200,0.12)'); phGlow.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = phGlow; ctx.fillRect(cx-200, cy-80, 400, 160);
-
- ctx.fillStyle = '#2a4860';
+ ctx.fillStyle = phGlow; ctx.fillRect(cx - 220, cy - 100, 440, 200);
+ ctx.fillStyle = '#1e3a5a';
  ctx.font = '58px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText('\uD83D\uDD2D', cx, cy - 40);
-
- ctx.fillStyle = '#3a6080';
- ctx.font = 'bold 28px Arial';
- ctx.fillText('Point & select an object', cx, cy + 30);
- ctx.fillStyle = '#2a4860';
- ctx.font = '22px Arial';
- ctx.fillText('in space to see its details here', cx, cy + 66);
+ ctx.fillText('\uD83D\uDD2D', cx, cy - 48);
+ ctx.fillStyle = '#2a5a80'; ctx.font = 'bold 28px Arial';
+ ctx.fillText('Aim your controller at an object', cx, cy + 22);
+ ctx.fillStyle = '#1a3a54'; ctx.font = '21px Arial';
+ ctx.fillText('Trigger — select it to see details here', cx, cy + 60);
  }
 
- // Info page footer — Navigate to go back, ✕ to close the overlay
+ // Info page footer
  this.vrButtons = this.vrButtons.filter(b => b.action !== 'hide' && b.action !== 'exitvr');
- btn('\uD83E\uDDED Navigate', 'page:navigate', EDGE, FOOT_Y, closeW, BTN_H, { success: true });
- btn('\u2715 Close', 'hide', EDGE + closeW + COL_GAP, FOOT_Y, closeW, BTN_H, { danger: true });
+ btn('\uD83E\uDDED  Navigate', 'page:navigate', EDGE, FOOT_Y, closeW, BTN_H, { bg: '#0e2a18', bg2: '#07131a', border: '#1a6030', text: '#AAFFCC' });
+ btn('\u2715  Close', 'hide', EDGE + closeW + GAP, FOOT_Y, closeW, BTN_H, { danger: true });
  }
 
  // ─────────────────── flush texture ─────────────────────────
