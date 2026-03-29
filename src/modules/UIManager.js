@@ -1,7 +1,7 @@
 ﻿// ===========================
 // UI MANAGER MODULE
 // ===========================
-import { DEBUG } from './utils.js';
+import { DEBUG, APP_VERSION } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
 
 export class UIManager {
@@ -120,6 +120,8 @@ export class UIManager {
  this.elements.settingsModal.classList.remove('hidden');
  this.elements.settingsModal.setAttribute('aria-hidden', 'false');
  this._trapFocus(this.elements.settingsModal);
+ const verEl = document.getElementById('app-version-display');
+ if (verEl) verEl.textContent = `v${APP_VERSION}`;
  }
  }
 

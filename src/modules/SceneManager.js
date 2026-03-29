@@ -1095,6 +1095,10 @@ this.camera.near = 10.0;
  ctx.fillStyle = msgCol; ctx.font = '20px Arial';
  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
  ctx.fillText(msg, W / 2, sbY + STATUS_H / 2);
+ // Version bottom-right of status bar
+ ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = '15px Arial';
+ ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+ ctx.fillText('v' + (window.APP_VERSION || ''), W - EDGE, sbY + STATUS_H / 2);
 
  // ── Shared footer buttons ───────────────────────────────────
  btn('\uD83D\uDEAA  Close Menu', 'hide', EDGE, FOOT_Y, closeW, BTN_H, { bg: '#0c1e38', bg2: '#060f1e', border: '#1e3a5a' });
@@ -2688,8 +2692,10 @@ this.camera.near = 10.0;
  if (sd < minDist) minDist = sd;
  }
  }
- // Near = 5% of surface distance, clamped between 0.01 and 10.0
- const newNear = Math.min(10.0, Math.max(0.01, minDist * 0.05));
+ // Near = 5% of surface distance, clamped 0.01–0.1.
+ // Max MUST stay below the VR panel distance (2.2 m); 10.0 was clipping the
+ // panel and any spacecraft right in front of the camera (e.g. Voyager 2).
+ const newNear = Math.min(0.1, Math.max(0.01, minDist * 0.05));
  if (Math.abs(this.camera.near - newNear) > 0.005) {
  this.camera.near = newNear;
  this.camera.updateProjectionMatrix();
@@ -2697,26 +2703,24 @@ this.camera.near = 10.0;
  }
  }
 
- // ── Both-trigger warp toggle ────────────────────────────────────────────
+ // ── Both-trigger warp: active while BOTH triggers held, off when released ─
  if (this.renderer.xr.isPresenting) {
  const bothTriggersHeld = !!(this._vrTriggerPressed?.left && this._vrTriggerPressed?.right);
- if (this._vrWarpToggleCooldown > 0) this._vrWarpToggleCooldown--;
- if (bothTriggersHeld && this._vrWarpToggleCooldown === 0) {
- this.vrStarshipMode = !this.vrStarshipMode;
- this._vrWarpToggleCooldown = 90; // ≈1.5 s lock-out (prevent rapid flicker)
- if (this.vrStarshipMode) {
+ const wasWarp = this.vrStarshipMode;
+ this.vrStarshipMode = bothTriggersHeld;
+ if (bothTriggersHeld && !wasWarp) {
+ // Just engaged — haptic + effect
  this.updateVRStatus('🚀 WARP DRIVE ENGAGED • 20× speed');
  this._activateVRWarpEffect();
- } else {
- this.updateVRStatus('🛸 Warp disengaged');
- this._deactivateVRWarpEffect();
- }
- // Haptic pulse on both controllers
  this.triggerVRHaptic(0, 0.6, 120);
  this.triggerVRHaptic(1, 0.6, 120);
  this.requestVRMenuRefresh();
+ } else if (!bothTriggersHeld && wasWarp) {
+ // Just disengaged
+ this.updateVRStatus('🛸 Warp disengaged');
+ this._deactivateVRWarpEffect();
+ this.requestVRMenuRefresh();
  }
- if (!bothTriggersHeld) this._vrWarpToggleCooldown = Math.max(0, this._vrWarpToggleCooldown - 0);
  }
 
  // ── Warp effect update ────────────────────────────────────────────────

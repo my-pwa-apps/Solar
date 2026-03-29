@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 
 // Import all modules
-import { DEBUG, CONFIG, IS_MOBILE } from './modules/utils.js';
+import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';
 import { warmupTextureCache } from './modules/TextureCache.js';
 import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
@@ -16,6 +16,7 @@ import { setupOnboarding } from './modules/AppFeatures.js';
 
 // Make audio manager globally accessible
 window.audioManager = audioManager;
+window.APP_VERSION = APP_VERSION;
 
 // i18n.js is loaded globally in index.html. Use a late-binding wrapper so calls always use
 // the fully-initialised translation function rather than capturing window.t at import time.
