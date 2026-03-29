@@ -147,6 +147,8 @@ const translations = {
         // Bottom bar tooltips
         tooltipOrbits: "Show/hide orbital paths (O)",
         tooltipConstellations: "Show/hide star constellations (C)",
+        toggleBloom: "Bloom",
+        tooltipBloom: "Toggle bloom glow effect (B)",
         tooltipLabels: "Toggle object labels (D)",
         tooltipScale: "Toggle educational/scientific mode (S)",
         tooltipSound: "Toggle sound effects",
@@ -750,6 +752,8 @@ const translations = {
         // Knopinfo onderste balk
         tooltipOrbits: "Orbitale paden tonen/verbergen (O)",
         tooltipConstellations: "Sterrenbeelden tonen/verbergen (C)",
+        toggleBloom: "Bloom",
+        tooltipBloom: "Gloeflitseffect in-/uitschakelen (B)",
         tooltipLabels: "Objectlabels in-/uitschakelen (D)",
         tooltipScale: "Schakel tussen educatieve/wetenschappelijke modus (S)",
         tooltipSound: "Geluidseffecten in-/uitschakelen",
@@ -1345,6 +1349,8 @@ const translations = {
         // Infobulles barre du bas
         tooltipOrbits: "Afficher/masquer les orbites (O)",
         tooltipConstellations: "Afficher/masquer les constellations (C)",
+        toggleBloom: "Bloom",
+        tooltipBloom: "Activer/désactiver l'effet de lueur (B)",
         tooltipLabels: "Basculer les étiquettes d'objets (D)",
         tooltipScale: "Basculer entre les modes éducatif/scientifique (S)",
         tooltipSound: "Activer/désactiver les effets sonores",
@@ -1934,6 +1940,8 @@ const translations = {
         // Tooltips untere Leiste
         tooltipOrbits: "Umlaufbahnen ein-/ausblenden (O)",
         tooltipConstellations: "Sternbilder ein-/ausblenden (C)",
+        toggleBloom: "Bloom",
+        tooltipBloom: "Leuchtefekt ein-/ausschalten (B)",
         tooltipLabels: "Objektbeschriftungen umschalten (D)",
         tooltipScale: "Zwischen lehrreichem/wissenschaftlichem Modus wechseln (S)",
         tooltipSound: "Soundeffekte ein-/ausschalten",
@@ -2521,6 +2529,8 @@ const translations = {
         // Información sobre herramientas barra inferior
         tooltipOrbits: "Mostrar/ocultar trayectorias orbitales (O)",
         tooltipConstellations: "Mostrar/ocultar constelaciones (C)",
+        toggleBloom: "Bloom",
+        tooltipBloom: "Activar/desactivar efecto de brillo (B)",
         tooltipLabels: "Alternar etiquetas de objetos (D)",
         tooltipScale: "Alternar entre modo educativo/científico (S)",
         tooltipSound: "Activar/desactivar efectos de sonido",
@@ -3108,6 +3118,8 @@ const translations = {
         // Dicas da barra inferior
         tooltipOrbits: "Mostrar/ocultar trajetórias orbitais (O)",
         tooltipConstellations: "Mostrar/ocultar constelações (C)",
+        toggleBloom: "Bloom",
+        tooltipBloom: "Ativar/desativar efeito de brilho (B)",
         tooltipLabels: "Alternar etiquetas de objetos (D)",
         tooltipScale: "Alternar entre modo educacional/científico (S)",
         tooltipSound: "Ativar/desativar efeitos sonoros",

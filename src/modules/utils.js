@@ -135,26 +135,38 @@ export class TextureGeneratorUtils {
  }
  
  /**
-  * Simple deterministic pseudo-random noise function
+  * Smooth value noise using bilinear interpolation with quintic smoothstep.
+  * Much higher quality than old sin-hash: no visible grid artifacts at high zoom.
   * @param {number} x - X coordinate
   * @param {number} y - Y coordinate
   * @param {number} seed - Random seed (default: 0)
   * @returns {number} Noise value between 0 and 1
   */
  static noise(x, y, seed = 0) {
- const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
+ const ix = Math.floor(x), iy = Math.floor(y);
+ const fx = x - ix, fy = y - iy;
+ // Quintic smoothstep (Ken Perlin's improved C2-continuous)
+ const ux = fx * fx * fx * (fx * (fx * 6 - 15) + 10);
+ const uy = fy * fy * fy * (fy * (fy * 6 - 15) + 10);
+ // Hash function for corner values
+ const h = (a, b) => {
+ const n = Math.sin(a * 127.1 + b * 311.7 + seed * 45.164) * 43758.5453;
  return n - Math.floor(n);
+ };
+ const a = h(ix, iy), b = h(ix + 1, iy);
+ const c = h(ix, iy + 1), d = h(ix + 1, iy + 1);
+ return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
  }
- 
+
  /**
   * Fractal Brownian Motion - multi-octave noise for natural patterns
   * @param {number} x - X coordinate
   * @param {number} y - Y coordinate
-  * @param {number} octaves - Number of noise layers (default: 4)
+  * @param {number} octaves - Number of noise layers (default: 6)
   * @param {Function} noiseFunc - Noise function to use (default: TextureGeneratorUtils.noise)
   * @returns {number} FBM value between 0 and 1
   */
- static fbm(x, y, octaves = 4, noiseFunc = TextureGeneratorUtils.noise) {
+ static fbm(x, y, octaves = 6, noiseFunc = TextureGeneratorUtils.noise) {
  let value = 0;
  let amplitude = 1;
  let frequency = 1;
@@ -169,7 +181,22 @@ export class TextureGeneratorUtils {
  
  return value / maxValue;
  }
- 
+
+ /**
+  * Domain-warped FBM — warps input coordinates using FBM before sampling.
+  * Produces more natural, flowing terrain shapes (ridges, river-like features)
+  * compared to plain FBM. Use for planets that need organic-looking surfaces.
+  * @param {number} x - X coordinate
+  * @param {number} y - Y coordinate
+  * @param {number} octaves - Number of noise layers (default: 6)
+  * @returns {number} Warped FBM value between 0 and 1
+  */
+ static fbmWarped(x, y, octaves = 6) {
+ const wx = x + TextureGeneratorUtils.fbm(x * 0.5, y * 0.5, 4);
+ const wy = y + TextureGeneratorUtils.fbm(x * 0.5 + 3.2, y * 0.5 + 1.7, 4);
+ return TextureGeneratorUtils.fbm(wx, wy, octaves);
+ }
+
  /**
   * Finalize texture - convert canvas to THREE.CanvasTexture
   * @param {HTMLCanvasElement} canvas - Canvas element

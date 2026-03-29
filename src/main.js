@@ -30,6 +30,7 @@ const UI_ELEMENTS = {
  ORBITS_BUTTON: 'toggle-orbits',
  CONSTELLATIONS_BUTTON: 'toggle-constellations',
  LABELS_BUTTON: 'toggle-details',
+ BLOOM_BUTTON: 'toggle-bloom',
  SCALE_BUTTON: 'toggle-scale',
  RESET_VIEW: 'reset-view',
  HELP_BUTTON: 'help-button',
@@ -274,8 +275,8 @@ class App {
  if (savedOrbitMode !== null && this.solarSystemModule) {
  this.applyOrbitMode(savedOrbitMode, { persist: false });
  } else {
- // Default on first load: show all orbits
- this._updateOrbitButton('all');
+ // Default on first load: orbits off for a cleaner initial view
+ this.applyOrbitMode('none', { persist: false });
  }
  
  // Restore constellations visibility
@@ -288,13 +289,15 @@ class App {
  });
  } else {
  const defaultConstellationsVisible = this.solarSystemModule?.constellationsVisible ?? false;
+ // Sync scene state (THREE.js objects default to visible=true)
+ if (this.solarSystemModule) this.solarSystemModule.toggleConstellations(defaultConstellationsVisible);
  const constellationsButton = document.getElementById(UI_ELEMENTS.CONSTELLATIONS_BUTTON);
  if (constellationsButton) {
  constellationsButton.classList.toggle('toggle-on', defaultConstellationsVisible);
  constellationsButton.setAttribute('aria-pressed', defaultConstellationsVisible.toString());
  }
  }
- 
+
  // Restore labels visibility (special case: needs sceneManager property update)
  const savedLabelsState = safeGetItem(STORAGE_KEYS.LABELS);
  if (savedLabelsState !== null && this.solarSystemModule && this.sceneManager) {
@@ -379,6 +382,18 @@ class App {
  }
 
  this.solarSystemModule.updateScale();
+
+ // Realistic mode milkyWay navigate target ≈ 366,667 units and the galaxy disc extends
+ // to ~333k radius. With the camera at ~366k the far edge of the disc is >700k units from
+ // the camera — beyond the default camera.far (500k) causing parts of the galaxy to be
+ // clipped. Expand both the controls zoom limit and camera frustum far plane.
+ if (this.sceneManager?.controls) {
+ this.sceneManager.controls.maxDistance = realisticScale ? 800000 : CONFIG.CONTROLS.maxDistance;
+ }
+ if (this.sceneManager?.camera) {
+ this.sceneManager.camera.far = realisticScale ? 2000000 : CONFIG.CAMERA.far;
+ this.sceneManager.camera.updateProjectionMatrix();
+ }
 
  const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
  if (scaleButton) {
@@ -550,6 +565,32 @@ class App {
  });
  }
 
+ // Bloom toggle button — only show when the EffectComposer was actually initialised.
+ // (It is skipped on mobile/low-power devices, so the button would do nothing there.)
+ const bloomButton = document.getElementById(UI_ELEMENTS.BLOOM_BUTTON);
+ if (bloomButton) {
+ if (!this.sceneManager.composer) {
+ bloomButton.classList.add('hidden');
+ } else {
+ // Restore bloom state from localStorage (default: off)
+ const savedBloom = safeGetItem('bloomEnabled');
+ const bloomOn = savedBloom === 'true';
+ if (!bloomOn) {
+ this.sceneManager.toggleBloom(false);
+ }
+ bloomButton.classList.toggle('toggle-on', bloomOn);
+ bloomButton.setAttribute('aria-pressed', bloomOn.toString());
+
+ bloomButton.addEventListener('click', () => {
+ const enabled = bloomButton.getAttribute('aria-pressed') !== 'true';
+ this.sceneManager.toggleBloom(enabled);
+ bloomButton.setAttribute('aria-pressed', enabled.toString());
+ bloomButton.classList.toggle('toggle-on', enabled);
+ safeSetItem('bloomEnabled', enabled.toString());
+ });
+ }
+ }
+
  // Scale toggle button
  // Note: Initial state is restored in restoreSavedToggleStates() after solar system is ready
  const scaleButton = document.getElementById(UI_ELEMENTS.SCALE_BUTTON);
@@ -590,6 +631,14 @@ class App {
  this.solarSystemModule.resetConstellationHighlight();
  }
  this.sceneManager.resetCamera();
+ // Keep the scale-appropriate limits after reset
+ if (this.solarSystemModule?.realisticScale) {
+ if (this.sceneManager?.controls) this.sceneManager.controls.maxDistance = 800000;
+ if (this.sceneManager?.camera) {
+ this.sceneManager.camera.far = 2000000;
+ this.sceneManager.camera.updateProjectionMatrix();
+ }
+ }
  });
  }
  // Canvas click for object selection
@@ -783,17 +832,31 @@ class App {
  'butterfly-nebula': ['butterflyNebula'],
  }},
  { prefix: '', array: 'galaxies', exactMatch: 'exact', patterns: {
- 'andromeda-galaxy': ['andromedaGalaxy'],
- 'whirlpool-galaxy': ['whirlpoolGalaxy'],
- 'sombrero-galaxy': ['sombreroGalaxy'],
+ 'andromeda-galaxy':       ['andromedaGalaxy'],
+ 'triangulum-galaxy':      ['triangulumGalaxy'],
+ 'whirlpool-galaxy':       ['whirlpoolGalaxy'],
+ 'sombrero-galaxy':        ['sombreroGalaxy'],
+ 'pinwheel-galaxy':        ['pinwheelGalaxy'],
+ 'bodes-galaxy':           ['bodesGalaxy'],
+ 'cigar-galaxy':           ['cigarGalaxy'],
+ 'sculptor-galaxy':        ['sculptorGalaxy'],
+ 'centaurus-a':            ['centaurusAGalaxy'],
+ 'large-magellanic-cloud': ['largeMagellanicCloud'],
+ 'small-magellanic-cloud': ['smallMagellanicCloud'],
  }},
- { prefix: '', array: 'objects', exactMatch: 'exact', patterns: {
- 'alpha-centauri': ['alphaCentauriA'],
- 'proxima-centauri': ['proximaCentauri'],
- 'proxima-b': ['proximaCentauri'],
- 'kepler-452b': ['kepler452Star'],
- 'trappist-1e': ['trappist1Star'],
- 'kepler-186f': ['kepler186Star'],
+ // Exoplanet navigation: navigate to the planet mesh, not the host star
+ { prefix: '', array: 'exoplanets', patterns: {
+ 'proxima-b':  ['Proxima Centauri b'],
+ 'kepler-452b': ['Kepler-452b'],
+ 'trappist-1e': ['TRAPPIST-1e'],
+ 'kepler-186f': ['Kepler-186f'],
+ }},
+ { prefix: '', array: 'nearbyStars', exactMatch: 'exact', patterns: {
+ 'alpha-centauri':    ['alphaCentauriA'],
+ 'proxima-centauri':  ['proximaCentauri'],
+ 'kepler-452-star':   ['kepler452Star'],
+ 'trappist-1-star':   ['trappist1Star'],
+ 'kepler-186-star':   ['kepler186Star'],
  }},
  { prefix: '', array: 'comets', patterns: {
  'halley': ["Halley's Comet"],
@@ -1087,6 +1150,9 @@ class App {
  break;
  case 'd':
  document.getElementById(UI_ELEMENTS.LABELS_BUTTON)?.click();
+ break;
+ case 'b':
+ document.getElementById(UI_ELEMENTS.BLOOM_BUTTON)?.click();
  break;
  case 's':
  document.getElementById(UI_ELEMENTS.SCALE_BUTTON)?.click();

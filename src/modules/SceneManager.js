@@ -5,12 +5,24 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { CONFIG, DEBUG, IS_MOBILE } from './utils.js';
 import { safeSetItem } from './storage.js';
 
 // Properties that MeshBasicMaterial does NOT support as uniforms.
 // If any are truthy on a MeshBasicMaterial, Three.js refreshUniformsCommon crashes.
 const BASIC_MAT_BANNED_PROPS = ['emissive','emissiveMap','normalMap','bumpMap','displacementMap'];
+
+// Module-level constant: VR menu page tabs — defined once, never reallocated on each drawVRMenu() call.
+const _VR_TABS = [
+ { id: 'controls', label: '\u2699\uFE0F  Controls' },
+ { id: 'navigate', label: '\uD83E\uDDED  Navigate' },
+ { id: 'info',     label: '\u2139\uFE0F  Info' }
+];
 
 export class SceneManager {
  constructor() {
@@ -60,6 +72,10 @@ export class SceneManager {
  this._vrLaserFrame = 0; // For throttling expensive laser raycasts
  this._vrIntersections = []; // Reused raycast results buffer (avoids per-frame array alloc)
 
+ // Post-processing composer (desktop only)
+ this.composer = null;
+ this.bloomPass = null;
+
  // Adaptive pixel ratio runtime state
  this._adaptivePixelRatio = Math.min(window.devicePixelRatio, CONFIG.RENDERER.maxPixelRatio);
  this._adaptiveFpsFrameCount = 0;
@@ -74,8 +90,9 @@ export class SceneManager {
  this._preVRCameraQuaternion = null;
  this._preVRControlsTarget = null;
 
- // VR menu debounce timer
- this._vrMenuRefreshTimer = null;
+ // VR menu dirty flag (replaces the old setTimeout debounce
+ // to avoid closure/timer allocations on every rapid input event)
+ this._vrMenuDirty = false;
 
  this.init();
  }
@@ -88,6 +105,7 @@ export class SceneManager {
  this.setupLighting();
  this.setupXR();
  this.setupEventListeners();
+ this.setupPostProcessing();
 
  // Desktop VR emulation: apply VR camera position so you can see
  // exactly what the headset sees, without needing a headset.
@@ -219,9 +237,9 @@ export class SceneManager {
  // Set scene background to dark space color
  this.scene.background = new THREE.Color(0x000011);
  
- // Ambient light - very faint fill so dark sides aren't pure black.
+ // Ambient light - subtle fill so dark sides retain detail.
  // SolarSystemModule.createSun() adds its own ambient (0x202030, 0.08) on top.
- this.lights.ambient = new THREE.AmbientLight(0x111122, 0.06);
+ this.lights.ambient = new THREE.AmbientLight(0x111122, 0.12);
  this.scene.add(this.lights.ambient);
 
  // Hemisphere light - extremely subtle sky/ground tint
@@ -236,6 +254,62 @@ export class SceneManager {
  if (DEBUG && DEBUG.enabled) {
  console.log('[Lighting] Scene lighting configured: low ambient fill + sun PointLight in SolarSystemModule');
  }
+ }
+
+ setupPostProcessing() {
+ // Post-processing is desktop-only for performance.
+ // During WebXR presentation, fall back to direct renderer.render() —
+ // the XR compositor doesn't support EffectComposer render targets.
+ this.bloomEnabled = true; // toggled via toggleBloom()
+ if (IS_MOBILE) return;
+
+ try {
+ this.composer = new EffectComposer(this.renderer);
+
+ // Pass 1 — render scene normally
+ this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+ // Pass 2 — UnrealBloom: glowing Sun corona + bright stars
+ // High threshold (0.85) ensures only the sun and very bright elements bloom;
+ // planets stay below the threshold and are unaffected.
+ this._bloomStrength = 0.55; // stored so toggle can restore it
+ this.bloomPass = new UnrealBloomPass(
+ new THREE.Vector2(window.innerWidth, window.innerHeight),
+ this._bloomStrength, // strength — noticeable but not over-the-top
+ 0.5, // radius — spread of the glow
+ 0.82 // threshold — only very bright pixels bloom
+ );
+ this.composer.addPass(this.bloomPass);
+
+ // Pass 3 — SMAA: high-quality antialiasing (better than MSAA for transparencies)
+ const smaaPass = new SMAAPass(
+ window.innerWidth * this.renderer.getPixelRatio(),
+ window.innerHeight * this.renderer.getPixelRatio()
+ );
+ this.composer.addPass(smaaPass);
+
+ // Pass 4 — OutputPass: colour-space conversion + tone-mapping for final canvas output
+ this.composer.addPass(new OutputPass());
+
+ if (DEBUG && DEBUG.enabled) {
+ console.log('[PostFX] EffectComposer initialised: Bloom (strength=0.55 thresh=0.82) + SMAA + OutputPass');
+ }
+ } catch (e) {
+ console.warn('[PostFX] Failed to initialise post-processing, falling back to direct render:', e);
+ this.composer = null;
+ }
+ }
+
+ /** Enable or disable bloom at runtime.
+ * Sets strength to 0 (off) or restores saved strength (on) —
+ * avoids the EffectComposer buffer-swap issue that occurs when a
+ * pass is fully disabled mid-chain. */
+ toggleBloom(enabled) {
+ this.bloomEnabled = enabled;
+ if (this.bloomPass) {
+ this.bloomPass.strength = enabled ? (this._bloomStrength || 0.55) : 0;
+ }
+ if (DEBUG.enabled) console.log(`[PostFX] Bloom ${enabled ? 'ON' : 'OFF'}`);
  }
 
  setupXR() {
@@ -269,6 +343,7 @@ export class SceneManager {
  this.controllers = [];
  this.controllerGrips = [];
  this.lasersVisible = true; // Toggle for laser pointers
+ this.vrStarshipMode = false; // Starship mode: 20× speed boost
  
  // Shared materials for controller visuals (same colour both sides → one material each)
  const laserMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
@@ -664,12 +739,8 @@ this.camera.near = 10.0;
 
  requestVRMenuRefresh() {
  if (!this.vrUIContext) return;
- // Debounce: coalesce rapid refresh requests into a single redraw
- if (this._vrMenuRefreshTimer) clearTimeout(this._vrMenuRefreshTimer);
- this._vrMenuRefreshTimer = setTimeout(() => {
- this._vrMenuRefreshTimer = null;
- this.drawVRMenu();
- }, 16); // ~1 frame at 60fps
+ // Mark dirty; the animate loop flushes at most once per frame — zero allocations.
+ this._vrMenuDirty = true;
  }
 
  getVRMenuState() {
@@ -691,7 +762,8 @@ this.camera.near = 10.0;
  currentCategory: ns.currentCategory || 'solar',
  scrollOffset: ns.scrollOffset || 0,
  audioEnabled: window.audioManager?.enabled ?? true,
- lastObjectInfo: this.vrLastObjectInfo || null
+ lastObjectInfo: this.vrLastObjectInfo || null,
+ starshipMode: this.vrStarshipMode
  };
  }
 
@@ -946,13 +1018,9 @@ this.camera.near = 10.0;
  ctx.fillStyle = divGrad; ctx.fillRect(0, 74, W, 2);
 
  // ─────────────────── page tabs ─────────────────────────────
- const TABS = [
- { id: 'controls', label: '\u2699\uFE0F  Controls' },
- { id: 'navigate', label: '\uD83E\uDDED  Navigate' },
- { id: 'info',     label: '\u2139\uFE0F  Info' }
- ];
- const TW = Math.floor(W / TABS.length);
- TABS.forEach((tab, i) => {
+ // (_VR_TABS is a module-level constant — not reallocated each redraw)
+ const TW = Math.floor(W / _VR_TABS.length);
+ _VR_TABS.forEach((tab, i) => {
  const active = state.currentPage === tab.id;
  const tabBg = ctx.createLinearGradient(i * TW, 80, i * TW, 152);
  if (active) { tabBg.addColorStop(0, '#0f2640'); tabBg.addColorStop(1, '#0a1a2e'); }
@@ -1019,6 +1087,73 @@ this.camera.near = 10.0;
  btn('\uD83C\uDFF7\uFE0F Labels', 'labels',          colX(1), rowY(2), COL_W, BTN_H, { active: state.labelsVisible });
  btn('\u2B50 Stars',              'constellations',  colX(2), rowY(2), COL_W, BTN_H, { active: state.constellationsVisible });
  btn('\uD83D\uDCCF Scale',        'scale',           colX(3), rowY(2), COL_W, BTN_H, { active: state.realisticScale });
+
+ // ── LOCOMOTION: Starship Mode (full-width warp-drive button) ──────────
+ sectionLabel('LOCOMOTION', EDGE, rowY(3) - 22, W - EDGE * 2);
+ {
+ const shipX = colX(0), shipY = rowY(3);
+ const shipW = 4 * COL_W + 3 * COL_GAP, shipH = BTN_H;
+ const shipActive = state.starshipMode;
+ ctx.save();
+
+ // Background
+ const shipBg = ctx.createLinearGradient(shipX, shipY, shipX + shipW, shipY + shipH);
+ if (shipActive) {
+ shipBg.addColorStop(0, '#031828'); shipBg.addColorStop(0.35, '#052535');
+ shipBg.addColorStop(0.65, '#062030'); shipBg.addColorStop(1, '#031828');
+ } else {
+ shipBg.addColorStop(0, '#080c14'); shipBg.addColorStop(0.5, '#0a1218'); shipBg.addColorStop(1, '#080c14');
+ }
+ ctx.fillStyle = shipBg;
+ ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 10); ctx.fill();
+
+ if (shipActive) {
+ // Warp-speed streak lines (deterministic seeded LCG)
+ ctx.save();
+ ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 10); ctx.clip();
+ let ws = 443271; const wr = () => { ws = (ws * 1103515245 + 12345) & 0x7fffffff; return ws / 0x7fffffff; };
+ for (let si = 0; si < 28; si++) {
+ const ly = shipY + wr() * shipH;
+ const len = 30 + wr() * 220;
+ const lx = shipX + wr() * (shipW - len);
+ const alpha = 0.06 + wr() * 0.25;
+ ctx.strokeStyle = `rgba(0,229,255,${alpha.toFixed(2)})`; ctx.lineWidth = wr() < 0.25 ? 2 : 1;
+ ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + len, ly); ctx.stroke();
+ }
+ // Radial warp-core glow
+ const rg = ctx.createRadialGradient(shipX + shipW * 0.5, shipY + shipH * 0.5, 0, shipX + shipW * 0.5, shipY + shipH * 0.5, shipW * 0.38);
+ rg.addColorStop(0, 'rgba(0,180,230,0.22)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = rg; ctx.fillRect(shipX, shipY, shipW, shipH);
+ ctx.restore();
+ }
+
+ // Border
+ if (shipActive) {
+ ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 26; ctx.strokeStyle = '#00CCFF'; ctx.lineWidth = 2;
+ } else {
+ ctx.strokeStyle = '#1e4860'; ctx.lineWidth = 1;
+ }
+ ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 10); ctx.stroke();
+ ctx.shadowBlur = 0;
+
+ // Text
+ ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ const midSX = shipX + shipW / 2, midSY = shipY + shipH / 2;
+ if (shipActive) {
+ ctx.fillStyle = '#00E5FF'; ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 14;
+ ctx.font = 'bold 28px Arial';
+ ctx.fillText('\uD83D\uDE80  STARSHIP MODE', midSX, midSY - 12, shipW - 60);
+ ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,220,255,0.82)'; ctx.font = '15px Arial';
+ ctx.fillText('20\u00D7 WARP DRIVE ENGAGED  \u2022  hold trigger for 60\u00D7 hyperwarp', midSX, midSY + 16, shipW - 60);
+ } else {
+ ctx.fillStyle = '#4a8aa8'; ctx.font = 'bold 26px Arial';
+ ctx.fillText('\uD83D\uDE80  STARSHIP MODE', midSX, midSY - 10, shipW - 60);
+ ctx.fillStyle = 'rgba(100,160,190,0.65)'; ctx.font = '15px Arial';
+ ctx.fillText('OFF  \u2022  press to unlock 20\u00D7 speed boost  \u2022  trigger = 60\u00D7 hyperwarp', midSX, midSY + 14, shipW - 60);
+ }
+ ctx.restore();
+ this.vrButtons.push({ x: shipX, y: shipY, w: shipW, h: shipH, label: '\uD83D\uDE80 STARSHIP MODE', action: 'starship' });
+ }
  }
 
  // ═══════════════════════════════════════════════════════════
@@ -1094,17 +1229,18 @@ this.camera.near = 10.0;
  // helper: type → accent colors + icon
  const typeStyle = (t) => {
  const tl = (t || '').toLowerCase();
- if (tl.includes('star')) return { icon: '\u2B50', accent: '#FFD700', dim:'#3d2e00', badge:'#2a1e00' };
- if (tl.includes('gas'))  return { icon: '\uD83E\uDE90', accent: '#88AAEE', dim:'#1a1e40', badge:'#0e1428' };
- if (tl.includes('moon')) return { icon: '\uD83C\uDF19', accent: '#AAAACC', dim:'#1e1e30', badge:'#12121e' };
- if (tl.includes('planet')) return { icon: '\uD83C\uDF0D', accent: '#44CC88', dim:'#0e2a1a', badge:'#081a10' };
- if (tl.includes('dwarf')) return { icon: '\uD83D\uDD34', accent: '#CC8844', dim:'#2a1a0a', badge:'#1a1006' };
- if (tl.includes('comet')) return { icon: '\u2604\uFE0F', accent: '#88CCFF', dim:'#0a2030', badge:'#061520' };
- if (tl.includes('nebula')) return { icon: '\uD83C\uDF0B', accent: '#CC88FF', dim:'#1e0a30', badge:'#120620' };
- if (tl.includes('galaxy')) return { icon: '\uD83C\uDF00', accent: '#FF88CC', dim:'#2a0a1a', badge:'#1a0610' };
- if (tl.includes('constellation')) return { icon: '\u2728', accent: '#FFCC88', dim:'#2a1e00', badge:'#1a1200' };
- if (tl.includes('spacecraft') || tl.includes('station')) return { icon: '\uD83D\uDEF8', accent: '#80CCFF', dim:'#0a1e30', badge:'#061220' };
- return { icon: '\u2022', accent: '#70B0E0', dim:'#0a1a2a', badge:'#060e1a' };
+ if (tl.includes('star')) return { icon: '⭐', accent: '#FFD700', dim:'#3d2e00', badge:'#2a1e00' };
+ if (tl.includes('gas'))  return { icon: '🪐', accent: '#88AAEE', dim:'#1a1e40', badge:'#0e1428' };
+ if (tl.includes('moon')) return { icon: '🌙', accent: '#AAAACC', dim:'#1e1e30', badge:'#12121e' };
+ if (tl.includes('exoplanet')) return { icon: '🌍', accent: '#55EE99', dim:'#0a2a18', badge:'#061a10' };
+ if (tl.includes('planet')) return { icon: '🌍', accent: '#44CC88', dim:'#0e2a1a', badge:'#081a10' };
+ if (tl.includes('dwarf')) return { icon: '🔴', accent: '#CC8844', dim:'#2a1a0a', badge:'#1a1006' };
+ if (tl.includes('comet')) return { icon: '☄️', accent: '#88CCFF', dim:'#0a2030', badge:'#061520' };
+ if (tl.includes('nebula')) return { icon: '🌋', accent: '#CC88FF', dim:'#1e0a30', badge:'#120620' };
+ if (tl.includes('galaxy')) return { icon: '🌀', accent: '#FF88CC', dim:'#2a0a1a', badge:'#1a0610' };
+ if (tl.includes('constellation')) return { icon: '✨', accent: '#FFCC88', dim:'#2a1e00', badge:'#1a1200' };
+ if (tl.includes('spacecraft') || tl.includes('station')) return { icon: '🛸', accent: '#80CCFF', dim:'#0a1e30', badge:'#061220' };
+ return { icon: '•', accent: '#70B0E0', dim:'#0a1a2a', badge:'#060e1a' };
  };
 
  const ts = typeStyle(info.type);
@@ -1813,6 +1949,17 @@ this.camera.near = 10.0;
  this.updateVRStatus('🎯 Lasers ' + (this.lasersVisible ? 'ON' : 'OFF'));
  scheduleRefresh(); break;
 
+ case 'starship':
+ this.vrStarshipMode = !this.vrStarshipMode;
+ if (this.vrStarshipMode) {
+ this.updateVRStatus('🚀 STARSHIP MODE ENGAGED • 20× speed');
+ this.triggerVRHaptic(0, 0.9, 220);
+ this.triggerVRHaptic(1, 0.9, 220);
+ } else {
+ this.updateVRStatus('🛸 Starship mode OFF • normal speed');
+ }
+ scheduleRefresh(); break;
+
  case 'reset':
  if (this.renderer.xr.isPresenting) {
  // In VR camera.position is owned by the HMD — move the dolly back to
@@ -1956,8 +2103,11 @@ this.camera.near = 10.0;
  controller.userData._laserVisualDist = visualDist;
  }
 
- // Colour: orange = sprint, green = hit, cyan = idle
- const col = sprintActive ? 0xff6600 : hasHit ? 0x00ff00 : 0x00ffff;
+ // Colour: magenta=hyperwarp, bright-cyan=starship, orange=sprint, green=hit, cyan=idle
+ const col = (this.vrStarshipMode && sprintActive) ? 0xff00ff
+ : this.vrStarshipMode ? 0x00ccff
+ : sprintActive ? 0xff6600
+ : hasHit ? 0x00ff00 : 0x00ffff;
  laser.material.color.setHex(col);
  if (pointer) pointer.material.color.setHex(col);
  if (cone) cone.material.color.setHex(col);
@@ -2115,7 +2265,8 @@ this.camera.near = 10.0;
  // LEFT CONTROLLER: MOVEMENT (like FPS games)
  // ============================================
  if (handedness === 'left') {
- const baseSpeed = 0.40 * sprintMultiplier; // Increased from 0.25 for more responsive locomotion
+ const starshipMult = this.vrStarshipMode ? 20.0 : 1.0;
+ const baseSpeed = 0.40 * sprintMultiplier * starshipMult; // Increased from 0.25 for more responsive locomotion
  
  // Forward/Backward & Strafe (only if NOT grab-rotating)
  if (!this.grabRotateState.active &&
@@ -2145,8 +2296,9 @@ this.camera.near = 10.0;
  // RIGHT CONTROLLER: TURN & VERTICAL
  // ============================================
  if (handedness === 'right') {
+ const starshipMult = this.vrStarshipMode ? 20.0 : 1.0;
  const turnSpeed = 0.03;
- const vertSpeed = 0.25 * sprintMultiplier;
+ const vertSpeed = 0.25 * sprintMultiplier * starshipMult;
  
  // TURN LEFT/RIGHT (only if NOT grab-rotating)
  // Use quaternion premultiply around world-Y so Euler order never
@@ -2214,19 +2366,27 @@ this.camera.near = 10.0;
  const r = solarSystem.sun.userData?.radius || solarSystem.sun.geometry?.boundingSphere?.radius || 5;
  minDist = Math.max(d - r, 0.01);
  }
- // Check all planets and moons
- const collections = [solarSystem.planets, solarSystem.moons];
- for (const coll of collections) {
- if (!coll) continue;
- for (const key in coll) {
- const mesh = coll[key];
+ // Check all planets and moons (use two separate passes to avoid allocating a wrapper array)
+ if (solarSystem.planets) {
+ for (const key in solarSystem.planets) {
+ const mesh = solarSystem.planets[key];
  if (!mesh?.position) continue;
  mesh.getWorldPosition(this._vrPosScratch);
  const d = this._vrNearCheckPos.distanceTo(this._vrPosScratch);
  const r = mesh.userData?.radius || mesh.geometry?.boundingSphere?.radius || 1;
- // Surface distance (subtract radius so near scales from surface, not center)
- const surfaceDist = Math.max(d - r, 0.01);
- if (surfaceDist < minDist) minDist = surfaceDist;
+ const sd = Math.max(d - r, 0.01);
+ if (sd < minDist) minDist = sd;
+ }
+ }
+ if (solarSystem.moons) {
+ for (const key in solarSystem.moons) {
+ const mesh = solarSystem.moons[key];
+ if (!mesh?.position) continue;
+ mesh.getWorldPosition(this._vrPosScratch);
+ const d = this._vrNearCheckPos.distanceTo(this._vrPosScratch);
+ const r = mesh.userData?.radius || mesh.geometry?.boundingSphere?.radius || 1;
+ const sd = Math.max(d - r, 0.01);
+ if (sd < minDist) minDist = sd;
  }
  }
  // Near = 5% of surface distance, clamped between 0.01 and 10.0
@@ -2256,6 +2416,9 @@ this.camera.near = 10.0;
  this.renderer.setSize(window.innerWidth, window.innerHeight);
  if (this.labelRenderer) {
  this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+ }
+ if (this.composer) {
+ this.composer.setSize(window.innerWidth, window.innerHeight);
  }
  }
 
@@ -2350,15 +2513,21 @@ this.camera.near = 10.0;
  if (DEBUG.enabled || DEBUG.VR) console.error('[Scene] controls.update error:', e);
  }
 
- // ── 2b. First-frame material sanity check ────────────────
- // Scan for the first several frames to catch late-added async objects.
- if (frameCount < 120 && frameCount % 30 === 0) {
+ // ── 2b. Material sanity check (frames 0 and 60 only) ────────────────
+ // Two passes catches both synchronous-init and async-loaded objects
+ // without burning 4 full traversals per session (was frameCount < 120 && % 30).
+ if (frameCount === 0 || frameCount === 60) {
  this.scene.traverse((obj) => {
  if (!obj.isMesh && !obj.isSkinnedMesh) return;
- const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
- mats.forEach((mat) => {
- if (!mat || !mat.isMeshBasicMaterial) return;
- BASIC_MAT_BANNED_PROPS.forEach((prop) => {
+ // Avoid allocating [mat] for single-material meshes (the common case)
+ const matArr = obj.material;
+ const mats = Array.isArray(matArr) ? matArr : null;
+ const count = mats ? mats.length : 1;
+ for (let mi = 0; mi < count; mi++) {
+ const mat = mats ? mats[mi] : matArr;
+ if (!mat || !mat.isMeshBasicMaterial) continue;
+ for (let pi = 0; pi < BASIC_MAT_BANNED_PROPS.length; pi++) {
+ const prop = BASIC_MAT_BANNED_PROPS[pi];
  if (mat[prop]) {
  if (DEBUG && DEBUG.enabled) console.warn(
  `[MaterialFix] Removed .${prop} from MeshBasicMaterial on ` +
@@ -2367,14 +2536,27 @@ this.camera.near = 10.0;
  delete mat[prop];
  mat.needsUpdate = true;
  }
+ }
+ }
  });
- });
- });
+ }
+
+ // ── 2c. VR menu redraw (dirty-flag driven, at most once per frame) ───
+ if (this._vrMenuDirty && this.vrUIContext) {
+ this._vrMenuDirty = false;
+ this.drawVRMenu();
  }
 
  // ── 3. RENDER (must ALWAYS run, even if callback threw) ─────
  try {
+ // Use EffectComposer (bloom + SMAA) in desktop non-VR mode.
+ // Fall back to direct render inside WebXR — the XR compositor
+ // does not support EffectComposer render targets.
+ if (this.composer && !this.renderer.xr.isPresenting) {
+ this.composer.render();
+ } else {
  this.renderer.render(this.scene, this.camera);
+ }
  } catch (e) {
  console.error('[Scene] render() FAILED:', e);
  // One-shot diagnostic: find the material causing the crash
