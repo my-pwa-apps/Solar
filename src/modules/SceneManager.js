@@ -71,6 +71,9 @@ export class SceneManager {
  this._vrLaserFrame = 0; // For throttling expensive laser raycasts
  this._vrIntersections = []; // Reused raycast results buffer (avoids per-frame array alloc)
  this._vrReticle = null; // Teleport aim reticle — created in setupVR, positioned in updateLaserPointers
+ this._vrWarpEffect = null; // Warp streak LineSegments — created lazily on first warp activate
+ this._vrWarpPositions = null; // Pre-allocated Float32Array for warp streaks
+ this._vrBothTriggerFrames = 0; // Count consecutive frames both triggers are held (debounce warp)
 
  // Post-processing composer (desktop only)
  this.composer = null;
@@ -340,9 +343,10 @@ export class SceneManager {
  this.controllers = [];
  this.controllerGrips = [];
  this.lasersVisible = true; // Toggle for laser pointers
- this.vrStarshipMode = false; // Starship mode: 20× speed boost
+ this.vrStarshipMode = false; // Starship mode: 20× speed boost (activated by both triggers)
  this.vrSnapTurn = true; // Snap turn (default on) vs smooth turn — reduces VR sickness
  this._vrSnapCooldown = [false, false]; // Per-controller snap cooldown (prevent multiple snaps per hold)
+ this._vrWarpToggleCooldown = 0; // Debounce: frames before warp can toggle again
  
  // Shared materials for controller visuals (same colour both sides → one material each)
  const laserMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
@@ -1118,71 +1122,52 @@ this.camera.near = 10.0;
  'sound', colX(2), rowY(2), COL_W, BTN_H, { active: state.audioEnabled, accent: CLR.accentPurple });
  btn('\uD83C\uDFAF  Lasers', 'togglelasers', colX(3), rowY(2), COL_W, BTN_H, { active: state.lasersVisible, accent: CLR.accentPurple });
 
- // — LOCOMOTION: Starship Mode ——————————————————————————
+ // — LOCOMOTION: Warp banner + Snap-turn toggle ——————————————
  sectionLabel('LOCOMOTION', EDGE, rowY(3) - 24, W - EDGE * 2, CLR.locomotionColor);
  {
  const shipX = colX(0), shipY = rowY(3);
  const shipW = 4 * COL_W + 3 * COL_GAP, shipH = BTN_H;
- const shipActive = state.starshipMode;
- ctx.save();
+ const warpActive = state.starshipMode;
 
- // Background
- const shipBg = ctx.createLinearGradient(shipX, shipY, shipX + shipW, shipY + shipH);
- if (shipActive) {
- shipBg.addColorStop(0, '#031828'); shipBg.addColorStop(0.35, '#052535');
- shipBg.addColorStop(0.65, '#062030'); shipBg.addColorStop(1, '#031828');
+ // Warp status banner — informational only (no button: toggle is both triggers)
+ ctx.save();
+ const warpBg = ctx.createLinearGradient(shipX, shipY, shipX + shipW, shipY + shipH);
+ if (warpActive) {
+ warpBg.addColorStop(0, '#031828'); warpBg.addColorStop(0.5, '#0a2840'); warpBg.addColorStop(1, '#031828');
  } else {
- shipBg.addColorStop(0, '#080c14'); shipBg.addColorStop(0.5, '#0a1218'); shipBg.addColorStop(1, '#080c14');
+ warpBg.addColorStop(0, '#06101a'); warpBg.addColorStop(1, '#06101a');
  }
- ctx.fillStyle = shipBg;
- ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 10); ctx.fill();
+ ctx.fillStyle = warpBg;
+ ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.fill();
 
- if (shipActive) {
- // Warp-speed streak lines (deterministic seeded LCG)
- ctx.save();
- ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 10); ctx.clip();
+ if (warpActive) {
+ // Speed-streak lines (deterministic, clipped)
+ ctx.save(); ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.clip();
  let ws = 443271; const wr = () => { ws = (ws * 1103515245 + 12345) & 0x7fffffff; return ws / 0x7fffffff; };
- for (let si = 0; si < 28; si++) {
- const ly = shipY + wr() * shipH;
- const len = 30 + wr() * 220;
- const lx = shipX + wr() * (shipW - len);
- const alpha = 0.06 + wr() * 0.25;
- ctx.strokeStyle = `rgba(0,229,255,${alpha.toFixed(2)})`; ctx.lineWidth = wr() < 0.25 ? 2 : 1;
+ for (let si = 0; si < 22; si++) {
+ const ly = shipY + wr() * shipH, len = 20 + wr() * 160, lx = shipX + wr() * (shipW - len);
+ ctx.strokeStyle = `rgba(0,220,255,${(0.05 + wr() * 0.22).toFixed(2)})`; ctx.lineWidth = 1;
  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + len, ly); ctx.stroke();
  }
- // Radial warp-core glow
- const rg = ctx.createRadialGradient(shipX + shipW * 0.5, shipY + shipH * 0.5, 0, shipX + shipW * 0.5, shipY + shipH * 0.5, shipW * 0.38);
- rg.addColorStop(0, 'rgba(0,180,230,0.22)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = rg; ctx.fillRect(shipX, shipY, shipW, shipH);
  ctx.restore();
+ ctx.save(); ctx.shadowColor = '#00CCFF'; ctx.shadowBlur = 18;
+ ctx.strokeStyle = '#00CCFF'; ctx.lineWidth = 1.5;
+ ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.stroke();
+ ctx.restore();
+ } else {
+ ctx.strokeStyle = '#1a3050'; ctx.lineWidth = 1;
+ ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.stroke();
  }
 
- // Border
- if (shipActive) {
- ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 26; ctx.strokeStyle = '#00CCFF'; ctx.lineWidth = 2;
- } else {
- ctx.strokeStyle = '#1e4860'; ctx.lineWidth = 1;
- }
- ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 10); ctx.stroke();
- ctx.shadowBlur = 0;
-
- // Text
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- const midSX = shipX + shipW / 2, midSY = shipY + shipH / 2;
- if (shipActive) {
- ctx.fillStyle = '#00E5FF'; ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 14;
- ctx.font = 'bold 28px Arial';
- ctx.fillText('\uD83D\uDE80  STARSHIP MODE', midSX, midSY - 12, shipW - 60);
- ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,220,255,0.82)'; ctx.font = '15px Arial';
- ctx.fillText('20\u00D7 WARP DRIVE ENGAGED  \u2022  hold trigger for 60\u00D7 hyperwarp', midSX, midSY + 16, shipW - 60);
- } else {
- ctx.fillStyle = '#4a8aa8'; ctx.font = 'bold 26px Arial';
- ctx.fillText('\uD83D\uDE80  STARSHIP MODE', midSX, midSY - 10, shipW - 60);
- ctx.fillStyle = 'rgba(100,160,190,0.65)'; ctx.font = '15px Arial';
- ctx.fillText('OFF  \u2022  press to unlock 20\u00D7 speed boost  \u2022  trigger = 60\u00D7 hyperwarp', midSX, midSY + 14, shipW - 60);
- }
+ if (warpActive) { ctx.save(); ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 12; }
+ ctx.fillStyle = warpActive ? '#00E5FF' : '#2a5070';
+ ctx.font = 'bold 26px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(warpActive ? '\uD83D\uDE80  WARP DRIVE ENGAGED  \u2014  20\u00D7 speed' : '\uD83D\uDE80  WARP DRIVE', shipX + shipW / 2, shipY + shipH * 0.38, shipW - 60);
+ if (warpActive) ctx.restore();
+ ctx.fillStyle = warpActive ? 'rgba(0,210,255,0.75)' : 'rgba(60,120,160,0.6)';
+ ctx.font = '18px Arial';
+ ctx.fillText(warpActive ? 'Hold BOTH TRIGGERS to disengage' : 'Hold BOTH TRIGGERS simultaneously to engage', shipX + shipW / 2, shipY + shipH * 0.7, shipW - 60);
  ctx.restore();
- this.vrButtons.push({ x: shipX, y: shipY, w: shipW, h: shipH, label: '\uD83D\uDE80 STARSHIP MODE', action: 'starship' });
 
  // ── SNAP TURN TOGGLE ──
  const snapY = shipY + shipH + 12;
@@ -1834,16 +1819,87 @@ this.camera.near = 10.0;
 
  /**
  * Rotate the panel to face the user (yaw only — keeps panel vertical, no tilt).
+ * lookAt() requires WORLD-space coords. camera.position is dolly-local, so we
+ * must call getWorldPosition() — otherwise the billboard breaks after any dolly move.
  */
  _billboardVRPanel() {
  if (!this.vrUIPanel) return;
- // Panel is a child of dolly, so use dolly-local camera position for lookAt
- const camLocalPos = this._vrBillboardPos;
- camLocalPos.copy(this.camera.position); // camera.position is already dolly-local in XR
- this.vrUIPanel.lookAt(camLocalPos);
- // Strip pitch/roll so panel stays vertical
+ // Get camera world position (correct even after dolly has been moved/rotated)
+ this.camera.getWorldPosition(this._vrBillboardPos);
+ this.vrUIPanel.lookAt(this._vrBillboardPos);
+ // Strip pitch/roll so panel stays perfectly vertical (yaw only)
  const yRot = this.vrUIPanel.rotation.y;
  this.vrUIPanel.rotation.set(0, yRot, 0);
+ }
+
+ // ═══════════════════════════════════════════════════════════
+ // WARP EFFECT — 3D star-streak tunnel attached to dolly
+ // ═══════════════════════════════════════════════════════════
+
+ /** Lazy-create and show the warp streak LineSegments effect. */
+ _activateVRWarpEffect() {
+ if (!this.dolly) return;
+ if (!this._vrWarpEffect) {
+ const COUNT = 220;
+ const pos = new Float32Array(COUNT * 6); // 2 verts × 3 floats each
+ // Spread streaks in a tube along -Z (forward in camera space = away from scene)
+ for (let i = 0; i < COUNT; i++) {
+ const theta = Math.random() * Math.PI * 2;
+ const r = 0.4 + Math.random() * 9;
+ const z = -(5 + Math.random() * 180);
+ const len = 2 + Math.random() * 16;
+ const x = Math.cos(theta) * r, y = Math.sin(theta) * r;
+ const i6 = i * 6;
+ pos[i6] = x; pos[i6 + 1] = y; pos[i6 + 2] = z;
+ pos[i6 + 3] = x * 0.88; pos[i6 + 4] = y * 0.88; pos[i6 + 5] = z + len;
+ }
+ const geo = new THREE.BufferGeometry();
+ geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+ const mat = new THREE.LineBasicMaterial({
+ color: 0x00CCFF,
+ transparent: true,
+ opacity: 0.72,
+ blending: THREE.AdditiveBlending,
+ depthWrite: false,
+ });
+ this._vrWarpEffect = new THREE.LineSegments(geo, mat);
+ this._vrWarpPositions = pos;
+ this.dolly.add(this._vrWarpEffect);
+ }
+ this._vrWarpEffect.visible = true;
+ this._vrWarpEffect.position.copy(this.camera.position); // track HMD in dolly space
+ }
+
+ /** Hide the warp streak effect. */
+ _deactivateVRWarpEffect() {
+ if (this._vrWarpEffect) this._vrWarpEffect.visible = false;
+ }
+
+ /**
+ * Per-frame update: scroll all streaks toward the camera, recycle ones that pass it.
+ * Called only while warp is active. Uses pre-allocated Float32Array — zero heap alloc.
+ */
+ _updateVRWarpEffect() {
+ const pos = this._vrWarpPositions;
+ if (!pos) return;
+ const COUNT = pos.length / 6;
+ const speed = 2.8; // units per frame at 72 Hz — feels fast without being nauseating
+ for (let i = 0; i < COUNT; i++) {
+ const i6 = i * 6;
+ pos[i6 + 2] += speed; // scroll start Z toward camera (+Z = toward)
+ pos[i6 + 5] += speed; // scroll end Z
+ // Recycle when the back end passes the camera (+2 units behind)
+ if (pos[i6 + 5] > 2) {
+ const theta = Math.random() * Math.PI * 2;
+ const r = 0.4 + Math.random() * 9;
+ const z = -(140 + Math.random() * 60);
+ const len = 2 + Math.random() * 16;
+ const x = Math.cos(theta) * r, y = Math.sin(theta) * r;
+ pos[i6] = x; pos[i6 + 1] = y; pos[i6 + 2] = z;
+ pos[i6 + 3] = x * 0.88; pos[i6 + 4] = y * 0.88; pos[i6 + 5] = z + len;
+ }
+ }
+ this._vrWarpEffect.geometry.attributes.position.needsUpdate = true;
  }
 
  /**
@@ -2330,10 +2386,12 @@ this.camera.near = 10.0;
  this.previousButtonStates[i][3] = false;
  }
  
- // Check trigger for sprint (button 0 = trigger)
+ // Check trigger (button 0 = trigger); track both-trigger for warp
  if (gamepad.buttons.length > 0 && gamepad.buttons[0].pressed) {
  sprintMultiplier = 3.0;
  }
+ if (!this._vrTriggerPressed) this._vrTriggerPressed = {};
+ this._vrTriggerPressed[handedness] = !!(gamepad.buttons[0]?.pressed);
  
  // Robustly read thumbstick axes — axis layout varies by Quest firmware / browser:
  // Some builds put thumbstick on axes[0,1]; others on axes[2,3].
@@ -2498,6 +2556,35 @@ this.camera.near = 10.0;
  this.camera.updateProjectionMatrix();
  }
  }
+ }
+
+ // ── Both-trigger warp toggle ────────────────────────────────────────────
+ if (this.renderer.xr.isPresenting) {
+ const bothTriggersHeld = !!(this._vrTriggerPressed?.left && this._vrTriggerPressed?.right);
+ if (this._vrWarpToggleCooldown > 0) this._vrWarpToggleCooldown--;
+ if (bothTriggersHeld && this._vrWarpToggleCooldown === 0) {
+ this.vrStarshipMode = !this.vrStarshipMode;
+ this._vrWarpToggleCooldown = 90; // ≈1.5 s lock-out (prevent rapid flicker)
+ if (this.vrStarshipMode) {
+ this.updateVRStatus('🚀 WARP DRIVE ENGAGED • 20× speed');
+ this._activateVRWarpEffect();
+ } else {
+ this.updateVRStatus('🛸 Warp disengaged');
+ this._deactivateVRWarpEffect();
+ }
+ // Haptic pulse on both controllers
+ this.triggerVRHaptic(0, 0.6, 120);
+ this.triggerVRHaptic(1, 0.6, 120);
+ this.requestVRMenuRefresh();
+ }
+ if (!bothTriggersHeld) this._vrWarpToggleCooldown = Math.max(0, this._vrWarpToggleCooldown - 0);
+ }
+
+ // ── Warp effect update ────────────────────────────────────────────────
+ if (this._vrWarpEffect?.visible && this.vrStarshipMode) {
+ // Keep streaks centred on the HMD in dolly-local space
+ this._vrWarpEffect.position.copy(this.camera.position);
+ this._updateVRWarpEffect();
  }
 
  // ── Panel drag update (right grip held) — independent of grab-rotate ──
