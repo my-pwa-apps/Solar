@@ -1,4 +1,4 @@
-﻿// ===========================
+// ===========================
 // SCENE MANAGER MODULE
 // ===========================
 import * as THREE from 'three';
@@ -74,6 +74,13 @@ export class SceneManager {
  this._vrWarpEffect = null; // Warp streak LineSegments — created lazily on first warp activate
  this._vrWarpPositions = null; // Pre-allocated Float32Array for warp streaks
  this._vrBothTriggerFrames = 0; // Count consecutive frames both triggers are held (debounce warp)
+ // Radial quick-nav wheel
+ this._vrRadialCanvas = null; // 512×512 canvas for the wheel
+ this._vrRadialCtx = null;
+ this._vrRadialPanel = null; // THREE.Mesh — child of left controller
+ this._vrRadialHot = -1; // Currently highlighted sector index (-1 = none)
+ this._vrRadialPressFrames = 0; // How many frames left thumbstick has been held
+ this._vrRadialVisible = false;
 
  // Post-processing composer (desktop only)
  this.composer = null;
@@ -1795,6 +1802,114 @@ this.camera.near = 10.0;
  }
  }
 
+
+ // ═══════════════════════════════════════════════════════════
+ // RADIAL QUICK-NAV WHEEL (left thumbstick hold)
+ // ═══════════════════════════════════════════════════════════
+
+ _vrRadialItems() {
+    return [
+      { id: 'sun',     label: '\u2600\uFE0F Sun',      color: '#FFD700' },
+      { id: 'mercury', label: '\u263F Mercury',  color: '#A8A8A8' },
+      { id: 'venus',   label: '\u2640 Venus',    color: '#E8C87A' },
+      { id: 'earth',   label: '\uD83C\uDF0D Earth',    color: '#4FC3F7' },
+      { id: 'mars',    label: '\u2642 Mars',     color: '#EF5350' },
+      { id: 'jupiter', label: '\u2643 Jupiter',  color: '#FFA726' },
+      { id: 'saturn',  label: '\u2644 Saturn',   color: '#FFCC80' },
+      { id: 'neptune', label: '\u2646 Neptune',  color: '#5C6BC0' },
+    ];
+  }
+
+  _ensureVRRadialPanel() {
+    if (this._vrRadialPanel) return;
+    const SZ = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = SZ; canvas.height = SZ;
+    this._vrRadialCanvas = canvas;
+    this._vrRadialCtx = canvas.getContext('2d');
+    const tex = new THREE.CanvasTexture(canvas);
+    const geo = new THREE.PlaneGeometry(0.52, 0.52);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+    this._vrRadialPanel = new THREE.Mesh(geo, mat);
+    this._vrRadialPanel.renderOrder = 20;
+    this._vrRadialPanel.frustumCulled = false;
+    const leftCtrl = this.controllers[0];
+    if (leftCtrl) {
+      this._vrRadialPanel.position.set(0, 0.06, -0.06);
+      this._vrRadialPanel.rotation.x = -Math.PI / 5;
+      leftCtrl.add(this._vrRadialPanel);
+    } else { this.dolly.add(this._vrRadialPanel); }
+    this._vrRadialPanel.visible = false;
+  }
+
+  _drawVRRadialWheel() {
+    this._ensureVRRadialPanel();
+    const ctx = this._vrRadialCtx; if (!ctx) return;
+    const SZ = 512, CX = SZ / 2, CY = SZ / 2;
+    const R_OUT = 230, R_IN = 68, R_LABEL = 160;
+    const items = this._vrRadialItems();
+    const SLICE = (Math.PI * 2) / items.length; const GAP = 0.04;
+    ctx.clearRect(0, 0, SZ, SZ);
+    const rimGlow = ctx.createRadialGradient(CX, CY, R_IN, CX, CY, R_OUT + 10);
+    rimGlow.addColorStop(0, 'rgba(0,180,255,0.06)'); rimGlow.addColorStop(1, 'rgba(0,60,120,0.18)');
+    ctx.fillStyle = rimGlow; ctx.beginPath(); ctx.arc(CX, CY, R_OUT + 10, 0, Math.PI * 2); ctx.fill();
+    items.forEach((item, idx) => {
+      const hot = this._vrRadialHot === idx;
+      const startA = -Math.PI / 2 + idx * SLICE + GAP / 2, endA = startA + SLICE - GAP;
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(CX, CY); ctx.arc(CX, CY, R_OUT, startA, endA); ctx.closePath();
+      const grad = ctx.createRadialGradient(CX, CY, R_IN, CX, CY, R_OUT);
+      grad.addColorStop(0, hot ? item.color + 'CC' : 'rgba(10,20,40,0.92)');
+      grad.addColorStop(1, hot ? item.color + '44' : 'rgba(6,12,28,0.88)');
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.strokeStyle = hot ? item.color : 'rgba(60,120,180,0.45)';
+      ctx.lineWidth = hot ? 2.5 : 1; ctx.stroke();
+      if (hot) { ctx.save(); ctx.shadowColor = item.color; ctx.shadowBlur = 16; ctx.stroke(); ctx.restore(); }
+      ctx.restore();
+      const midA = startA + (SLICE - GAP) / 2;
+      ctx.save();
+      ctx.font = hot ? 'bold 26px Arial' : '22px Arial';
+      ctx.fillStyle = hot ? item.color : 'rgba(180,220,255,0.8)';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (hot) { ctx.shadowColor = item.color; ctx.shadowBlur = 10; }
+      ctx.fillText(item.label, CX + Math.cos(midA) * R_LABEL, CY + Math.sin(midA) * R_LABEL);
+      ctx.restore();
+    });
+    const holeBg = ctx.createRadialGradient(CX, CY, 0, CX, CY, R_IN);
+    holeBg.addColorStop(0, 'rgba(4,10,24,0.96)'); holeBg.addColorStop(1, 'rgba(8,16,36,0.90)');
+    ctx.fillStyle = holeBg; ctx.beginPath(); ctx.arc(CX, CY, R_IN, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(60,130,200,0.4)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(CX, CY, R_IN, 0, Math.PI * 2); ctx.stroke();
+    const hotItem = this._vrRadialHot >= 0 ? items[this._vrRadialHot] : null;
+    ctx.fillStyle = hotItem ? hotItem.color : 'rgba(100,160,200,0.6)';
+    ctx.font = hotItem ? 'bold 18px Arial' : '15px Arial';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(hotItem ? 'Release \u2192 go' : 'Tilt to choose', CX, CY);
+    if (this._vrRadialPanel?.material?.map) this._vrRadialPanel.material.map.needsUpdate = true;
+  }
+
+  _showVRRadialWheel() {
+    this._ensureVRRadialPanel();
+    this._vrRadialHot = -1; this._vrRadialVisible = true;
+    this._drawVRRadialWheel();
+    if (this._vrRadialPanel) this._vrRadialPanel.visible = true;
+    this.triggerVRHaptic(0, 0.25, 60);
+  }
+
+  _hideVRRadialWheel() {
+    this._vrRadialVisible = false;
+    if (this._vrRadialPanel) this._vrRadialPanel.visible = false;
+  }
+
+  _confirmVRRadialSelection() {
+    const hot = this._vrRadialHot;
+    this._hideVRRadialWheel();
+    if (hot >= 0) {
+      const item = this._vrRadialItems()[hot];
+      this.triggerVRHaptic(0, 0.5, 80); this.triggerVRHaptic(1, 0.3, 60);
+      this.navigateVRTarget(item.id);
+    }
+  }
+
  /**
  * Place the menu panel directly in the user’s current line of sight at eye level.
  * Uses the HMD camera position + forward direction in dolly-local space.
@@ -2361,28 +2476,42 @@ this.camera.near = 10.0;
  }
  
  // ============================================
- // THUMBSTICK PRESS (Button 3) - TOGGLE PAUSE
+ // THUMBSTICK PRESS (Button 3)
+ // LEFT : hold ≥8 frames → radial quick-nav wheel; short tap → pause
+ // RIGHT: tap → pause toggle
  // ============================================
- const thumbstickButton = gamepad.buttons[3]; // Thumbstick press
+ const thumbstickButton = gamepad.buttons[3];
  if (thumbstickButton && thumbstickButton.pressed) {
- // Check if this is a new press (not held from previous frame)
  const prevState = this.previousButtonStates[i][3] || false;
- if (!prevState) {
- // NEW PRESS - Toggle pause
- const app = window.app || this;
- if (app.timeSpeed === 0) {
- app.timeSpeed = 1;
- this.updateVRStatus('▶ Playing');
- if (DEBUG.VR) console.log('[VR] Thumbstick pressed - PLAY');
- } else {
- app.timeSpeed = 0;
- this.updateVRStatus('⏸ Paused');
- if (DEBUG.VR) console.log('[VR] Thumbstick pressed - PAUSE');
+ if (handedness === 'left') {
+ this._vrRadialPressFrames = (this._vrRadialPressFrames || 0) + 1;
+ if (this._vrRadialPressFrames === 8) {
+ // Held long enough — show radial wheel
+ this._showVRRadialWheel();
  }
+ } else if (!prevState) {
+ // Right thumbstick tap = pause toggle
+ const app = window.app || this;
+ if (app.timeSpeed === 0) { app.timeSpeed = 1; this.updateVRStatus('\u25B6 Playing'); }
+ else { app.timeSpeed = 0; this.updateVRStatus('\u23F8 Paused'); }
  this.requestVRMenuRefresh();
  }
  this.previousButtonStates[i][3] = true;
  } else {
+ if (handedness === 'left') {
+ const wasHeld = (this._vrRadialPressFrames || 0) >= 8;
+ if (wasHeld && this._vrRadialVisible) {
+ // Released while wheel was showing — navigate to highlighted sector
+ this._confirmVRRadialSelection();
+ } else if ((this._vrRadialPressFrames || 0) > 0 && (this._vrRadialPressFrames || 0) < 8) {
+ // Short tap — pause toggle
+ const app = window.app || this;
+ if (app.timeSpeed === 0) { app.timeSpeed = 1; this.updateVRStatus('\u25B6 Playing'); }
+ else { app.timeSpeed = 0; this.updateVRStatus('\u23F8 Paused'); }
+ this.requestVRMenuRefresh();
+ }
+ this._vrRadialPressFrames = 0;
+ }
  this.previousButtonStates[i][3] = false;
  }
  
@@ -2414,10 +2543,20 @@ this.camera.near = 10.0;
  // ============================================
  if (handedness === 'left') {
  const starshipMult = this.vrStarshipMode ? 20.0 : 1.0;
- const baseSpeed = 0.40 * sprintMultiplier * starshipMult; // Increased from 0.25 for more responsive locomotion
- 
- // Forward/Backward & Strafe (only if NOT grab-rotating)
- if (!this.grabRotateState.active &&
+ const baseSpeed = 0.40 * sprintMultiplier * starshipMult;
+
+ // While radial wheel is open: use stick to select sector (no movement)
+ if (this._vrRadialVisible) {
+ const mag = Math.sqrt(stickX * stickX + stickY * stickY);
+ const newHot = mag > 0.45
+ ? Math.round((Math.atan2(stickX, -stickY) / (Math.PI * 2) + 1) * 8) % 8
+ : -1;
+ if (newHot !== this._vrRadialHot) {
+ this._vrRadialHot = newHot;
+ this._drawVRRadialWheel(); // Redraw highlight
+ if (newHot >= 0) this.triggerVRHaptic(0, 0.08, 20); // Light tick
+ }
+ } else if (!this.grabRotateState.active &&
  (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone)) {
  // Forward/back: negate stickY (forward stick = negative Y on Quest)
  this._vrMoveScratch.copy(cameraForward).multiplyScalar(-stickY * baseSpeed);
