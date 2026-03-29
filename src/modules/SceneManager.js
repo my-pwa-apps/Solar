@@ -299,7 +299,8 @@ export class SceneManager {
  console.log('[PostFX] EffectComposer initialised: Bloom (strength=0.55 thresh=0.82) + SMAA + OutputPass');
  }
  } catch (e) {
- console.warn('[PostFX] Failed to initialise post-processing, falling back to direct render:', e);
+ // Always log — this failure silently disables the bloom button so it must be visible.
+ console.error('[PostFX] Failed to initialise post-processing, falling back to direct render:', e);
  this.composer = null;
  }
  }

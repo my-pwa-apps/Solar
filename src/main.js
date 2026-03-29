@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 
 // Import all modules
-import { DEBUG, CONFIG } from './modules/utils.js';
+import { DEBUG, CONFIG, IS_MOBILE } from './modules/utils.js';
 import { warmupTextureCache } from './modules/TextureCache.js';
 import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
@@ -651,23 +651,25 @@ class App {
  });
  }
 
- // Bloom toggle button — only show when the EffectComposer was actually initialised.
- // (It is skipped on mobile/low-power devices, so the button would do nothing there.)
+ // Bloom toggle button — desktop only (mobile hides it; on desktop always show
+ // regardless of whether EffectComposer initialized, so the button is never
+ // silently absent due to a post-processing init failure).
  const bloomButton = document.getElementById(UI_ELEMENTS.BLOOM_BUTTON);
  if (bloomButton) {
- if (!this.sceneManager.composer) {
+ if (IS_MOBILE) {
  bloomButton.classList.add('hidden');
  } else {
  // Restore bloom state from localStorage (default: off)
  const savedBloom = safeGetItem('bloomEnabled');
  const bloomOn = savedBloom === 'true';
- if (!bloomOn) {
+ if (!bloomOn && this.sceneManager.composer) {
  this.sceneManager.toggleBloom(false);
  }
  bloomButton.classList.toggle('toggle-on', bloomOn);
  bloomButton.setAttribute('aria-pressed', bloomOn.toString());
 
  bloomButton.addEventListener('click', () => {
+ if (!this.sceneManager.composer) return; // post-processing not available
  const enabled = bloomButton.getAttribute('aria-pressed') !== 'true';
  this.sceneManager.toggleBloom(enabled);
  bloomButton.setAttribute('aria-pressed', enabled.toString());
