@@ -80,6 +80,7 @@ export class SceneManager {
  this._adaptivePixelRatio = Math.min(window.devicePixelRatio, CONFIG.RENDERER.maxPixelRatio);
  this._adaptiveFpsFrameCount = 0;
  this._adaptiveFpsSampleStart = performance.now();
+ this._pendingDprChange = null; // DPR resize is applied at frame START, not frame END, to avoid blank-frame flash
 
  // Panel drag state — right grip moves the open menu panel
  this.vrPanelDrag = { active: false, controllerIndex: -1 };
@@ -2486,7 +2487,18 @@ this.camera.near = 10.0;
  let vrErrorCount = 0;
  const VR_ERROR_LOG_LIMIT = 10; // Don't spam console after N errors
  this.renderer.setAnimationLoop(() => {
- // ── 1. App callback (update logic) ──────────────
+ // ── 0. Apply pending DPR resize (scheduled by previous frame's FPS check) ───
+ // Doing this HERE (before render) means: canvas is cleared and immediately
+ // re-drawn in the same JS tick — the user never sees a blank frame.
+ if (this._pendingDprChange !== null) {
+ const pr = this._pendingDprChange;
+ this._pendingDprChange = null;
+ this._adaptivePixelRatio = pr;
+ this.renderer.setPixelRatio(pr);
+ this.renderer.setSize(window.innerWidth, window.innerHeight, false);
+ if (this.composer) this.composer.setSize(window.innerWidth, window.innerHeight);
+ if (DEBUG.PERFORMANCE) console.log(`[Perf] Adaptive DPR applied -> ${pr.toFixed(2)}`);
+ }
  // Run callback FIRST so updateCameraTracking() can set controls.target
  // to the planet's current world position BEFORE controls.update() reads it.
  // This ensures zoom/rotate always operate relative to the planet's
@@ -2592,6 +2604,8 @@ this.camera.near = 10.0;
  }
 
  // Adaptive DPR (desktop): lower DPR when FPS drops, raise when stable.
+ // Schedule the resize for the START of the next frame (not applied here)
+ // to prevent a blank-frame flash from canvas.width reassignment mid-session.
  if (CONFIG.PERFORMANCE.adaptivePixelRatio && !this.renderer.xr.isPresenting) {
  this._adaptiveFpsFrameCount++;
  const now = performance.now();
@@ -2612,11 +2626,10 @@ this.camera.near = 10.0;
  nextRatio = Math.max(minRatio, Math.min(maxRatio, nextRatio));
 
  if (Math.abs(nextRatio - this._adaptivePixelRatio) >= 0.049) {
- this._adaptivePixelRatio = nextRatio;
- this.renderer.setPixelRatio(this._adaptivePixelRatio);
- this.renderer.setSize(window.innerWidth, window.innerHeight, false);
+ // Schedule — applied at the TOP of the next frame before rendering
+ this._pendingDprChange = nextRatio;
  if (DEBUG.PERFORMANCE) {
- console.log(`[Perf] Adaptive DPR -> ${this._adaptivePixelRatio.toFixed(2)} (fps ${fps.toFixed(1)})`);
+ console.log(`[Perf] Adaptive DPR scheduled -> ${nextRatio.toFixed(2)} (fps ${fps.toFixed(1)})`);
  }
  }
 

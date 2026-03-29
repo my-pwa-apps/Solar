@@ -1441,6 +1441,8 @@ class App {
  });
  }
 
+ }
+
  showEventToast(text) {
  const existing = document.getElementById('event-toast');
  if (existing) existing.remove();
