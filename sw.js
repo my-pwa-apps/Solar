@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.173
+// Version 2.10.253
 
-const CACHE_VERSION = 'v2.10.250';
+const CACHE_VERSION = 'v2.10.253';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -17,7 +17,7 @@ const STATIC_CACHE_FILES = [
   './',
   './index.html',
   './src/main.js',
-    './src/modules/storage.js',
+  './src/modules/storage.js',
     './src/modules/AppFeatures.js',
   './src/i18n.js',
   './src/bootstrap/installPromptCapture.js',
@@ -31,7 +31,6 @@ const STATIC_CACHE_FILES = [
   './src/modules/ServiceWorkerManager.js',
   './src/modules/LanguageManager.js',
   './src/modules/AudioManager.js',
-  './src/modules/storage.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
@@ -116,10 +115,10 @@ const STATIC_CACHE_FILES = [
 
 // CDN files to cache (Three.js and dependencies)
 const CDN_CACHE_FILES = [
-  'https://cdn.jsdelivr.net/npm/three@0.183.0/build/three.module.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/controls/OrbitControls.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/renderers/CSS2DRenderer.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/webxr/XRControllerModelFactory.js'
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/controls/OrbitControls.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/renderers/CSS2DRenderer.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js'
 ];
 
 // Install event - cache static files

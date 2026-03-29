@@ -11,7 +11,7 @@ import { SceneManager } from './modules/SceneManager.js';
 import { UIManager } from './modules/UIManager.js';
 import { SolarSystemModule } from './modules/SolarSystemModule.js';
 import { audioManager } from './modules/AudioManager.js';
-import { safeGetItem, safeSetItem } from './modules/storage.js';
+import { safeGetItem, safeSetItem, safeRemoveItem } from './modules/storage.js';
 import { setupOnboarding } from './modules/AppFeatures.js';
 
 // Make audio manager globally accessible
@@ -55,6 +55,86 @@ const STORAGE_KEYS = {
  SCALE_MODE: 'scaleMode',
  SCIENTIFIC: 'scientificMode'
 };
+
+// ===========================
+// MODULE-LEVEL STATIC DATA
+// ===========================
+
+// Pattern-based navigation lookups for array-stored objects.
+// Pure static data — hoisted here so it is never reallocated per call.
+const _NAV_SEARCH_PATTERNS = [
+ { prefix: 'constellation-', array: 'constellations', exactMatch: 'exact', patterns: {
+ 'aries': ['aries'], 'taurus': ['taurus'], 'gemini': ['gemini'],
+ 'cancer': ['cancer'], 'leo': ['leo'], 'virgo': ['virgo'],
+ 'libra': ['libra'], 'scorpius': ['scorpius'], 'sagittarius': ['sagittarius'],
+ 'capricornus': ['capricornus'], 'aquarius': ['aquarius'], 'pisces': ['pisces'],
+ 'orion': ['orion'], 'orions-belt': ['orionsBelt'],
+ 'ursa-major': ['ursaMajor'], 'big-dipper': ['bigDipper'], 'little-dipper': ['littleDipper'],
+ 'southern-cross': ['southernCross'], 'cassiopeia': ['cassiopeia'],
+ 'cygnus': ['cygnus'], 'lyra': ['lyra'],
+ 'andromeda': ['andromedaConst'], // Distinct from "andromeda galaxy"
+ 'perseus': ['perseus'], 'canis-major': ['canisMajor'],
+ 'aquila': ['aquila'], 'pegasus': ['pegasus'],
+ }},
+ { prefix: '', array: 'satellites', patterns: {
+ 'iss': ['ISS', 'International Space Station'],
+ 'hubble': ['Hubble', 'Hubble Space Telescope'],
+ 'gps': ['GPS', 'NAVSTAR'],
+ 'gps-navstar': ['GPS', 'NAVSTAR'],
+ 'sputnik': ['Sputnik'],
+ 'sputnik-1': ['Sputnik 1'],
+ }},
+ { prefix: '', array: 'spacecraft', patterns: {
+ 'voyager-1': ['Voyager 1'], 'voyager-2': ['Voyager 2'], 'voyager': ['Voyager'],
+ 'new-horizons': ['New Horizons'],
+ 'jwst': ['James Webb'], 'james-webb': ['James Webb'],
+ 'juno': ['Juno'], 'cassini': ['Cassini'],
+ 'pioneer-10': ['Pioneer 10'], 'pioneer-11': ['Pioneer 11'], 'pioneer': ['Pioneer'],
+ }},
+ { prefix: '', array: 'nebulae', exactMatch: 'exact', patterns: {
+ 'orion-nebula':     ['orionNebula'],
+ 'crab-nebula':      ['crabNebula'],
+ 'ring-nebula':      ['ringNebula'],
+ 'eagle-nebula':     ['eagleNebula'],
+ 'helix-nebula':     ['helixNebula'],
+ 'lagoon-nebula':    ['lagoonNebula'],
+ 'butterfly-nebula': ['butterflyNebula'],
+ }},
+ { prefix: '', array: 'galaxies', exactMatch: 'exact', patterns: {
+ 'andromeda-galaxy':       ['andromedaGalaxy'],
+ 'triangulum-galaxy':      ['triangulumGalaxy'],
+ 'whirlpool-galaxy':       ['whirlpoolGalaxy'],
+ 'sombrero-galaxy':        ['sombreroGalaxy'],
+ 'pinwheel-galaxy':        ['pinwheelGalaxy'],
+ 'bodes-galaxy':           ['bodesGalaxy'],
+ 'cigar-galaxy':           ['cigarGalaxy'],
+ 'sculptor-galaxy':        ['sculptorGalaxy'],
+ 'centaurus-a':            ['centaurusAGalaxy'],
+ 'large-magellanic-cloud': ['largeMagellanicCloud'],
+ 'small-magellanic-cloud': ['smallMagellanicCloud'],
+ }},
+ { prefix: '', array: 'exoplanets', patterns: {
+ 'proxima-b':   ['Proxima Centauri b'],
+ 'kepler-452b': ['Kepler-452b'],
+ 'trappist-1e': ['TRAPPIST-1e'],
+ 'kepler-186f': ['Kepler-186f'],
+ }},
+ { prefix: '', array: 'nearbyStars', exactMatch: 'exact', patterns: {
+ 'alpha-centauri':   ['alphaCentauriA'],
+ 'proxima-centauri': ['proximaCentauri'],
+ 'kepler-452-star':  ['kepler452Star'],
+ 'trappist-1-star':  ['trappist1Star'],
+ 'kepler-186-star':  ['kepler186Star'],
+ }},
+ { prefix: '', array: 'comets', patterns: {
+ 'halley':       ["Halley's Comet"],
+ 'hale-bopp':    ["Hale-Bopp", "Comet Hale-Bopp"],
+ 'hyakutake':    ["Hyakutake", "Comet Hyakutake"],
+ 'lovejoy':      ["Lovejoy", "Comet Lovejoy"],
+ 'encke':        ["Encke", "Comet Encke"],
+ 'swift-tuttle': ["Swift-Tuttle", "Comet Swift-Tuttle"],
+ }},
+];
 
 // ===========================
 // APP CLASS
@@ -327,18 +407,26 @@ class App {
  }
  
  // Restore scale mode (special case: uses 'active' class and updates text)
- const savedScaleMode = safeGetItem(STORAGE_KEYS.SCALE_MODE);
+ // One-time migration: convert legacy two-key storage to the unified 'scaleMode' key.
+ let savedScaleMode = safeGetItem(STORAGE_KEYS.SCALE_MODE);
+ if (!savedScaleMode) {
+ const legacyScientific = safeGetItem(STORAGE_KEYS.SCIENTIFIC);
+ const legacyScale = safeGetItem(STORAGE_KEYS.SCALE);
+ if (legacyScientific === 'true' || legacyScale === 'true') {
+ savedScaleMode = 'scientific';
+ } else if (legacyScientific === 'false' || legacyScale === 'false') {
+ savedScaleMode = 'educational';
+ }
+ if (savedScaleMode) {
+ safeSetItem(STORAGE_KEYS.SCALE_MODE, savedScaleMode);
+ }
+ // Remove stale legacy keys regardless so this path is never traversed again.
+ if (legacyScientific !== null) safeRemoveItem(STORAGE_KEYS.SCIENTIFIC);
+ if (legacyScale !== null) safeRemoveItem(STORAGE_KEYS.SCALE);
+ }
+
  if (savedScaleMode && this.solarSystemModule) {
  this.applyScaleMode(savedScaleMode, { persist: false });
- } else {
- // Backward compatibility with previous two-state storage.
- const savedScientificState = safeGetItem(STORAGE_KEYS.SCIENTIFIC);
- if (savedScientificState === 'true') {
- this.applyScaleMode('scientific', { persist: false });
- } else {
- const savedScaleState = safeGetItem(STORAGE_KEYS.SCALE);
- if (savedScaleState !== null && this.solarSystemModule) {
- this.applyScaleMode(savedScaleState === 'true' ? 'scientific' : 'educational', { persist: false });
  } else {
  const scaleMode = this.getCurrentScaleMode();
  const scientificMode = scaleMode === 'scientific';
@@ -349,8 +437,6 @@ class App {
  const btnText = scaleButton.querySelector('.btn-text');
  if (btnText) {
  btnText.textContent = this.getScaleModeLabel(scaleMode);
- }
- }
  }
  }
  }
@@ -706,170 +792,68 @@ class App {
  
  findObjectByNavigationValue(value) {
  if (!this.solarSystemModule) return null;
- 
- // Define navigation mapping with categories for easy maintenance
- const navigationMap = {
- // Sun and Planets (direct property access)
- 'sun': () => this.solarSystemModule.sun,
- 'mercury': () => this.solarSystemModule.planets.mercury,
- 'venus': () => this.solarSystemModule.planets.venus,
- 'earth': () => this.solarSystemModule.planets.earth,
- 'mars': () => this.solarSystemModule.planets.mars,
- 'jupiter': () => this.solarSystemModule.planets.jupiter,
- 'saturn': () => this.solarSystemModule.planets.saturn,
- 'uranus': () => this.solarSystemModule.planets.uranus,
- 'neptune': () => this.solarSystemModule.planets.neptune,
- 'pluto': () => this.solarSystemModule.planets.pluto,
- 
+
+ // Build navigationMap once per App instance (lambdas close over solarSystemModule).
+ if (!this._navigationMap) {
+ const ssm = this.solarSystemModule;
+ this._navigationMap = {
+ 'sun': () => ssm.sun,
+ 'mercury': () => ssm.planets.mercury,
+ 'venus': () => ssm.planets.venus,
+ 'earth': () => ssm.planets.earth,
+ 'mars': () => ssm.planets.mars,
+ 'jupiter': () => ssm.planets.jupiter,
+ 'saturn': () => ssm.planets.saturn,
+ 'uranus': () => ssm.planets.uranus,
+ 'neptune': () => ssm.planets.neptune,
+ 'pluto': () => ssm.planets.pluto,
  // Earth's Moon - always stored under fixed key 'moon' regardless of language
- 'moon': () => this.solarSystemModule.moons['moon'],
- 
+ 'moon': () => ssm.moons['moon'],
  // Moons (direct moon registry access)
- 'phobos': () => this.solarSystemModule.moons.phobos,
- 'deimos': () => this.solarSystemModule.moons.deimos,
- 'io': () => this.solarSystemModule.moons.io,
- 'europa': () => this.solarSystemModule.moons.europa,
- 'ganymede': () => this.solarSystemModule.moons.ganymede,
- 'callisto': () => this.solarSystemModule.moons.callisto,
- 'titan': () => this.solarSystemModule.moons.titan,
- 'enceladus': () => this.solarSystemModule.moons.enceladus,
- 'rhea': () => this.solarSystemModule.moons.rhea,
- 'titania': () => this.solarSystemModule.moons.titania,
- 'miranda': () => this.solarSystemModule.moons.miranda,
- 'triton': () => this.solarSystemModule.moons.triton,
- 'charon': () => this.solarSystemModule.moons.charon,
- 
- // Belts (structure objects)
- 'asteroid-belt': () => this.solarSystemModule.asteroidBelt,
- 'kuiper-belt': () => this.solarSystemModule.kuiperBelt,
-
- // Oort Cloud (structure object)
- 'oort-cloud': () => this.solarSystemModule.oortCloud,
-
- // Heliopause (boundary sphere)
- 'heliopause': () => this.solarSystemModule.heliopause,
-
- // Milky Way Galaxy (zoom out to intergalactic view)
- 'milky-way': () => this.solarSystemModule.milkyWayDisc,
-
+ 'phobos': () => ssm.moons.phobos,
+ 'deimos': () => ssm.moons.deimos,
+ 'io': () => ssm.moons.io,
+ 'europa': () => ssm.moons.europa,
+ 'ganymede': () => ssm.moons.ganymede,
+ 'callisto': () => ssm.moons.callisto,
+ 'titan': () => ssm.moons.titan,
+ 'enceladus': () => ssm.moons.enceladus,
+ 'rhea': () => ssm.moons.rhea,
+ 'titania': () => ssm.moons.titania,
+ 'miranda': () => ssm.moons.miranda,
+ 'triton': () => ssm.moons.triton,
+ 'charon': () => ssm.moons.charon,
+ // Belts
+ 'asteroid-belt': () => ssm.asteroidBelt,
+ 'kuiper-belt': () => ssm.kuiperBelt,
+ // Oort Cloud
+ 'oort-cloud': () => ssm.oortCloud,
+ // Heliopause
+ 'heliopause': () => ssm.heliopause,
+ // Milky Way Galaxy
+ 'milky-way': () => ssm.milkyWayDisc,
  // Dwarf Planets (stored in planets registry)
- 'ceres': () => this.solarSystemModule.planets.ceres,
- 'haumea': () => this.solarSystemModule.planets.haumea,
- 'makemake': () => this.solarSystemModule.planets.makemake,
- 'eris': () => this.solarSystemModule.planets.eris,
- 'orcus': () => this.solarSystemModule.planets.orcus,
- 'quaoar': () => this.solarSystemModule.planets.quaoar,
- 'gonggong': () => this.solarSystemModule.planets.gonggong,
- 'sedna': () => this.solarSystemModule.planets.sedna,
- 'salacia': () => this.solarSystemModule.planets.salacia,
- 'varda': () => this.solarSystemModule.planets.varda,
- 'varuna': () => this.solarSystemModule.planets.varuna,
+ 'ceres': () => ssm.planets.ceres,
+ 'haumea': () => ssm.planets.haumea,
+ 'makemake': () => ssm.planets.makemake,
+ 'eris': () => ssm.planets.eris,
+ 'orcus': () => ssm.planets.orcus,
+ 'quaoar': () => ssm.planets.quaoar,
+ 'gonggong': () => ssm.planets.gonggong,
+ 'sedna': () => ssm.planets.sedna,
+ 'salacia': () => ssm.planets.salacia,
+ 'varda': () => ssm.planets.varda,
+ 'varuna': () => ssm.planets.varuna,
  };
- 
- // Check direct mapping first
- if (navigationMap[value]) {
- return navigationMap[value]();
  }
- 
- // Pattern-based lookups for arrays (stars, exoplanets, spacecraft, etc.)
- const searchPatterns = [
- { prefix: 'constellation-', array: 'constellations', exactMatch: 'exact', patterns: {
- 'aries': ['aries'],
- 'taurus': ['taurus'],
- 'gemini': ['gemini'],
- 'cancer': ['cancer'],
- 'leo': ['leo'],
- 'virgo': ['virgo'],
- 'libra': ['libra'],
- 'scorpius': ['scorpius'],
- 'sagittarius': ['sagittarius'],
- 'capricornus': ['capricornus'],
- 'aquarius': ['aquarius'],
- 'pisces': ['pisces'],
- 'orion': ['orion'],
- 'orions-belt': ['orionsBelt'],
- 'ursa-major': ['ursaMajor'],
- 'big-dipper': ['bigDipper'],
- 'little-dipper': ['littleDipper'],
- 'southern-cross': ['southernCross'],
- 'cassiopeia': ['cassiopeia'],
- 'cygnus': ['cygnus'],
- 'lyra': ['lyra'],
- 'andromeda': ['andromedaConst'], // Distinct from "andromeda galaxy"
- 'perseus': ['perseus'],
- 'canis-major': ['canisMajor'],
- 'aquila': ['aquila'],
- 'pegasus': ['pegasus'],
- }},
- { prefix: '', array: 'satellites', patterns: {
- 'iss': ['ISS', 'International Space Station'],
- 'hubble': ['Hubble', 'Hubble Space Telescope'],
- 'gps': ['GPS', 'NAVSTAR'],
- 'gps-navstar': ['GPS', 'NAVSTAR'],
- 'sputnik': ['Sputnik'],
- 'sputnik-1': ['Sputnik 1'],
- }},
- { prefix: '', array: 'spacecraft', patterns: {
- 'voyager-1': ['Voyager 1'],
- 'voyager-2': ['Voyager 2'],
- 'voyager': ['Voyager'],
- 'new-horizons': ['New Horizons'],
- 'jwst': ['James Webb'],
- 'james-webb': ['James Webb'],
- 'juno': ['Juno'],
- 'cassini': ['Cassini'],
- 'pioneer-10': ['Pioneer 10'],
- 'pioneer-11': ['Pioneer 11'],
- 'pioneer': ['Pioneer'],
- }},
- { prefix: '', array: 'nebulae', exactMatch: 'exact', patterns: {
- 'orion-nebula':     ['orionNebula'],
- 'crab-nebula':      ['crabNebula'],
- 'ring-nebula':      ['ringNebula'],
- 'eagle-nebula':     ['eagleNebula'],
- 'helix-nebula':     ['helixNebula'],
- 'lagoon-nebula':    ['lagoonNebula'],
- 'butterfly-nebula': ['butterflyNebula'],
- }},
- { prefix: '', array: 'galaxies', exactMatch: 'exact', patterns: {
- 'andromeda-galaxy':       ['andromedaGalaxy'],
- 'triangulum-galaxy':      ['triangulumGalaxy'],
- 'whirlpool-galaxy':       ['whirlpoolGalaxy'],
- 'sombrero-galaxy':        ['sombreroGalaxy'],
- 'pinwheel-galaxy':        ['pinwheelGalaxy'],
- 'bodes-galaxy':           ['bodesGalaxy'],
- 'cigar-galaxy':           ['cigarGalaxy'],
- 'sculptor-galaxy':        ['sculptorGalaxy'],
- 'centaurus-a':            ['centaurusAGalaxy'],
- 'large-magellanic-cloud': ['largeMagellanicCloud'],
- 'small-magellanic-cloud': ['smallMagellanicCloud'],
- }},
- // Exoplanet navigation: navigate to the planet mesh, not the host star
- { prefix: '', array: 'exoplanets', patterns: {
- 'proxima-b':  ['Proxima Centauri b'],
- 'kepler-452b': ['Kepler-452b'],
- 'trappist-1e': ['TRAPPIST-1e'],
- 'kepler-186f': ['Kepler-186f'],
- }},
- { prefix: '', array: 'nearbyStars', exactMatch: 'exact', patterns: {
- 'alpha-centauri':    ['alphaCentauriA'],
- 'proxima-centauri':  ['proximaCentauri'],
- 'kepler-452-star':   ['kepler452Star'],
- 'trappist-1-star':   ['trappist1Star'],
- 'kepler-186-star':   ['kepler186Star'],
- }},
- { prefix: '', array: 'comets', patterns: {
- 'halley': ["Halley's Comet"],
- 'hale-bopp': ["Hale-Bopp", "Comet Hale-Bopp"],
- 'hyakutake': ["Hyakutake", "Comet Hyakutake"],
- 'lovejoy': ["Lovejoy", "Comet Lovejoy"],
- 'encke': ["Encke", "Comet Encke"],
- 'swift-tuttle': ["Swift-Tuttle", "Comet Swift-Tuttle"],
- }},
- ];
- 
- // Search through pattern-based lookups
- for (const category of searchPatterns) {
+
+ // Check direct mapping first
+ if (this._navigationMap[value]) {
+ return this._navigationMap[value]();
+ }
+
+ // Pattern-based lookups use the module-level _NAV_SEARCH_PATTERNS constant.
+ for (const category of _NAV_SEARCH_PATTERNS) {
  const searchKey = category.prefix ? value.replace(category.prefix, '') : value;
  const patterns = category.patterns[searchKey];
  
@@ -1217,6 +1201,10 @@ class App {
  this.uiManager.closeHelpModal();
  this.uiManager.closeSettingsModal();
  break;
+ case ',':
+ // Comma = open Settings (matches tooltip hint)
+ document.getElementById(UI_ELEMENTS.SETTINGS_BUTTON)?.click();
+ break;
  case ' ': {
  // SPACE = Toggle between Paused and Normal speed (50 = 1x)
  e.preventDefault();
@@ -1453,6 +1441,18 @@ class App {
  });
  }
 
+ // ── Seek-to-date input ─────────────────────────────────────────────
+ const seekInput = document.getElementById('seek-date-input');
+ if (seekInput) {
+ seekInput.addEventListener('change', () => {
+ const d = new Date(seekInput.value + 'T12:00:00Z');
+ if (!isNaN(d.getTime())) {
+ ssm.seekToDate(d);
+ audioManager.playClick();
+ }
+ });
+ }
+
  }
 
  showEventToast(text) {
@@ -1471,10 +1471,11 @@ class App {
  }, 3500);
  }
 
- // Notable event descriptions keyed by ISO date value
+ // Notable event descriptions keyed by ISO date value.
+ // The outer object is allocated once and cached on the instance.
  _getEventDescriptions() {
- const t = window.t || ((key) => key);
- return {
+ if (this._cachedEventDescriptions) return this._cachedEventDescriptions;
+ this._cachedEventDescriptions = {
  // Solar Eclipses
  '2024-04-08': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2024' },
  '2025-03-29': { name: 'Partial Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2025Mar' },
@@ -1539,6 +1540,7 @@ class App {
  '1930-02-18': { name: 'Tombaugh Discovers Pluto', type: '📜 Historic Discovery', i18nKey: 'eventPluto1930' },
  '1979-03-05': { name: 'Voyager 1 — Jupiter Flyby', type: '📜 Historic Discovery', i18nKey: 'eventVoyager1Jupiter1979' },
  };
+ return this._cachedEventDescriptions;
  }
 
  _showEventInfo(dateValue, eventLabel, focusKey) {
@@ -1620,48 +1622,64 @@ class App {
  
  if (!searchInput || !dropdown) return;
  
- // Store original options HTML for reset/filtering
+ // Preserve full original HTML for restoring the complete grouped dropdown.
  const originalHTML = dropdown.innerHTML;
+
+ // Translated option data — built lazily on the first keystroke so that
+ // window.applyTranslations() has already run by then. Invalidated on restore.
+ let _cachedOptions = null;
+ const getOptions = () => {
+ if (!_cachedOptions) {
+ _cachedOptions = Array.from(dropdown.querySelectorAll('option'))
+ .filter(o => o.value)
+ .map(o => ({ value: o.value, text: o.textContent }));
+ }
+ return _cachedOptions;
+ };
+
+ const restoreDropdown = () => {
+ dropdown.innerHTML = originalHTML;
+ // Re-apply translations only once on restore (this is a rare event).
+ if (window.applyTranslations) window.applyTranslations();
+ _cachedOptions = null; // invalidate so next filter re-reads translated text
+ };
  
  searchInput.addEventListener('input', (e) => {
  const query = e.target.value.toLowerCase().trim();
 
  if (!query) {
- // Restore original dropdown and re-apply current language
- dropdown.innerHTML = originalHTML;
- if (window.applyTranslations) window.applyTranslations();
+ restoreDropdown();
  return;
  }
 
- // Restore full dropdown first so we can read current translated option text,
- // then filter. This ensures translated names (e.g. "Saturnus" in NL) match.
- dropdown.innerHTML = originalHTML;
- if (window.applyTranslations) window.applyTranslations();
-
- const currentOptions = Array.from(dropdown.querySelectorAll('option')).filter(o => o.value);
- const matchingOptions = currentOptions.filter(node =>
- node.textContent.toLowerCase().includes(query) ||
- node.value.toLowerCase().includes(query)
+ // Filter against cached translated text — no full DOM rebuild per keystroke.
+ const matches = getOptions().filter(o =>
+ o.text.toLowerCase().includes(query) ||
+ o.value.toLowerCase().includes(query)
  );
  
- // Rebuild dropdown with matches
+ // Rebuild dropdown with matches (no optgroups during search).
  dropdown.innerHTML = '';
  const placeholder = document.createElement('option');
  placeholder.value = '';
- placeholder.textContent = matchingOptions.length > 0 
- ? `${matchingOptions.length} results for "${query}"`
+ placeholder.textContent = matches.length > 0
+ ? `${matches.length} result${matches.length === 1 ? '' : 's'}`
  : 'No results found';
  dropdown.appendChild(placeholder);
  
- matchingOptions.forEach(opt => dropdown.appendChild(opt));
+ matches.forEach(({ value, text }) => {
+ const opt = document.createElement('option');
+ opt.value = value;
+ opt.textContent = text;
+ dropdown.appendChild(opt);
+ });
  });
  
  // Clear search when dropdown is used
  dropdown.addEventListener('change', () => {
  if (dropdown.value) {
  searchInput.value = '';
- dropdown.innerHTML = originalHTML;
- if (window.applyTranslations) window.applyTranslations();
+ restoreDropdown();
  }
  });
  }

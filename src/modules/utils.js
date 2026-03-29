@@ -50,7 +50,7 @@ export const CONFIG = {
  targetFPS: 60,
  frameTime: 1000 / 60,
  maxDeltaTime: 0.1,
- adaptivePixelRatio: false,
+ adaptivePixelRatio: true,
  adaptivePixelRatioMin: IS_LOW_POWER ? 0.9 : 1.0,
  adaptivePixelRatioMax: IS_MOBILE ? 1.25 : (IS_LOW_POWER ? 1.5 : (PERFORMANCE_MODE ? 1.5 : 2.0)),
  adaptivePixelRatioStepDown: 0.1,
@@ -65,7 +65,8 @@ export const CONFIG = {
  sphereSegments: IS_MOBILE ? 32 : (IS_LOW_POWER ? 64 : (PERFORMANCE_MODE ? 96 : 128)),
  particleSize: 2,
  particleCount: IS_MOBILE ? 1000 : (IS_LOW_POWER ? 2500 : 5000),
- shadows: !(IS_MOBILE || IS_LOW_POWER) // Disable shadows on mobile/low-power
+ shadows: !(IS_MOBILE || IS_LOW_POWER), // Disable shadows on mobile/low-power
+ shadowMapSize: IS_MOBILE ? 512 : 1024  // Adaptive shadow map resolution
  },
  CONSTELLATION: {
  // Constellation rendering constants
@@ -81,23 +82,6 @@ export const CONFIG = {
  STAR_SEGMENTS: IS_LOW_POWER ? 12 : 16, // Sphere segments for stars
  GLOW_SEGMENTS: IS_LOW_POWER ? 12 : 16 // Sphere segments for glow
  }
-};
-
-// Suppress harmless WebGL shader validation warnings
-const originalWarn = console.warn;
-console.warn = function(...args) {
- // Only check string arguments to avoid [object Object] coercion breaking the filter
- const msg = args.filter(a => typeof a === 'string').join(' ');
- // Filter out known harmless WebGL shader warnings
- if (msg.includes('THREE.WebGLProgram') && msg.includes('VALIDATE_STATUS')) {
- // Suppress - this is a harmless validation warning that doesn't affect functionality
- return;
- }
- if (msg.includes('Vertex shader is not compiled')) {
- // Suppress - shader compiles successfully despite warning
- return;
- }
- originalWarn.apply(console, args);
 };
 
 // Log configuration (only if debug enabled)

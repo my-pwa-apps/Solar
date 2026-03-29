@@ -298,26 +298,26 @@ export class SolarSystemModule {
  // Define all loading steps with progress and tasks
  // Individual planet creation reports its own progress internally
  const loadingSteps = [
- { progress: 3, message: t('creatingSun'), task: async () => this.createSun(scene) },
- { progress: 5, message: t('creatingInnerPlanets'), task: async () => await this.createInnerPlanets(scene) },
- { progress: 38, message: t('creatingOuterPlanets'), task: async () => await this.createOuterPlanets(scene) },
- { progress: 50, message: t('creatingDwarfPlanets'), task: async () => await this.createDwarfPlanets(scene) },
- { progress: 62, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
- { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
- { progress: 66, message: t('creatingHeliopause'), task: () => this.createHeliopause(scene) },
- { progress: 67, message: t('creatingOortCloud'), task: () => this.createOortCloud(scene) },
- { progress: 69, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
- { progress: 70, message: t('creatingMilkyWay'), task: () => this.createMilkyWay(scene) },
- { progress: 71, message: t('creatingOrbitalPaths'), task: () => this.createOrbitalPaths(scene) },
- { progress: 74, message: t('creatingConstellations'), task: () => this.createConstellations(scene) },
- { progress: 80, message: t('creatingNebulae'), task: () => this.createNebulae(scene) },
- { progress: 83, message: t('creatingGalaxies'), task: () => this.createGalaxies(scene) },
- { progress: 86, message: t('creatingNearbyStars'), task: () => this.createNearbyStars(scene) },
- { progress: 89, message: t('creatingExoplanets'), task: () => this.createExoplanets(scene) },
- { progress: 91, message: t('creatingComets'), task: () => this.createComets(scene) },
- { progress: 93, message: t('creatingSatellites'), task: () => this.createSatellites(scene) },
- { progress: 95, message: t('creatingSpacecraft'), task: () => this.createSpacecraft(scene) },
- { progress: 100, message: t('creatingLabels'), task: () => this.createLabels() }
+ { progress: 5,  message: t('creatingSun'),          task: async () => this.createSun(scene) },
+ { progress: 10, message: t('creatingInnerPlanets'),  task: async () => await this.createInnerPlanets(scene) },
+ { progress: 20, message: t('creatingOuterPlanets'),  task: async () => await this.createOuterPlanets(scene) },
+ { progress: 30, message: t('creatingDwarfPlanets'),  task: async () => await this.createDwarfPlanets(scene) },
+ { progress: 40, message: t('creatingAsteroidBelt'),  task: () => this.createAsteroidBelt(scene) },
+ { progress: 50, message: t('creatingKuiperBelt'),    task: () => this.createKuiperBelt(scene) },
+ { progress: 55, message: t('creatingHeliopause'),    task: () => this.createHeliopause(scene) },
+ { progress: 58, message: t('creatingOortCloud'),     task: () => this.createOortCloud(scene) },
+ { progress: 61, message: t('creatingStarfield'),     task: () => this.createStarfield(scene) },
+ { progress: 64, message: t('creatingMilkyWay'),      task: () => this.createMilkyWay(scene) },
+ { progress: 67, message: t('creatingOrbitalPaths'),  task: () => this.createOrbitalPaths(scene) },
+ { progress: 70, message: t('creatingConstellations'),task: () => this.createConstellations(scene) },
+ { progress: 75, message: t('creatingNebulae'),       task: () => this.createNebulae(scene) },
+ { progress: 79, message: t('creatingGalaxies'),      task: () => this.createGalaxies(scene) },
+ { progress: 83, message: t('creatingNearbyStars'),   task: () => this.createNearbyStars(scene) },
+ { progress: 87, message: t('creatingExoplanets'),    task: () => this.createExoplanets(scene) },
+ { progress: 90, message: t('creatingComets'),        task: () => this.createComets(scene) },
+ { progress: 93, message: t('creatingSatellites'),    task: () => this.createSatellites(scene) },
+ { progress: 96, message: t('creatingSpacecraft'),    task: () => this.createSpacecraft(scene) },
+ { progress: 100, message: t('creatingLabels'),       task: () => this.createLabels() }
  ];
 
  // Execute steps sequentially with UI updates (iterative — avoids 20-frame deep
@@ -361,10 +361,10 @@ export class SolarSystemModule {
  // Sun: 1,391,000 km / 12,742 km = 109.2 (should be MASSIVE)
  // But we'll scale it down to 15 for visibility while still being impressive
  const sunRadius = 15; // Compromise between realism and usability
- const sunGeometry = new THREE.SphereGeometry(sunRadius, 128, 128); // Higher detail
+ const sunGeometry = new THREE.SphereGeometry(sunRadius, CONFIG.QUALITY.sphereSegments, CONFIG.QUALITY.sphereSegments); // Quality-adaptive detail
  
  // Load real NASA Sun texture (with procedural fallback)
- const sunTexture = this.createSunTextureReal(2048);
+ const sunTexture = this.createSunTextureReal(CONFIG.QUALITY.textureSize);
  
  // MeshBasicMaterial — the sun is self-luminous; it doesn't react to scene lights
  const sunMaterial = new THREE.MeshBasicMaterial({
@@ -391,8 +391,8 @@ export class SolarSystemModule {
  sunLight.name = 'sunLight';
  sunLight.position.set(0, 0, 0);
  sunLight.castShadow = CONFIG.QUALITY.shadows;
- sunLight.shadow.mapSize.width = 4096; // Higher resolution shadows
- sunLight.shadow.mapSize.height = 4096;
+ sunLight.shadow.mapSize.width = CONFIG.QUALITY.shadowMapSize;
+ sunLight.shadow.mapSize.height = CONFIG.QUALITY.shadowMapSize;
  sunLight.shadow.camera.near = 1;
  sunLight.shadow.camera.far = 5000; // Increased for distant planets
  sunLight.shadow.bias = -0.0005; // Reduce shadow artifacts
@@ -2797,9 +2797,9 @@ export class SolarSystemModule {
 
  case 'mars':
  // Mars: REAL NASA texture with rusty red surface with canyons, polar caps
- const marsTexture = this.createMarsTextureReal(2048);
- const marsBump = this.createMarsBumpMap(2048);
- const marsNormal = this.createMarsNormalMap(2048);
+ const marsTexture = this.createMarsTextureReal(CONFIG.QUALITY.textureSize);
+ const marsBump = this.createMarsBumpMap(CONFIG.QUALITY.textureSize);
+ const marsNormal = this.createMarsNormalMap(CONFIG.QUALITY.textureSize);
  
  return new THREE.MeshStandardMaterial({
  map: marsTexture,
@@ -2815,7 +2815,7 @@ export class SolarSystemModule {
  
  case 'venus':
  // Venus: REAL NASA texture with thick yellowish sulfuric acid clouds
- const venusTexture = this.createVenusTextureReal(2048);
+ const venusTexture = this.createVenusTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: venusTexture,
  color: 0xe8c468,
@@ -2827,8 +2827,8 @@ export class SolarSystemModule {
  
  case 'mercury':
  // Mercury: REAL NASA texture heavily cratered surface
- const mercuryTexture = this.createMercuryTextureReal(2048);
- const mercuryBump = this.createMercuryBumpMap(2048);
+ const mercuryTexture = this.createMercuryTextureReal(CONFIG.QUALITY.textureSize);
+ const mercuryBump = this.createMercuryBumpMap(CONFIG.QUALITY.textureSize);
  
  return new THREE.MeshStandardMaterial({
  map: mercuryTexture,
@@ -2842,8 +2842,8 @@ export class SolarSystemModule {
  
  case 'jupiter':
  // Jupiter: REAL NASA texture with hyperrealistic bands and Great Red Spot
- const jupiterTexture = this.createJupiterTextureReal(2048);
- const jupiterBump = this.createJupiterBumpMap(1024);
+ const jupiterTexture = this.createJupiterTextureReal(CONFIG.QUALITY.textureSize);
+ const jupiterBump = this.createJupiterBumpMap(Math.min(CONFIG.QUALITY.textureSize, 1024));
  
  return new THREE.MeshStandardMaterial({
  map: jupiterTexture,
@@ -2857,8 +2857,8 @@ export class SolarSystemModule {
  
  case 'saturn':
  // Saturn: REAL NASA texture with pale gold and detailed banding
- const saturnTexture = this.createSaturnTextureReal(2048);
- const saturnBump = this.createSaturnBumpMap(1024);
+ const saturnTexture = this.createSaturnTextureReal(CONFIG.QUALITY.textureSize);
+ const saturnBump = this.createSaturnBumpMap(Math.min(CONFIG.QUALITY.textureSize, 1024));
  
  return new THREE.MeshStandardMaterial({
  map: saturnTexture,
@@ -2872,7 +2872,7 @@ export class SolarSystemModule {
  
  case 'uranus':
  // Uranus: REAL NASA texture with cyan atmosphere and methane
- const uranusTexture = this.createUranusTextureReal(2048);
+ const uranusTexture = this.createUranusTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: uranusTexture,
  roughness: 0.7,
@@ -2883,7 +2883,7 @@ export class SolarSystemModule {
  
  case 'neptune':
  // Neptune: REAL NASA texture with deep blue and Great Dark Spot
- const neptuneTexture = this.createNeptuneTextureReal(2048);
+ const neptuneTexture = this.createNeptuneTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: neptuneTexture,
  roughness: 0.7,
@@ -2894,7 +2894,7 @@ export class SolarSystemModule {
  
  case 'pluto':
  // Pluto: Remote attempt (plugin) then procedural with Tombaugh Regio heart
- const plutoTexture = this.createPlutoTextureReal(2048);
+ const plutoTexture = this.createPlutoTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: plutoTexture,
  roughness: 0.85,
@@ -2905,7 +2905,7 @@ export class SolarSystemModule {
 
  case 'ceres':
  // Ceres: Dawn mission texture (NASA)
- const ceresTexture = this.createCeresTextureReal(2048);
+ const ceresTexture = this.createCeresTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: ceresTexture,
  roughness: 0.9,
@@ -2916,7 +2916,7 @@ export class SolarSystemModule {
 
  case 'haumea':
  // Haumea: Fast-spinning elongated dwarf planet (CC BY 4.0 Solar System Scope)
- const haumeaTexture = this.createHaumeaTextureReal(2048);
+ const haumeaTexture = this.createHaumeaTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: haumeaTexture,
  roughness: 0.85,
@@ -2927,7 +2927,7 @@ export class SolarSystemModule {
 
  case 'makemake':
  // Makemake: Bright Kuiper Belt dwarf planet (CC BY 4.0 Solar System Scope)
- const makemakeTexture = this.createMakemakeTextureReal(2048);
+ const makemakeTexture = this.createMakemakeTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: makemakeTexture,
  roughness: 0.85,
@@ -2938,7 +2938,7 @@ export class SolarSystemModule {
 
  case 'eris':
  // Eris: Massive scattered disk dwarf planet (CC BY 4.0 Solar System Scope)
- const erisTexture = this.createErisTextureReal(2048);
+ const erisTexture = this.createErisTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: erisTexture,
  roughness: 0.8,
@@ -2979,7 +2979,7 @@ export class SolarSystemModule {
 
  const planet = new THREE.Mesh(geometry, material);
  planet.position.set(config.distance, 0, 0);
- planet.castShadow = false; // Planets don't cast shadows on each other (unrealistic at solar system scale)
+ planet.castShadow = CONFIG.QUALITY.shadows; // Enable eclipses on desktop; mobile stays off for performance
  planet.receiveShadow = true; // But can receive shadows from moons
  planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 

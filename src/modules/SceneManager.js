@@ -127,6 +127,9 @@ export class SceneManager {
  this.renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap deprecated in Three.js r167
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
  this.renderer.toneMappingExposure = 1.35; // Slightly higher to compensate for darker ambient lights
+ // Suppress harmless WebGL shader VALIDATE_STATUS warnings via the official API.
+ // Previously this was done via a console.warn monkey-patch which was a global side-effect.
+ this.renderer.debug.checkShaderErrors = false;
  
  // Performance optimizations
  this.renderer.sortObjects = true; // Required for correct transparent blending
@@ -2096,7 +2099,10 @@ this.camera.near = 10.0;
  let visualDist = controller.userData._laserVisualDist;
  if (shouldRaycastThisFrame) {
  this._vrIntersections.length = 0;
- this._vrRaycaster.intersectObjects(this.scene.children, true, this._vrIntersections);
+ // Use the solar system's named objects array for VR raycasting — much cheaper
+ // than testing all scene.children (avoids lights, helpers, orbit rings, etc.)
+ const pickTargets = window.app?.solarSystemModule?.objects || this.scene.children;
+ this._vrRaycaster.intersectObjects(pickTargets, true, this._vrIntersections);
  hasHit = this._vrIntersections.length > 0;
  visualDist = hasHit ? Math.min(this._vrIntersections[0].distance, LASER_DEFAULT_LENGTH) : LASER_DEFAULT_LENGTH;
  controller.userData._laserHasHit = hasHit;
