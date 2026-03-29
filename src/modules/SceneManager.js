@@ -1178,7 +1178,8 @@ this.camera.near = 10.0;
  ctx.fillText(`🔄  SNAP TURN  ${snapActive ? 'ON  (30°)' : 'OFF  (smooth)'}`, shipX + shipW / 2, snapY + BTN_H * 0.375);
  ctx.restore();
  this.vrButtons.push({ x: shipX, y: snapY, w: shipW, h: Math.round(BTN_H * 0.75), label: 'SNAP TURN', action: 'snapTurn' });
- }
+ } // end anonymous starship/snapTurn block
+ } // end controls page
 
  // ═══════════════════════════════════════════════════════════
  // NAVIGATE PAGE
