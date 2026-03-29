@@ -26,7 +26,6 @@ export class SolarSystemModule {
  this.heliopause = null;
  this.orbits = [];
  this.focusedObject = null;
- this.distantStars = [];
  this.nebulae = [];
  this.galaxies = [];
  this.comets = [];
@@ -54,6 +53,13 @@ export class SolarSystemModule {
  
  // Comet tails visibility: shown by default
  this.cometTailsVisible = true;
+
+ // Labels visibility — updated by toggleLabels()
+ this.labelsVisible = false;
+
+ // Pickable subset used by VR raycaster — planets, moons, comets, satellites, spacecraft, sun.
+ // Populated during object creation; avoids raycasting against galaxies, nebulae, belt particles, etc.
+ this.pickableObjects = [];
  
  // Orbits visibility: true = visible by default
  this.orbitMode = 'all'; // 'all' | 'planets' | 'comets' | 'none'
@@ -61,7 +67,7 @@ export class SolarSystemModule {
  this.cometOrbitsVisible = true; // comet orbits visible (derived from orbitMode)
  
  // Constellations visibility: true = visible by default
- this.constellationsVisible = true;
+ this.constellationsVisible = false;
  
  // Geometry cache for reuse
  this.geometryCache = new Map();
@@ -266,9 +272,17 @@ export class SolarSystemModule {
  this._focusTransitionActive = false;
  this._focusTransitionCancelRequested = false;
 
+ // Pre-allocated CustomEvent for date-changed dispatch — avoids creating
+ // 3 new objects every 200 ms in the update hot path.
+ this._dateEventDetail = { jd: 0 };
+ this._dateEvent = new CustomEvent('simulatedDateChanged', { detail: this._dateEventDetail });
+
  // Frame counters for throttled animations (initialised here, not lazily in update)
  this._sunFlareFrame    = 0;
  this._starTwinkleFrame = 0;
+
+ // Scratch object for _probePositionAtJD — avoids per-call heap allocation
+ this._probePosOut = { x: 0, y: 0, z: 0, distAU: 0 };
  }
  
  getGeometry(type, ...params) {
@@ -291,27 +305,26 @@ export class SolarSystemModule {
  // Define all loading steps with progress and tasks
  // Individual planet creation reports its own progress internally
  const loadingSteps = [
- { progress: 3, message: t('creatingSun'), task: async () => this.createSun(scene) },
- { progress: 5, message: t('creatingInnerPlanets'), task: async () => await this.createInnerPlanets(scene) },
- { progress: 38, message: t('creatingOuterPlanets'), task: async () => await this.createOuterPlanets(scene) },
- { progress: 50, message: t('creatingDwarfPlanets'), task: async () => await this.createDwarfPlanets(scene) },
- { progress: 62, message: t('creatingAsteroidBelt'), task: () => this.createAsteroidBelt(scene) },
- { progress: 65, message: t('creatingKuiperBelt'), task: () => this.createKuiperBelt(scene) },
- { progress: 66, message: t('creatingHeliopause'), task: () => this.createHeliopause(scene) },
- { progress: 67, message: t('creatingOortCloud'), task: () => this.createOortCloud(scene) },
- { progress: 69, message: t('creatingStarfield'), task: () => this.createStarfield(scene) },
- { progress: 70, message: t('creatingMilkyWay'), task: () => this.createMilkyWay(scene) },
- { progress: 71, message: t('creatingOrbitalPaths'), task: () => this.createOrbitalPaths(scene) },
- { progress: 74, message: t('creatingConstellations'), task: () => this.createConstellations(scene) },
- { progress: 77, message: t('creatingDistantStars'), task: () => this.createDistantStars(scene) },
- { progress: 80, message: t('creatingNebulae'), task: () => this.createNebulae(scene) },
- { progress: 83, message: t('creatingGalaxies'), task: () => this.createGalaxies(scene) },
- { progress: 86, message: t('creatingNearbyStars'), task: () => this.createNearbyStars(scene) },
- { progress: 89, message: t('creatingExoplanets'), task: () => this.createExoplanets(scene) },
- { progress: 91, message: t('creatingComets'), task: () => this.createComets(scene) },
- { progress: 93, message: t('creatingSatellites'), task: () => this.createSatellites(scene) },
- { progress: 95, message: t('creatingSpacecraft'), task: () => this.createSpacecraft(scene) },
- { progress: 100, message: t('creatingLabels'), task: () => this.createLabels() }
+ { progress: 5,  message: t('creatingSun'),          task: async () => this.createSun(scene) },
+ { progress: 10, message: t('creatingInnerPlanets'),  task: async () => await this.createInnerPlanets(scene) },
+ { progress: 20, message: t('creatingOuterPlanets'),  task: async () => await this.createOuterPlanets(scene) },
+ { progress: 30, message: t('creatingDwarfPlanets'),  task: async () => await this.createDwarfPlanets(scene) },
+ { progress: 40, message: t('creatingAsteroidBelt'),  task: () => this.createAsteroidBelt(scene) },
+ { progress: 50, message: t('creatingKuiperBelt'),    task: () => this.createKuiperBelt(scene) },
+ { progress: 55, message: t('creatingHeliopause'),    task: () => this.createHeliopause(scene) },
+ { progress: 58, message: t('creatingOortCloud'),     task: () => this.createOortCloud(scene) },
+ { progress: 61, message: t('creatingStarfield'),     task: () => this.createStarfield(scene) },
+ { progress: 64, message: t('creatingMilkyWay'),      task: () => this.createMilkyWay(scene) },
+ { progress: 67, message: t('creatingOrbitalPaths'),  task: () => this.createOrbitalPaths(scene) },
+ { progress: 70, message: t('creatingConstellations'),task: () => this.createConstellations(scene) },
+ { progress: 75, message: t('creatingNebulae'),       task: () => this.createNebulae(scene) },
+ { progress: 79, message: t('creatingGalaxies'),      task: () => this.createGalaxies(scene) },
+ { progress: 83, message: t('creatingNearbyStars'),   task: () => this.createNearbyStars(scene) },
+ { progress: 87, message: t('creatingExoplanets'),    task: () => this.createExoplanets(scene) },
+ { progress: 90, message: t('creatingComets'),        task: () => this.createComets(scene) },
+ { progress: 93, message: t('creatingSatellites'),    task: () => this.createSatellites(scene) },
+ { progress: 96, message: t('creatingSpacecraft'),    task: () => this.createSpacecraft(scene) },
+ { progress: 100, message: t('creatingLabels'),       task: () => this.createLabels() }
  ];
 
  // Execute steps sequentially with UI updates (iterative — avoids 20-frame deep
@@ -355,10 +368,10 @@ export class SolarSystemModule {
  // Sun: 1,391,000 km / 12,742 km = 109.2 (should be MASSIVE)
  // But we'll scale it down to 15 for visibility while still being impressive
  const sunRadius = 15; // Compromise between realism and usability
- const sunGeometry = new THREE.SphereGeometry(sunRadius, 128, 128); // Higher detail
+ const sunGeometry = new THREE.SphereGeometry(sunRadius, CONFIG.QUALITY.sphereSegments, CONFIG.QUALITY.sphereSegments); // Quality-adaptive detail
  
  // Load real NASA Sun texture (with procedural fallback)
- const sunTexture = this.createSunTextureReal(2048);
+ const sunTexture = this.createSunTextureReal(CONFIG.QUALITY.textureSize);
  
  // MeshBasicMaterial — the sun is self-luminous; it doesn't react to scene lights
  const sunMaterial = new THREE.MeshBasicMaterial({
@@ -385,8 +398,8 @@ export class SolarSystemModule {
  sunLight.name = 'sunLight';
  sunLight.position.set(0, 0, 0);
  sunLight.castShadow = CONFIG.QUALITY.shadows;
- sunLight.shadow.mapSize.width = 4096; // Higher resolution shadows
- sunLight.shadow.mapSize.height = 4096;
+ sunLight.shadow.mapSize.width = CONFIG.QUALITY.shadowMapSize;
+ sunLight.shadow.mapSize.height = CONFIG.QUALITY.shadowMapSize;
  sunLight.shadow.camera.near = 1;
  sunLight.shadow.camera.far = 5000; // Increased for distant planets
  sunLight.shadow.bias = -0.0005; // Reduce shadow artifacts
@@ -404,14 +417,14 @@ export class SolarSystemModule {
  console.log(' Lighting: Sun 9 (warm white), Ambient 0.4, Tone mapping 1.2');
  }
  
- // Multi-layer corona for realistic glow — inner bright core fading to a wispy outer halo
+ // Multi-layer corona for realistic glow — inner bright core fading to a wispy outer halo.
+ // Outer layers are kept warm (yellow-orange) at very low opacity to avoid hard red ring
+ // artifacts, which occur because the sun sphere occludes each BackSide layer's centre.
  const coronaLayers = [
  { size: 11.5, color: 0xffdd88, opacity: 0.25 },
- { size: 13, color: 0xffaa44, opacity: 0.18 },
- { size: 15, color: 0xff8822, opacity: 0.12 },
- { size: 18, color: 0xff6600, opacity: 0.07 },
- { size: 23, color: 0xff4400, opacity: 0.03 }, // Extended mid corona
- { size: 30, color: 0xff2200, opacity: 0.012 } // Faint outer solar wind glow
+ { size: 13,   color: 0xffaa44, opacity: 0.18 },
+ { size: 15,   color: 0xff8822, opacity: 0.12 },
+ { size: 20,   color: 0xff9944, opacity: 0.018 } // very subtle warm outer halo
  ];
  
  coronaLayers.forEach(layer => {
@@ -464,6 +477,7 @@ export class SolarSystemModule {
  
  scene.add(this.sun);
  this.objects.push(this.sun);
+ this.pickableObjects.push(this.sun);
  }
 
  async createInnerPlanets(scene) {
@@ -1361,7 +1375,7 @@ export class SolarSystemModule {
  const pluginFallbacks = [];
  return this.loadPlanetTextureReal('Earth', primary, this.createEarthTexture, size, pluginFallbacks);
  }
- 
+
  // Mars real texture loader
  createMarsTextureReal(size) {
  const primary = [
@@ -2761,7 +2775,6 @@ export class SolarSystemModule {
  if (DEBUG.enabled) console.timeEnd('Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
- // NO emissive - planets don't emit light, they only reflect it
  const earthMaterial = new THREE.MeshStandardMaterial({
  map: earthTexture,
  
@@ -2792,9 +2805,9 @@ export class SolarSystemModule {
 
  case 'mars':
  // Mars: REAL NASA texture with rusty red surface with canyons, polar caps
- const marsTexture = this.createMarsTextureReal(2048);
- const marsBump = this.createMarsBumpMap(2048);
- const marsNormal = this.createMarsNormalMap(2048);
+ const marsTexture = this.createMarsTextureReal(CONFIG.QUALITY.textureSize);
+ const marsBump = this.createMarsBumpMap(CONFIG.QUALITY.textureSize);
+ const marsNormal = this.createMarsNormalMap(CONFIG.QUALITY.textureSize);
  
  return new THREE.MeshStandardMaterial({
  map: marsTexture,
@@ -2810,7 +2823,7 @@ export class SolarSystemModule {
  
  case 'venus':
  // Venus: REAL NASA texture with thick yellowish sulfuric acid clouds
- const venusTexture = this.createVenusTextureReal(2048);
+ const venusTexture = this.createVenusTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: venusTexture,
  color: 0xe8c468,
@@ -2822,8 +2835,8 @@ export class SolarSystemModule {
  
  case 'mercury':
  // Mercury: REAL NASA texture heavily cratered surface
- const mercuryTexture = this.createMercuryTextureReal(2048);
- const mercuryBump = this.createMercuryBumpMap(2048);
+ const mercuryTexture = this.createMercuryTextureReal(CONFIG.QUALITY.textureSize);
+ const mercuryBump = this.createMercuryBumpMap(CONFIG.QUALITY.textureSize);
  
  return new THREE.MeshStandardMaterial({
  map: mercuryTexture,
@@ -2837,8 +2850,8 @@ export class SolarSystemModule {
  
  case 'jupiter':
  // Jupiter: REAL NASA texture with hyperrealistic bands and Great Red Spot
- const jupiterTexture = this.createJupiterTextureReal(2048);
- const jupiterBump = this.createJupiterBumpMap(1024);
+ const jupiterTexture = this.createJupiterTextureReal(CONFIG.QUALITY.textureSize);
+ const jupiterBump = this.createJupiterBumpMap(Math.min(CONFIG.QUALITY.textureSize, 1024));
  
  return new THREE.MeshStandardMaterial({
  map: jupiterTexture,
@@ -2852,8 +2865,8 @@ export class SolarSystemModule {
  
  case 'saturn':
  // Saturn: REAL NASA texture with pale gold and detailed banding
- const saturnTexture = this.createSaturnTextureReal(2048);
- const saturnBump = this.createSaturnBumpMap(1024);
+ const saturnTexture = this.createSaturnTextureReal(CONFIG.QUALITY.textureSize);
+ const saturnBump = this.createSaturnBumpMap(Math.min(CONFIG.QUALITY.textureSize, 1024));
  
  return new THREE.MeshStandardMaterial({
  map: saturnTexture,
@@ -2867,7 +2880,7 @@ export class SolarSystemModule {
  
  case 'uranus':
  // Uranus: REAL NASA texture with cyan atmosphere and methane
- const uranusTexture = this.createUranusTextureReal(2048);
+ const uranusTexture = this.createUranusTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: uranusTexture,
  roughness: 0.7,
@@ -2878,7 +2891,7 @@ export class SolarSystemModule {
  
  case 'neptune':
  // Neptune: REAL NASA texture with deep blue and Great Dark Spot
- const neptuneTexture = this.createNeptuneTextureReal(2048);
+ const neptuneTexture = this.createNeptuneTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: neptuneTexture,
  roughness: 0.7,
@@ -2889,7 +2902,7 @@ export class SolarSystemModule {
  
  case 'pluto':
  // Pluto: Remote attempt (plugin) then procedural with Tombaugh Regio heart
- const plutoTexture = this.createPlutoTextureReal(2048);
+ const plutoTexture = this.createPlutoTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: plutoTexture,
  roughness: 0.85,
@@ -2900,7 +2913,7 @@ export class SolarSystemModule {
 
  case 'ceres':
  // Ceres: Dawn mission texture (NASA)
- const ceresTexture = this.createCeresTextureReal(2048);
+ const ceresTexture = this.createCeresTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: ceresTexture,
  roughness: 0.9,
@@ -2911,7 +2924,7 @@ export class SolarSystemModule {
 
  case 'haumea':
  // Haumea: Fast-spinning elongated dwarf planet (CC BY 4.0 Solar System Scope)
- const haumeaTexture = this.createHaumeaTextureReal(2048);
+ const haumeaTexture = this.createHaumeaTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: haumeaTexture,
  roughness: 0.85,
@@ -2922,7 +2935,7 @@ export class SolarSystemModule {
 
  case 'makemake':
  // Makemake: Bright Kuiper Belt dwarf planet (CC BY 4.0 Solar System Scope)
- const makemakeTexture = this.createMakemakeTextureReal(2048);
+ const makemakeTexture = this.createMakemakeTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: makemakeTexture,
  roughness: 0.85,
@@ -2933,7 +2946,7 @@ export class SolarSystemModule {
 
  case 'eris':
  // Eris: Massive scattered disk dwarf planet (CC BY 4.0 Solar System Scope)
- const erisTexture = this.createErisTextureReal(2048);
+ const erisTexture = this.createErisTextureReal(CONFIG.QUALITY.textureSize);
  return new THREE.MeshStandardMaterial({
  map: erisTexture,
  roughness: 0.8,
@@ -2974,7 +2987,7 @@ export class SolarSystemModule {
 
  const planet = new THREE.Mesh(geometry, material);
  planet.position.set(config.distance, 0, 0);
- planet.castShadow = false; // Planets don't cast shadows on each other (unrealistic at solar system scale)
+ planet.castShadow = CONFIG.QUALITY.shadows; // Enable eclipses on desktop; mobile stays off for performance
  planet.receiveShadow = true; // But can receive shadows from moons
  planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 
@@ -3009,6 +3022,12 @@ export class SolarSystemModule {
  planet.userData.orbitalEccentricity = orbitalElements.eccentricity || 0;
  planet.userData.orbitalInclination = (orbitalElements.inclinationDeg || 0) * Math.PI / 180;
  planet.userData.orbitalPeriapsis = (orbitalElements.periapsisDeg || 0) * Math.PI / 180;
+ // Pre-cached trig — inclination and sqrt(1±e) are constant per body
+ planet.userData._sinOrbInc = Math.sin(planet.userData.orbitalInclination);
+ planet.userData._cosOrbInc = Math.cos(planet.userData.orbitalInclination);
+ const _pe = planet.userData.orbitalEccentricity;
+ planet.userData._keplerSqrtPlus = Math.sqrt(1 + _pe);
+ planet.userData._keplerSqrtMinus = _pe < 1 ? Math.sqrt(1 - _pe) : 0;
 
  // Cloud layer disabled — real NASA Earth texture already includes visible
  // cloud patterns; a separate cloud mesh caused a blue-tint artefact.
@@ -3063,21 +3082,57 @@ export class SolarSystemModule {
  ringMap = ringLoader.load('./textures/rings/saturn_ring_alpha.webp');
  } catch(e) { ringMap = null; }
  }
- const ringMaterial = ringMap
- ? new THREE.MeshBasicMaterial({
- map: ringMap,
+ // Provide a 1×1 fallback so the sampler2D uniform is always a valid texture
+ // (avoids driver issues on GPUs that evaluate both GLSL ternary branches)
+ if (!ringMap) {
+ ringMap = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+ ringMap.needsUpdate = true;
+ }
+
+ // Saturn ring material: forward-scatter shader simulates light shining through
+ // dusty ring particles from behind — the iconic "dark side" ring brightening.
+ // The sun is always at world origin (0,0,0) in this solar system simulation.
+ const ringForwardScatterVert = /* glsl */`
+ varying vec2 vUv;
+ varying vec3 vWorldPos;
+ void main() {
+ vUv = uv;
+ vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+ }
+ `;
+ const ringForwardScatterFrag = /* glsl */`
+ uniform sampler2D ringMap;
+ uniform bool useTexture;
+ uniform vec3 ringColor;
+ uniform float ringOpacity;
+ varying vec2 vUv;
+ varying vec3 vWorldPos;
+ void main() {
+ vec4 texSample = useTexture ? texture2D(ringMap, vUv) : vec4(ringColor, ringOpacity);
+ if (texSample.a < 0.01) discard;
+ // Forward-scatter: view looking toward the sun through the rings → brighten
+ // Sun is at origin; dirToSun = normalize(-vWorldPos)
+ vec3 dirToCamera = normalize(cameraPosition - vWorldPos);
+ vec3 dirToSun = normalize(-vWorldPos);
+ // Phase: 1.0 when camera behind rings looking at sun, 0.0 otherwise
+ float phase = max(0.0, dot(dirToCamera, dirToSun));
+ float scatter = 1.0 + pow(phase, 5.0) * 1.5;
+ gl_FragColor = vec4(texSample.rgb * scatter, texSample.a);
+ }
+ `;
+
+ const ringMaterial = new THREE.ShaderMaterial({
+ uniforms: {
+ ringMap: { value: ringMap },
+ useTexture: { value: !!config.prominentRings },
+ ringColor: { value: new THREE.Color(ringColor) },
+ ringOpacity: { value: ringOpacity }
+ },
+ vertexShader: ringForwardScatterVert,
+ fragmentShader: ringForwardScatterFrag,
  side: THREE.DoubleSide,
  transparent: true,
- opacity: 0.9,
- depthWrite: false
- })
- : new THREE.MeshStandardMaterial({
- color: ringColor,
- side: THREE.DoubleSide,
- transparent: true,
- opacity: ringOpacity,
- roughness: 0.8,
- metalness: 0.1,
  depthWrite: false
  });
  const rings = new THREE.Mesh(ringGeometry, ringMaterial);
@@ -3088,20 +3143,52 @@ export class SolarSystemModule {
  }
 
  // Atmosphere glow — thin transparent sphere around planets with appreciable atmospheres.
- // BackSide rendering: the inward-facing surface creates a limb glow visible from space.
+ // Sun-aware: glow only appears on the sunlit limb, fading into darkness on the shadow side.
  if (config.atmosphere) {
  const atmosRadius = config.radius * 1.06;
  const atmosGeo = new THREE.SphereGeometry(atmosRadius, 48, 48);
  const atmosColor = config.atmosphereColor !== undefined ? config.atmosphereColor : 0x4466ff;
  const atmosOpacity = config.atmosphereOpacity !== undefined ? config.atmosphereOpacity : 0.15;
- const atmosMat = new THREE.MeshBasicMaterial({
- color: atmosColor,
+ const atmosColorVec = new THREE.Color(atmosColor);
+
+ const atmosMat = new THREE.ShaderMaterial({
+ uniforms: {
+ glowColor: { value: atmosColorVec },
+ glowOpacity: { value: atmosOpacity },
+ sunDir: { value: new THREE.Vector3(1, 0, 0) } // updated each frame
+ },
+ vertexShader: /* glsl */`
+ uniform vec3 sunDir;
+ varying float vLimbFactor;
+ varying float vSunDot;
+ void main() {
+ vec4 worldPos = modelMatrix * vec4(position, 1.0);
+ vec3 outwardNormal = normalize(mat3(modelMatrix) * normalize(position));
+ vec3 toCamera = normalize(cameraPosition - worldPos.xyz);
+ float cosAngle = abs(dot(outwardNormal, toCamera));
+ vLimbFactor = 1.0 - cosAngle;
+ vSunDot = dot(outwardNormal, sunDir);
+ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+ }
+ `,
+ fragmentShader: /* glsl */`
+ uniform vec3 glowColor;
+ uniform float glowOpacity;
+ varying float vLimbFactor;
+ varying float vSunDot;
+ void main() {
+ float edge = pow(vLimbFactor, 1.6);
+ // Fade glow on the shadow side; soft transition around the terminator.
+ float sunFactor = smoothstep(-0.25, 0.4, vSunDot);
+ gl_FragColor = vec4(glowColor, edge * glowOpacity * 1.6 * sunFactor);
+ }
+ `,
  transparent: true,
- opacity: atmosOpacity,
  side: THREE.BackSide,
  blending: THREE.AdditiveBlending,
  depthWrite: false
  });
+
  const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
  atmosMesh.name = 'atmosphere';
  atmosMesh.raycast = () => {}; // Never intercept pointer clicks — let the planet underneath receive them
@@ -3111,6 +3198,7 @@ export class SolarSystemModule {
 
  scene.add(planet);
  this.objects.push(planet);
+ this.pickableObjects.push(planet);
 
     // Merge any pending remote texture metadata captured before planet object existed
     const meta = this._pendingTextureMeta?.[config.name.toLowerCase()];
@@ -3372,12 +3460,19 @@ export class SolarSystemModule {
  moon.userData.orbitalEccentricity = moonElements.eccentricity || 0;
  moon.userData.orbitalInclination = (moonElements.inclinationDeg || 0) * Math.PI / 180;
  moon.userData.orbitalPeriapsis = (moonElements.periapsisDeg || 0) * Math.PI / 180;
+ // Pre-cached trig — constant for each moon
+ moon.userData._sinOrbInc = Math.sin(moon.userData.orbitalInclination);
+ moon.userData._cosOrbInc = Math.cos(moon.userData.orbitalInclination);
+ const _me = moon.userData.orbitalEccentricity;
+ moon.userData._keplerSqrtPlus = Math.sqrt(1 + _me);
+ moon.userData._keplerSqrtMinus = _me < 1 ? Math.sqrt(1 - _me) : 0;
 
  // Store moon reference using id (language-independent)
  const moonStorageKey = (config.id || config.name).trim().toLowerCase();
  this.moons[moonStorageKey] = moon;
  planet.userData.moons.push(moon);
  this.objects.push(moon);
+ this.pickableObjects.push(moon);
  
  // Set initial position based on angle (IMPORTANT: must be done before adding to planet)
  moon.position.x = config.distance * Math.cos(moon.userData.angle);
@@ -3516,14 +3611,62 @@ export class SolarSystemModule {
  return E;
  }
 
- /** Mean anomaly (radians) → true anomaly (radians). */
- _meanToTrueAnomaly(M_rad, e) {
+ /** Mean anomaly (radians) → true anomaly (radians).
+ * Pass pre-cached sqrtPlus = sqrt(1+e) and sqrtMinus = sqrt(1-e) to skip recomputing them. */
+ _meanToTrueAnomaly(M_rad, e, sqrtPlus, sqrtMinus) {
  if (e < 1e-6) return M_rad; // circular — skip Kepler solver
  const E = this._solveKepler(M_rad, e);
+ const sp = sqrtPlus || Math.sqrt(1 + e);
+ const sm = sqrtMinus || Math.sqrt(1 - e);
  return 2 * Math.atan2(
- Math.sqrt(1 + e) * Math.sin(E / 2),
- Math.sqrt(1 - e) * Math.cos(E / 2)
+ sp * Math.sin(E / 2),
+ sm * Math.cos(E / 2)
  );
+ }
+
+ /**
+ * Compute the scene-space position of a trajectory-based deep-space probe for a given JD.
+ * Returns {x, y, z} in scene units (educational or realistic scale).
+ * @param {object} traj - trajectory descriptor { refJD, refDistAU, speedKmps, eclLon, eclLat }
+ * @param {number} jd   - target Julian Date
+ * @returns {{x:number, y:number, z:number, distAU:number}}
+ */
+ _probePositionAtJD(traj, jd) {
+ const AU_KM = 149597870.7;
+ // Educational: 22.5 units/AU = heliopause 2700 / 120 AU, consistent with visual placement.
+ // Realistic: 150 units/AU = heliopause 18000 / 120 AU.
+ const scaleUnitsPerAU = this.realisticScale ? 150 : 22.5;
+ const distAU = traj.refDistAU + traj.speedKmps * (jd - traj.refJD) * 86400 / AU_KM;
+ const dist = Math.max(0, distAU) * scaleUnitsPerAU;
+ const lonRad = traj.eclLon * Math.PI / 180;
+ const latRad = traj.eclLat * Math.PI / 180;
+ const out = this._probePosOut;
+ out.x = dist * Math.cos(latRad) * Math.cos(lonRad);
+ out.y = dist * Math.sin(latRad);
+ out.z = dist * Math.cos(latRad) * Math.sin(lonRad);
+ out.distAU = distAU;
+ return out;
+ }
+
+ /**
+ * Update all trajectory-based spacecraft to their correct positions for the given JD.
+ * Called from initPositionsToDate and during scale changes.
+ * @param {number} jd - Julian Date
+ */
+ _initSpacecraftToDate(jd) {
+ if (!this.spacecraft) return;
+ this.spacecraft.forEach(craft => {
+ const ud = craft.userData;
+ if (!ud || ud.orbitPlanet || !ud.trajectory) return;
+ const pos = this._probePositionAtJD(ud.trajectory, jd);
+ craft.position.set(pos.x, pos.y, pos.z);
+ // Store for use by updateSpacecraftPositions (scale changes)
+ ud.distanceAU = pos.distAU;
+ ud.distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+ if (DEBUG.enabled) {
+ console.log(` [Trajectory] ${ud.name}: ${pos.distAU.toFixed(2)} AU → scene (${pos.x.toFixed(0)}, ${pos.y.toFixed(0)}, ${pos.z.toFixed(0)})`);
+ }
+ });
  }
 
  /**
@@ -3610,8 +3753,8 @@ export class SolarSystemModule {
  const xOrb = r * Math.cos(theta);
  const zOrb = r * Math.sin(theta);
  moon.position.x = xOrb;
- moon.position.y = zOrb * Math.sin(i);
- moon.position.z = zOrb * Math.cos(i);
+ moon.position.y = zOrb * moon.userData._sinOrbInc;
+ moon.position.z = zOrb * moon.userData._cosOrbInc;
  } else {
  const adj = moon.userData.angle + parentRotY;
  moon.position.x = moon.userData.distance * Math.cos(adj);
@@ -3638,14 +3781,18 @@ export class SolarSystemModule {
 
  const a = userData.distance;
  const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(userData.angle))) : a;
+ const inclRad = (userData.inclination || 0) * Math.PI / 180;
  comet.position.x = r * Math.cos(userData.angle);
- comet.position.y = Math.sin(userData.angle) * 15;
- comet.position.z = r * Math.sin(userData.angle);
+ comet.position.y = r * Math.sin(userData.angle) * Math.sin(inclRad);
+ comet.position.z = r * Math.sin(userData.angle) * Math.cos(inclRad);
  });
  }
 
  // Notify UI immediately
  window.dispatchEvent(new CustomEvent('simulatedDateChanged', { detail: { jd } }));
+
+ // Update trajectory-based spacecraft positions (Voyagers, Pioneers, New Horizons)
+ this._initSpacecraftToDate(jd);
 
  if (DEBUG.enabled) console.log(`[TimeMachine] Seeked to ${date.toUTCString().slice(0, 16)} (JD ${jd.toFixed(1)})`);
  }
@@ -4067,6 +4214,7 @@ export class SolarSystemModule {
  description: t('descHeliopause'),
  funFact: t('funFactHeliopause'),
  radius: heliopauseRadius,
+ baseRadius: heliopauseRadius, // educational-scale radius — used by updateScale()
  realSize: '~240 AU diameter (~36 billion km)'
  };
 
@@ -4089,13 +4237,19 @@ export class SolarSystemModule {
  oortCloudGroup.name = 'oortCloud';
  
  // Scale distances appropriately
- // Realistic scale: 50,000 AU = 2,564,000 units, 200,000 AU = 10,256,000 units
- // Educational scale: Compressed to sit INSIDE the constellation sphere (10,000 units)
- // Oort Cloud must encompass all spacecraft (Voyager 1 at 8307) and stay
- // inside the constellation sphere (10,000). Range: 3,000-9,000 units.
- // Using spherical shell distribution rather than disk
- const innerRadius = this.realisticScale ? 2564000 : 3000;
- const outerRadius = this.realisticScale ? 10256000 : 9000;
+ // Educational: Compressed to sit inside the constellation sphere (10,000 units)
+ // Oort Cloud must encompass all spacecraft and stay inside the constellation sphere.
+ // Range: 3,000–9,000 units (proportional — inner is 1.1× heliopause at 2700,
+ // outer is 3.3× heliopause at 2700).
+ //
+ // Realistic: Proportionally scaled with the realistic heliopause (18,000 units):
+ // inner = 18000 × 1.1 ≈ 20,000 units
+ // outer = 18000 × 3.3 ≈ 60,000 units
+ // (True AU values of 50k–200k AU would place particles millions of units away,
+ // making them invisible before the galaxy transition; this compressed-but-proportional
+ // scale preserves the relative journey through heliopause → Oort Cloud → galaxy.)
+ const innerRadius = this.realisticScale ? 20000 : 3000;
+ const outerRadius = this.realisticScale ? 60000 : 9000;
  
  // Inner Oort Cloud (Hills cloud) - denser concentration
  const innerOortCount = 800;
@@ -4223,14 +4377,14 @@ export class SolarSystemModule {
  description: t('descOortCloud'),
  funFact: t('funFactOortCloud'),
  count: innerOortCount + outerOortCount + cometaryCount,
- radius: this.realisticScale ? 10256000 : 9000
+ radius: this.realisticScale ? 60000 : 9000
  };
  
  scene.add(oortCloudGroup);
  this.oortCloud = oortCloudGroup;
  this.objects.push(oortCloudGroup);
  
- if (DEBUG.enabled) console.log(`[OORT] ${innerOortCount + outerOortCount + cometaryCount} objects (${this.realisticScale ? 'Realistic' : 'Educational'} scale)`);
+ if (DEBUG.enabled) console.log(`[OORT] ${innerOortCount + outerOortCount + cometaryCount} objects (${this.realisticScale ? 'Realistic (20k–60k units)' : 'Educational (3k–9k units)'} scale)`);
  }
 
  createOrbitalPaths(scene) {
@@ -4292,7 +4446,7 @@ export class SolarSystemModule {
  // Enhanced starfield based on real astronomical data
  // Uses Hertzsprung-Russell diagram for realistic stellar populations
  const starGeometry = new THREE.BufferGeometry();
- const starCount = IS_MOBILE ? 4000 : 12000; // Richer sky on desktop; lighter on mobile
+ const starCount = IS_MOBILE ? 4000 : 20000; // Richer sky on desktop; lighter on mobile
  const positions = new Float32Array(starCount * 3);
  const colors = new Float32Array(starCount * 3);
  const sizes = new Float32Array(starCount);
@@ -4388,12 +4542,40 @@ export class SolarSystemModule {
  starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
  starGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
- const starMaterial = new THREE.PointsMaterial({
- size: 2,
- vertexColors: true,
+ // Custom ShaderMaterial replaces PointsMaterial for circular glow sprites.
+ // Each star renders as a circular disk with a bright core and soft halo,
+ // creating the characteristic "star diffraction" look.
+ // opacityFade uniform allows the galaxy-view fade logic to dim stars smoothly.
+ const starMaterial = new THREE.ShaderMaterial({
+ uniforms: { opacityFade: { value: 1.0 } },
+ vertexShader: /* glsl */`
+ attribute float size;
+ attribute vec3 color;
+ varying vec3 vColor;
+ void main() {
+ vColor = color;
+ // Fixed pixel size (no perspective attenuation — stars are effectively at infinity)
+ gl_PointSize = clamp(size * 1.6, 1.0, 6.0);
+ gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+ }
+ `,
+ fragmentShader: /* glsl */`
+ uniform float opacityFade;
+ varying vec3 vColor;
+ void main() {
+ // gl_PointCoord is 0..1 within the point sprite; centre it at (0,0)
+ vec2 uv = gl_PointCoord - vec2(0.5);
+ float dist = length(uv);
+ if (dist > 0.5) discard; // circular clipping
+ // Bright core with exponential falloff + soft outer halo
+ float core = 1.0 - smoothstep(0.0, 0.18, dist);
+ float halo = pow(clamp(1.0 - dist * 2.0, 0.0, 1.0), 3.5) * 0.45;
+ float alpha = clamp(core + halo, 0.0, 1.0) * opacityFade;
+ gl_FragColor = vec4(vColor, alpha);
+ }
+ `,
  transparent: true,
- opacity: 0.9,
- sizeAttenuation: false,
+ depthWrite: false,
  blending: THREE.AdditiveBlending
  });
 
@@ -4402,8 +4584,19 @@ export class SolarSystemModule {
  this.starfield.frustumCulled = false;
  scene.add(this.starfield);
 
+ // Pre-compute twinkle jitter table so the hot path makes zero Math.random() calls.
+ // 30 entries: 16-bit index (proportional 0–1) and float size (1–3).
+ const twinkleCount = 30;
+ this._starTwinkleRatios = new Float32Array(twinkleCount); // 0..1 ratios into sizes array
+ this._starTwinkleSizes = new Float32Array(twinkleCount); // new size values
+ for (let i = 0; i < twinkleCount; i++) {
+ this._starTwinkleRatios[i] = Math.random();
+ this._starTwinkleSizes[i] = 1 + Math.random() * 2;
+ }
+ this._starTwinklePtr = 0; // round-robin cursor through the table
+
  if (DEBUG.enabled) {
- const count = IS_MOBILE ? 4000 : 12000;
+ const count = IS_MOBILE ? 4000 : 20000;
  console.log(` Starfield created with ${count} stars based on H-R diagram stellar distribution`);
  }
  }
@@ -4655,11 +4848,19 @@ export class SolarSystemModule {
  this.milkyWayDisc.userData = {
  name: t('milkyWayGalaxy'),
  type: 'milkyWay',
- radius: 25000, // Half of discSize (50000)
+ radius: 25000, // Half of discSize (50000) at educational scale
  description: t('descMilkyWay'),
  funFact: t('funFactMilkyWay'),
- realSize: '100,000 light-years diameter (~200,000 including halo)'
+ realSize: '100,000 light-years diameter (~200,000 including halo)',
+ basePosition: this.milkyWayDisc.position.clone() // stored for scale changes
  };
+
+ // If scene is already in realistic mode at creation time, apply scale immediately
+ if (this.realisticScale) {
+ const s = 18000 / 2700; // ≈6.667
+ this.milkyWayDisc.scale.setScalar(s);
+ this.milkyWayDisc.position.multiplyScalar(s);
+ }
 
  this._createMilkyWaySolarLocator(discSize, texSize, solarX, solarY);
 
@@ -4826,65 +5027,6 @@ export class SolarSystemModule {
  resolve(texture);
  }
  );
- });
- }
-
- createDistantStars(scene) {
- // Create recognizable star systems and bright stars
- this.distantStars = [];
- 
- // Visual sizes use cube-root scale of real solar radii so all stars remain visible
- // Real radii: Betelgeuse ~764 R☉, Rigel ~78 R☉, Polaris ~46 R☉, Vega 2.4 R☉, Sirius 1.7 R☉
- const brightStars = [
- { name: 'Sirius', color: 0xFFFFFF, size: 3, solarRadii: 1.7, distance: 8000, angle: 0, tilt: 0.5, description: t('descSirius') },
- { name: 'Betelgeuse', color: 0xFF4500, size: 22, solarRadii: 764, distance: 7500, angle: Math.PI / 3, tilt: 0.8, description: t('descBetelgeuse') },
- { name: 'Rigel', color: 0x87CEEB, size: 10, solarRadii: 78.9, distance: 8500, angle: Math.PI * 2 / 3, tilt: -0.6, description: t('descRigel') },
- { name: 'Vega', color: 0xF0F8FF, size: 3.5, solarRadii: 2.4, distance: 7800, angle: Math.PI, tilt: 0.3, description: t('descVega') },
- { name: 'Polaris', color: 0xFFFACD, size: 8.5, solarRadii: 46, distance: 9000, angle: Math.PI * 1.5, tilt: 0.9, description: t('descPolaris') }
- ];
-
- brightStars.forEach((starData) => {
- const geometry = new THREE.SphereGeometry(starData.size, 32, 32);
- 
- const material = new THREE.MeshBasicMaterial({
- color: starData.color,
- transparent: true,
- opacity: 0.9
- });
- 
- const star = new THREE.Mesh(geometry, material);
- const x = starData.distance * Math.cos(starData.angle);
- const z = starData.distance * Math.sin(starData.angle);
- const y = starData.distance * starData.tilt;
- star.position.set(x, y, z);
- 
- // Add glow
- const glowGeo = new THREE.SphereGeometry(starData.size * 1.5, 16, 16);
- const glowMat = new THREE.MeshBasicMaterial({
- color: starData.color,
- transparent: true,
- opacity: 0.3,
- side: THREE.BackSide,
- depthWrite: false // Don't block objects behind the glow
- });
- const glow = new THREE.Mesh(glowGeo, glowMat);
- star.add(glow);
- 
- star.userData = {
- name: starData.name,
- type: 'distantStar',
- radius: starData.size,
- description: starData.description,
- distance: 'Light-years away',
- realSize: `${starData.solarRadii} solar radii`,
- funFact: starData.name === 'Betelgeuse' ? t('funFactBetelgeuse') :
- starData.name === 'Sirius' ? t('funFactSirius') :
- t('funFactDefaultStar')
- };
- 
- scene.add(star);
- this.objects.push(star);
- this.distantStars.push(star);
  });
  }
 
@@ -6363,7 +6505,7 @@ export class SolarSystemModule {
  // Random rotation around face normal for variety
  mesh.rotation.z = Math.random() * Math.PI * 2;
  mesh.frustumCulled = false;
- mesh.userData = { type: 'backgroundGalaxy' };
+ mesh.userData = { type: 'backgroundGalaxy', basePosition: { x, y, z } };
  
  scene.add(mesh);
  this.galaxies.push(mesh);
@@ -6697,7 +6839,8 @@ export class SolarSystemModule {
  description: t('descAlphaCentauriA'),
  distance: '4.37 light-years',
  realSize: '1.22 times the Sun\'s diameter',
- funFact: t('funFactAlphaCentauriA')
+ funFact: t('funFactAlphaCentauriA'),
+ basePosition: { x: 8000, y: 1000, z: -6000 }
  };
  
  alphaCentauriGroup.add(alphaA);
@@ -6728,7 +6871,8 @@ export class SolarSystemModule {
  description: t('descProximaCentauri'),
  distance: '4.24 light-years (40 trillion km!)',
  realSize: '0.14 times the Sun\'s diameter',
- funFact: t('funFactProximaCentauri')
+ funFact: t('funFactProximaCentauri'),
+ basePosition: { x: 8500, y: 800, z: -6200 }
  };
  
  alphaCentauriGroup.add(proxima);
@@ -6765,7 +6909,8 @@ export class SolarSystemModule {
  description: t('descKepler452Star'),
  distance: '1,400 light-years',
  realSize: '1.11 times the Sun\'s diameter',
- funFact: t('funFactKepler452Star')
+ funFact: t('funFactKepler452Star'),
+ basePosition: { x: -9000, y: 2500, z: 8450 }
  };
  
  scene.add(kepler452);
@@ -6798,7 +6943,8 @@ export class SolarSystemModule {
  description: t('descTrappist1Star'),
  distance: '40 light-years',
  realSize: '0.12 times the Sun\'s diameter (barely larger than Jupiter!)',
- funFact: t('funFactTrappist1Star')
+ funFact: t('funFactTrappist1Star'),
+ basePosition: { x: 7000, y: -3000, z: -8950 }
  };
  
  scene.add(trappist1);
@@ -6831,7 +6977,8 @@ export class SolarSystemModule {
  description: t('descKepler186Star'),
  distance: '500 light-years',
  realSize: '0.54 times the Sun\'s diameter',
- funFact: t('funFactKepler186Star')
+ funFact: t('funFactKepler186Star'),
+ basePosition: { x: -8000, y: -2000, z: 9450 }
  };
  
  scene.add(kepler186);
@@ -6906,7 +7053,10 @@ export class SolarSystemModule {
 
  exoplanetsData.forEach(exoData => {
  const orbitSpeed = EARTH_SPEED * (365.25 / exoData.orbitPeriodDays);
- const initialAngle = Math.random() * Math.PI * 2;
+ // Seed orbital phase from current JD so the position is deterministic and
+ // consistent with the time machine. Mean anomaly = (daysSinceJ2000 / period) * 2π.
+ const _exoDaysSinceJ2000 = this.simulatedJD - 2451545.0;
+ const initialAngle = ((_exoDaysSinceJ2000 % exoData.orbitPeriodDays) / exoData.orbitPeriodDays) * Math.PI * 2;
  const { x: sx, y: sy, z: sz } = exoData.hostStarPosition;
 
  // --- Orbit ring ---
@@ -7007,18 +7157,30 @@ export class SolarSystemModule {
  this.comets = [];
  
  const cometsData = [
- // Halley: 15 km nucleus, 35 AU orbit
- { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.02, size: 0.002, description: t('descHalley'), orbitalPeriod: 27511 },
- // Hale-Bopp: 60 km nucleus (massive!), ~250 AU orbit
- { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.015, size: 0.005, description: t('descHaleBopp'), orbitalPeriod: 925188 },
- // Hyakutake: 4 km nucleus, spectacular in 1996
- { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, speed: 0.022, size: 0.0015, description: t('descHyakutake'), orbitalPeriod: 25567500 },
- // Lovejoy: ~500m nucleus, Kreutz sungrazer
- { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, speed: 0.04, size: 0.0008, description: t('descLovejoy'), orbitalPeriod: 227185 },
- // Encke: 4.8 km nucleus, shortest period (3.3 years)
- { name: 'Comet Encke', distance: 385, eccentricity: 0.847, speed: 0.035, size: 0.0018, description: t('descEncke'), orbitalPeriod: 1205 },
- // Swift-Tuttle: 26 km nucleus, source of Perseid meteor shower
- { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, speed: 0.018, size: 0.003, description: t('descSwiftTuttle'), orbitalPeriod: 48680 }
+ // perihelionJD: Julian Date of most recent perihelion passage (from JPL/IAU MPC).
+ // initPositionsToDate() uses this so mean anomaly is 0 at perihelion, giving
+ // a correct orbital phase for any queried date.
+ // inclination: orbital inclination to the ecliptic in degrees (source: JPL Small-Body DB).
+ //   Values > 90° indicate retrograde orbits.
+
+ // Halley: last perihelion Feb 9, 1986 (JD 2446470.5); next ~Jul 28, 2061 (JD 2473621.5)
+ // Inclination 162.3° = retrograde, ~18° to ecliptic
+ { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, inclination: 162.3, speed: 0.02, size: 0.002, description: t('descHalley'), orbitalPeriod: 27511, perihelionJD: 2446470.5 },
+ // Hale-Bopp: perihelion Apr 1, 1997 (JD 2450538.0); period ~2520 yr
+ // Inclination 89.4° = near-polar orbit
+ { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, inclination: 89.4, speed: 0.015, size: 0.005, description: t('descHaleBopp'), orbitalPeriod: 925188, perihelionJD: 2450538.0 },
+ // Hyakutake: perihelion May 1, 1996 (JD 2450204.5); period ~70,000 yr (hyperbolic escapee)
+ // Inclination 124.9° = retrograde
+ { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, inclination: 124.9, speed: 0.022, size: 0.0015, description: t('descHyakutake'), orbitalPeriod: 25567500, perihelionJD: 2450204.5 },
+ // Lovejoy (C/2011 W3): perihelion Dec 16, 2011 (JD 2455912.0); period ~622 yr
+ // Inclination 134.1° = retrograde sungrazer
+ { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, inclination: 134.1, speed: 0.04, size: 0.0008, description: t('descLovejoy'), orbitalPeriod: 227185, perihelionJD: 2455912.0 },
+ // Encke: most recent perihelion Oct 22, 2023 (JD 2460240.5); period 3.30 yr = 1205 d
+ // Inclination 11.8° = low-inclination prograde
+ { name: 'Comet Encke', distance: 385, eccentricity: 0.847, inclination: 11.8, speed: 0.035, size: 0.0018, description: t('descEncke'), orbitalPeriod: 1205, perihelionJD: 2460240.5 },
+ // Swift-Tuttle: perihelion Dec 12, 1992 (JD 2448967.5); period 133.3 yr = 48680 d
+ // Inclination 113.4° = retrograde (source of Perseid meteor shower)
+ { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, inclination: 113.4, speed: 0.018, size: 0.003, description: t('descSwiftTuttle'), orbitalPeriod: 48680, perihelionJD: 2448967.5 }
  ];
 
  // Shared coma textures — created once, reused for all comets.
@@ -7271,7 +7433,9 @@ export class SolarSystemModule {
  speed: cometData.speed,
  eccentricity: safeEccentricity, // Clamped to keep perihelion outside sun
  originalEccentricity: cometData.eccentricity, // Stored for reclamping after scale changes
+ inclination: cometData.inclination || 0, // Orbital inclination to ecliptic in degrees (JPL Small-Body DB)
  orbitalPeriod: cometData.orbitalPeriod,
+ perihelionJD: cometData.perihelionJD || null, // Real perihelion epoch (JD) for date-accurate phase
  description: cometData.description,
  realSize: '1-60 km nucleus',
  funFact: t('funFactComets'),
@@ -7284,7 +7448,13 @@ export class SolarSystemModule {
  ionJitter,
  isComet: true, // Flag for special zoom handling
  _sunDir: new THREE.Vector3(), // Pre-allocated for tail updates
- _velDir: new THREE.Vector3() // Pre-allocated for tail updates
+ _velDir: new THREE.Vector3(), // Pre-allocated for tail updates
+ // Pre-cached trig for inclination and Kepler sqrt — constant per comet
+ inclRad: (cometData.inclination || 0) * Math.PI / 180,
+ _cosIncl: Math.cos((cometData.inclination || 0) * Math.PI / 180),
+ _sinIncl: Math.sin((cometData.inclination || 0) * Math.PI / 180),
+ _keplerSqrtPlus: Math.sqrt(1 + safeEccentricity),
+ _keplerSqrtMinus: safeEccentricity < 1 ? Math.sqrt(1 - safeEccentricity) : 0
  };
  
  // ===== ELLIPTICAL ORBIT PATH =====
@@ -7292,10 +7462,11 @@ export class SolarSystemModule {
  const orbitPoints = [];
  const orbitA = cometData.distance;
  const orbitE = safeEccentricity; // use same clamped value stored in userData
+ const orbitInclRad = (cometData.inclination || 0) * Math.PI / 180;
  for (let j = 0; j <= orbitSegments; j++) {
  const f = (j / orbitSegments) * Math.PI * 2;
  const orbitR = orbitA * (1 - orbitE * orbitE) / (1 + orbitE * Math.cos(f));
- orbitPoints.push(new THREE.Vector3(orbitR * Math.cos(f), Math.sin(f) * 15, orbitR * Math.sin(f)));
+ orbitPoints.push(new THREE.Vector3(orbitR * Math.cos(f), orbitR * Math.sin(f) * Math.sin(orbitInclRad), orbitR * Math.sin(f) * Math.cos(orbitInclRad)));
  }
  const cometOrbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPoints);
  const cometOrbitMat = new THREE.LineBasicMaterial({
@@ -7320,6 +7491,7 @@ export class SolarSystemModule {
  scene.add(cometGroup);
  this.objects.push(cometGroup);
  this.comets.push(cometGroup);
+ this.pickableObjects.push(cometGroup);
  
  if (DEBUG.enabled) console.log(` ${cometData.name} created at distance ${cometData.distance}, visualRadius=${visualRadius.toFixed(2)}`);
  });
@@ -8556,19 +8728,56 @@ createHyperrealisticHubble(satData) {
             }; scene.add(satellite);
  this.objects.push(satellite);
  this.satellites.push(satellite);
+ this.pickableObjects.push(satellite);
  });
  }
 
  createSpacecraft(scene) {
  // Deep space probes and interplanetary missions
  this.spacecraft = [];
- 
+
+ // ── Trajectory data for straight-line deep-space probes ──────────────────
+ // Each probe travels in a fixed direction (ecliptic longitude + latitude) at
+ // an approximately constant heliocentric speed. Positions are computed from a
+ // published JPL/NASA reference epoch so they update correctly with the time machine.
+ //
+ // Coordinate convention (matches Three.js scene):
+ //   X = ecliptic lon 0°  (vernal equinox)
+ //   Z = ecliptic lon 90°
+ //   Y = ecliptic north pole
+ //
+ // Formula:
+ //   distAU = refDistAU + speedKmps * (jd - refJD) * 86400 / 149597870.7
+ //   x = distSceneUnits * cos(lat) * cos(lon)
+ //   z = distSceneUnits * cos(lat) * sin(lon)
+ //   y = distSceneUnits * sin(lat)
+ //
+ // Reference epochs and heliocentric scale:
+ //   Voyager 1/2, New Horizons: Jan 1 2025 (JD 2460676.5) from NASA JPL Horizons.
+ //   Pioneer 10: ~Jan 2003 (JD 2452641.5) — last-contact date, not Jan 2025.
+ //   Pioneer 11: ~Nov 1995 (JD 2450084.5) — last-contact date, not Jan 2025.
+ //   Positions for all probes are linearly extrapolated from these reference epochs.
+ //
+ // Scale: _probePositionAtJD() converts distAU → scene units using:
+ //   educational: 22.5 scene-units/AU  (heliopause 2,700 / 120 AU)
+ //   realistic:  150   scene-units/AU  (heliopause 18,000 / 120 AU)
+ // NOTE: Inner planet visual distances are NOT derived from AU — they use separate
+ //   display units (e.g. Mercury at 20 units/0.39 AU ≈ 51.3 units/AU). Only the
+ //   heliospheric probe model uses the 22.5/150 AU conversion above.
+ const PROBE_TRAJECTORIES = {
+ 'Voyager 1':   { refJD: 2460676.5, refDistAU: 163.7,  speedKmps: 16.99, eclLon: 255.8, eclLat: 35.7  },
+ 'Voyager 2':   { refJD: 2460676.5, refDistAU: 136.6,  speedKmps: 15.35, eclLon: 208.0, eclLat: -31.9 },
+ 'New Horizons':{ refJD: 2460676.5, refDistAU:  58.3,  speedKmps: 13.85, eclLon: 305.7, eclLat: -7.3  },
+ 'Pioneer 10':  { refJD: 2452641.5, refDistAU:  80.0,  speedKmps: 12.04, eclLon:  79.5, eclLat:  3.0  },
+ 'Pioneer 11':  { refJD: 2450084.5, refDistAU:  42.7,  speedKmps: 11.38, eclLon: 311.5, eclLat: -17.0 }
+ };
+
  const spacecraftData = [
  {
  name: 'Voyager 1',
- distance: 8307, // ~24.3 billion km from Sun as of Oct 2025 (162 AU) - educational scale (162 × 51.28)
- angle: Math.PI * 0.7, // Direction: 35 north of ecliptic plane
- speed: 0.0001, // Traveling at 17 km/s relative to Sun
+ distance: 8307, // placeholder; overwritten by trajectory at init
+ angle: Math.PI * 0.7,
+ speed: 0, // not used — trajectory-based movement
  size: 0.08,
  color: 0xC0C0C0,
  type: 'probe',
@@ -8580,9 +8789,9 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'Voyager 2',
- distance: 6923, // ~20.3 billion km from Sun as of Oct 2025 (135 AU) - educational scale (135 × 51.28)
- angle: Math.PI * 1.2, // Direction: Different trajectory than V1
- speed: 0.0001, // Traveling at 15.4 km/s relative to Sun
+ distance: 6923, // placeholder; overwritten by trajectory at init
+ angle: Math.PI * 1.2,
+ speed: 0,
  size: 0.08,
  color: 0xB0B0B0,
  type: 'probe',
@@ -8594,9 +8803,9 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'New Horizons',
- distance: 3025, // ~8.9 billion km from Sun as of Oct 2025 (59 AU) - educational scale (59 × 51.28)
+ distance: 3025, // placeholder; overwritten by trajectory at init
  angle: Math.PI * 0.3,
- speed: 0.0002, // Traveling at 14.31 km/s relative to Sun
+ speed: 0,
  size: 0.06,
  color: 0x4169E1,
  type: 'probe',
@@ -8652,9 +8861,9 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'Pioneer 10',
- distance: 7127, // ~20.5 billion km from Sun (139 AU) - educational scale (139 × 51.28)
- angle: Math.PI * 0.5, // Direction: toward Aldebaran in Taurus
- speed: 0.00009, // Traveling at 12.2 km/s relative to Sun
+ distance: 7127, // placeholder; overwritten by trajectory at init
+ angle: Math.PI * 0.5,
+ speed: 0,
  size: 0.07,
  color: 0xA0A0A0,
  type: 'probe',
@@ -8666,9 +8875,9 @@ createHyperrealisticHubble(satData) {
  },
  {
  name: 'Pioneer 11',
- distance: 5436, // ~15.9 billion km from Sun (106 AU) - educational scale (106 × 51.28)
- angle: Math.PI * 1.4, // Direction: toward constellation Aquila
- speed: 0.00008, // Traveling at 11.4 km/s relative to Sun
+ distance: 5436, // placeholder; overwritten by trajectory at init
+ angle: Math.PI * 1.4,
+ speed: 0,
  size: 0.07,
  color: 0x909090,
  type: 'probe',
@@ -8871,7 +9080,9 @@ createHyperrealisticHubble(satData) {
  isMoon: craft.isMoon || false,
  isSpacecraft: true,
  actualSize: craft.size,
- radius: craft.size
+ radius: craft.size,
+ // Trajectory data for date-accurate straight-line probes (null for orbiters)
+ trajectory: PROBE_TRAJECTORIES[craft.name] || null
  };
  
  if (DEBUG.enabled) console.log(` ${craft.name} created`);
@@ -8894,8 +9105,9 @@ createHyperrealisticHubble(satData) {
  
  this.objects.push(spacecraftGroup);
  this.spacecraft.push(spacecraftGroup);
+ this.pickableObjects.push(spacecraftGroup);
  });
- 
+
  if (DEBUG.enabled) console.log(` Created ${this.spacecraft.length} spacecraft and probes!`);
  }
 
@@ -8938,7 +9150,8 @@ createHyperrealisticHubble(satData) {
  const _wallNow = Date.now();
  if (_wallNow - this._lastDateEventWall >= 200) {
  this._lastDateEventWall = _wallNow;
- window.dispatchEvent(new CustomEvent('simulatedDateChanged', { detail: { jd: this.simulatedJD } }));
+ this._dateEventDetail.jd = this.simulatedJD;
+ window.dispatchEvent(this._dateEvent);
  }
  const now = performance.now();
  const elapsedHours = this.simulatedHours;
@@ -8964,7 +9177,7 @@ createHyperrealisticHubble(satData) {
  // Kepler’s 2nd law: mean anomaly advances linearly, true anomaly derived via solver
  const e = planet.userData.orbitalEccentricity || 0;
  planet.userData.meanAnomaly = (planet.userData.meanAnomaly || 0) + angleIncrement;
- planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e) : planet.userData.meanAnomaly;
+ planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e, planet.userData._keplerSqrtPlus, planet.userData._keplerSqrtMinus) : planet.userData.meanAnomaly;
  } else {
  planet.userData.angle += angleIncrement;
  }
@@ -8989,8 +9202,8 @@ createHyperrealisticHubble(satData) {
  const xOrb = r * cosTheta;
  const zOrb = r * sinTheta;
  planet.position.x = xOrb;
- planet.position.y = zOrb * Math.sin(i);
- planet.position.z = zOrb * Math.cos(i);
+ planet.position.y = zOrb * planet.userData._sinOrbInc;
+ planet.position.z = zOrb * planet.userData._cosOrbInc;
  } else {
  planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
  planet.position.y = 0;
@@ -9021,7 +9234,16 @@ createHyperrealisticHubble(satData) {
  planet.rotation.y = rotationAngle;
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
  }
- 
+
+ // Update atmosphere sun-direction uniform so glow only appears on the lit limb.
+ // Sun is at world origin; planet.position points away from the sun.
+ if (planet.userData.atmosphereMesh) {
+ const atmosMat = planet.userData.atmosphereMesh.material;
+ if (atmosMat?.uniforms?.sunDir) {
+ atmosMat.uniforms.sunDir.value.copy(planet.position).negate().normalize();
+ }
+ }
+
  // Rotate clouds slightly faster than planet for Earth
  if (planet.userData.clouds && rotationSpeed !== 0) {
  planet.userData.clouds.rotation.y = planet.rotation.y * 1.05; // 5% faster
@@ -9038,7 +9260,7 @@ createHyperrealisticHubble(satData) {
  if (this.scientificMode) {
  const e = moon.userData.orbitalEccentricity || 0;
  moon.userData.meanAnomaly = (moon.userData.meanAnomaly || 0) + moonAngleIncrement;
- moon.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(moon.userData.meanAnomaly, e) : moon.userData.meanAnomaly;
+ moon.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(moon.userData.meanAnomaly, e, moon.userData._keplerSqrtPlus, moon.userData._keplerSqrtMinus) : moon.userData.meanAnomaly;
  } else {
  moon.userData.angle += moonAngleIncrement;
  }
@@ -9061,8 +9283,8 @@ createHyperrealisticHubble(satData) {
  const xOrb = r * cosTheta;
  const zOrb = r * sinTheta;
  moon.position.x = xOrb;
- moon.position.y = zOrb * Math.sin(i);
- moon.position.z = zOrb * Math.cos(i);
+ moon.position.y = zOrb * moon.userData._sinOrbInc;
+ moon.position.z = zOrb * moon.userData._cosOrbInc;
  } else {
  const adj = moon.userData.angle + parentRotY;
  moon.position.x = moon.userData.distance * Math.cos(adj);
@@ -9137,18 +9359,51 @@ createHyperrealisticHubble(satData) {
  this._sunFlareFrame += 1;
  }
 
+ // Keep starfield and Milky Way band centred on the camera so their sphere
+ // boundaries are never visible and they always appear around the observer.
+ if (this.starfield && camera) {
+ this.starfield.position.copy(camera.position);
+ }
+ if (this.milkyWay && camera) {
+ this.milkyWay.position.copy(camera.position);
+ }
+
  // Twinkle stars slightly (optimized - only every 5 frames)
  if (this.starfield && this._starTwinkleFrame % 5 === 0 && Math.random() < 0.3) {
  const sizes = this.starfield.geometry.attributes.size.array;
- // Reduce updates to 30 stars instead of 50
- for (let i = 0; i < 30; i++) {
- const idx = Math.floor(Math.random() * sizes.length);
- sizes[idx] = 1 + Math.random() * 2;
+ const tbl = this._starTwinkleRatios;
+ const szTbl = this._starTwinkleSizes;
+ const tblLen = tbl ? tbl.length : 0;
+ for (let i = 0; i < 30 && tblLen > 0; i++) {
+ const ptr = (this._starTwinklePtr + i) % tblLen;
+ const idx = Math.floor(tbl[ptr] * sizes.length);
+ sizes[idx] = szTbl[ptr];
  }
+ if (tblLen > 0) this._starTwinklePtr = (this._starTwinklePtr + 30) % tblLen;
  this.starfield.geometry.attributes.size.needsUpdate = true;
  }
- this._starTwinkleFrame += 1;
- 
+
+ // Cull label sprites by distance to camera — run every 3 frames to avoid per-frame overhead.
+ // Planets visible up to 5000 units; moons/craft up to 600; everything else up to 1200.
+ if (this.labelsVisible && this.labels && camera && this._starTwinkleFrame % 3 === 0) {
+ const camX = camera.position.x, camY = camera.position.y, camZ = camera.position.z;
+ for (let _li = 0; _li < this.labels.length; _li++) {
+ const lbl = this.labels[_li];
+ if (!lbl || !lbl.parent) continue;
+ const p = lbl.parent;
+ // Use world position via parent's matrixWorld translation column
+ const wx = p.matrixWorld.elements[12];
+ const wy = p.matrixWorld.elements[13];
+ const wz = p.matrixWorld.elements[14];
+ const dSq = (wx - camX) ** 2 + (wy - camY) ** 2 + (wz - camZ) ** 2;
+ const type = p.userData?.type;
+ const maxDSq = (type === 'planet' || type === 'dwarf-planet') ? 5000 * 5000
+ : (type === 'moon' || type === 'satellite' || type === 'spacecraft') ? 600 * 600
+ : 1200 * 1200;
+ lbl.visible = dSq < maxDSq;
+ }
+ }
+
  // Update comets with elliptical orbits — Kepler's 2nd law
  if (this.comets) {
  this.comets.forEach(comet => {
@@ -9173,7 +9428,7 @@ createHyperrealisticHubble(satData) {
  // This ensures comets spend more time near aphelion and whip through perihelion (Kepler's 2nd law)
  const e = userData.eccentricity;
  const M = userData.meanAnomaly || 0;
- userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(M, e) : M;
+ userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(M, e, userData._keplerSqrtPlus, userData._keplerSqrtMinus) : M;
  
  const a = userData.distance;
  const angle = userData.angle;
@@ -9185,10 +9440,10 @@ createHyperrealisticHubble(satData) {
  // Simplified elliptical orbit
  const r = a * (1 - e * e) / (1 + e * cosAngle);
  
- // Always use actual orbital position
+ // Use cached inclination trig (computed once at comet creation)
  comet.position.x = r * cosAngle;
- comet.position.z = r * sinAngle;
- comet.position.y = Math.sin(angle) * 15;
+ comet.position.z = r * sinAngle * userData._cosIncl;
+ comet.position.y = r * sinAngle * userData._sinIncl;
 
  if (userData.orbitLine) {
  userData.orbitLine.visible = this.cometOrbitsVisible;
@@ -9210,19 +9465,30 @@ createHyperrealisticHubble(satData) {
  
  // Cache direction vectors (reuse pre-allocated objects to avoid GC)
  userData._sunDir.set(comet.position.x, comet.position.y, comet.position.z).normalize();
- userData._velDir.set(Math.cos(angle + Math.PI/2), 0, Math.sin(angle + Math.PI/2)).normalize();
+ // Velocity direction = tangent to the inclined ellipse at true anomaly `angle`.
+ // d/df [r·cos f, r·sin f·sin i, r·sin f·cos i] ≈ [-sin f, cos f·sin i, cos f·cos i]
+ // cos(i) is negative for retrograde orbits (i > 90°), which naturally reverses
+ // the XZ component — no separate retrograde flag needed.
+ userData._velDir.set(
+ -sinAngle,
+ cosAngle * userData._sinIncl,
+ cosAngle * userData._cosIncl
+ ).normalize();
  
  // Dynamic tail transparency scaling: tails get invisible far from the sun but very bright close to perihelion
  const distanceToSun = Math.sqrt(comet.position.x ** 2 + comet.position.y ** 2 + comet.position.z ** 2);
  const sunProximityScale = Math.max(0.12, Math.min(1.0, 500 / distanceToSun)); // Keep tails dim when far from the sun
 
  // Update dust tail (only every 3 frames for performance)
+ // Skip GPU buffer upload when comet is deep in aphelion (nearly invisible anyway)
+ const tailsDim = sunProximityScale <= 0.14; // matches the Math.max(0.12,...) floor
  if (userData.dustTail && userData.frameCount % 3 === 0) {
  // Dynamically set material opacity based on sun distance
  if (userData.dustTail.material) {
  userData.dustTail.material.opacity = 0.14 * sunProximityScale;
  }
  
+ if (!tailsDim) {
  const dustPositions = userData.dustTail.geometry.attributes.position.array;
  const dustSizes = userData.dustTail.geometry.attributes.size.array;
  
@@ -9260,6 +9526,7 @@ createHyperrealisticHubble(satData) {
  userData.dustTail.geometry.attributes.position.needsUpdate = true;
  userData.dustTail.geometry.attributes.size.needsUpdate = true;
  }
+ }
  
  // Update ion tail (only every 2 frames for performance)
  if (userData.ionTail && userData.frameCount % 2 === 0) {
@@ -9268,6 +9535,7 @@ createHyperrealisticHubble(satData) {
  userData.ionTail.material.opacity = 0.18 * sunProximityScale;
  }
 
+ if (!tailsDim) {
  const ionPositions = userData.ionTail.geometry.attributes.position.array;
  const sunDirX = userData._sunDir.x;
  const sunDirY = userData._sunDir.y;
@@ -9291,6 +9559,7 @@ createHyperrealisticHubble(satData) {
  ionPositions[i * 3 + 2] = sunDirZ * length + spreadIon;
  }
  userData.ionTail.geometry.attributes.position.needsUpdate = true;
+ }
  }
  
  userData.frameCount = (userData.frameCount || 0) + 1;
@@ -9356,9 +9625,17 @@ createHyperrealisticHubble(satData) {
  if (this.spacecraft) {
  this.spacecraft.forEach(craft => {
  const userData = craft.userData;
- 
- // Deep space probes keep moving away
- if (!userData.orbitPlanet && userData.speed) {
+
+ // Trajectory-based probes: position derived from running simulatedJD
+ if (!userData.orbitPlanet && userData.trajectory) {
+ const pos = this._probePositionAtJD(userData.trajectory, this.simulatedJD);
+ craft.position.set(pos.x, pos.y, pos.z);
+ userData.distanceAU = pos.distAU;
+ userData.distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+ }
+
+ // Legacy angle-based probes (non-trajectory, e.g. JWST): keep simple orbit
+ if (!userData.orbitPlanet && !userData.trajectory && userData.speed) {
  const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.001;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
@@ -9366,7 +9643,7 @@ createHyperrealisticHubble(satData) {
  craft.position.z = userData.distance * Math.sin(userData.angle);
  }
  }
- 
+
  // Orbiters around planets (Juno, Cassini legacy, etc)
  if (userData.orbitPlanet && userData.speed && userData.type === 'orbiter') {
  const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.01;
@@ -9378,7 +9655,7 @@ createHyperrealisticHubble(satData) {
  craft.position.y = Math.sin(userData.angle * 2) * radius * 0.1; // Inclined orbit
  }
  }
- 
+
  // Rotate spacecraft slowly
  if (userData.type === 'probe' || userData.type === 'orbiter') {
  const rotationIncrement = 0.002 * rotationSpeed;
@@ -9432,14 +9709,16 @@ createHyperrealisticHubble(satData) {
  // fade in the galaxy disc. Only other galaxies remain visible.
  if (this.milkyWayDisc && camera) {
  const camDist = camera.position.length();
- // Phase 1: Fade out all solar system/galactic objects (14k-22k)
- // Phase 2: Fade in the Milky Way disc (22k-42k)
- // Kuiper Belt extends to ~8250, Oort Cloud to ~9000 (educational scale),
- // so fading must not begin until the camera is well past both.
- const solarFadeStart = 14000;
- const solarFadeEnd = 22000;
- const galaxyFadeStart = 22000; // Disc appears only after everything is dark
- const galaxyFadeFull = 42000;
+ // Phase 1: Fade out all solar system/galactic objects — thresholds scale with mode.
+ // Educational: heliopause=2700, Oort outer=9000 → fade starts at 14k (1.56× Oort)
+ // Realistic: heliopause=18000, Oort outer=60000 → fade starts at 70k (1.17× Oort)
+ // The milkyWayDisc is scaled 6.667× in realistic mode, so it fills the same
+ // apparent angular size at the new (proportionally shorter) transition distances.
+ const realisticScale = this.realisticScale;
+ const solarFadeStart = realisticScale ? 70000 : 14000;
+ const solarFadeEnd = realisticScale ? 95000 : 22000;
+ const galaxyFadeStart = realisticScale ? 95000 : 22000; // Disc appears only after everything is dark
+ const galaxyFadeFull = realisticScale ? 140000 : 42000;
 
  // Calculate fade factors
  const solarFadeT = camDist < solarFadeStart ? 0 :
@@ -9475,16 +9754,15 @@ createHyperrealisticHubble(satData) {
  if (camDist < solarFadeStart) {
  // Restore ALL solar system objects when inside the galaxy
  if (this.sun) this.sun.visible = true;
- Object.values(this.planets).forEach(p => { if (p) p.visible = true; });
+ this._planetArray.forEach(p => { if (p) p.visible = true; });
  if (this.comets) this.comets.forEach(c => { c.visible = true; });
  if (this.spacecraft) this.spacecraft.forEach(s => { s.visible = true; });
  if (this.satellites) this.satellites.forEach(s => { s.visible = true; });
+ if (this.nearbyStars) this.nearbyStars.forEach(s => { s.visible = true; });
+ if (this.exoplanets) this.exoplanets.forEach(p => { p.visible = true; });
  // Restore opacities that were faded to 0
  if (this.milkyWay) this.milkyWay.material.opacity = 0.65;
- if (this.starfield) this.starfield.material.opacity = 1;
- if (this.distantStars) this.distantStars.forEach(star => {
- if (star.material) star.material.opacity = 0.9;
- });
+ if (this.starfield) this.starfield.material.uniforms.opacityFade.value = 1;
  if (this.constellations) this.constellations.forEach(c => {
  c.traverse(child => { if (child.material) child.material.opacity = 1; });
  });
@@ -9519,13 +9797,7 @@ createHyperrealisticHubble(satData) {
  }
  // Starfield (background stars)
  if (this.starfield) {
- this.starfield.material.opacity = solarFadeOut;
- }
- // Distant named stars (Sirius, Betelgeuse, etc.)
- if (this.distantStars) {
- this.distantStars.forEach(star => {
- if (star.material) star.material.opacity = 0.9 * solarFadeOut;
- });
+ this.starfield.material.uniforms.opacityFade.value = solarFadeOut;
  }
  // Constellation lines and stars
  if (this.constellations) {
@@ -9535,10 +9807,16 @@ createHyperrealisticHubble(satData) {
  });
  });
  }
- // Nebulae: deep-sky objects — do NOT apply solarFadeOut here.
- // In realistic scale nebulae sit at 37 500 units (> solarFadeEnd=22k), so
- // applying solarFadeOut=0 would make them completely invisible on navigation.
- // Galaxies are treated the same way — never faded by this loop.
+ // Nebulae: fade out as the galaxy fades in (opposite of galaxyT).
+ // They are inside-our-galaxy objects and must disappear in intergalactic view.
+ // Using (1 - galaxyT) means they're fully visible inside the solar system,
+ // start fading when the galaxy disc starts appearing, and are gone by galaxyFadeFull.
+ if (this.nebulae) {
+ const nebulaAlpha = Math.max(0, 1 - galaxyT);
+ this.nebulae.forEach(n => {
+ n.traverse(child => { if (child.material) child.material.opacity = 0.95 * nebulaAlpha; });
+ });
+ }
  // Oort Cloud
  if (this.oortCloud) {
  this.oortCloud.traverse(child => {
@@ -9576,7 +9854,7 @@ createHyperrealisticHubble(satData) {
  }
  // Sun and planets (entire solar system)
  if (this.sun) this.sun.visible = solarFadeOut > 0.01;
- Object.values(this.planets).forEach(planet => {
+ this._planetArray.forEach(planet => {
  if (planet) planet.visible = solarFadeOut > 0.01;
  });
  // Comets
@@ -9585,7 +9863,7 @@ createHyperrealisticHubble(satData) {
  comet.visible = solarFadeOut > 0.01;
  });
  }
- // Spacecraft and satellites
+ // Spacecraft
  if (this.spacecraft) {
  this.spacecraft.forEach(craft => {
  craft.visible = solarFadeOut > 0.01;
@@ -9596,22 +9874,21 @@ createHyperrealisticHubble(satData) {
  sat.visible = solarFadeOut > 0.01;
  });
  }
+ // Nearby stars (exoplanet host stars: Alpha Centauri, TRAPPIST-1, etc.)
+ if (this.nearbyStars) {
+ this.nearbyStars.forEach(star => {
+ star.visible = solarFadeOut > 0.01;
+ });
  }
- }
-
- // Twinkle distant stars
- if (this.distantStars) {
- this._starTwinkleFrame = (this._starTwinkleFrame + 1) % 3;
- // Update twinkle every 3rd frame to reduce hot-path CPU work
- if (this._starTwinkleFrame === 0) {
- this.distantStars.forEach(star => {
- if (Math.random() < 0.01) {
- const scale = 0.9 + Math.random() * 0.2;
- star.scale.setScalar(scale);
- }
+ // Exoplanets
+ if (this.exoplanets) {
+ this.exoplanets.forEach(planet => {
+ planet.visible = solarFadeOut > 0.01;
  });
  }
  }
+ }
+
  }
 
  cleanup(scene) {
@@ -9738,7 +10015,6 @@ createHyperrealisticHubble(satData) {
  this.satellites = [];
  this.spacecraft = [];
  this.constellations = [];
- this.distantStars = [];
  this.nebulae = [];
  this.galaxies = [];
  this.nearbyStars = [];
@@ -9812,7 +10088,8 @@ createHyperrealisticHubble(satData) {
  }
  if (DEBUG.enabled) console.log(` Constellations ${visible ? 'shown' : 'hidden'}`);
  }
- 
+
+
  updateScale() {
  // Update all planetary positions based on scale mode
  const scaleFactors = this.realisticScale ? {
@@ -9890,13 +10167,31 @@ createHyperrealisticHubble(satData) {
  
  // Update spacecraft positions
  this.updateSpacecraftPositions();
- 
+
  // Update comet positions
  this.updateCometPositions();
  
  // Update nebulae and galaxies positions
  this.updateDeepSpaceObjects();
- 
+
+ // Update heliopause radius:
+ // Educational: 2,700 units (~120 AU × 22.5 units/AU)
+ // Realistic: 18,000 units (120 AU × 150 units/AU)
+ if (this.heliopause) {
+ const newRadius = this.realisticScale ? 18000 : 2700;
+ this.heliopause.userData.radius = newRadius;
+ this.heliopause.scale.setScalar(newRadius / this.heliopause.userData.baseRadius);
+ }
+
+ // Scale the Milky Way galaxy disc so it fills the same apparent angular size
+ // at the new fade-in distance (proportional to heliopause ratio 18000/2700 ≈ 6.667).
+ if (this.milkyWayDisc?.userData?.basePosition) {
+ const discScale = this.realisticScale ? 18000 / 2700 : 1.0;
+ const bp = this.milkyWayDisc.userData.basePosition;
+ this.milkyWayDisc.scale.setScalar(discScale);
+ this.milkyWayDisc.position.set(bp.x * discScale, bp.y * discScale, bp.z * discScale);
+ }
+
  if (DEBUG.enabled) console.log(`Scale: ${this.realisticScale ? 'Realistic' : 'Educational'}`);
  }
  
@@ -10069,15 +10364,17 @@ createHyperrealisticHubble(satData) {
  }
 
  // Update Oort Cloud positions based on scale (spherical shell)
+ // Educational: inner=3000, outer=9000
+ // Realistic: inner=20000, outer=60000 (proportional to heliopause 18k, same ratio as educational)
  if (this.oortCloud && this.oortCloud.children) {
- // Define scale parameters for both modes
- const oldParams = this.realisticScale ? 
- { inner: 5000, outer: 15000 } : // We're switching FROM educational TO realistic
- { inner: 2564000, outer: 10256000 }; // We're switching FROM realistic TO educational
- 
- const newParams = this.realisticScale ? 
- { inner: 2564000, outer: 10256000 } : // Switching TO realistic (50,000-200,000 AU)
- { inner: 5000, outer: 15000 }; // Switching TO educational (far beyond Kuiper Belt)
+ // this.realisticScale is already the NEW state when updateScale() runs.
+ const oldParams = this.realisticScale
+ ? { inner: 3000, outer: 9000 } // was educational, now switching TO realistic
+ : { inner: 20000, outer: 60000 }; // was realistic, now switching TO educational
+
+ const newParams = this.realisticScale
+ ? { inner: 20000, outer: 60000 } // TO realistic
+ : { inner: 3000, outer: 9000 }; // TO educational
  
  this.oortCloud.children.forEach(particleSystem => {
  if (particleSystem.geometry && particleSystem.geometry.attributes.position) {
@@ -10118,44 +10415,38 @@ createHyperrealisticHubble(satData) {
  updateSpacecraftPositions() {
  // Update spacecraft positions based on scale mode
  if (!this.spacecraft || this.spacecraft.length === 0) return;
- 
- // Scale factors for spacecraft distances
+
+ // Trajectory-based probes: recompute from current simulatedJD with new scale
+ // _probePositionAtJD reads this.realisticScale so calling after scale toggle is correct.
+ this.spacecraft.forEach(spacecraft => {
+ const ud = spacecraft.userData;
+ if (!ud || ud.orbitPlanet || !ud.trajectory) return;
+ const pos = this._probePositionAtJD(ud.trajectory, this.simulatedJD);
+ spacecraft.position.set(pos.x, pos.y, pos.z);
+ ud.distanceAU = pos.distAU;
+ ud.distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+ });
+
+ // JWST and other non-trajectory spacecraft: use legacy scale table for display distances
  const spacecraftScaleFactors = this.realisticScale ? {
- // Realistic scale - use much larger distances
- 'Voyager 1': 4500, // 162 AU - way beyond planets
- 'Voyager 2': 4200, // 135 AU
- 'New Horizons': 2950, // 59 AU - beyond Neptune 
- 'James Webb Space Telescope': 155, // At Earth's L2 point (~1.01 AU from Sun)
- 'Pioneer 10': 5000, // 139 AU
- 'Pioneer 11': 4400 // 106 AU
+ 'James Webb Space Telescope': 155
  } : {
- // Educational scale - proportionally compressed
- // Using Mercury (0.39 AU) = 20 as base scale factor = 51.28 units per AU
- 'Voyager 1': 8307,  // 162 AU * 51.28 (was 300)
- 'Voyager 2': 6923,  // 135 AU * 51.28 (was 280)
- 'New Horizons': 3025, // 59 AU * 51.28 (was 85)
- 'James Webb Space Telescope': 55, // At Earth's L2 point (~1.01 AU from Sun, just beyond Earth at 51)
- 'Pioneer 10': 7127,  // 139 AU * 51.28
- 'Pioneer 11': 5436   // 106 AU * 51.28 (was 290)
+ 'James Webb Space Telescope': 55
  };
- 
+
  this.spacecraft.forEach(spacecraft => {
  const userData = spacecraft.userData;
- if (!userData || userData.orbitPlanet) return; // Skip orbiters - they stay relative to planet
- 
+ if (!userData || userData.orbitPlanet || userData.trajectory) return; // skip trajectory probes & orbiters
+
  const newDistance = spacecraftScaleFactors[userData.name];
  if (newDistance && userData.angle !== undefined) {
- // Update stored distance
  userData.distance = newDistance;
- 
- // Update position
  spacecraft.position.x = newDistance * Math.cos(userData.angle);
  spacecraft.position.z = newDistance * Math.sin(userData.angle);
- 
  if (DEBUG.enabled) console.log(` ${userData.name}: ${newDistance} units`);
  }
  });
- 
+
  if (DEBUG.enabled) console.log(` Spacecraft positions updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
  }
  
@@ -10207,9 +10498,10 @@ createHyperrealisticHubble(satData) {
  
  // Elliptical orbit formula
  const r = a * (1 - e * e) / (1 + e * cosAngle);
+ const inclRadScale = (userData.inclination || 0) * Math.PI / 180;
  comet.position.x = r * cosAngle;
- comet.position.z = r * sinAngle;
- comet.position.y = Math.sin(angle) * 15;
+ comet.position.z = r * sinAngle * Math.cos(inclRadScale);
+ comet.position.y = r * sinAngle * Math.sin(inclRadScale);
  
  if (DEBUG.enabled) console.log(` ${userData.name}: ${newDistance} units (e=${e})`);
  }
@@ -10251,11 +10543,12 @@ createHyperrealisticHubble(satData) {
 
  const a = userData.distance;
  const e = userData.eccentricity || 0;
+ const inclRadRebuild = (userData.inclination || 0) * Math.PI / 180;
  const points = [];
  for (let j = 0; j <= orbitSegments; j++) {
  const f = (j / orbitSegments) * Math.PI * 2;
  const r = a * (1 - e * e) / (1 + e * Math.cos(f));
- points.push(new THREE.Vector3(r * Math.cos(f), Math.sin(f) * 15, r * Math.sin(f)));
+ points.push(new THREE.Vector3(r * Math.cos(f), r * Math.sin(f) * Math.sin(inclRadRebuild), r * Math.sin(f) * Math.cos(inclRadRebuild)));
  }
 
  orbitLine.geometry.setFromPoints(points);
@@ -10292,7 +10585,46 @@ createHyperrealisticHubble(satData) {
  }
  });
  }
- 
+
+ // Update nearby stars (exoplanet host stars: Alpha Centauri, TRAPPIST-1, etc.)
+ // In realistic scale these move outward so they stay beyond the heliopause (18,000 units).
+ if (this.nearbyStars && this.nearbyStars.length > 0) {
+ this.nearbyStars.forEach(star => {
+ if (star.userData && star.userData.basePosition) {
+ star.position.x = star.userData.basePosition.x * deepSpaceScale;
+ star.position.y = star.userData.basePosition.y * deepSpaceScale;
+ star.position.z = star.userData.basePosition.z * deepSpaceScale;
+ }
+ });
+ }
+
+ // Update constellation positions for scale mode.
+ // Each constellation is a THREE.Group at scene origin; its children (star meshes
+ // and line meshes) are positioned at CONFIG.CONSTELLATION.DISTANCE (10,000 units).
+ // Scaling the group by deepSpaceScale moves all children to 25,000 units in
+ // realistic mode — well outside the realistic heliopause at 18,000 units.
+ // userData.centerPosition (used by focusOnObject) is updated lazily from a cached
+ // baseCenterPosition so camera targeting remains accurate after scale changes.
+ if (this.constellations && this.constellations.length > 0) {
+ this.constellations.forEach(group => {
+ group.scale.setScalar(deepSpaceScale);
+ if (group.userData && group.userData.centerPosition) {
+ // Cache base on first call
+ if (!group.userData.baseCenterPosition) {
+ group.userData.baseCenterPosition = {
+ x: group.userData.centerPosition.x,
+ y: group.userData.centerPosition.y,
+ z: group.userData.centerPosition.z,
+ };
+ }
+ const base = group.userData.baseCenterPosition;
+ group.userData.centerPosition.x = base.x * deepSpaceScale;
+ group.userData.centerPosition.y = base.y * deepSpaceScale;
+ group.userData.centerPosition.z = base.z * deepSpaceScale;
+ }
+ });
+ }
+
  if (DEBUG.enabled) console.log(` Deep space objects updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
  }
 
@@ -10459,20 +10791,21 @@ let actualRadius;
  distance = Math.max(actualRadius * 3, 0.6);
  if (DEBUG.enabled) console.log(` [Dwarf Planet] Camera distance: ${distance.toFixed(2)} for ${userData.name} (radius: ${actualRadius.toFixed(3)})`);
  } else if (userData.type === 'asteroidBelt') {
- // Asteroid Belt at ~125 units from Sun — position camera just outside the outer edge
- distance = 170; // Just beyond the belt's outer edge (~150 units)
+ // Asteroid Belt outer edge: educational ~150 units, realistic ~500 units
+ distance = this.realisticScale ? 600 : 170;
  } else if (userData.type === 'kuiperBelt') {
- // Kuiper Belt at ~1600-2400 units — position camera just outside
- distance = 2800; // Just beyond the belt's outer edge (~2400 units)
+ // Kuiper Belt outer edge: educational ~2400 units, realistic ~8250 units
+ distance = this.realisticScale ? 9000 : 2800;
  } else if (userData.type === 'oortCloud') {
- // Oort Cloud outer edge at 9000 units — view from just outside
- distance = 9500;
+ // Navigate to just outside the Oort Cloud outer edge (scale-aware)
+ distance = this.realisticScale ? 65000 : 9500;
  } else if (userData.type === 'heliopause') {
- // Heliopause at 2700 units — view from just outside
- distance = 3200;
+ // Heliopause view distance (scale-aware)
+ distance = this.realisticScale ? 20000 : 3200;
  } else if (userData.type === 'milkyWay') {
  // Milky Way: zoom out to see the entire galaxy disc
- distance = 55000;
+ // In realistic mode the disc is 6.667× larger, so stand proportionally further back
+ distance = this.realisticScale ? 55000 * (18000 / 2700) : 55000;
  } else {
  // Regular objects: standard zoom
  distance = Math.max(actualRadius * 5, 10);
@@ -11224,6 +11557,8 @@ let actualRadius;
  ctx.fillText(labelText, 256, 32);
  
  const texture = new THREE.CanvasTexture(canvas);
+ // GPU copy is taken — shrink the canvas backing to 1×1 to free the pixel buffer (150+ labels × 128KB each)
+ canvas.width = 1; canvas.height = 1;
  const material = new THREE.SpriteMaterial({
  map: texture,
  transparent: true,
@@ -11290,13 +11625,6 @@ let actualRadius;
  });
  }
  
- // Add labels to distant stars
- if (this.distantStars) {
- this.distantStars.forEach(star => {
- createLabel(star, ` ${star.userData.name}`);
- });
- }
- 
  // Add labels to nebulae
  if (this.nebulae) {
  this.nebulae.forEach(nebula => {
@@ -11319,6 +11647,7 @@ let actualRadius;
  
  // Use the passed visibility state, or toggle based on first label's current state
  const newVisibility = visible !== undefined ? visible : !this.labels[0].visible;
+ this.labelsVisible = newVisibility; // keep flag in sync for distance-culling loop
  
  this.labels.forEach((label, index) => {
  label.visible = newVisibility;

@@ -20,6 +20,9 @@ export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 export const IS_LOW_POWER = navigator.hardwareConcurrency < 4;
 export const QUALITY_PRESET = (IS_MOBILE || IS_LOW_POWER) ? 'low' : 'high';
 
+/** App version — single source of truth for SW and texture cache invalidation. */
+export const APP_VERSION = '2.10.259';
+
 export const CONFIG = {
  RENDERER: {
  antialias: !IS_MOBILE, // Disable AA on mobile for performance
@@ -50,7 +53,7 @@ export const CONFIG = {
  targetFPS: 60,
  frameTime: 1000 / 60,
  maxDeltaTime: 0.1,
- adaptivePixelRatio: false,
+ adaptivePixelRatio: true,
  adaptivePixelRatioMin: IS_LOW_POWER ? 0.9 : 1.0,
  adaptivePixelRatioMax: IS_MOBILE ? 1.25 : (IS_LOW_POWER ? 1.5 : (PERFORMANCE_MODE ? 1.5 : 2.0)),
  adaptivePixelRatioStepDown: 0.1,
@@ -65,7 +68,8 @@ export const CONFIG = {
  sphereSegments: IS_MOBILE ? 32 : (IS_LOW_POWER ? 64 : (PERFORMANCE_MODE ? 96 : 128)),
  particleSize: 2,
  particleCount: IS_MOBILE ? 1000 : (IS_LOW_POWER ? 2500 : 5000),
- shadows: !(IS_MOBILE || IS_LOW_POWER) // Disable shadows on mobile/low-power
+ shadows: !(IS_MOBILE || IS_LOW_POWER), // Disable shadows on mobile/low-power
+ shadowMapSize: IS_MOBILE ? 512 : 1024  // Adaptive shadow map resolution
  },
  CONSTELLATION: {
  // Constellation rendering constants
@@ -81,23 +85,6 @@ export const CONFIG = {
  STAR_SEGMENTS: IS_LOW_POWER ? 12 : 16, // Sphere segments for stars
  GLOW_SEGMENTS: IS_LOW_POWER ? 12 : 16 // Sphere segments for glow
  }
-};
-
-// Suppress harmless WebGL shader validation warnings
-const originalWarn = console.warn;
-console.warn = function(...args) {
- // Only check string arguments to avoid [object Object] coercion breaking the filter
- const msg = args.filter(a => typeof a === 'string').join(' ');
- // Filter out known harmless WebGL shader warnings
- if (msg.includes('THREE.WebGLProgram') && msg.includes('VALIDATE_STATUS')) {
- // Suppress - this is a harmless validation warning that doesn't affect functionality
- return;
- }
- if (msg.includes('Vertex shader is not compiled')) {
- // Suppress - shader compiles successfully despite warning
- return;
- }
- originalWarn.apply(console, args);
 };
 
 // Log configuration (only if debug enabled)
@@ -135,26 +122,38 @@ export class TextureGeneratorUtils {
  }
  
  /**
-  * Simple deterministic pseudo-random noise function
+  * Smooth value noise using bilinear interpolation with quintic smoothstep.
+  * Much higher quality than old sin-hash: no visible grid artifacts at high zoom.
   * @param {number} x - X coordinate
   * @param {number} y - Y coordinate
   * @param {number} seed - Random seed (default: 0)
   * @returns {number} Noise value between 0 and 1
   */
  static noise(x, y, seed = 0) {
- const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 45.164) * 43758.5453;
+ const ix = Math.floor(x), iy = Math.floor(y);
+ const fx = x - ix, fy = y - iy;
+ // Quintic smoothstep (Ken Perlin's improved C2-continuous)
+ const ux = fx * fx * fx * (fx * (fx * 6 - 15) + 10);
+ const uy = fy * fy * fy * (fy * (fy * 6 - 15) + 10);
+ // Hash function for corner values
+ const h = (a, b) => {
+ const n = Math.sin(a * 127.1 + b * 311.7 + seed * 45.164) * 43758.5453;
  return n - Math.floor(n);
+ };
+ const a = h(ix, iy), b = h(ix + 1, iy);
+ const c = h(ix, iy + 1), d = h(ix + 1, iy + 1);
+ return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
  }
- 
+
  /**
   * Fractal Brownian Motion - multi-octave noise for natural patterns
   * @param {number} x - X coordinate
   * @param {number} y - Y coordinate
-  * @param {number} octaves - Number of noise layers (default: 4)
+  * @param {number} octaves - Number of noise layers (default: 6)
   * @param {Function} noiseFunc - Noise function to use (default: TextureGeneratorUtils.noise)
   * @returns {number} FBM value between 0 and 1
   */
- static fbm(x, y, octaves = 4, noiseFunc = TextureGeneratorUtils.noise) {
+ static fbm(x, y, octaves = 6, noiseFunc = TextureGeneratorUtils.noise) {
  let value = 0;
  let amplitude = 1;
  let frequency = 1;
@@ -169,7 +168,22 @@ export class TextureGeneratorUtils {
  
  return value / maxValue;
  }
- 
+
+ /**
+  * Domain-warped FBM — warps input coordinates using FBM before sampling.
+  * Produces more natural, flowing terrain shapes (ridges, river-like features)
+  * compared to plain FBM. Use for planets that need organic-looking surfaces.
+  * @param {number} x - X coordinate
+  * @param {number} y - Y coordinate
+  * @param {number} octaves - Number of noise layers (default: 6)
+  * @returns {number} Warped FBM value between 0 and 1
+  */
+ static fbmWarped(x, y, octaves = 6) {
+ const wx = x + TextureGeneratorUtils.fbm(x * 0.5, y * 0.5, 4);
+ const wy = y + TextureGeneratorUtils.fbm(x * 0.5 + 3.2, y * 0.5 + 1.7, 4);
+ return TextureGeneratorUtils.fbm(wx, wy, octaves);
+ }
+
  /**
   * Finalize texture - convert canvas to THREE.CanvasTexture
   * @param {HTMLCanvasElement} canvas - Canvas element

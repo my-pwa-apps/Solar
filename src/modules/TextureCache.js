@@ -1,7 +1,7 @@
 // ===========================
 // TEXTURE CACHE SYSTEM
 // ===========================
-import { DEBUG, CONFIG } from './utils.js';
+import { DEBUG, CONFIG, APP_VERSION } from './utils.js';
 
 export class TextureCache {
  constructor() {
@@ -10,7 +10,7 @@ export class TextureCache {
  this.dbName = 'SolarSystemTextureCache';
  this.dbVersion = 1;
  this.storeName = 'textures';
- this.textureVersion = '2.10.207'; // Bump to invalidate all cached textures
+ this.textureVersion = APP_VERSION; // Single source of truth — stays in sync with APP_VERSION in utils.js
  this.db = null;
  this.initPromise = this.initDB();
  }

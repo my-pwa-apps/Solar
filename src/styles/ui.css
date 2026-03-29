@@ -335,6 +335,20 @@
     white-space: pre-wrap;
 }
 
+.fun-fact-box {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 120, 212, 0.1);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid rgba(0, 120, 212, 0.6);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary, #aaa);
+    font-style: italic;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 .info-content {
     padding: 14px;
     overflow-y: auto;

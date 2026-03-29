@@ -17,6 +17,7 @@ export class UIManager {
  objectDistance: document.getElementById('object-distance'),
  objectSize: document.getElementById('object-size'),
  objectDescription: document.getElementById('object-description'),
+ objectFunFact: document.getElementById('object-fun-fact'),
  helpContent: document.getElementById('help-content'),
  loadingText: document.getElementById('loading-text'),
  loadingProgressBar: document.getElementById('loading-progress-bar'),
@@ -84,6 +85,16 @@ export class UIManager {
  for (const [key, value] of Object.entries(updates)) {
  if (this.elements[key]) {
  this.elements[key].textContent = value;
+ }
+ }
+
+ // Show or hide the fun fact block
+ if (this.elements.objectFunFact) {
+ if (info.funFact) {
+ this.elements.objectFunFact.textContent = '\u{1F4A1} ' + info.funFact;
+ this.elements.objectFunFact.classList.remove('hidden');
+ } else {
+ this.elements.objectFunFact.classList.add('hidden');
  }
  }
 
