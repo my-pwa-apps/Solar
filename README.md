@@ -3,7 +3,7 @@
 An immersive, educational Progressive Web App for exploring our Solar System in stunning 3D with VR/AR support.
 
 ![Space Voyage](https://img.shields.io/badge/PWA-Ready-success)
-![Three.js](https://img.shields.io/badge/Three.js-v0.160.0-blue)
+![Three.js](https://img.shields.io/badge/Three.js-v0.183.0-blue)
 ![WebXR](https://img.shields.io/badge/WebXR-Supported-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -131,7 +131,7 @@ Test your PWA at [PWABuilder.com](https://www.pwabuilder.com/) with your deploye
 
 ## Technology Stack
 
-- **3D Graphics:** Three.js v0.160.0
+- **3D Graphics:** Three.js v0.183.0
 - **VR/AR:** WebXR Device API
 - **Offline Support:** Service Workers
 - **UI Framework:** Custom CSS with Fluent Design

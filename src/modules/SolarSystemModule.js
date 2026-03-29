@@ -3756,9 +3756,10 @@ export class SolarSystemModule {
 
  const a = userData.distance;
  const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(userData.angle))) : a;
+ const inclRad = (userData.inclination || 0) * Math.PI / 180;
  comet.position.x = r * Math.cos(userData.angle);
- comet.position.y = Math.sin(userData.angle) * 15;
- comet.position.z = r * Math.sin(userData.angle);
+ comet.position.y = r * Math.sin(userData.angle) * Math.sin(inclRad);
+ comet.position.z = r * Math.sin(userData.angle) * Math.cos(inclRad);
  });
  }
 
@@ -7134,19 +7135,27 @@ export class SolarSystemModule {
  // perihelionJD: Julian Date of most recent perihelion passage (from JPL/IAU MPC).
  // initPositionsToDate() uses this so mean anomaly is 0 at perihelion, giving
  // a correct orbital phase for any queried date.
+ // inclination: orbital inclination to the ecliptic in degrees (source: JPL Small-Body DB).
+ //   Values > 90° indicate retrograde orbits.
 
  // Halley: last perihelion Feb 9, 1986 (JD 2446470.5); next ~Jul 28, 2061 (JD 2473621.5)
- { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, speed: 0.02, size: 0.002, description: t('descHalley'), orbitalPeriod: 27511, perihelionJD: 2446470.5 },
+ // Inclination 162.3° = retrograde, ~18° to ecliptic
+ { name: 'Halley\'s Comet', distance: 1795, eccentricity: 0.967, inclination: 162.3, speed: 0.02, size: 0.002, description: t('descHalley'), orbitalPeriod: 27511, perihelionJD: 2446470.5 },
  // Hale-Bopp: perihelion Apr 1, 1997 (JD 2450538.0); period ~2520 yr
- { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, speed: 0.015, size: 0.005, description: t('descHaleBopp'), orbitalPeriod: 925188, perihelionJD: 2450538.0 },
+ // Inclination 89.4° = near-polar orbit
+ { name: 'Comet Hale-Bopp', distance: 12820, eccentricity: 0.995, inclination: 89.4, speed: 0.015, size: 0.005, description: t('descHaleBopp'), orbitalPeriod: 925188, perihelionJD: 2450538.0 },
  // Hyakutake: perihelion May 1, 1996 (JD 2450204.5); period ~70,000 yr (hyperbolic escapee)
- { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, speed: 0.022, size: 0.0015, description: t('descHyakutake'), orbitalPeriod: 25567500, perihelionJD: 2450204.5 },
+ // Inclination 124.9° = retrograde
+ { name: 'Comet Hyakutake', distance: 1540, eccentricity: 0.999, inclination: 124.9, speed: 0.022, size: 0.0015, description: t('descHyakutake'), orbitalPeriod: 25567500, perihelionJD: 2450204.5 },
  // Lovejoy (C/2011 W3): perihelion Dec 16, 2011 (JD 2455912.0); period ~622 yr
- { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, speed: 0.04, size: 0.0008, description: t('descLovejoy'), orbitalPeriod: 227185, perihelionJD: 2455912.0 },
+ // Inclination 134.1° = retrograde sungrazer
+ { name: 'Comet Lovejoy', distance: 770, eccentricity: 0.998, inclination: 134.1, speed: 0.04, size: 0.0008, description: t('descLovejoy'), orbitalPeriod: 227185, perihelionJD: 2455912.0 },
  // Encke: most recent perihelion Oct 22, 2023 (JD 2460240.5); period 3.30 yr = 1205 d
- { name: 'Comet Encke', distance: 385, eccentricity: 0.847, speed: 0.035, size: 0.0018, description: t('descEncke'), orbitalPeriod: 1205, perihelionJD: 2460240.5 },
+ // Inclination 11.8° = low-inclination prograde
+ { name: 'Comet Encke', distance: 385, eccentricity: 0.847, inclination: 11.8, speed: 0.035, size: 0.0018, description: t('descEncke'), orbitalPeriod: 1205, perihelionJD: 2460240.5 },
  // Swift-Tuttle: perihelion Dec 12, 1992 (JD 2448967.5); period 133.3 yr = 48680 d
- { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, speed: 0.018, size: 0.003, description: t('descSwiftTuttle'), orbitalPeriod: 48680, perihelionJD: 2448967.5 }
+ // Inclination 113.4° = retrograde (source of Perseid meteor shower)
+ { name: 'Comet Swift-Tuttle', distance: 2570, eccentricity: 0.963, inclination: 113.4, speed: 0.018, size: 0.003, description: t('descSwiftTuttle'), orbitalPeriod: 48680, perihelionJD: 2448967.5 }
  ];
 
  // Shared coma textures — created once, reused for all comets.
@@ -7399,6 +7408,7 @@ export class SolarSystemModule {
  speed: cometData.speed,
  eccentricity: safeEccentricity, // Clamped to keep perihelion outside sun
  originalEccentricity: cometData.eccentricity, // Stored for reclamping after scale changes
+ inclination: cometData.inclination || 0, // Orbital inclination to ecliptic in degrees (JPL Small-Body DB)
  orbitalPeriod: cometData.orbitalPeriod,
  perihelionJD: cometData.perihelionJD || null, // Real perihelion epoch (JD) for date-accurate phase
  description: cometData.description,
@@ -7421,10 +7431,11 @@ export class SolarSystemModule {
  const orbitPoints = [];
  const orbitA = cometData.distance;
  const orbitE = safeEccentricity; // use same clamped value stored in userData
+ const orbitInclRad = (cometData.inclination || 0) * Math.PI / 180;
  for (let j = 0; j <= orbitSegments; j++) {
  const f = (j / orbitSegments) * Math.PI * 2;
  const orbitR = orbitA * (1 - orbitE * orbitE) / (1 + orbitE * Math.cos(f));
- orbitPoints.push(new THREE.Vector3(orbitR * Math.cos(f), Math.sin(f) * 15, orbitR * Math.sin(f)));
+ orbitPoints.push(new THREE.Vector3(orbitR * Math.cos(f), orbitR * Math.sin(f) * Math.sin(orbitInclRad), orbitR * Math.sin(f) * Math.cos(orbitInclRad)));
  }
  const cometOrbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPoints);
  const cometOrbitMat = new THREE.LineBasicMaterial({
@@ -8708,10 +8719,18 @@ createHyperrealisticHubble(satData) {
  //   z = distSceneUnits * cos(lat) * sin(lon)
  //   y = distSceneUnits * sin(lat)
  //
- // Reference distances: Jan 1 2025 (JD 2460676.5) from NASA JPL Horizons / mission pages.
- // Pioneer 10/11 silenced in 2003/1995; distances are linear extrapolations from last contact.
- // 1 AU = 149 597 870.7 km          educational scale: 51.28 scene-units/AU
- //                                  realistic   scale: 150    scene-units/AU
+ // Reference epochs and heliocentric scale:
+ //   Voyager 1/2, New Horizons: Jan 1 2025 (JD 2460676.5) from NASA JPL Horizons.
+ //   Pioneer 10: ~Jan 2003 (JD 2452641.5) — last-contact date, not Jan 2025.
+ //   Pioneer 11: ~Nov 1995 (JD 2450084.5) — last-contact date, not Jan 2025.
+ //   Positions for all probes are linearly extrapolated from these reference epochs.
+ //
+ // Scale: _probePositionAtJD() converts distAU → scene units using:
+ //   educational: 22.5 scene-units/AU  (heliopause 2,700 / 120 AU)
+ //   realistic:  150   scene-units/AU  (heliopause 18,000 / 120 AU)
+ // NOTE: Inner planet visual distances are NOT derived from AU — they use separate
+ //   display units (e.g. Mercury at 20 units/0.39 AU ≈ 51.3 units/AU). Only the
+ //   heliospheric probe model uses the 22.5/150 AU conversion above.
  const PROBE_TRAJECTORIES = {
  'Voyager 1':   { refJD: 2460676.5, refDistAU: 163.7,  speedKmps: 16.99, eclLon: 255.8, eclLat: 35.7  },
  'Voyager 2':   { refJD: 2460676.5, refDistAU: 136.6,  speedKmps: 15.35, eclLon: 208.0, eclLat: -31.9 },
@@ -9367,9 +9386,10 @@ createHyperrealisticHubble(satData) {
  const r = a * (1 - e * e) / (1 + e * cosAngle);
  
  // Always use actual orbital position
+ const inclRadUpd = (userData.inclination || 0) * Math.PI / 180;
  comet.position.x = r * cosAngle;
- comet.position.z = r * sinAngle;
- comet.position.y = Math.sin(angle) * 15;
+ comet.position.z = r * sinAngle * Math.cos(inclRadUpd);
+ comet.position.y = r * sinAngle * Math.sin(inclRadUpd);
 
  if (userData.orbitLine) {
  userData.orbitLine.visible = this.cometOrbitsVisible;
@@ -10410,9 +10430,10 @@ createHyperrealisticHubble(satData) {
  
  // Elliptical orbit formula
  const r = a * (1 - e * e) / (1 + e * cosAngle);
+ const inclRadScale = (userData.inclination || 0) * Math.PI / 180;
  comet.position.x = r * cosAngle;
- comet.position.z = r * sinAngle;
- comet.position.y = Math.sin(angle) * 15;
+ comet.position.z = r * sinAngle * Math.cos(inclRadScale);
+ comet.position.y = r * sinAngle * Math.sin(inclRadScale);
  
  if (DEBUG.enabled) console.log(` ${userData.name}: ${newDistance} units (e=${e})`);
  }
@@ -10454,11 +10475,12 @@ createHyperrealisticHubble(satData) {
 
  const a = userData.distance;
  const e = userData.eccentricity || 0;
+ const inclRadRebuild = (userData.inclination || 0) * Math.PI / 180;
  const points = [];
  for (let j = 0; j <= orbitSegments; j++) {
  const f = (j / orbitSegments) * Math.PI * 2;
  const r = a * (1 - e * e) / (1 + e * Math.cos(f));
- points.push(new THREE.Vector3(r * Math.cos(f), Math.sin(f) * 15, r * Math.sin(f)));
+ points.push(new THREE.Vector3(r * Math.cos(f), r * Math.sin(f) * Math.sin(inclRadRebuild), r * Math.sin(f) * Math.cos(inclRadRebuild)));
  }
 
  orbitLine.geometry.setFromPoints(points);

@@ -292,7 +292,7 @@ const translations = {
         descMercury: 'Mercury is the smallest planet and closest to the Sun. Its surface is covered with craters like our Moon. Temperature ranges from -180°C at night to 430°C during the day - the largest temperature swing in the solar system!',
         descVenus: 'Venus is the hottest planet with surface temperature of 465°C due to extreme greenhouse effect. Its atmosphere is 96% CO2 with clouds of sulfuric acid. Venus rotates backwards and has no moons - one of only two planets without any!',
         descEarth: 'Earth is our home, the only known planet with life! 71% is covered by water, creating the blue color visible from space. Earth is the densest planet in the solar system, with a molten iron core that generates a magnetic field protecting life from solar wind. It is also the only planet with active plate tectonics!',
-        descMoon: 'Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, stabilizes Earth\'s tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
+        descMoon: 'Earth\'s Moon is the fifth largest moon in the solar system. It creates tides, may help stabilize Earth\'s axial tilt, and was formed 4.5 billion years ago when a Mars-sized object hit Earth!',
         descMars: 'Mars, the Red Planet, gets its color from iron oxide (rust). It has the largest volcano (Olympus Mons - 22 km high) and canyon (Valles Marineris - 4,000 km long) in the solar system. Water ice exists at its poles!',
         descJupiter: 'Jupiter is the largest planet - all other planets could fit inside it! The Great Red Spot is a storm larger than Earth that has raged for at least 400 years. Jupiter has many known moons, including Io, Europa, Ganymede, and Callisto.',
         descSaturn: 'Saturn is famous for its spectacular ring system made of ice and rock particles. It\'s the least dense planet - it would float in water! Saturn has many known moons, including Titan, which has a thick atmosphere.',
@@ -350,8 +350,8 @@ const translations = {
         funFactEarth: 'Earth is the only planet not named after a god. It travels at 107,000 km/h around the Sun!',
         funFactMoon: 'The Moon is slowly moving away from Earth at 3.8 cm per year!',
         funFactMars: 'Mars has seasons like Earth, and its day is only 37 minutes longer than ours!',
-        funFactJupiter: 'Jupiter\'s gravity shields Earth from many asteroids and comets!',
-        funFactSaturn: 'Saturn\'s rings are only 10 meters thick but 280,000 km wide!',
+        funFactJupiter: 'Jupiter\'s massive gravity deflects asteroids and comets — sometimes protecting the inner planets, sometimes redirecting them inward. Its role is more complex than a simple shield!',
+        funFactSaturn: 'Saturn\'s rings can be as thin as 10 meters in places yet span 280,000 km wide — thinner than a sheet of paper relative to their width!',
         funFactUranus: 'Uranus was the first planet discovered with a telescope (1781)!',
         funFactNeptune: 'Neptune was discovered by math before being seen - its gravity affected Uranus\'s orbit!',
         descPluto: '🪐 Pluto is a dwarf planet in the Kuiper Belt. It has a heart-shaped glacier (Tombaugh Regio), mountains of water ice, and five moons. Pluto and its largest moon Charon are tidally locked - they always show the same face to each other!',
@@ -385,9 +385,9 @@ const translations = {
         funFactJWST: 'Operating at -233C (-388F)! Can detect heat signature of a bumblebee at Moon distance. It helps astronomers study some of the earliest known galaxies, seen only a few hundred million years after the Big Bang.',
         
         // Spacecraft descriptions and fun facts
-        descVoyager1: 'Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. Currently ~25.8 billion km (~172 AU) from Sun. It carries the Golden Record with sounds and images of Earth.',
+        descVoyager1: 'Voyager 1 is the farthest human-made object from Earth! Launched Sept 5, 1977, it entered interstellar space on Aug 25, 2012. As of early 2025 approximately 164 AU (~24.5 billion km) from the Sun and still receding at 17 km/s. It carries the Golden Record with sounds and images of Earth.',
         funFactVoyager1: 'Voyager 1 travels at 17 km/s (61,200 km/h). Its radio signals take 22.5 hours to reach Earth!',
-        descVoyager2: 'Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. Now ~21.4 billion km (~143 AU) from Sun.',
+        descVoyager2: 'Voyager 2 is the only spacecraft to visit all four giant planets! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptune (Aug 1989). Entered interstellar space Nov 5, 2018. As of early 2025 approximately 137 AU (~20.5 billion km) from the Sun, receding at 15.4 km/s.',
         funFactVoyager2: 'Voyager 2 discovered 16 moons across the giant planets, Neptune\'s Great Dark Spot, and Triton\'s geysers!',
         descNewHorizons: 'New Horizons gave us the first close-up images of Pluto on July 14, 2015! It revealed water ice mountains up to 3,500m tall, vast nitrogen glaciers, and the famous heart-shaped Tombaugh Regio. Now 59 AU from Sun, exploring Kuiper Belt.',
         funFactNewHorizons: 'New Horizons traveled 9.5 years and 5 billion km to reach Pluto at 58,536 km/h. It carries 1 oz of Clyde Tombaugh\'s ashes!',
@@ -396,7 +396,7 @@ const translations = {
         descCassini: 'Cassini orbited Saturn June 30, 2004 - Sept 15, 2017 (13 years). Discovered liquid methane/ethane lakes on Titan, water geysers on Enceladus, new rings, 7 new moons. Huygens probe landed on Titan Jan 14, 2005. Ended with atmospheric entry "Grand Finale".',
         funFactCassini: 'Discovered Enceladus\' subsurface ocean! Water geysers shoot 250kg/s into space. Cassini flew through plumes, detected H2, organics - ingredients for life!',
         descPioneer10: 'Pioneer 10 was the first spacecraft to travel through the asteroid belt and first to visit Jupiter (Dec 3, 1973)! Launched March 2, 1972, it carried the famous Pioneer plaque showing humans and Earth\'s location. Last contact: Jan 23, 2003 at 12.2 billion km.',
-        funFactPioneer10: 'Pioneer 10 carries a gold plaque designed by Carl Sagan showing a man, woman, and Earth\'s location - a message to any aliens who might find it!',
+        funFactPioneer10: 'Pioneer 10 carries a gold-anodized aluminum plaque designed by Carl Sagan showing a man, woman, and Earth\'s location — a message to any extraterrestrials who might find it!',
         descPioneer11: 'Pioneer 11 was the first spacecraft to visit Saturn (Sept 1, 1979)! Also flew by Jupiter (Dec 3, 1974). Launched April 5, 1973, it discovered Saturn\'s F ring and a new moon. Also carries the Pioneer plaque. Last contact: Nov 24, 1995 at 6.5 billion km.',
         funFactPioneer11: 'Pioneer 11 used Jupiter\'s gravity for a daring gravity assist, saving years of travel time to Saturn!',
         
@@ -453,7 +453,7 @@ const translations = {
 
         // Comet descriptions
         descHalley: 'Halley\'s Comet is the most famous comet! It returns to Earth\'s vicinity every 75-76 years. Last seen in 1986, it will return in 2061. When you see it, you\'re viewing a 4.6 billion year old cosmic snowball!',
-        descHaleBopp: 'Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996-1997! Its nucleus is unusually large at about 40 km in diameter.',
+        descHaleBopp: 'Hale-Bopp was one of the brightest comets of the 20th century, visible to the naked eye for 18 months in 1996–1997! Its nucleus is unusually large — estimated at 40–80 km in diameter, making it one of the biggest comets ever observed.',
         descNeowise: 'Comet NEOWISE was a spectacular sight in July 2020! It won\'t return for about 6,800 years. Comets are "dirty snowballs" made of ice, dust, and rock from the solar system\'s formation.',
 
         // Galaxy descriptions
@@ -554,7 +554,7 @@ const translations = {
         // Fun facts for additional objects
         funFactAsteroidBelt: 'Despite what movies show, asteroids are very far apart - spacecraft can pass through safely!',
         funFactKuiperBelt: 'The Kuiper Belt is 20 times wider than the asteroid belt and contains billions of objects!',
-        funFactOortCloud: 'The Oort Cloud is so far away that light from the Sun takes over 1.5 years to reach its outer edge! It would take Voyager 1 about 300 years to reach the inner edge.',
+        funFactOortCloud: 'The Oort Cloud is so far away that light from the Sun takes over 3 years to reach its outer edge at 200,000 AU! It would take Voyager 1 about 300 years just to reach the inner edge.',
         funFactHeliopause: 'When Voyager 1 crossed the heliopause, it detected a 40-fold increase in cosmic ray intensity — confirming it had left the Sun\'s protective bubble! Beyond this boundary, the interstellar wind reigns.',
         funFactCeres: 'Ceres may host subsurface liquid water - making it a top candidate for finding life!',
         funFactHaumea: 'Rotation period ~4 hours gives Haumea its unique egg-like triaxial ellipsoid shape!',
@@ -949,7 +949,7 @@ const translations = {
         funFactEarth: 'De Aarde is de enige planeet die niet naar een god is vernoemd. We reizen met 107.000 km/u om de Zon!',
         funFactMoon: 'De Maan beweegt elk jaar 3,8 cm verder van de Aarde vandaan!',
         funFactMars: 'Mars heeft seizoenen net als de Aarde, en een dag op Mars duurt maar 37 minuten langer dan een aardse dag!',
-        funFactJupiter: 'De zwaartekracht van Jupiter beschermt de Aarde tegen veel asteroïden en kometen!',
+        funFactJupiter: 'Jupiters enorme zwaartekracht leidt asteroïden en kometen af — soms beschermt het de binnenste planeten, soms juist richting zon. Zijn rol als schild is complexer dan gedacht!',
         funFactSaturn: 'De ringen van Saturnus zijn slechts 10 meter dik maar 280.000 km breed!',
         funFactUranus: 'Uranus was de eerste planeet die ontdekt werd met een telescoop (in 1781)!',
         funFactNeptune: 'Neptunus werd ontdekt door wiskundige berekeningen voordat hij gezien werd - zijn zwaartekracht beïnvloedde de baan van Uranus!',
@@ -982,9 +982,9 @@ const translations = {
         funFactJWST: 'Werkt bij -233°C (-388°F)! Kan de warmte van een hommel op maanafstand detecteren. Helpt astronomen enkele van de vroegst bekende sterrenstelsels te bestuderen, zichtbaar slechts enkele honderden miljoenen jaren na de Oerknal.',
         
         // Ruimtevaartuigbeschrijvingen en wetenswaardigheden
-        descVoyager1: 'Voyager 1 is het verst door mensen gemaakte object vanaf de Aarde! Gelanceerd 5 sept 1977, kwam het op 25 aug 2012 in de interstellaire ruimte. Momenteel ~25,8 miljard km (~172 AU) van de Zon. Draagt de Gouden Plaat met geluiden en beelden van de Aarde.',
+        descVoyager1: 'Voyager 1 is het verst door mensen gemaakte object vanaf de Aarde! Gelanceerd 5 sept 1977, kwam het op 25 aug 2012 in de interstellaire ruimte. Begin 2025 was het op ~164 AU (~24,5 miljard km) van de Zon en verwijdert zich met 17 km/s. Draagt de Gouden Plaat met geluiden en beelden van de Aarde.',
         funFactVoyager1: 'Voyager 1 reist met 17 km/s (61.200 km/u). Radiosignalen doen er 22,5 uur over om de Aarde te bereiken!',
-        descVoyager2: 'Voyager 2 is het enige ruimtevaartuig dat alle vier reuzenplaneten bezocht! Jupiter (juli 1979), Saturnus (aug 1981), Uranus (jan 1986), Neptunus (aug 1989). Kwam 5 nov 2018 in de interstellaire ruimte. Nu ~21,4 miljard km (~143 AU) van de Zon.',
+        descVoyager2: 'Voyager 2 is het enige ruimtevaartuig dat alle vier reuzenplaneten bezocht! Jupiter (juli 1979), Saturnus (aug 1981), Uranus (jan 1986), Neptunus (aug 1989). Kwam 5 nov 2018 in de interstellaire ruimte. Begin 2025 op ~137 AU (~20,5 miljard km) van de Zon.',
         funFactVoyager2: 'Voyager 2 ontdekte 16 manen bij de reuzenplaneten, de Grote Donkere Vlek van Neptunus, en geisers op Triton!',
         descNewHorizons: 'New Horizons gaf ons de eerste close-up beelden van Pluto op 14 juli 2015! Het onthulde waterijsbergen tot 3.500m hoog, enorme stikstofgletsjers, en de beroemde hartvormige Tombaugh Regio. Nu 59 AU van de Zon, verkent de Kuipergordel.',
         funFactNewHorizons: 'New Horizons reisde 9,5 jaar en 5 miljard km om Pluto te bereiken met 58.536 km/u. Het draagt 28 gram van Clyde Tombaugh\'s as!',
@@ -1540,7 +1540,7 @@ const translations = {
         funFactEarth: 'La Terre est la seule planète qui ne porte pas le nom d\'un dieu. Elle voyage à 107 000 km/h autour du Soleil!',
         funFactMoon: 'La Lune s\'éloigne lentement de la Terre de 3,8 cm par an!',
         funFactMars: 'Mars a des saisons comme la Terre, et son jour ne dure que 37 minutes de plus que le nôtre!',
-        funFactJupiter: 'La gravité de Jupiter protège la Terre de nombreux astéroïdes et comètes!',
+        funFactJupiter: 'La puissante gravité de Jupiter dévie astéroïdes et comètes — parfois en protégeant les planètes intérieures, parfois en les dirigeant vers l\'intérieur. Son rôle de bouclier est plus complexe qu\'on ne le croyait !',
         funFactSaturn: 'Les anneaux de Saturne ne font que 10 mètres d\'épaisseur mais 280 000 km de large!',
         funFactUranus: 'Uranus a été la première planète découverte avec un télescope (1781)!',
         funFactNeptune: 'Neptune a été découverte par les mathématiques avant d\'être vue - sa gravité affectait l\'orbite d\'Uranus!',
@@ -1573,9 +1573,9 @@ const translations = {
         funFactJWST: 'Fonctionne à -233°C (-388°F)! Peut détecter la signature thermique d\'un bourdon à distance lunaire. Il aide les astronomes à étudier certaines des galaxies connues les plus anciennes, observées seulement quelques centaines de millions d\'années après le Big Bang.',
         
         // Descriptions et faits des vaisseaux spatiaux
-        descVoyager1: 'Voyager 1 est l\'objet fait par l\'homme le plus éloigné de la Terre! Lancée le 5 sept 1977, elle est entrée dans l\'espace interstellaire le 25 août 2012. Actuellement à ~25,8 milliards de km (~172 UA) du Soleil. Elle transporte le Disque d\'Or avec des sons et images de la Terre.',
+        descVoyager1: 'Voyager 1 est l\'objet fait par l\'homme le plus éloigné de la Terre! Lancée le 5 sept 1977, elle est entrée dans l\'espace interstellaire le 25 août 2012. Début 2025 à environ 164 UA (~24,5 milliards de km) du Soleil et s\'en éloignant à 17 km/s. Elle transporte le Disque d\'Or avec des sons et images de la Terre.',
         funFactVoyager1: 'Voyager 1 voyage à 17 km/s (61 200 km/h). Ses signaux radio mettent 22,5 heures pour atteindre la Terre!',
-        descVoyager2: 'Voyager 2 est le seul vaisseau spatial à avoir visité les quatre planètes géantes! Jupiter (juil 1979), Saturne (août 1981), Uranus (jan 1986), Neptune (août 1989). Entrée dans l\'espace interstellaire le 5 nov 2018. Maintenant à ~21,4 milliards de km (~143 UA) du Soleil.',
+        descVoyager2: 'Voyager 2 est le seul vaisseau spatial à avoir visité les quatre planètes géantes ! Jupiter (juil 1979), Saturne (août 1981), Uranus (jan 1986), Neptune (août 1989). Entrée dans l\'espace interstellaire le 5 nov 2018. Début 2025 à environ 137 UA (~20,5 milliards de km) du Soleil.',
         funFactVoyager2: 'Voyager 2 a découvert 16 lunes parmi les planètes géantes, la Grande Tache Sombre de Neptune et les geysers de Triton!',
         descNewHorizons: 'New Horizons nous a donné les premières images rapprochées de Pluton le 14 juillet 2015! Il a révélé des montagnes de glace d\'eau jusqu\'à 3 500m de haut, de vastes glaciers d\'azote et la célèbre Tombaugh Regio en forme de cœur. Maintenant à 59 UA du Soleil, explorant la ceinture de Kuiper.',
         funFactNewHorizons: 'New Horizons a voyagé 9,5 ans et 5 milliards de km pour atteindre Pluton à 58 536 km/h. Il transporte 28g des cendres de Clyde Tombaugh!',
@@ -2129,7 +2129,7 @@ const translations = {
         funFactEarth: 'Die Erde ist der einzige Planet, der nicht nach einem Gott benannt ist. Sie reist mit 107.000 km/h um die Sonne!',
         funFactMoon: 'Der Mond entfernt sich langsam von der Erde mit 3,8 cm pro Jahr!',
         funFactMars: 'Mars hat wie die Erde Jahreszeiten, und sein Tag ist nur 37 Minuten länger als unserer!',
-        funFactJupiter: 'Jupiters Schwerkraft schützt die Erde vor vielen Asteroiden und Kometen!',
+        funFactJupiter: 'Jupiters gewaltige Schwerkraft lenkt Asteroiden und Kometen ab — manchmal schützt sie die inneren Planeten, manchmal lenkt sie Objekte auch einwärts. Jupiters Schutzwirkung ist komplexer als früher gedacht!',
         funFactSaturn: 'Saturns Ringe sind nur 10 Meter dick, aber 280.000 km breit!',
         funFactUranus: 'Uranus war der erste Planet, der mit einem Teleskop entdeckt wurde (1781)!',
         funFactNeptune: 'Neptun wurde durch Mathematik entdeckt, bevor er gesehen wurde - seine Schwerkraft beeinflusste die Umlaufbahn von Uranus!',
@@ -2162,9 +2162,9 @@ const translations = {
         funFactJWST: 'Arbeitet bei -233°C (-388°F)! Kann die thermische Signatur einer Hummel in Mondentfernung erkennen. Hilft Astronomen, einige der frühesten bekannten Galaxien zu untersuchen, die nur wenige hundert Millionen Jahre nach dem Urknall zu sehen sind.',
         
         // Raumfahrzeugbeschreibungen und Fakten
-        descVoyager1: 'Voyager 1 ist das am weitesten von der Erde entfernte menschengemachte Objekt! Gestartet am 5. Sept 1977, trat am 25. Aug 2012 in den interstellaren Raum ein. Derzeit ~25,8 Milliarden km (~172 AE) von der Sonne entfernt. Trägt die Goldene Schallplatte mit Klängen und Bildern der Erde.',
+        descVoyager1: 'Voyager 1 ist das am weitesten von der Erde entfernte menschengemachte Objekt! Gestartet am 5. Sept 1977, trat am 25. Aug 2012 in den interstellaren Raum ein. Anfang 2025 etwa 164 AE (~24,5 Milliarden km) von der Sonne entfernt, mit 17 km/s weiter wachsend. Trägt die Goldene Schallplatte mit Klängen und Bildern der Erde.',
         funFactVoyager1: 'Voyager 1 reist mit 17 km/s (61.200 km/h). Seine Funksignale brauchen 22,5 Stunden zur Erde!',
-        descVoyager2: 'Voyager 2 ist das einzige Raumfahrzeug, das alle vier Riesenplaneten besucht hat! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptun (Aug 1989). Trat am 5. Nov 2018 in den interstellaren Raum ein. Jetzt ~21,4 Milliarden km (~143 AE) von der Sonne entfernt.',
+        descVoyager2: 'Voyager 2 ist das einzige Raumfahrzeug, das alle vier Riesenplaneten besucht hat! Jupiter (Jul 1979), Saturn (Aug 1981), Uranus (Jan 1986), Neptun (Aug 1989). Trat am 5. Nov 2018 in den interstellaren Raum ein. Anfang 2025 etwa 137 AE (~20,5 Milliarden km) von der Sonne entfernt.',
         funFactVoyager2: 'Voyager 2 entdeckte 16 Monde bei den Riesenplaneten, den Großen Dunklen Fleck des Neptun und die Geysire von Triton!',
         descNewHorizons: 'New Horizons gab uns am 14. Juli 2015 die ersten Nahaufnahmen von Pluto! Enthüllte Wassereis-Berge bis 3.500m Höhe, riesige Stickstoffgletscher und die berühmte herzförmige Tombaugh Regio. Jetzt 59 AE von der Sonne entfernt, erkundet den Kuipergürtel.',
         funFactNewHorizons: 'New Horizons reiste 9,5 Jahre und 5 Milliarden km, um Pluto mit 58.536 km/h zu erreichen. Trägt 28g von Clyde Tombaughs Asche!',
@@ -2718,7 +2718,7 @@ const translations = {
         funFactEarth: '¡La Tierra es el único planeta que no lleva el nombre de un dios. Viaja a 107.000 km/h alrededor del Sol!',
         funFactMoon: '¡La Luna se está alejando lentamente de la Tierra a 3,8 cm por año!',
         funFactMars: '¡Marte tiene estaciones como la Tierra, y su día es solo 37 minutos más largo que el nuestro!',
-        funFactJupiter: '¡La gravedad de Júpiter protege a la Tierra de muchos asteroides y cometas!',
+        funFactJupiter: '¡La enorme gravedad de Júpiter desvía asteroides y cometas — a veces protegiendo los planetas interiores, a veces redirigiéndolos hacia el interior. Su papel como escudo es más complejo de lo que se creía!',
         funFactSaturn: '¡Los anillos de Saturno tienen solo 10 metros de espesor pero 280.000 km de ancho!',
         funFactUranus: '¡Urano fue el primer planeta descubierto con un telescopio (1781)!',
         funFactNeptune: '¡Neptuno fue descubierto por matemáticas antes de ser visto: su gravedad afectaba la órbita de Urano!',
@@ -2751,9 +2751,9 @@ const translations = {
         funFactJWST: '¡Opera a -233°C (-388°F)! Puede detectar la firma térmica de un abejorro a distancia lunar. Ayuda a los astrónomos a estudiar algunas de las galaxias conocidas más antiguas, visibles solo unos cientos de millones de años después del Big Bang.',
         
         // Descripciones y datos de naves espaciales
-        descVoyager1: '¡Voyager 1 es el objeto hecho por el hombre más lejano de la Tierra! Lanzada el 5 sept 1977, entró al espacio interestelar el 25 ago 2012. Actualmente a ~25,8 mil millones de km (~172 UA) del Sol. Lleva el Disco de Oro con sonidos e imágenes de la Tierra.',
+        descVoyager1: '¡Voyager 1 es el objeto hecho por el hombre más lejano de la Tierra! Lanzada el 5 sept 1977, entró al espacio interestelar el 25 ago 2012. A principios de 2025 a ~164 UA (~24,5 mil millones de km) del Sol, alejándose a 17 km/s. Lleva el Disco de Oro con sonidos e imágenes de la Tierra.',
         funFactVoyager1: '¡Voyager 1 viaja a 17 km/s (61.200 km/h). Sus señales de radio tardan 22,5 horas en llegar a la Tierra!',
-        descVoyager2: '¡Voyager 2 es la única nave espacial que ha visitado los cuatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (ene 1986), Neptuno (ago 1989). Entró al espacio interestelar el 5 nov 2018. Ahora a ~21,4 mil millones de km (~143 UA) del Sol.',
+        descVoyager2: '¡Voyager 2 es la única nave espacial que ha visitado los cuatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (ene 1986), Neptuno (ago 1989). Entró al espacio interestelar el 5 nov 2018. A principios de 2025 a ~137 UA (~20,5 mil millones de km) del Sol.',
         funFactVoyager2: '¡Voyager 2 descubrió 16 lunas entre los planetas gigantes, la Gran Mancha Oscura de Neptuno y los géiseres de Tritón!',
         descNewHorizons: '¡New Horizons nos dio las primeras imágenes cercanas de Plutón el 14 julio 2015! Reveló montañas de hielo de agua de hasta 3.500m de altura, vastos glaciares de nitrógeno y la famosa Tombaugh Regio en forma de corazón. Ahora a 59 UA del Sol, explorando el cinturón de Kuiper.',
         funFactNewHorizons: '¡New Horizons viajó 9,5 años y 5 mil millones de km para llegar a Plutón a 58.536 km/h. Lleva 28g de las cenizas de Clyde Tombaugh!',
@@ -3307,7 +3307,7 @@ const translations = {
         funFactEarth: 'A Terra é o único planeta que não tem o nome de um deus. Ela viaja a 107.000 km/h ao redor do Sol!',
         funFactMoon: 'A Lua está lentamente se afastando da Terra a 3,8 cm por ano!',
         funFactMars: 'Marte tem estações como a Terra, e seu dia é apenas 37 minutos mais longo que o nosso!',
-        funFactJupiter: 'A gravidade de Júpiter protege a Terra de muitos asteroides e cometas!',
+        funFactJupiter: 'A enorme gravidade de Júpiter desvia asteroides e cometas — às vezes protegendo os planetas interiores, às vezes redirecionando-os para dentro. Seu papel como escudo é mais complexo do que se pensava!',
         funFactSaturn: 'Os anéis de Saturno têm apenas 10 metros de espessura, mas 280.000 km de largura!',
         funFactUranus: 'Urano foi o primeiro planeta descoberto com um telescópio (1781)!',
         funFactNeptune: 'Netuno foi descoberto pela matemática antes de ser visto - sua gravidade afetava a órbita de Urano!',
@@ -3340,9 +3340,9 @@ const translations = {
         funFactJWST: 'Opera a -233°C (-388°F)! Pode detectar a assinatura térmica de um zangão à distância lunar. Ajuda astrônomos a estudar algumas das galáxias conhecidas mais antigas, visíveis apenas algumas centenas de milhões de anos após o Big Bang.',
         
         // Descrições e fatos de naves espaciais
-        descVoyager1: 'Voyager 1 é o objeto feito pelo homem mais distante da Terra! Lançada em 5 set 1977, entrou no espaço interestelar em 25 ago 2012. Atualmente a ~25,8 bilhões de km (~172 UA) do Sol. Carrega o Disco de Ouro com sons e imagens da Terra.',
+        descVoyager1: 'Voyager 1 é o objeto feito pelo homem mais distante da Terra! Lançada em 5 set 1977, entrou no espaço interestelar em 25 ago 2012. No início de 2025 estava a ~164 UA (~24,5 bilhões de km) do Sol, afastando-se a 17 km/s. Carrega o Disco de Ouro com sons e imagens da Terra.',
         funFactVoyager1: 'Voyager 1 viaja a 17 km/s (61.200 km/h). Seus sinais de rádio levam 22,5 horas para chegar à Terra!',
-        descVoyager2: 'Voyager 2 é a única nave espacial a visitar todos os quatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (jan 1986), Netuno (ago 1989). Entrou no espaço interestelar em 5 nov 2018. Agora a ~21,4 bilhões de km (~143 UA) do Sol.',
+        descVoyager2: 'Voyager 2 é a única nave espacial a visitar todos os quatro planetas gigantes! Júpiter (jul 1979), Saturno (ago 1981), Urano (jan 1986), Netuno (ago 1989). Entrou no espaço interestelar em 5 nov 2018. No início de 2025 a ~137 UA (~20,5 bilhões de km) do Sol.',
         funFactVoyager2: 'Voyager 2 descobriu 16 luas entre os planetas gigantes, a Grande Mancha Escura de Netuno e os gêiseres de Tritão!',
         descNewHorizons: 'New Horizons nos deu as primeiras imagens próximas de Plutão em 14 julho 2015! Revelou montanhas de gelo de água de até 3.500m de altura, vastas geleiras de nitrogênio e a famosa Tombaugh Regio em forma de coração. Agora a 59 UA do Sol, explorando o cinturão de Kuiper.',
         funFactNewHorizons: 'New Horizons viajou 9,5 anos e 5 bilhões de km para chegar a Plutão a 58.536 km/h. Carrega 28g das cinzas de Clyde Tombaugh!',
