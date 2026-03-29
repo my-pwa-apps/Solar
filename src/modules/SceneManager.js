@@ -3,7 +3,6 @@
 // ===========================
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -71,6 +70,7 @@ export class SceneManager {
  this._vrNearCheckPos = new THREE.Vector3(); // For dynamic VR near-plane adjustment
  this._vrLaserFrame = 0; // For throttling expensive laser raycasts
  this._vrIntersections = []; // Reused raycast results buffer (avoids per-frame array alloc)
+ this._vrReticle = null; // Teleport aim reticle — created in setupVR, positioned in updateLaserPointers
 
  // Post-processing composer (desktop only)
  this.composer = null;
@@ -163,14 +163,6 @@ export class SceneManager {
  throw new Error('Canvas container not found');
  }
  
- // Setup CSS2D label renderer
- this.labelRenderer = new CSS2DRenderer();
- this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
- this.labelRenderer.domElement.style.position = 'absolute';
- this.labelRenderer.domElement.style.top = '0px';
- this.labelRenderer.domElement.style.pointerEvents = 'none';
- container.appendChild(this.labelRenderer.domElement);
-
  // VR UI state
  this.vrStatusMessage = ' Use Laser to Click Buttons';
  this.vrFlashAction = null;
@@ -349,6 +341,8 @@ export class SceneManager {
  this.controllerGrips = [];
  this.lasersVisible = true; // Toggle for laser pointers
  this.vrStarshipMode = false; // Starship mode: 20× speed boost
+ this.vrSnapTurn = true; // Snap turn (default on) vs smooth turn — reduces VR sickness
+ this._vrSnapCooldown = [false, false]; // Per-controller snap cooldown (prevent multiple snaps per hold)
  
  // Shared materials for controller visuals (same colour both sides → one material each)
  const laserMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
@@ -420,6 +414,17 @@ export class SceneManager {
  
  // Setup VR UI Panel
  this.setupVRUI();
+
+ // Teleport aim reticle — a flat ring shown at intersection point when controller aims at an object
+ {
+ const reticleGeo = new THREE.RingGeometry(0.08, 0.13, 32);
+ const reticleMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false });
+ this._vrReticle = new THREE.Mesh(reticleGeo, reticleMat);
+ this._vrReticle.visible = false;
+ this._vrReticle.renderOrder = 10;
+ this._vrReticle.frustumCulled = false;
+ this.scene.add(this._vrReticle);
+ }
  
  // Custom VR Button - Only show if VR is supported
  if (navigator.xr) {
@@ -768,7 +773,8 @@ this.camera.near = 10.0;
  scrollOffset: ns.scrollOffset || 0,
  audioEnabled: window.audioManager?.enabled ?? true,
  lastObjectInfo: this.vrLastObjectInfo || null,
- starshipMode: this.vrStarshipMode
+ starshipMode: this.vrStarshipMode,
+ snapTurn: this.vrSnapTurn
  };
  }
 
@@ -1158,7 +1164,20 @@ this.camera.near = 10.0;
  }
  ctx.restore();
  this.vrButtons.push({ x: shipX, y: shipY, w: shipW, h: shipH, label: '\uD83D\uDE80 STARSHIP MODE', action: 'starship' });
- }
+
+ // ── SNAP TURN TOGGLE ──
+ const snapY = shipY + shipH + 12;
+ const snapActive = state.snapTurn;
+ ctx.save();
+ ctx.fillStyle = snapActive ? '#0e2a3a' : '#0a1018';
+ ctx.strokeStyle = snapActive ? '#00b8d4' : '#1e3a4a';
+ ctx.lineWidth = snapActive ? 1.5 : 1;
+ ctx.beginPath(); ctx.roundRect(shipX, snapY, shipW, BTN_H * 0.75, 8); ctx.fill(); ctx.stroke();
+ ctx.fillStyle = snapActive ? '#00d8ef' : '#567a8a';
+ ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ ctx.fillText(`🔄  SNAP TURN  ${snapActive ? 'ON  (30°)' : 'OFF  (smooth)'}`, shipX + shipW / 2, snapY + BTN_H * 0.375);
+ ctx.restore();
+ this.vrButtons.push({ x: shipX, y: snapY, w: shipW, h: Math.round(BTN_H * 0.75), label: 'SNAP TURN', action: 'snapTurn' });
  }
 
  // ═══════════════════════════════════════════════════════════
@@ -1507,10 +1526,13 @@ this.camera.near = 10.0;
  if (DEBUG.VR) console.log(`[VR] UI clicked at (${Math.round(x)}, ${Math.round(y)})`);
  
  // Check which button was clicked
+ // IMP-10: Expand logical hit target to at least 80px height to compensate for controller jitter
+ const MIN_HIT_H = 80;
  let buttonFound = false;
  for (const btn of this.vrButtons) {
+ const hitExpand = Math.max(0, (MIN_HIT_H - btn.h) / 2);
  if (x >= btn.x && x <= btn.x + btn.w && 
- y >= btn.y && y <= btn.y + btn.h) {
+ y >= btn.y - hitExpand && y <= btn.y + btn.h + hitExpand) {
  if (DEBUG.VR) console.log(`[VR] Button clicked: "${btn.label}" - Action: ${btn.action}`);
  this.handleVRAction(btn.action);
  this.flashVRButton(btn);
@@ -1965,6 +1987,11 @@ this.camera.near = 10.0;
  }
  scheduleRefresh(); break;
 
+ case 'snapTurn':
+ this.vrSnapTurn = !this.vrSnapTurn;
+ this.updateVRStatus('🔄 Snap turn ' + (this.vrSnapTurn ? 'ON (30°)' : 'OFF (smooth)'));
+ scheduleRefresh(); break;
+
  case 'reset':
  if (this.renderer.xr.isPresenting) {
  // In VR camera.position is owned by the HMD — move the dolly back to
@@ -2059,7 +2086,10 @@ this.camera.near = 10.0;
 
  updateLaserPointers() {
  // Skip entirely when lasers are hidden — avoids expensive per-frame raycasting
- if (!this.renderer.xr.isPresenting || !this.controllers || !this.lasersVisible) return;
+ if (!this.renderer.xr.isPresenting || !this.controllers || !this.lasersVisible) {
+ if (this._vrReticle) this._vrReticle.visible = false;
+ return;
+ }
 
  // Keep full-rate raycasts while VR panel is open for responsive UI interaction;
  // otherwise raycast every other frame to reduce CPU/GC pressure on Quest/mobile.
@@ -2101,9 +2131,16 @@ this.camera.near = 10.0;
  let visualDist = controller.userData._laserVisualDist;
  if (shouldRaycastThisFrame) {
  this._vrIntersections.length = 0;
- // Use the solar system's named objects array for VR raycasting — much cheaper
- // than testing all scene.children (avoids lights, helpers, orbit rings, etc.)
- const pickTargets = window.app?.solarSystemModule?.objects || this.scene.children;
+ // Use pickableObjects (planets/moons/comets/satellites/spacecraft/sun) — avoids testing
+ // ~400 meshes including galaxies, belt particles, constellation lines, orbit rings, etc.
+ const ssm = window.app?.solarSystemModule;
+ const allPick = ssm?.pickableObjects || ssm?.objects || this.scene.children;
+ // Further narrow by distance: objects farther than 3000 units can't be usefully selected in VR
+ const dollyPos = this.dolly ? this.dolly.position : this.camera.position;
+ const MAX_PICK_DSQ = 3000 * 3000;
+ const pickTargets = allPick.length > 80
+ ? allPick.filter(o => o.visible && (o.position.distanceToSquared(dollyPos) < MAX_PICK_DSQ))
+ : allPick;
  this._vrRaycaster.intersectObjects(pickTargets, true, this._vrIntersections);
  hasHit = this._vrIntersections.length > 0;
  visualDist = hasHit ? Math.min(this._vrIntersections[0].distance, LASER_DEFAULT_LENGTH) : LASER_DEFAULT_LENGTH;
@@ -2119,6 +2156,19 @@ this.camera.near = 10.0;
  laser.material.color.setHex(col);
  if (pointer) pointer.material.color.setHex(col);
  if (cone) cone.material.color.setHex(col);
+
+ // Teleport reticle: show only on the first controller that intersects an object
+ if (this._vrReticle) {
+ if (hasHit && shouldRaycastThisFrame && this._vrIntersections.length > 0) {
+ const hit = this._vrIntersections[0];
+ this._vrReticle.position.copy(hit.point);
+ // Orient ring to face the camera (billboard yaw-only)
+ this._vrReticle.lookAt(this.camera.position);
+ this._vrReticle.visible = true;
+ } else if (!hasHit) {
+ this._vrReticle.visible = false;
+ }
+ }
 
  // Stretch beam and move dot to hit point
  laser.scale.y = visualDist / LASER_DEFAULT_LENGTH;
@@ -2309,11 +2359,23 @@ this.camera.near = 10.0;
  const vertSpeed = 0.25 * sprintMultiplier * starshipMult;
  
  // TURN LEFT/RIGHT (only if NOT grab-rotating)
- // Use quaternion premultiply around world-Y so Euler order never
- // causes a direction flip after combined pitch+yaw accumulation.
+ // vrSnapTurn (default on): 30° discrete snaps to prevent VR sickness.
+ // Smooth turn available when vrSnapTurn=false.
  if (!this.grabRotateState.active && Math.abs(stickX) > deadzone) {
+ if (this.vrSnapTurn) {
+ const SNAP_ANGLE = Math.PI / 6; // 30°
+ if (!this._vrSnapCooldown[i] && Math.abs(stickX) > 0.7) {
+ this._vrTurnQuat.setFromAxisAngle(this._vrUpVector, -Math.sign(stickX) * SNAP_ANGLE);
+ this.dolly.quaternion.premultiply(this._vrTurnQuat);
+ this._vrSnapCooldown[i] = true;
+ this.triggerVRHaptic(i, 0.1, 30);
+ }
+ if (Math.abs(stickX) < 0.3) this._vrSnapCooldown[i] = false; // reset when stick released
+ } else {
+ const turnSpeed = 0.03;
  this._vrTurnQuat.setFromAxisAngle(this._vrUpVector, -stickX * turnSpeed);
  this.dolly.quaternion.premultiply(this._vrTurnQuat);
+ }
  }
  
  // VERTICAL MOVEMENT (Up/Down in world space)
@@ -2422,9 +2484,6 @@ this.camera.near = 10.0;
  this.camera.updateProjectionMatrix();
  this.renderer.setPixelRatio(this._adaptivePixelRatio);
  this.renderer.setSize(window.innerWidth, window.innerHeight);
- if (this.labelRenderer) {
- this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
- }
  if (this.composer) {
  this.composer.setSize(window.innerWidth, window.innerHeight);
  }
@@ -2639,13 +2698,6 @@ this.camera.near = 10.0;
  }
  }
 
- try {
- // CSS2D labels replaced with Sprite labels — labelRenderer kept for any
- // remaining CSS2D objects but skipped in XR (DOM elements can't appear in headset)
- if (this.labelRenderer && !this.renderer.xr.isPresenting) {
- this.labelRenderer.render(this.scene, this.camera);
- }
- } catch (_) { /* label render is non-critical */ }
 
  // Debug first frame
  if (frameCount === 0 && (DEBUG.enabled || DEBUG.VR || DEBUG.EMULATE_VR)) {
@@ -2706,11 +2758,6 @@ this.camera.near = 10.0;
  });
  }
  document.body.classList.remove('xr-active');
- 
- // Dispose label renderer
- if (this.labelRenderer?.domElement?.parentNode) {
- this.labelRenderer.domElement.parentNode.removeChild(this.labelRenderer.domElement);
- }
  
  if (this.renderer) {
  this.renderer.dispose();

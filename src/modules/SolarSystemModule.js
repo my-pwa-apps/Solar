@@ -53,6 +53,13 @@ export class SolarSystemModule {
  
  // Comet tails visibility: shown by default
  this.cometTailsVisible = true;
+
+ // Labels visibility — updated by toggleLabels()
+ this.labelsVisible = false;
+
+ // Pickable subset used by VR raycaster — planets, moons, comets, satellites, spacecraft, sun.
+ // Populated during object creation; avoids raycasting against galaxies, nebulae, belt particles, etc.
+ this.pickableObjects = [];
  
  // Orbits visibility: true = visible by default
  this.orbitMode = 'all'; // 'all' | 'planets' | 'comets' | 'none'
@@ -470,6 +477,7 @@ export class SolarSystemModule {
  
  scene.add(this.sun);
  this.objects.push(this.sun);
+ this.pickableObjects.push(this.sun);
  }
 
  async createInnerPlanets(scene) {
@@ -3014,6 +3022,12 @@ export class SolarSystemModule {
  planet.userData.orbitalEccentricity = orbitalElements.eccentricity || 0;
  planet.userData.orbitalInclination = (orbitalElements.inclinationDeg || 0) * Math.PI / 180;
  planet.userData.orbitalPeriapsis = (orbitalElements.periapsisDeg || 0) * Math.PI / 180;
+ // Pre-cached trig — inclination and sqrt(1±e) are constant per body
+ planet.userData._sinOrbInc = Math.sin(planet.userData.orbitalInclination);
+ planet.userData._cosOrbInc = Math.cos(planet.userData.orbitalInclination);
+ const _pe = planet.userData.orbitalEccentricity;
+ planet.userData._keplerSqrtPlus = Math.sqrt(1 + _pe);
+ planet.userData._keplerSqrtMinus = _pe < 1 ? Math.sqrt(1 - _pe) : 0;
 
  // Cloud layer disabled — real NASA Earth texture already includes visible
  // cloud patterns; a separate cloud mesh caused a blue-tint artefact.
@@ -3184,6 +3198,7 @@ export class SolarSystemModule {
 
  scene.add(planet);
  this.objects.push(planet);
+ this.pickableObjects.push(planet);
 
     // Merge any pending remote texture metadata captured before planet object existed
     const meta = this._pendingTextureMeta?.[config.name.toLowerCase()];
@@ -3445,12 +3460,19 @@ export class SolarSystemModule {
  moon.userData.orbitalEccentricity = moonElements.eccentricity || 0;
  moon.userData.orbitalInclination = (moonElements.inclinationDeg || 0) * Math.PI / 180;
  moon.userData.orbitalPeriapsis = (moonElements.periapsisDeg || 0) * Math.PI / 180;
+ // Pre-cached trig — constant for each moon
+ moon.userData._sinOrbInc = Math.sin(moon.userData.orbitalInclination);
+ moon.userData._cosOrbInc = Math.cos(moon.userData.orbitalInclination);
+ const _me = moon.userData.orbitalEccentricity;
+ moon.userData._keplerSqrtPlus = Math.sqrt(1 + _me);
+ moon.userData._keplerSqrtMinus = _me < 1 ? Math.sqrt(1 - _me) : 0;
 
  // Store moon reference using id (language-independent)
  const moonStorageKey = (config.id || config.name).trim().toLowerCase();
  this.moons[moonStorageKey] = moon;
  planet.userData.moons.push(moon);
  this.objects.push(moon);
+ this.pickableObjects.push(moon);
  
  // Set initial position based on angle (IMPORTANT: must be done before adding to planet)
  moon.position.x = config.distance * Math.cos(moon.userData.angle);
@@ -3589,13 +3611,16 @@ export class SolarSystemModule {
  return E;
  }
 
- /** Mean anomaly (radians) → true anomaly (radians). */
- _meanToTrueAnomaly(M_rad, e) {
+ /** Mean anomaly (radians) → true anomaly (radians).
+ * Pass pre-cached sqrtPlus = sqrt(1+e) and sqrtMinus = sqrt(1-e) to skip recomputing them. */
+ _meanToTrueAnomaly(M_rad, e, sqrtPlus, sqrtMinus) {
  if (e < 1e-6) return M_rad; // circular — skip Kepler solver
  const E = this._solveKepler(M_rad, e);
+ const sp = sqrtPlus || Math.sqrt(1 + e);
+ const sm = sqrtMinus || Math.sqrt(1 - e);
  return 2 * Math.atan2(
- Math.sqrt(1 + e) * Math.sin(E / 2),
- Math.sqrt(1 - e) * Math.cos(E / 2)
+ sp * Math.sin(E / 2),
+ sm * Math.cos(E / 2)
  );
  }
 
@@ -3728,8 +3753,8 @@ export class SolarSystemModule {
  const xOrb = r * Math.cos(theta);
  const zOrb = r * Math.sin(theta);
  moon.position.x = xOrb;
- moon.position.y = zOrb * Math.sin(i);
- moon.position.z = zOrb * Math.cos(i);
+ moon.position.y = zOrb * moon.userData._sinOrbInc;
+ moon.position.z = zOrb * moon.userData._cosOrbInc;
  } else {
  const adj = moon.userData.angle + parentRotY;
  moon.position.x = moon.userData.distance * Math.cos(adj);
@@ -7423,7 +7448,13 @@ export class SolarSystemModule {
  ionJitter,
  isComet: true, // Flag for special zoom handling
  _sunDir: new THREE.Vector3(), // Pre-allocated for tail updates
- _velDir: new THREE.Vector3() // Pre-allocated for tail updates
+ _velDir: new THREE.Vector3(), // Pre-allocated for tail updates
+ // Pre-cached trig for inclination and Kepler sqrt — constant per comet
+ inclRad: (cometData.inclination || 0) * Math.PI / 180,
+ _cosIncl: Math.cos((cometData.inclination || 0) * Math.PI / 180),
+ _sinIncl: Math.sin((cometData.inclination || 0) * Math.PI / 180),
+ _keplerSqrtPlus: Math.sqrt(1 + safeEccentricity),
+ _keplerSqrtMinus: safeEccentricity < 1 ? Math.sqrt(1 - safeEccentricity) : 0
  };
  
  // ===== ELLIPTICAL ORBIT PATH =====
@@ -7460,6 +7491,7 @@ export class SolarSystemModule {
  scene.add(cometGroup);
  this.objects.push(cometGroup);
  this.comets.push(cometGroup);
+ this.pickableObjects.push(cometGroup);
  
  if (DEBUG.enabled) console.log(` ${cometData.name} created at distance ${cometData.distance}, visualRadius=${visualRadius.toFixed(2)}`);
  });
@@ -8696,6 +8728,7 @@ createHyperrealisticHubble(satData) {
             }; scene.add(satellite);
  this.objects.push(satellite);
  this.satellites.push(satellite);
+ this.pickableObjects.push(satellite);
  });
  }
 
@@ -9072,6 +9105,7 @@ createHyperrealisticHubble(satData) {
  
  this.objects.push(spacecraftGroup);
  this.spacecraft.push(spacecraftGroup);
+ this.pickableObjects.push(spacecraftGroup);
  });
 
  if (DEBUG.enabled) console.log(` Created ${this.spacecraft.length} spacecraft and probes!`);
@@ -9143,7 +9177,7 @@ createHyperrealisticHubble(satData) {
  // Kepler’s 2nd law: mean anomaly advances linearly, true anomaly derived via solver
  const e = planet.userData.orbitalEccentricity || 0;
  planet.userData.meanAnomaly = (planet.userData.meanAnomaly || 0) + angleIncrement;
- planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e) : planet.userData.meanAnomaly;
+ planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e, planet.userData._keplerSqrtPlus, planet.userData._keplerSqrtMinus) : planet.userData.meanAnomaly;
  } else {
  planet.userData.angle += angleIncrement;
  }
@@ -9168,8 +9202,8 @@ createHyperrealisticHubble(satData) {
  const xOrb = r * cosTheta;
  const zOrb = r * sinTheta;
  planet.position.x = xOrb;
- planet.position.y = zOrb * Math.sin(i);
- planet.position.z = zOrb * Math.cos(i);
+ planet.position.y = zOrb * planet.userData._sinOrbInc;
+ planet.position.z = zOrb * planet.userData._cosOrbInc;
  } else {
  planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
  planet.position.y = 0;
@@ -9226,7 +9260,7 @@ createHyperrealisticHubble(satData) {
  if (this.scientificMode) {
  const e = moon.userData.orbitalEccentricity || 0;
  moon.userData.meanAnomaly = (moon.userData.meanAnomaly || 0) + moonAngleIncrement;
- moon.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(moon.userData.meanAnomaly, e) : moon.userData.meanAnomaly;
+ moon.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(moon.userData.meanAnomaly, e, moon.userData._keplerSqrtPlus, moon.userData._keplerSqrtMinus) : moon.userData.meanAnomaly;
  } else {
  moon.userData.angle += moonAngleIncrement;
  }
@@ -9249,8 +9283,8 @@ createHyperrealisticHubble(satData) {
  const xOrb = r * cosTheta;
  const zOrb = r * sinTheta;
  moon.position.x = xOrb;
- moon.position.y = zOrb * Math.sin(i);
- moon.position.z = zOrb * Math.cos(i);
+ moon.position.y = zOrb * moon.userData._sinOrbInc;
+ moon.position.z = zOrb * moon.userData._cosOrbInc;
  } else {
  const adj = moon.userData.angle + parentRotY;
  moon.position.x = moon.userData.distance * Math.cos(adj);
@@ -9349,6 +9383,27 @@ createHyperrealisticHubble(satData) {
  this.starfield.geometry.attributes.size.needsUpdate = true;
  }
 
+ // Cull label sprites by distance to camera — run every 3 frames to avoid per-frame overhead.
+ // Planets visible up to 5000 units; moons/craft up to 600; everything else up to 1200.
+ if (this.labelsVisible && this.labels && camera && this._starTwinkleFrame % 3 === 0) {
+ const camX = camera.position.x, camY = camera.position.y, camZ = camera.position.z;
+ for (let _li = 0; _li < this.labels.length; _li++) {
+ const lbl = this.labels[_li];
+ if (!lbl || !lbl.parent) continue;
+ const p = lbl.parent;
+ // Use world position via parent's matrixWorld translation column
+ const wx = p.matrixWorld.elements[12];
+ const wy = p.matrixWorld.elements[13];
+ const wz = p.matrixWorld.elements[14];
+ const dSq = (wx - camX) ** 2 + (wy - camY) ** 2 + (wz - camZ) ** 2;
+ const type = p.userData?.type;
+ const maxDSq = (type === 'planet' || type === 'dwarf-planet') ? 5000 * 5000
+ : (type === 'moon' || type === 'satellite' || type === 'spacecraft') ? 600 * 600
+ : 1200 * 1200;
+ lbl.visible = dSq < maxDSq;
+ }
+ }
+
  // Update comets with elliptical orbits — Kepler's 2nd law
  if (this.comets) {
  this.comets.forEach(comet => {
@@ -9373,7 +9428,7 @@ createHyperrealisticHubble(satData) {
  // This ensures comets spend more time near aphelion and whip through perihelion (Kepler's 2nd law)
  const e = userData.eccentricity;
  const M = userData.meanAnomaly || 0;
- userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(M, e) : M;
+ userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(M, e, userData._keplerSqrtPlus, userData._keplerSqrtMinus) : M;
  
  const a = userData.distance;
  const angle = userData.angle;
@@ -9385,11 +9440,10 @@ createHyperrealisticHubble(satData) {
  // Simplified elliptical orbit
  const r = a * (1 - e * e) / (1 + e * cosAngle);
  
- // Always use actual orbital position
- const inclRadUpd = (userData.inclination || 0) * Math.PI / 180;
+ // Use cached inclination trig (computed once at comet creation)
  comet.position.x = r * cosAngle;
- comet.position.z = r * sinAngle * Math.cos(inclRadUpd);
- comet.position.y = r * sinAngle * Math.sin(inclRadUpd);
+ comet.position.z = r * sinAngle * userData._cosIncl;
+ comet.position.y = r * sinAngle * userData._sinIncl;
 
  if (userData.orbitLine) {
  userData.orbitLine.visible = this.cometOrbitsVisible;
@@ -9417,8 +9471,8 @@ createHyperrealisticHubble(satData) {
  // the XZ component — no separate retrograde flag needed.
  userData._velDir.set(
  -sinAngle,
- cosAngle * Math.sin(inclRadUpd),
- cosAngle * Math.cos(inclRadUpd)
+ cosAngle * userData._sinIncl,
+ cosAngle * userData._cosIncl
  ).normalize();
  
  // Dynamic tail transparency scaling: tails get invisible far from the sun but very bright close to perihelion
@@ -9426,12 +9480,15 @@ createHyperrealisticHubble(satData) {
  const sunProximityScale = Math.max(0.12, Math.min(1.0, 500 / distanceToSun)); // Keep tails dim when far from the sun
 
  // Update dust tail (only every 3 frames for performance)
+ // Skip GPU buffer upload when comet is deep in aphelion (nearly invisible anyway)
+ const tailsDim = sunProximityScale <= 0.14; // matches the Math.max(0.12,...) floor
  if (userData.dustTail && userData.frameCount % 3 === 0) {
  // Dynamically set material opacity based on sun distance
  if (userData.dustTail.material) {
  userData.dustTail.material.opacity = 0.14 * sunProximityScale;
  }
  
+ if (!tailsDim) {
  const dustPositions = userData.dustTail.geometry.attributes.position.array;
  const dustSizes = userData.dustTail.geometry.attributes.size.array;
  
@@ -9469,6 +9526,7 @@ createHyperrealisticHubble(satData) {
  userData.dustTail.geometry.attributes.position.needsUpdate = true;
  userData.dustTail.geometry.attributes.size.needsUpdate = true;
  }
+ }
  
  // Update ion tail (only every 2 frames for performance)
  if (userData.ionTail && userData.frameCount % 2 === 0) {
@@ -9477,6 +9535,7 @@ createHyperrealisticHubble(satData) {
  userData.ionTail.material.opacity = 0.18 * sunProximityScale;
  }
 
+ if (!tailsDim) {
  const ionPositions = userData.ionTail.geometry.attributes.position.array;
  const sunDirX = userData._sunDir.x;
  const sunDirY = userData._sunDir.y;
@@ -9500,6 +9559,7 @@ createHyperrealisticHubble(satData) {
  ionPositions[i * 3 + 2] = sunDirZ * length + spreadIon;
  }
  userData.ionTail.geometry.attributes.position.needsUpdate = true;
+ }
  }
  
  userData.frameCount = (userData.frameCount || 0) + 1;
@@ -11497,6 +11557,8 @@ let actualRadius;
  ctx.fillText(labelText, 256, 32);
  
  const texture = new THREE.CanvasTexture(canvas);
+ // GPU copy is taken — shrink the canvas backing to 1×1 to free the pixel buffer (150+ labels × 128KB each)
+ canvas.width = 1; canvas.height = 1;
  const material = new THREE.SpriteMaterial({
  map: texture,
  transparent: true,
@@ -11585,6 +11647,7 @@ let actualRadius;
  
  // Use the passed visibility state, or toggle based on first label's current state
  const newVisibility = visible !== undefined ? visible : !this.labels[0].visible;
+ this.labelsVisible = newVisibility; // keep flag in sync for distance-culling loop
  
  this.labels.forEach((label, index) => {
  label.visible = newVisibility;
