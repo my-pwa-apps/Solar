@@ -1441,20 +1441,6 @@ class App {
  });
  }
 
- // ── Seek-to-date input ─────────────────────────────────────────────
- const seekInput = document.getElementById('seek-date-input');
- if (seekInput) {
- seekInput.addEventListener('change', () => {
- const d = new Date(seekInput.value + 'T12:00:00Z');
- if (!isNaN(d.getTime())) {
- ssm.seekToDate(d);
- audioManager.playClick();
- }
- });
- }
-
- }
-
  showEventToast(text) {
  const existing = document.getElementById('event-toast');
  if (existing) existing.remove();

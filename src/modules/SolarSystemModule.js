@@ -9411,7 +9411,11 @@ createHyperrealisticHubble(satData) {
  
  // Cache direction vectors (reuse pre-allocated objects to avoid GC)
  userData._sunDir.set(comet.position.x, comet.position.y, comet.position.z).normalize();
- userData._velDir.set(Math.cos(angle + Math.PI/2), 0, Math.sin(angle + Math.PI/2)).normalize();
+ // Retrograde comets (inclination > 90°) orbit clockwise — negate the velocity
+ // direction so the dust tail curves the correct way (backward along the orbit).
+ const retrograde = (userData.inclination || 0) > 90;
+ const velAngleOffset = retrograde ? -Math.PI / 2 : Math.PI / 2;
+ userData._velDir.set(Math.cos(angle + velAngleOffset), 0, Math.sin(angle + velAngleOffset)).normalize();
  
  // Dynamic tail transparency scaling: tails get invisible far from the sun but very bright close to perihelion
  const distanceToSun = Math.sqrt(comet.position.x ** 2 + comet.position.y ** 2 + comet.position.z ** 2);
