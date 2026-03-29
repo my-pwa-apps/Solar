@@ -1764,10 +1764,13 @@ this.camera.near = 10.0;
  targetPos.z + approachDir.z * distance
  );
 
- // Rotate dolly so the user faces the object
+ // Rotate dolly so the user faces the object.
+ // dx/dz is the vector from dolly toward the target (i.e. -approachDir * distance).
+ // We need atan2(-dx, -dz) = atan2(approachDir.x, approachDir.z) so the camera's
+ // -Z axis points at the target (Three.js: dolly.rotation.y=θ → camera faces (-sinθ, 0, -cosθ)).
  const dx = targetPos.x - newDollyPos.x;
  const dz = targetPos.z - newDollyPos.z;
- const facing = Math.atan2(dx, dz);
+ const facing = Math.atan2(-dx, -dz); // ← was atan2(dx, dz) which faced AWAY from target
 
  this.dolly.position.copy(newDollyPos);
  this.dolly.rotation.set(0, facing, 0);
@@ -2256,6 +2259,11 @@ this.camera.near = 10.0;
  
  // Position panel in front of user when showing
  if (this.vrUIPanel.visible) {
+ // Return to controls page so Starship Mode / time controls are always immediately accessible.
+ // (Page is left on 'info' after every navigation action.)
+ if (this.vrNavState && this.vrNavState.currentPage === 'info') {
+ this.vrNavState.currentPage = 'controls';
+ }
  this._positionMenuAtEyeLevel();
 
  // Always force lasers ON when menu opens
