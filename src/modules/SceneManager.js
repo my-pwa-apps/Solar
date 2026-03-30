@@ -73,6 +73,10 @@ export class SceneManager {
  this._vrReticle = null; // Teleport aim reticle — created in setupVR, positioned in updateLaserPointers
  this._vrWarpEffect = null; // Warp streak LineSegments — created lazily on first warp activate
  this._vrWarpPositions = null; // Pre-allocated Float32Array for warp streaks
+ this._vrWarpTravel = new THREE.Vector3(); // Net dolly translation this frame (world-space)
+ this._vrWarpLocalDir = new THREE.Vector3(); // Travel direction converted into dolly-local space
+ this._vrWarpQuat = new THREE.Quaternion(); // Reused orientation for warp effect alignment
+ this._vrWarpInverseQuat = new THREE.Quaternion(); // Reused inverse dolly rotation for warp alignment
  this._vrBothTriggerFrames = 0; // Count consecutive frames both triggers are held (debounce warp)
  // Radial quick-nav wheel
  this._vrRadialCanvas = null; // 512×512 canvas for the wheel
@@ -895,531 +899,742 @@ this.camera.near = 10.0;
  drawVRMenu() {
  if (!this.vrUIContext || !this.vrUICanvas) return;
  const ctx = this.vrUIContext;
- const W = this.vrUICanvas.width;   // 1400
- const H = this.vrUICanvas.height;  // 1000
+ const W = this.vrUICanvas.width;
+ const H = this.vrUICanvas.height;
  const state = this.getVRMenuState();
+ const info = state.lastObjectInfo;
 
- // ── Layout constants ────────────────────────────────────────
- const EDGE = 28, GAP = 14, COLS = 4;
- const COL_GAP = GAP; // alias kept for compat
- const COL_W = Math.floor((W - EDGE * 2 - GAP * (COLS - 1)) / COLS);
- const colX = c => EDGE + c * (COL_W + GAP);
- const BTN_H = 96, ROW_GAP = 10;
- const TITLE_H = 72, TAB_H = 64, STATUS_H = 56, FOOT_H = 108;
- const CONTENT_Y = TITLE_H + TAB_H;
- const FOOT_Y    = H - STATUS_H - FOOT_H;
- const rowY  = r => CONTENT_Y + 10 + r * (BTN_H + ROW_GAP);
- const closeW = Math.floor((W - EDGE * 2 - GAP) / 2);
+ const PAD = 28;
+ const RAIL_W = 286;
+ const GAP = 18;
+ const SHELL_R = 28;
+ const HEADER_H = 132;
+ const STATUS_H = 58;
+ const ACTION_H = 68;
+ const MAIN_X = PAD + RAIL_W + GAP;
+ const MAIN_Y = PAD;
+ const MAIN_W = W - MAIN_X - PAD;
+ const MAIN_H = H - PAD * 2;
+ const BODY_X = MAIN_X + 24;
+ const BODY_Y = MAIN_Y + HEADER_H + 20;
+ const BODY_W = MAIN_W - 48;
+ const ACTION_Y = H - PAD - ACTION_H - 18;
+ const BODY_BOTTOM = ACTION_Y - 18;
 
- // ── Design tokens ───────────────────────────────────────────
- const CLR = {
- accentBlue: '#4A90D9', accentCyan: '#00D4FF', accentPurple: '#A855F7',
- timeColor: '#F59E0B', displayColor: '#3B82F6', locomotionColor: '#10B981',
- textPrimary: '#E8F4FF', textSecondary: '#5a85a8',
+ const pagePalette = {
+ controls: { accent: '#F97316', soft: 'rgba(249,115,22,0.18)', edge: 'rgba(249,115,22,0.45)' },
+ navigate: { accent: '#38BDF8', soft: 'rgba(56,189,248,0.18)', edge: 'rgba(56,189,248,0.45)' },
+ info: { accent: '#34D399', soft: 'rgba(52,211,153,0.18)', edge: 'rgba(52,211,153,0.45)' }
+ };
+ const currentPalette = pagePalette[state.currentPage] || pagePalette.controls;
+ const pageMeta = {
+ controls: {
+ title: 'Flight Controls',
+ subtitle: 'Time flow, overlays, utilities, and comfort settings.'
+ },
+ navigate: {
+ title: 'Navigation Grid',
+ subtitle: 'Jump directly to planets, moons, spacecraft, and deep-sky targets.'
+ },
+ info: {
+ title: 'Object Intel',
+ subtitle: info ? 'Live telemetry for the currently selected target.' : 'Select an object to inspect it here.'
+ }
  };
 
  this.vrButtons = [];
 
- // ── btn() helper — glassmorphism style ─────────────────────
- const btn = (label, action, x, y, w, h, opts = {}) => {
- const isActive   = opts.active   ?? false;
- const isDanger   = opts.danger   ?? false;
- const isSuccess  = opts.success  ?? false;
- const isFlashing = state.flashAction === action;
- const accent     = opts.accent   || CLR.accentBlue;
+ const rr = (x, y, w, h, r = 18) => {
+ ctx.beginPath();
+ ctx.roundRect(x, y, w, h, r);
+ };
+
+ const panel = (x, y, w, h, opts = {}) => {
+ const radius = opts.radius ?? 24;
+ const top = opts.top || 'rgba(14,22,34,0.94)';
+ const bottom = opts.bottom || 'rgba(7,11,20,0.98)';
+ const border = opts.border || 'rgba(120,160,210,0.16)';
  ctx.save();
-
- // Glow shadow under key states
- if (isFlashing)      { ctx.shadowColor = '#FFD600'; ctx.shadowBlur = 20; }
- else if (isActive)   { ctx.shadowColor = accent;    ctx.shadowBlur = 14; }
- else if (isDanger)   { ctx.shadowColor = '#EF4444'; ctx.shadowBlur = 8;  }
-
- // Background
- let topCol, botCol, bdrCol, txtCol;
- if (isFlashing)     { topCol = '#FFF176'; botCol = '#FFD600'; bdrCol = '#FF8F00'; txtCol = '#1a0e00'; }
- else if (isDanger)  { topCol = opts.bg  || '#2e0d0d'; botCol = opts.bg2 || '#1a0606'; bdrCol = opts.border || '#882222'; txtCol = opts.text || '#FFAAAA'; }
- else if (isSuccess) { topCol = opts.bg  || '#0e2a18'; botCol = opts.bg2 || '#071510'; bdrCol = opts.border || '#1a7a44'; txtCol = opts.text || '#AAFFCC'; }
- else if (isActive)  { topCol = '#1a4a90'; botCol = '#0c2450'; bdrCol = accent; txtCol = '#FFFFFF'; }
- else                { topCol = opts.bg  || '#0e1e32'; botCol = opts.bg2 || '#070f1e'; bdrCol = opts.border || '#1a3050'; txtCol = opts.text || CLR.textPrimary; }
-
- const fg = ctx.createLinearGradient(x, y, x, y + h);
- fg.addColorStop(0, topCol); fg.addColorStop(1, botCol);
- ctx.fillStyle = fg;
- ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fill();
-
+ const fill = ctx.createLinearGradient(x, y, x, y + h);
+ fill.addColorStop(0, top);
+ fill.addColorStop(1, bottom);
+ ctx.fillStyle = fill;
+ rr(x, y, w, h, radius);
+ ctx.fill();
+ if (opts.glow) {
+ ctx.shadowColor = opts.glow;
+ ctx.shadowBlur = opts.glowBlur ?? 20;
+ rr(x, y, w, h, radius);
+ ctx.strokeStyle = opts.glow;
+ ctx.lineWidth = 1;
+ ctx.stroke();
+ }
  ctx.shadowBlur = 0;
- ctx.strokeStyle = bdrCol;
- ctx.lineWidth = isActive ? 1.5 : 1;
- ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.stroke();
-
- // Active top-glow accent stripe
- if (isActive) {
- const gl = ctx.createLinearGradient(x, y, x + w, y);
- gl.addColorStop(0, 'rgba(74,144,217,0)'); gl.addColorStop(0.5, accent); gl.addColorStop(1, 'rgba(74,144,217,0)');
- ctx.fillStyle = gl; ctx.fillRect(x + 2, y, w - 4, 2);
+ rr(x, y, w, h, radius);
+ ctx.strokeStyle = border;
+ ctx.lineWidth = opts.lineWidth ?? 1;
+ ctx.stroke();
+ if (opts.highlight) {
+ const hi = ctx.createLinearGradient(x, y, x + w, y);
+ hi.addColorStop(0, 'rgba(255,255,255,0)');
+ hi.addColorStop(0.3, opts.highlight);
+ hi.addColorStop(0.7, opts.highlight);
+ hi.addColorStop(1, 'rgba(255,255,255,0)');
+ ctx.fillStyle = hi;
+ ctx.fillRect(x + 18, y + 1, w - 36, 2);
  }
-
- if (opts.sublabel) {
- ctx.fillStyle = isActive ? 'rgba(255,255,255,0.55)' : 'rgba(100,140,170,0.7)';
- ctx.font = '14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(opts.sublabel, x + w / 2, y + h * 0.68, w - 12);
- ctx.fillStyle = txtCol;
- ctx.font = opts.font || 'bold 22px Arial';
- ctx.fillText(label, x + w / 2, y + h * 0.35, w - 12);
- } else {
- ctx.fillStyle = txtCol;
- ctx.font = opts.font || 'bold 22px Arial';
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(label, x + w / 2, y + h / 2, w - 16);
- }
-
  ctx.restore();
+ };
+
+ const sectionTitle = (text, x, y, w, accent = currentPalette.accent, subtext = '') => {
+ ctx.save();
+ ctx.fillStyle = accent;
+ ctx.fillRect(x, y + 7, 4, 18);
+ ctx.fillStyle = 'rgba(255,255,255,0.05)';
+ ctx.fillRect(x + 12, y + 15, w - 12, 1);
+ ctx.fillStyle = '#E8F4FF';
+ ctx.font = 'bold 18px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ ctx.fillText(text, x + 14, y);
+ if (subtext) {
+ ctx.fillStyle = 'rgba(137,173,207,0.72)';
+ ctx.font = '15px Arial';
+ ctx.fillText(subtext, x + 14, y + 26, w - 16);
+ }
+ ctx.restore();
+ };
+
+ const statusPill = (text, x, y, w, accent) => {
+ panel(x, y, w, 34, {
+ radius: 17,
+ top: 'rgba(11,23,36,0.94)',
+ bottom: 'rgba(8,13,24,0.98)',
+ border: accent + '66',
+ highlight: accent + 'AA'
+ });
+ ctx.save();
+ ctx.fillStyle = accent;
+ ctx.font = 'bold 15px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(text, x + w / 2, y + 17, w - 16);
+ ctx.restore();
+ };
+
+ const chip = (text, x, y, w, accent, opts = {}) => {
+ panel(x, y, w, 34, {
+ radius: 17,
+ top: opts.top || 'rgba(9,16,26,0.92)',
+ bottom: opts.bottom || 'rgba(6,10,18,0.98)',
+ border: opts.border || 'rgba(110,145,190,0.22)',
+ highlight: accent + '99'
+ });
+ ctx.save();
+ ctx.fillStyle = opts.text || '#D9EBFF';
+ ctx.font = opts.font || 'bold 14px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(text, x + w / 2, y + 17, w - 12);
+ ctx.restore();
+ };
+
+ const tile = (label, action, x, y, w, h, opts = {}) => {
+ const active = opts.active ?? false;
+ const danger = opts.danger ?? false;
+ const flash = state.flashAction === action;
+ const accent = opts.accent || currentPalette.accent;
+ const top = danger
+ ? '#311015'
+ : active
+ ? 'rgba(28,48,64,0.98)'
+ : opts.top || 'rgba(13,22,34,0.96)';
+ const bottom = danger
+ ? '#1b070b'
+ : active
+ ? 'rgba(9,14,25,0.99)'
+ : opts.bottom || 'rgba(7,11,20,0.99)';
+ const border = danger
+ ? 'rgba(239,68,68,0.58)'
+ : active
+ ? accent
+ : opts.border || 'rgba(112,145,186,0.18)';
+
+ panel(x, y, w, h, {
+ radius: opts.radius ?? 18,
+ top,
+ bottom,
+ border,
+ glow: flash ? '#FFD966' : active ? accent + 'AA' : '',
+ glowBlur: flash ? 18 : 14,
+ highlight: flash ? '#FFD966' : active ? accent + 'CC' : 'rgba(255,255,255,0.08)'
+ });
+
+ if (opts.badge) {
+ ctx.save();
+ ctx.fillStyle = accent;
+ ctx.font = 'bold 12px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ ctx.fillText(opts.badge, x + 16, y + 12);
+ ctx.restore();
+ }
+
+ ctx.save();
+ ctx.fillStyle = danger ? '#FFD3D3' : active ? '#FFFFFF' : '#E5F0FF';
+ ctx.textAlign = opts.align === 'left' ? 'left' : 'center';
+ ctx.textBaseline = 'middle';
+ ctx.font = opts.font || 'bold 22px Arial';
+ const tx = opts.align === 'left' ? x + 18 : x + w / 2;
+ const ty = opts.meta ? y + h * 0.42 : y + h * 0.5;
+ ctx.fillText(label, tx, ty, opts.align === 'left' ? w - 36 : w - 18);
+ if (opts.meta) {
+ ctx.fillStyle = active ? 'rgba(255,255,255,0.76)' : 'rgba(142,175,205,0.78)';
+ ctx.font = '15px Arial';
+ ctx.fillText(opts.meta, tx, y + h * 0.72, opts.align === 'left' ? w - 36 : w - 18);
+ }
+ ctx.restore();
+
  if (action) this.vrButtons.push({ x, y, w, h, label, action });
  };
 
- // ── Section label with accent-bar + separator ───────────────
- const sectionLabel = (text, lx, ly, lw, color = CLR.accentBlue) => {
+ const wrapText = (text, x, y, maxW, lineH, maxLines, color = '#9BC3E2', font = '20px Arial') => {
  ctx.save();
- ctx.fillStyle = color; ctx.fillRect(lx, ly - 2, 3, 18);
- ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(lx + 8, ly + 7, lw - 8, 1);
- ctx.fillStyle = color; ctx.font = 'bold 13px Arial';
- ctx.textAlign = 'left'; ctx.textBaseline = 'top';
- ctx.fillText(text, lx + 10, ly - 1);
+ ctx.fillStyle = color;
+ ctx.font = font;
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ const words = String(text || '').split(' ');
+ let line = '';
+ let lineIndex = 0;
+ for (let i = 0; i < words.length; i++) {
+ const candidate = line ? line + ' ' + words[i] : words[i];
+ if (ctx.measureText(candidate).width > maxW && line) {
+ ctx.fillText(line, x, y + lineIndex * lineH, maxW);
+ line = words[i];
+ lineIndex++;
+ if (lineIndex >= maxLines - 1) break;
+ } else {
+ line = candidate;
+ }
+ }
+ if (line && lineIndex < maxLines) ctx.fillText(line, x, y + lineIndex * lineH, maxW);
  ctx.restore();
  };
 
- // ═══════════════════════════════════════════════════════
- // BACKGROUND — deep space with dual aurora glows
- // ═══════════════════════════════════════════════════════
- const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
- bgGrad.addColorStop(0, '#020611'); bgGrad.addColorStop(0.45, '#040a16'); bgGrad.addColorStop(1, '#030710');
- ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
+ const typeStyle = (t) => {
+ const tl = (t || '').toLowerCase();
+ if (tl.includes('star')) return { icon: '⭐', accent: '#FACC15', badge: '#291f07' };
+ if (tl.includes('gas')) return { icon: '🪐', accent: '#93C5FD', badge: '#111a2d' };
+ if (tl.includes('moon')) return { icon: '🌙', accent: '#D4D4D8', badge: '#181822' };
+ if (tl.includes('spacecraft') || tl.includes('station')) return { icon: '🛸', accent: '#7DD3FC', badge: '#0d1b29' };
+ if (tl.includes('comet')) return { icon: '☄️', accent: '#A5F3FC', badge: '#0c1820' };
+ if (tl.includes('galaxy')) return { icon: '🌀', accent: '#F9A8D4', badge: '#28111d' };
+ if (tl.includes('nebula')) return { icon: '🌋', accent: '#C084FC', badge: '#20112a' };
+ if (tl.includes('constellation')) return { icon: '✨', accent: '#FDBA74', badge: '#2a190b' };
+ if (tl.includes('dwarf')) return { icon: '🔴', accent: '#FB923C', badge: '#291508' };
+ if (tl.includes('planet') || tl.includes('exoplanet')) return { icon: '🌍', accent: '#4ADE80', badge: '#0d2113' };
+ return { icon: '•', accent: '#7DD3FC', badge: '#0d1b29' };
+ };
 
- const aur1 = ctx.createRadialGradient(W * 0.15, H * 0.08, 0, W * 0.15, H * 0.08, W * 0.42);
- aur1.addColorStop(0, 'rgba(74,144,217,0.10)'); aur1.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = aur1; ctx.fillRect(0, 0, W, H);
+ const pageHeader = pageMeta[state.currentPage] || pageMeta.controls;
 
- const aur2 = ctx.createRadialGradient(W * 0.88, H * 0.9, 0, W * 0.88, H * 0.9, W * 0.40);
- aur2.addColorStop(0, 'rgba(120,40,200,0.08)'); aur2.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = aur2; ctx.fillRect(0, 0, W, H);
+ const bg = ctx.createLinearGradient(0, 0, W, H);
+ bg.addColorStop(0, '#02040a');
+ bg.addColorStop(0.5, '#040914');
+ bg.addColorStop(1, '#02050d');
+ ctx.fillStyle = bg;
+ ctx.fillRect(0, 0, W, H);
 
- // Deterministic star field
- let sr = 98273;
- const srand = () => { sr = (sr * 1103515245 + 12345) & 0x7fffffff; return sr / 0x7fffffff; };
- for (let i = 0; i < 80; i++) {
- const sx = srand() * W, sy = srand() * (H - 80) + 5;
- const sa = 0.08 + srand() * 0.45, ss = 0.3 + srand() * 1.1;
- ctx.fillStyle = `rgba(180,220,255,${sa.toFixed(2)})`;
- ctx.beginPath(); ctx.arc(sx, sy, ss, 0, Math.PI * 2); ctx.fill();
+ const orbA = ctx.createRadialGradient(W * 0.14, H * 0.12, 0, W * 0.14, H * 0.12, 300);
+ orbA.addColorStop(0, currentPalette.soft);
+ orbA.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = orbA;
+ ctx.fillRect(0, 0, W, H);
+
+ const orbB = ctx.createRadialGradient(W * 0.88, H * 0.82, 0, W * 0.88, H * 0.82, 360);
+ orbB.addColorStop(0, 'rgba(168,85,247,0.12)');
+ orbB.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = orbB;
+ ctx.fillRect(0, 0, W, H);
+
+ let seed = 44021;
+ const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0xffffffff; };
+ for (let i = 0; i < 64; i++) {
+ const sx = rand() * W;
+ const sy = rand() * H;
+ const r = 0.5 + rand() * 1.2;
+ ctx.fillStyle = `rgba(200,225,255,${(0.08 + rand() * 0.4).toFixed(2)})`;
+ ctx.beginPath();
+ ctx.arc(sx, sy, r, 0, Math.PI * 2);
+ ctx.fill();
+ }
+ ctx.strokeStyle = 'rgba(120,160,210,0.06)';
+ ctx.lineWidth = 1;
+ for (let gx = 120; gx < W; gx += 120) {
+ ctx.beginPath();
+ ctx.moveTo(gx, 40);
+ ctx.lineTo(gx - 70, H - 40);
+ ctx.stroke();
  }
 
- // Outer panel border glow
- ctx.save();
- ctx.strokeStyle = 'rgba(74,144,217,0.20)'; ctx.lineWidth = 2;
- ctx.beginPath(); ctx.roundRect(2, 2, W - 4, H - 4, 14); ctx.stroke();
- ctx.restore();
-
- // ═══════════════════════════════════════════════════════
- // TITLE BAR
- // ═══════════════════════════════════════════════════════
- const hdrGrad = ctx.createLinearGradient(0, 0, W, 0);
- hdrGrad.addColorStop(0, '#050e1e'); hdrGrad.addColorStop(0.5, '#0b1e36'); hdrGrad.addColorStop(1, '#050e1e');
- ctx.fillStyle = hdrGrad; ctx.fillRect(0, 0, W, TITLE_H);
-
- ctx.save();
- const titleGrad = ctx.createLinearGradient(W / 2 - 210, 0, W / 2 + 210, 0);
- titleGrad.addColorStop(0, '#7EC8F8'); titleGrad.addColorStop(0.4, '#D0EAFF');
- titleGrad.addColorStop(0.72, '#C0AAFF'); titleGrad.addColorStop(1, '#E0C3FC');
- ctx.fillStyle = titleGrad;
- ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.shadowColor = '#4A90D9'; ctx.shadowBlur = 20;
- ctx.fillText('\uD83C\uDF0C Space Voyage VR', W / 2, TITLE_H / 2);
- ctx.restore();
-
- // ✕ close button
- btn('\u2715', 'hide', W - 70, 9, 54, 54, { danger: true, font: 'bold 24px Arial' });
-
- ctx.fillStyle = 'rgba(60,90,130,0.6)';
- ctx.font = '11px Arial'; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
- ctx.fillText('\uD83E\uDD1A grip: move panel', W - 84, TITLE_H - 4);
-
- // Title divider
- const divGrad = ctx.createLinearGradient(0, TITLE_H, W, TITLE_H);
- divGrad.addColorStop(0, 'rgba(74,144,217,0)'); divGrad.addColorStop(0.3, 'rgba(74,144,217,0.75)');
- divGrad.addColorStop(0.7, 'rgba(123,184,245,0.75)'); divGrad.addColorStop(1, 'rgba(74,144,217,0)');
- ctx.fillStyle = divGrad; ctx.fillRect(0, TITLE_H - 1, W, 2);
-
- // ═══════════════════════════════════════════════════════
- // TAB BAR — pill-style active indicator
- // ═══════════════════════════════════════════════════════
- const _VR_TABS_MODERN = [
- { id: 'controls', label: '\u2699\uFE0F  Controls' },
- { id: 'navigate', label: '\uD83E\uDDED  Navigate' },
- { id: 'info',     label: 'i\uFE0F  Info' }
- ];
- const TW = Math.floor(W / _VR_TABS_MODERN.length);
- _VR_TABS_MODERN.forEach((tab, i) => {
- const active = state.currentPage === tab.id;
- const tx = i * TW, ty = TITLE_H;
- const tabBg = ctx.createLinearGradient(tx, ty, tx, ty + TAB_H);
- tabBg.addColorStop(0, active ? '#0a2040' : '#050c18');
- tabBg.addColorStop(1, active ? '#061428' : '#030810');
- ctx.fillStyle = tabBg; ctx.fillRect(tx, ty, TW - 2, TAB_H);
- if (active) {
- ctx.save(); ctx.shadowColor = CLR.accentBlue; ctx.shadowBlur = 10;
- const pillW = (TW - 2) * 0.6, pillX = tx + ((TW - 2) - pillW) / 2;
- const pillGrad = ctx.createLinearGradient(pillX, 0, pillX + pillW, 0);
- pillGrad.addColorStop(0, 'rgba(74,144,217,0.3)');
- pillGrad.addColorStop(0.5, CLR.accentBlue);
- pillGrad.addColorStop(1, 'rgba(74,144,217,0.3)');
- ctx.fillStyle = pillGrad;
- ctx.beginPath(); ctx.roundRect(pillX, ty + TAB_H - 5, pillW, 5, 3); ctx.fill();
- ctx.restore();
- }
- ctx.fillStyle = active ? '#DDEEFF' : '#2a5070';
- ctx.font = active ? 'bold 20px Arial' : '18px Arial';
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(tab.label, tx + TW / 2, ty + TAB_H / 2 - 2);
- this.vrButtons.push({ x: tx, y: ty, w: TW - 2, h: TAB_H, label: tab.label, action: `page:${tab.id}` });
+ panel(PAD, PAD, W - PAD * 2, H - PAD * 2, {
+ radius: SHELL_R,
+ top: 'rgba(7,12,22,0.92)',
+ bottom: 'rgba(4,7,14,0.98)',
+ border: 'rgba(123,164,213,0.12)',
+ glow: currentPalette.edge,
+ glowBlur: 26,
+ highlight: currentPalette.edge
  });
- ctx.fillStyle = '#0e1e30'; ctx.fillRect(0, TITLE_H + TAB_H - 1, W, 2);
 
- // ═══════════════════════════════════════════════════════
- // STATUS BAR (bottom strip)
- // ═══════════════════════════════════════════════════════
- const sbY = H - STATUS_H;
- ctx.fillStyle = '#050d1a'; ctx.fillRect(0, sbY, W, STATUS_H);
- ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(0, sbY, W, 1);
- const msg = state.statusMessage || '\u2728 Ready';
- const msgCol = msg.includes('\u26A0') ? CLR.timeColor : msg.includes('\u2714') ? '#34D399' : '#7AAACE';
- ctx.fillStyle = msgCol; ctx.font = '20px Arial';
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(msg, W / 2, sbY + STATUS_H / 2);
- // Version bottom-right of status bar
- ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = '15px Arial';
- ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
- ctx.fillText('v' + (window.APP_VERSION || ''), W - EDGE, sbY + STATUS_H / 2);
+ panel(PAD + 12, PAD + 12, RAIL_W - 24, H - PAD * 2 - 24, {
+ radius: 24,
+ top: 'rgba(11,17,28,0.95)',
+ bottom: 'rgba(7,10,18,0.98)',
+ border: 'rgba(109,142,184,0.14)',
+ highlight: 'rgba(255,255,255,0.08)'
+ });
 
- // ── Shared footer buttons ───────────────────────────────────
- btn('\uD83D\uDEAA  Close Menu', 'hide', EDGE, FOOT_Y, closeW, BTN_H, { bg: '#0c1e38', bg2: '#060f1e', border: '#1e3a5a' });
- btn('\u274C  Exit VR', 'exitvr', EDGE + closeW + GAP, FOOT_Y, closeW, BTN_H, { danger: true });
-
- // ═══════════════════════════════════════════════════════════
- // CONTROLS PAGE
- // ═══════════════════════════════════════════════════════════
- if (state.currentPage === 'controls') {
- const spd = state.timeSpeed;
- const s0 = spd === 0, s1 = spd === 1, s10 = spd === 10, s100 = spd >= 100;
-
- // — TIME SCALE ——————————————————————————————————————
- sectionLabel('TIME SCALE', EDGE, rowY(0) - 24, W - EDGE * 2, CLR.timeColor);
- btn('\u23F8  Pause', 'speed0',  colX(0), rowY(0), COL_W, BTN_H, { active: s0,   sublabel: '0\u00D7', accent: CLR.timeColor });
- btn('\u25B6  Play',  'speed1',  colX(1), rowY(0), COL_W, BTN_H, { active: s1,   sublabel: '1\u00D7', accent: CLR.timeColor });
- btn('\u23E9  Fast',  'speed10', colX(2), rowY(0), COL_W, BTN_H, { active: s10,  sublabel: '10\u00D7', accent: CLR.timeColor });
- btn('\u23E9\u23E9 Max', 'speed100', colX(3), rowY(0), COL_W, BTN_H, { active: s100, sublabel: '100\u00D7', accent: CLR.timeColor });
-
- // — DISPLAY ————————————————————————————————————————
- sectionLabel('DISPLAY', EDGE, rowY(1) - 24, W - EDGE * 2, CLR.displayColor);
- btn('\uD83E\uDE90  Orbits',         'orbits',        colX(0), rowY(1), COL_W, BTN_H, { active: state.orbitsVisible,         accent: CLR.displayColor });
- btn('\uD83C\uDFF7\uFE0F  Labels',   'labels',         colX(1), rowY(1), COL_W, BTN_H, { active: state.labelsVisible,         accent: CLR.displayColor });
- btn('\u2B50  Stars',                'constellations', colX(2), rowY(1), COL_W, BTN_H, { active: state.constellationsVisible,  accent: CLR.displayColor });
- btn('\uD83D\uDCCF  Scale',          'scale',          colX(3), rowY(1), COL_W, BTN_H, { active: state.realisticScale,        accent: CLR.displayColor });
-
- // — TOOLS ——————————————————————————————————————————
- sectionLabel('TOOLS', EDGE, rowY(2) - 24, W - EDGE * 2, CLR.accentPurple);
- btn('\uD83D\uDD04  Reset',    'reset',        colX(0), rowY(2), COL_W, BTN_H, { accent: CLR.accentPurple });
- btn('\uD83C\uDFB2  Discover', 'discover',     colX(1), rowY(2), COL_W, BTN_H, { accent: CLR.accentPurple });
- btn(state.audioEnabled ? '\uD83D\uDD0A  Sound' : '\uD83D\uDD07  Sound',
- 'sound', colX(2), rowY(2), COL_W, BTN_H, { active: state.audioEnabled, accent: CLR.accentPurple });
- btn('\uD83C\uDFAF  Lasers', 'togglelasers', colX(3), rowY(2), COL_W, BTN_H, { active: state.lasersVisible, accent: CLR.accentPurple });
-
- // — LOCOMOTION: Warp banner + Snap-turn toggle ——————————————
- sectionLabel('LOCOMOTION', EDGE, rowY(3) - 24, W - EDGE * 2, CLR.locomotionColor);
- {
- const shipX = colX(0), shipY = rowY(3);
- const shipW = 4 * COL_W + 3 * COL_GAP, shipH = BTN_H;
- const warpActive = state.starshipMode;
-
- // Warp status banner — informational only (no button: toggle is both triggers)
  ctx.save();
- const warpBg = ctx.createLinearGradient(shipX, shipY, shipX + shipW, shipY + shipH);
- if (warpActive) {
- warpBg.addColorStop(0, '#031828'); warpBg.addColorStop(0.5, '#0a2840'); warpBg.addColorStop(1, '#031828');
- } else {
- warpBg.addColorStop(0, '#06101a'); warpBg.addColorStop(1, '#06101a');
- }
- ctx.fillStyle = warpBg;
- ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.fill();
-
- if (warpActive) {
- // Speed-streak lines (deterministic, clipped)
- ctx.save(); ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.clip();
- let ws = 443271; const wr = () => { ws = (ws * 1103515245 + 12345) & 0x7fffffff; return ws / 0x7fffffff; };
- for (let si = 0; si < 22; si++) {
- const ly = shipY + wr() * shipH, len = 20 + wr() * 160, lx = shipX + wr() * (shipW - len);
- ctx.strokeStyle = `rgba(0,220,255,${(0.05 + wr() * 0.22).toFixed(2)})`; ctx.lineWidth = 1;
- ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + len, ly); ctx.stroke();
- }
- ctx.restore();
- ctx.save(); ctx.shadowColor = '#00CCFF'; ctx.shadowBlur = 18;
- ctx.strokeStyle = '#00CCFF'; ctx.lineWidth = 1.5;
- ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.stroke();
- ctx.restore();
- } else {
- ctx.strokeStyle = '#1a3050'; ctx.lineWidth = 1;
- ctx.beginPath(); ctx.roundRect(shipX, shipY, shipW, shipH, 8); ctx.stroke();
- }
-
- if (warpActive) { ctx.save(); ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 12; }
- ctx.fillStyle = warpActive ? '#00E5FF' : '#2a5070';
- ctx.font = 'bold 26px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(warpActive ? '\uD83D\uDE80  WARP DRIVE ENGAGED  \u2014  20\u00D7 speed' : '\uD83D\uDE80  WARP DRIVE', shipX + shipW / 2, shipY + shipH * 0.38, shipW - 60);
- if (warpActive) ctx.restore();
- ctx.fillStyle = warpActive ? 'rgba(0,210,255,0.75)' : 'rgba(60,120,160,0.6)';
+ ctx.fillStyle = '#7C95B4';
+ ctx.font = 'bold 14px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ ctx.fillText('SPACE VOYAGE / VR', PAD + 30, PAD + 26);
+ ctx.fillStyle = '#F4F7FB';
+ ctx.font = 'bold 36px Arial';
+ ctx.fillText('Command Deck', PAD + 30, PAD + 52);
+ ctx.fillStyle = 'rgba(157,183,212,0.76)';
  ctx.font = '18px Arial';
- ctx.fillText(warpActive ? 'Hold BOTH TRIGGERS to disengage' : 'Hold BOTH TRIGGERS simultaneously to engage', shipX + shipW / 2, shipY + shipH * 0.7, shipW - 60);
+ ctx.fillText('Fast control surfaces built for hand-held VR use.', PAD + 30, PAD + 98, RAIL_W - 54);
  ctx.restore();
 
- // ── SNAP TURN TOGGLE ──
- const snapY = shipY + shipH + 12;
- const snapActive = state.snapTurn;
+ const railChipW = Math.floor((RAIL_W - 84) / 2);
+ chip(state.starshipMode ? 'WARP ON' : 'WARP READY', PAD + 30, PAD + 136, railChipW, '#22D3EE', {
+ text: state.starshipMode ? '#CFFAFE' : '#9AD4E5'
+ });
+ chip(state.lasersVisible ? 'LASERS ON' : 'LASERS OFF', PAD + 30 + railChipW + 12, PAD + 136, railChipW, '#A78BFA', {
+ text: state.lasersVisible ? '#E9DDFF' : '#BCAFE4'
+ });
+
+ let tabY = PAD + 192;
+ _VR_TABS.forEach((tab) => {
+ const active = state.currentPage === tab.id;
+ tile(tab.label, `page:${tab.id}`, PAD + 24, tabY, RAIL_W - 48, 74, {
+ active,
+ accent: pagePalette[tab.id]?.accent || currentPalette.accent,
+ font: active ? 'bold 24px Arial' : 'bold 22px Arial',
+ meta: active ? 'ACTIVE PAGE' : ''
+ });
+ tabY += 88;
+ });
+
+ panel(PAD + 24, H - PAD - 238, RAIL_W - 48, 126, {
+ radius: 20,
+ top: 'rgba(12,18,30,0.96)',
+ bottom: 'rgba(7,11,19,0.98)',
+ border: 'rgba(109,142,184,0.12)',
+ highlight: 'rgba(255,255,255,0.06)'
+ });
+ sectionTitle('QUICK GESTURES', PAD + 38, H - PAD - 222, RAIL_W - 76, currentPalette.accent);
  ctx.save();
- ctx.fillStyle = snapActive ? '#0e2a3a' : '#0a1018';
- ctx.strokeStyle = snapActive ? '#00b8d4' : '#1e3a4a';
- ctx.lineWidth = snapActive ? 1.5 : 1;
- ctx.beginPath(); ctx.roundRect(shipX, snapY, shipW, BTN_H * 0.75, 8); ctx.fill(); ctx.stroke();
- ctx.fillStyle = snapActive ? '#00d8ef' : '#567a8a';
- ctx.font = 'bold 22px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(`🔄  SNAP TURN  ${snapActive ? 'ON  (30°)' : 'OFF  (smooth)'}`, shipX + shipW / 2, snapY + BTN_H * 0.375);
+ ctx.fillStyle = 'rgba(164,189,217,0.82)';
+ ctx.font = '17px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ ctx.fillText('X  open / close menu', PAD + 40, H - PAD - 180);
+ ctx.fillText('Right grip  drag panel', PAD + 40, H - PAD - 152);
+ ctx.fillText('Left stick hold  radial quick-jump', PAD + 40, H - PAD - 124);
  ctx.restore();
- this.vrButtons.push({ x: shipX, y: snapY, w: shipW, h: Math.round(BTN_H * 0.75), label: 'SNAP TURN', action: 'snapTurn' });
- } // end anonymous starship/snapTurn block
- } // end controls page
 
- // ═══════════════════════════════════════════════════════════
- // NAVIGATE PAGE
- // ═══════════════════════════════════════════════════════════
+ tile('Close Menu', 'hide', PAD + 24, H - PAD - 94, RAIL_W - 48, 44, {
+ accent: '#94A3B8',
+ font: 'bold 18px Arial'
+ });
+ tile('Exit VR', 'exitvr', PAD + 24, H - PAD - 44, RAIL_W - 48, 44, {
+ danger: true,
+ font: 'bold 18px Arial'
+ });
+
+ panel(MAIN_X, MAIN_Y, MAIN_W, HEADER_H, {
+ radius: 26,
+ top: 'rgba(11,18,30,0.96)',
+ bottom: 'rgba(7,11,19,0.98)',
+ border: currentPalette.edge,
+ highlight: currentPalette.edge,
+ glow: currentPalette.soft,
+ glowBlur: 20
+ });
+
+ ctx.save();
+ ctx.fillStyle = 'rgba(127,152,182,0.76)';
+ ctx.font = 'bold 14px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ ctx.fillText('ACTIVE WORKSPACE', MAIN_X + 30, MAIN_Y + 24);
+ ctx.fillStyle = '#F4F7FB';
+ ctx.font = 'bold 40px Arial';
+ ctx.fillText(pageHeader.title, MAIN_X + 30, MAIN_Y + 46, MAIN_W - 320);
+ ctx.fillStyle = 'rgba(163,191,219,0.80)';
+ ctx.font = '20px Arial';
+ ctx.fillText(pageHeader.subtitle, MAIN_X + 30, MAIN_Y + 92, MAIN_W - 360);
+ ctx.restore();
+
+ const statusText = state.statusMessage || '✨ Ready';
+ const statusColor = statusText.includes('⚠') ? '#F59E0B' : statusText.includes('✔') ? '#34D399' : currentPalette.accent;
+ statusPill(statusText, MAIN_X + MAIN_W - 344, MAIN_Y + 24, 314, statusColor);
+ chip('v' + (window.APP_VERSION || ''), MAIN_X + MAIN_W - 144, MAIN_Y + 74, 114, '#94A3B8', {
+ font: 'bold 15px Arial',
+ text: 'rgba(218,231,247,0.72)'
+ });
+
+ if (state.currentPage === 'controls') {
+ const fullW = BODY_W;
+ const halfGap = 16;
+ const halfW = Math.floor((fullW - halfGap) / 2);
+ const rowTop = BODY_Y;
+ const timeH = 190;
+ const midY = rowTop + timeH + 16;
+ const midH = 214;
+ const locoY = midY + midH + 16;
+ const locoH = BODY_BOTTOM - locoY;
+
+ panel(BODY_X, rowTop, fullW, timeH, {
+ radius: 24,
+ top: 'rgba(20,16,9,0.96)',
+ bottom: 'rgba(11,8,6,0.99)',
+ border: 'rgba(245,158,11,0.28)',
+ highlight: 'rgba(245,158,11,0.62)'
+ });
+ sectionTitle('TIME FLOW', BODY_X + 22, rowTop + 18, fullW - 44, '#F59E0B', 'Pick a simulation pace instantly.');
+ const timeTileY = rowTop + 78;
+ const timeTileW = Math.floor((fullW - 22 * 2 - 12 * 3) / 4);
+ const timeActions = [
+ { label: '⏸ Pause', action: 'speed0', active: state.timeSpeed === 0, meta: '0×' },
+ { label: '▶ Live', action: 'speed1', active: state.timeSpeed === 1, meta: '1×' },
+ { label: '⏩ Fast', action: 'speed10', active: state.timeSpeed === 10, meta: '10×' },
+ { label: '⏩⏩ Max', action: 'speed100', active: state.timeSpeed >= 100, meta: '100×' }
+ ];
+ timeActions.forEach((item, idx) => {
+ tile(item.label, item.action, BODY_X + 22 + idx * (timeTileW + 12), timeTileY, timeTileW, 88, {
+ active: item.active,
+ accent: '#F59E0B',
+ meta: item.meta,
+ font: 'bold 23px Arial'
+ });
+ });
+
+ panel(BODY_X, midY, halfW, midH, {
+ radius: 24,
+ top: 'rgba(9,16,29,0.96)',
+ bottom: 'rgba(6,10,18,0.99)',
+ border: 'rgba(59,130,246,0.26)',
+ highlight: 'rgba(59,130,246,0.56)'
+ });
+ sectionTitle('VISUAL LAYERS', BODY_X + 22, midY + 18, halfW - 44, '#60A5FA', 'World overlays and scale modes.');
+ const visualGridY = midY + 74;
+ const visualTileW = Math.floor((halfW - 22 * 2 - 12) / 2);
+ const visualTileH = 56;
+ const visualItems = [
+ { label: '🛰 Orbits', action: 'orbits', active: state.orbitsVisible },
+ { label: '🏷 Labels', action: 'labels', active: state.labelsVisible },
+ { label: '⭐ Stars', action: 'constellations', active: state.constellationsVisible },
+ { label: '📏 Scale', action: 'scale', active: state.realisticScale }
+ ];
+ visualItems.forEach((item, idx) => {
+ const col = idx % 2;
+ const row = Math.floor(idx / 2);
+ tile(item.label, item.action, BODY_X + 22 + col * (visualTileW + 12), visualGridY + row * (visualTileH + 12), visualTileW, visualTileH, {
+ active: item.active,
+ accent: '#3B82F6',
+ font: 'bold 20px Arial'
+ });
+ });
+
+ panel(BODY_X + halfW + halfGap, midY, halfW, midH, {
+ radius: 24,
+ top: 'rgba(23,11,31,0.96)',
+ bottom: 'rgba(11,6,18,0.99)',
+ border: 'rgba(168,85,247,0.26)',
+ highlight: 'rgba(168,85,247,0.56)'
+ });
+ sectionTitle('SHIP TOOLS', BODY_X + halfW + halfGap + 22, midY + 18, halfW - 44, '#C084FC', 'Reset, discover, sound, and laser pointer controls.');
+ const toolX = BODY_X + halfW + halfGap + 22;
+ const toolTileW = Math.floor((halfW - 22 * 2 - 12) / 2);
+ const toolItems = [
+ { label: '🔄 Reset', action: 'reset', active: false },
+ { label: '🎲 Discover', action: 'discover', active: false },
+ { label: state.audioEnabled ? '🔊 Sound' : '🔇 Sound', action: 'sound', active: state.audioEnabled },
+ { label: '🎯 Lasers', action: 'togglelasers', active: state.lasersVisible }
+ ];
+ toolItems.forEach((item, idx) => {
+ const col = idx % 2;
+ const row = Math.floor(idx / 2);
+ tile(item.label, item.action, toolX + col * (toolTileW + 12), visualGridY + row * (visualTileH + 12), toolTileW, visualTileH, {
+ active: item.active,
+ accent: '#A855F7',
+ font: 'bold 20px Arial'
+ });
+ });
+
+ panel(BODY_X, locoY, fullW, locoH, {
+ radius: 24,
+ top: 'rgba(8,23,24,0.96)',
+ bottom: 'rgba(4,13,16,0.99)',
+ border: 'rgba(16,185,129,0.30)',
+ highlight: 'rgba(16,185,129,0.56)'
+ });
+ sectionTitle('LOCOMOTION', BODY_X + 22, locoY + 18, fullW - 44, '#10B981', 'Warp is pressure-based: hold both triggers only while you want speed.');
+ const warpBoxX = BODY_X + 22;
+ const warpBoxY = locoY + 68;
+ const warpBoxW = fullW - 44;
+ const warpBoxH = Math.max(76, locoH - 90);
+ panel(warpBoxX, warpBoxY, warpBoxW, warpBoxH, {
+ radius: 20,
+ top: state.starshipMode ? 'rgba(8,44,54,0.98)' : 'rgba(8,18,24,0.96)',
+ bottom: state.starshipMode ? 'rgba(3,22,28,0.99)' : 'rgba(5,12,17,0.99)',
+ border: state.starshipMode ? 'rgba(34,211,238,0.42)' : 'rgba(41,96,110,0.24)',
+ highlight: state.starshipMode ? 'rgba(34,211,238,0.74)' : 'rgba(255,255,255,0.06)',
+ glow: state.starshipMode ? 'rgba(34,211,238,0.42)' : ''
+ });
+ if (state.starshipMode) {
+ ctx.save();
+ rr(warpBoxX, warpBoxY, warpBoxW, warpBoxH, 20);
+ ctx.clip();
+ let ws = 10811;
+ const wr = () => { ws = (ws * 1103515245 + 12345) & 0x7fffffff; return ws / 0x7fffffff; };
+ for (let i = 0; i < 24; i++) {
+ const ly = warpBoxY + 10 + wr() * (warpBoxH - 20);
+ const len = 30 + wr() * 180;
+ const lx = warpBoxX + wr() * (warpBoxW - len - 20);
+ ctx.strokeStyle = `rgba(103,232,249,${(0.08 + wr() * 0.28).toFixed(2)})`;
+ ctx.lineWidth = 1 + wr() * 1.3;
+ ctx.beginPath();
+ ctx.moveTo(lx, ly);
+ ctx.lineTo(lx + len, ly);
+ ctx.stroke();
+ }
+ ctx.restore();
+ }
+ ctx.save();
+ ctx.fillStyle = state.starshipMode ? '#CFFAFE' : '#DDF2F2';
+ ctx.font = 'bold 28px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(state.starshipMode ? '🚀 Warp drive engaged' : '🚀 Warp drive standby', warpBoxX + warpBoxW / 2, warpBoxY + 28, warpBoxW - 32);
+ ctx.fillStyle = state.starshipMode ? 'rgba(173,244,255,0.92)' : 'rgba(146,201,203,0.78)';
+ ctx.font = '19px Arial';
+ ctx.fillText(state.starshipMode ? 'Release either trigger to drop back to normal speed.' : 'Press and hold both triggers together to accelerate to 20×.', warpBoxX + warpBoxW / 2, warpBoxY + warpBoxH - 26, warpBoxW - 48);
+ ctx.restore();
+ tile(`🔄 Snap Turn  ${state.snapTurn ? 'ON (30°)' : 'OFF (smooth)'}`, 'snapTurn', warpBoxX + 18, warpBoxY + warpBoxH / 2 - 18, warpBoxW - 36, 52, {
+ active: state.snapTurn,
+ accent: '#10B981',
+ font: 'bold 21px Arial'
+ });
+ }
  else if (state.currentPage === 'navigate') {
  const catalog = this.getVRNavCatalog();
- const CAT_H = 54, CAT_GAP = 10;
- const catPillW = Math.floor((W - EDGE * 2 - CAT_GAP * (catalog.length - 1)) / catalog.length);
+ const topCardH = 124;
+ const gridY = BODY_Y + topCardH + 18;
+ const footerY = BODY_BOTTOM - 74;
+ const itemGap = 12;
+ const cols = 4;
+ const itemW = Math.floor((BODY_W - itemGap * (cols - 1)) / cols);
+ const itemH = 74;
+ const catGap = 10;
+ const catW = Math.floor((BODY_W - catGap * (catalog.length - 1)) / catalog.length);
 
- catalog.forEach((cat, i) => {
+ panel(BODY_X, BODY_Y, BODY_W, topCardH, {
+ radius: 24,
+ top: 'rgba(8,18,32,0.96)',
+ bottom: 'rgba(5,11,20,0.99)',
+ border: 'rgba(56,189,248,0.28)',
+ highlight: 'rgba(56,189,248,0.58)'
+ });
+ sectionTitle('DESTINATION CLASS', BODY_X + 22, BODY_Y + 16, BODY_W - 44, '#38BDF8', 'Choose a group, then tap a destination card.');
+ catalog.forEach((cat, idx) => {
  const active = state.currentCategory === cat.id;
- const px = EDGE + i * (catPillW + CAT_GAP), py = CONTENT_Y + 10;
- ctx.save();
- const pbg = ctx.createLinearGradient(px, py, px, py + CAT_H);
- pbg.addColorStop(0, active ? '#122040' : '#0a1020');
- pbg.addColorStop(1, active ? '#0a1428' : '#050810');
- ctx.fillStyle = pbg;
- ctx.beginPath(); ctx.roundRect(px, py, catPillW, CAT_H, CAT_H / 2); ctx.fill();
-
- if (active) {
- ctx.shadowColor = CLR.accentBlue; ctx.shadowBlur = 10;
- ctx.strokeStyle = CLR.accentBlue; ctx.lineWidth = 1.5;
- } else {
- ctx.strokeStyle = '#14283c'; ctx.lineWidth = 1;
- }
- ctx.beginPath(); ctx.roundRect(px, py, catPillW, CAT_H, CAT_H / 2); ctx.stroke();
- ctx.shadowBlur = 0;
-
- ctx.fillStyle = active ? '#D8EEFF' : '#2a4e6a';
- ctx.font = active ? 'bold 18px Arial' : '17px Arial';
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(cat.label, px + catPillW / 2, py + CAT_H / 2);
- ctx.restore();
- this.vrButtons.push({ x: px, y: py, w: catPillW, h: CAT_H, label: cat.label, action: `cat:${cat.id}` });
+ tile(cat.label, `cat:${cat.id}`, BODY_X + idx * (catW + catGap), BODY_Y + 58, catW, 44, {
+ active,
+ accent: '#38BDF8',
+ radius: 22,
+ font: active ? 'bold 18px Arial' : '17px Arial'
+ });
  });
 
  const curCat = catalog.find(c => c.id === state.currentCategory) || catalog[0];
- const items  = curCat.items;
- const PER = 16;
+ const items = curCat?.items || [];
+ const perPage = 16;
  const offset = state.scrollOffset || 0;
- const page = items.slice(offset, offset + PER);
- const ITEM_H = 72, ITEM_GAP = 8;
- const GRID_Y = CONTENT_Y + CAT_H + 22;
- const ITEM_W = Math.floor((W - EDGE * 2 - GAP * (COLS - 1)) / COLS);
+ const page = items.slice(offset, offset + perPage);
+ const pageCount = Math.max(1, Math.ceil(items.length / perPage));
+ const currentPage = Math.floor(offset / perPage) + 1;
 
+ panel(BODY_X, gridY, BODY_W, footerY - gridY - 16, {
+ radius: 24,
+ top: 'rgba(10,17,29,0.96)',
+ bottom: 'rgba(6,10,18,0.99)',
+ border: 'rgba(86,160,210,0.18)',
+ highlight: 'rgba(255,255,255,0.06)'
+ });
+ sectionTitle('TARGET GRID', BODY_X + 22, gridY + 16, BODY_W - 44, '#7DD3FC', `${items.length} destinations in ${curCat.label}.`);
  page.forEach((item, idx) => {
- const col = idx % COLS, row = Math.floor(idx / COLS);
- const ix = EDGE + col * (ITEM_W + GAP);
- const iy = GRID_Y + row * (ITEM_H + ITEM_GAP);
- btn(item.label, `navigate-to:${item.id}`, ix, iy, ITEM_W, ITEM_H, {
- font: 'bold 19px Arial', bg: '#0c1e32', bg2: '#06101e', border: '#1a3050'
+ const col = idx % cols;
+ const row = Math.floor(idx / cols);
+ tile(item.label, `navigate-to:${item.id}`, BODY_X + 22 + col * (itemW + itemGap), gridY + 58 + row * (itemH + itemGap), itemW - 22, itemH, {
+ align: 'left',
+ accent: '#38BDF8',
+ font: 'bold 20px Arial',
+ meta: 'Jump now'
  });
  });
 
- const totalPages = Math.ceil(items.length / PER);
- const curPage = Math.floor(offset / PER) + 1;
- const PAG_Y = GRID_Y + 4 * (ITEM_H + ITEM_GAP) + 10;
- const pAgW  = Math.floor((W - EDGE * 2 - GAP * 2) / 3);
- const pMidW = W - EDGE * 2 - pAgW * 2 - GAP * 2;
-
- if (offset > 0) btn('\u25C4  Prev', 'scroll:prev', EDGE, PAG_Y, pAgW, BTN_H);
- ctx.fillStyle = '#3a6080'; ctx.font = 'bold 20px Arial';
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(`${curPage} / ${totalPages}`, EDGE + pAgW + GAP + pMidW / 2, PAG_Y + BTN_H / 2);
- if (offset + PER < items.length) btn('Next  \u25BA', 'scroll:next', EDGE + pAgW + GAP + pMidW + GAP, PAG_Y, pAgW, BTN_H);
-
- const RESET_Y = PAG_Y + BTN_H + 16;
- btn('\uD83D\uDE80  Reset to Solar System View', 'reset', EDGE, RESET_Y, W - EDGE * 2, 70, {
- bg: '#0e1e38', bg2: '#070f1e', border: '#1e3a60', font: 'bold 22px Arial'
+ const navBtnW = 182;
+ if (offset > 0) tile('◀ Previous', 'scroll:prev', BODY_X, footerY, navBtnW, 56, {
+ accent: '#60A5FA',
+ font: 'bold 20px Arial'
+ });
+ chip(`${currentPage} / ${pageCount}`, BODY_X + Math.floor((BODY_W - 180) / 2), footerY + 11, 180, '#7DD3FC', {
+ font: 'bold 18px Arial'
+ });
+ if (offset + perPage < items.length) tile('Next ▶', 'scroll:next', BODY_X + BODY_W - navBtnW, footerY, navBtnW, 56, {
+ accent: '#60A5FA',
+ font: 'bold 20px Arial'
+ });
+ tile('🛰 Reset to solar-system overview', 'reset', BODY_X, BODY_BOTTOM - 8, BODY_W, 52, {
+ accent: '#38BDF8',
+ font: 'bold 22px Arial'
  });
  }
-
- // ═══════════════════════════════════════════════════════════
- // INFO PAGE
- // ═══════════════════════════════════════════════════════════
  else if (state.currentPage === 'info') {
- const info = state.lastObjectInfo;
-
  if (info) {
- // helper: type → accent colors + icon
- const typeStyle = (t) => {
- const tl = (t || '').toLowerCase();
- if (tl.includes('star')) return { icon: '⭐', accent: '#FFD700', dim:'#3d2e00', badge:'#2a1e00' };
- if (tl.includes('gas'))  return { icon: '🪐', accent: '#88AAEE', dim:'#1a1e40', badge:'#0e1428' };
- if (tl.includes('moon')) return { icon: '🌙', accent: '#AAAACC', dim:'#1e1e30', badge:'#12121e' };
- if (tl.includes('exoplanet')) return { icon: '🌍', accent: '#55EE99', dim:'#0a2a18', badge:'#061a10' };
- if (tl.includes('planet')) return { icon: '🌍', accent: '#44CC88', dim:'#0e2a1a', badge:'#081a10' };
- if (tl.includes('dwarf')) return { icon: '🔴', accent: '#CC8844', dim:'#2a1a0a', badge:'#1a1006' };
- if (tl.includes('comet')) return { icon: '☄️', accent: '#88CCFF', dim:'#0a2030', badge:'#061520' };
- if (tl.includes('nebula')) return { icon: '🌋', accent: '#CC88FF', dim:'#1e0a30', badge:'#120620' };
- if (tl.includes('galaxy')) return { icon: '🌀', accent: '#FF88CC', dim:'#2a0a1a', badge:'#1a0610' };
- if (tl.includes('constellation')) return { icon: '✨', accent: '#FFCC88', dim:'#2a1e00', badge:'#1a1200' };
- if (tl.includes('spacecraft') || tl.includes('station')) return { icon: '🛸', accent: '#80CCFF', dim:'#0a1e30', badge:'#061220' };
- return { icon: '•', accent: '#70B0E0', dim:'#0a1a2a', badge:'#060e1a' };
- };
-
  const ts = typeStyle(info.type);
-
- // ── glowing object name ──────────────────────────
- const NAME_Y = CONTENT_Y + 56;
+ const heroH = 184;
+ const descY = BODY_Y + heroH + 18;
+ const descH = BODY_BOTTOM - descY - 8;
+ panel(BODY_X, BODY_Y, BODY_W, heroH, {
+ radius: 24,
+ top: 'rgba(8,24,20,0.96)',
+ bottom: 'rgba(6,13,15,0.99)',
+ border: ts.accent + '44',
+ highlight: ts.accent + '88',
+ glow: ts.accent + '33',
+ glowBlur: 18
+ });
  ctx.save();
- const nameGlow = ctx.createRadialGradient(W/2, NAME_Y, 0, W/2, NAME_Y, 300);
- nameGlow.addColorStop(0, `rgba(${ts.accent === '#FFD700' ? '200,150,0' : '30,80,160'},0.18)`);
- nameGlow.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = nameGlow; ctx.fillRect(0, NAME_Y - 60, W, 120);
-
- const nameGrad = ctx.createLinearGradient(W/2 - 250, 0, W/2 + 250, 0);
- nameGrad.addColorStop(0, ts.accent);
- nameGrad.addColorStop(0.5, '#FFFFFF');
- nameGrad.addColorStop(1, ts.accent);
- ctx.fillStyle = nameGrad;
- ctx.font = 'bold 46px Arial';
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.shadowColor = ts.accent; ctx.shadowBlur = 22;
- ctx.fillText(info.name || 'Unknown Object', W / 2, NAME_Y, W - EDGE*2);
+ const halo = ctx.createRadialGradient(BODY_X + BODY_W * 0.18, BODY_Y + 78, 0, BODY_X + BODY_W * 0.18, BODY_Y + 78, 140);
+ halo.addColorStop(0, ts.accent + '33');
+ halo.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = halo;
+ ctx.fillRect(BODY_X, BODY_Y, BODY_W, heroH);
  ctx.restore();
-
- // ── type badge ───────────────────────────────────
- const BADGE_Y = NAME_Y + 46;
- const typeLabel = (info.type || 'Celestial Object').toUpperCase();
- ctx.font = 'bold 17px Arial';
- const tw = ctx.measureText(ts.icon + '  ' + typeLabel).width + 28;
- const bx = W/2 - tw/2;
- ctx.fillStyle = ts.badge;
- ctx.beginPath(); ctx.roundRect(bx, BADGE_Y, tw, 28, 14); ctx.fill();
- ctx.strokeStyle = ts.accent + '88';
- ctx.lineWidth = 1;
- ctx.beginPath(); ctx.roundRect(bx, BADGE_Y, tw, 28, 14); ctx.stroke();
- ctx.fillStyle = ts.accent;
- ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText(ts.icon + '  ' + typeLabel, W/2, BADGE_Y + 14);
-
- // ── stat tiles ───────────────────────────────────
- const STAT_Y = BADGE_Y + 44;
- const STAT_H = 84;
- const statW  = Math.floor((W - EDGE*2 - COL_GAP*2) / 3);
- const stats  = [
- { lbl: 'DISTANCE',  val: info.distance != null
- ? (info.distance.toFixed ? info.distance.toFixed(2) + ' AU' : info.distance + ' AU')
- : '—',
- icon: '\uD83D\uDD2D' },
- { lbl: 'DIAMETER',  val: info.size != null
- ? (info.size.toFixed ? Math.round(info.size).toLocaleString() + ' km' : info.size + ' km')
- : '—',
- icon: '\uD83D\uDCCF' },
- { lbl: 'PERIOD',    val: info.orbitalPeriod != null
- ? (info.orbitalPeriod < 5 ? info.orbitalPeriod.toFixed(2) + ' yrs' : Math.round(info.orbitalPeriod) + ' yrs')
- : (info.rotationPeriod != null ? info.rotationPeriod.toFixed(1) + ' hrs rot' : '—'),
- icon: '\u23F3' }
- ];
-
- stats.forEach((st, i) => {
- const sx = EDGE + i * (statW + COL_GAP);
- const sg = ctx.createLinearGradient(sx, STAT_Y, sx, STAT_Y + STAT_H);
- sg.addColorStop(0, '#10202e'); sg.addColorStop(1, '#081420');
- ctx.fillStyle = sg;
- ctx.beginPath(); ctx.roundRect(sx, STAT_Y, statW, STAT_H, 10); ctx.fill();
- ctx.strokeStyle = '#1e3a54'; ctx.lineWidth = 1;
- ctx.beginPath(); ctx.roundRect(sx, STAT_Y, statW, STAT_H, 10); ctx.stroke();
-
- ctx.fillStyle = '#4a7090';
- ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
- ctx.fillText(st.icon + ' ' + st.lbl, sx + statW/2, STAT_Y + 10);
-
- ctx.fillStyle = '#C8E8FF';
- ctx.font = 'bold 22px Arial'; ctx.textBaseline = 'middle';
- ctx.fillText(st.val, sx + statW/2, STAT_Y + STAT_H - 28, statW - 12);
+ ctx.save();
+ ctx.fillStyle = '#D7E6F5';
+ ctx.font = 'bold 16px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ ctx.fillText('SELECTED OBJECT', BODY_X + 28, BODY_Y + 22);
+ ctx.fillStyle = '#FFFFFF';
+ ctx.font = 'bold 46px Arial';
+ ctx.fillText(info.name || 'Unknown Object', BODY_X + 28, BODY_Y + 48, BODY_W - 280);
+ ctx.restore();
+ chip(`${ts.icon}  ${(info.type || 'Celestial Object').toUpperCase()}`, BODY_X + 28, BODY_Y + 110, 280, ts.accent, {
+ top: ts.badge,
+ bottom: ts.badge,
+ border: ts.accent + '55',
+ text: ts.accent,
+ font: 'bold 16px Arial'
  });
 
- // ── description ──────────────────────────────────
- const DESC_Y  = STAT_Y + STAT_H + 18;
- const DESC_H  = FOOT_Y - DESC_Y - 12;
- const desc = info.description || 'No description available.';
-
- const descBg = ctx.createLinearGradient(EDGE, DESC_Y, EDGE, DESC_Y + DESC_H);
- descBg.addColorStop(0, '#0c1e30'); descBg.addColorStop(1, '#080f1e');
- ctx.fillStyle = descBg;
- ctx.beginPath(); ctx.roundRect(EDGE, DESC_Y, W - EDGE*2, DESC_H, 12); ctx.fill();
- ctx.strokeStyle = '#1e3a54'; ctx.lineWidth = 1;
- ctx.beginPath(); ctx.roundRect(EDGE, DESC_Y, W - EDGE*2, DESC_H, 12); ctx.stroke();
-
- // left accent bar
+ const stats = [
+ { label: 'Distance', value: info.distance != null ? (info.distance.toFixed ? info.distance.toFixed(2) + ' AU' : info.distance + ' AU') : '—' },
+ { label: 'Diameter', value: info.size != null ? (info.size.toFixed ? Math.round(info.size).toLocaleString() + ' km' : info.size + ' km') : '—' },
+ { label: 'Period', value: info.orbitalPeriod != null ? (info.orbitalPeriod < 5 ? info.orbitalPeriod.toFixed(2) + ' yrs' : Math.round(info.orbitalPeriod) + ' yrs') : (info.rotationPeriod != null ? info.rotationPeriod.toFixed(1) + ' hrs rot' : '—') }
+ ];
+ const statW = 188;
+ stats.forEach((stat, idx) => {
+ panel(BODY_X + BODY_W - 28 - statW * (3 - idx) - 12 * (2 - idx), BODY_Y + 32, statW, 108, {
+ radius: 18,
+ top: 'rgba(11,21,26,0.96)',
+ bottom: 'rgba(6,10,16,0.99)',
+ border: 'rgba(158,197,208,0.16)',
+ highlight: 'rgba(255,255,255,0.07)'
+ });
  ctx.save();
- const accentBar = ctx.createLinearGradient(EDGE, DESC_Y, EDGE, DESC_Y + DESC_H);
- accentBar.addColorStop(0, ts.accent); accentBar.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = accentBar; ctx.fillRect(EDGE + 1, DESC_Y + 1, 3, DESC_H - 2);
+ const sx = BODY_X + BODY_W - 28 - statW * (3 - idx) - 12 * (2 - idx);
+ ctx.fillStyle = 'rgba(134,171,186,0.78)';
+ ctx.font = 'bold 14px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'top';
+ ctx.fillText(stat.label.toUpperCase(), sx + statW / 2, BODY_Y + 48, statW - 20);
+ ctx.fillStyle = '#F4F7FB';
+ ctx.font = 'bold 23px Arial';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(stat.value, sx + statW / 2, BODY_Y + 102, statW - 18);
+ ctx.restore();
+ });
+
+ panel(BODY_X, descY, BODY_W, descH, {
+ radius: 24,
+ top: 'rgba(9,18,25,0.96)',
+ bottom: 'rgba(5,10,16,0.99)',
+ border: 'rgba(103,152,171,0.18)',
+ highlight: 'rgba(255,255,255,0.07)'
+ });
+ sectionTitle('FIELD NOTES', BODY_X + 22, descY + 16, BODY_W - 44, ts.accent, 'A concise description of the selected target.');
+ wrapText(info.description || 'No description available.', BODY_X + 24, descY + 62, BODY_W - 48, 28, Math.max(4, Math.floor((descH - 78) / 28)), 'rgba(169,205,222,0.86)', '21px Arial');
+ }
+ else {
+ panel(BODY_X, BODY_Y, BODY_W, BODY_BOTTOM - BODY_Y, {
+ radius: 24,
+ top: 'rgba(8,22,20,0.96)',
+ bottom: 'rgba(5,12,13,0.99)',
+ border: 'rgba(52,211,153,0.22)',
+ highlight: 'rgba(52,211,153,0.56)'
+ });
+ ctx.save();
+ const cx = BODY_X + BODY_W / 2;
+ const cy = BODY_Y + (BODY_BOTTOM - BODY_Y) / 2 - 24;
+ const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 180);
+ glow.addColorStop(0, 'rgba(52,211,153,0.18)');
+ glow.addColorStop(1, 'rgba(0,0,0,0)');
+ ctx.fillStyle = glow;
+ ctx.fillRect(BODY_X, BODY_Y, BODY_W, BODY_BOTTOM - BODY_Y);
+ ctx.fillStyle = '#8DE2C1';
+ ctx.font = '64px Arial';
+ ctx.textAlign = 'center';
+ ctx.textBaseline = 'middle';
+ ctx.fillText('◎', cx, cy - 54);
+ ctx.fillStyle = '#F4F7FB';
+ ctx.font = 'bold 34px Arial';
+ ctx.fillText('Point at an object to inspect it', cx, cy + 10, BODY_W - 80);
+ ctx.fillStyle = 'rgba(160,206,192,0.82)';
+ ctx.font = '22px Arial';
+ ctx.fillText('Trigger selects the target and opens this page with stats and notes.', cx, cy + 56, BODY_W - 120);
+ ctx.restore();
+ }
+ }
+
+ panel(MAIN_X, H - PAD - STATUS_H, MAIN_W, STATUS_H, {
+ radius: 20,
+ top: 'rgba(8,12,20,0.98)',
+ bottom: 'rgba(5,8,14,0.99)',
+ border: 'rgba(113,148,187,0.12)',
+ highlight: 'rgba(255,255,255,0.06)'
+ });
+ ctx.save();
+ ctx.fillStyle = statusColor;
+ ctx.font = '20px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'middle';
+ ctx.fillText(statusText, MAIN_X + 24, H - PAD - STATUS_H / 2, MAIN_W - 210);
+ ctx.fillStyle = 'rgba(202,218,236,0.34)';
+ ctx.font = '15px Arial';
+ ctx.textAlign = 'right';
+ ctx.fillText('v' + (window.APP_VERSION || ''), MAIN_X + MAIN_W - 22, H - PAD - STATUS_H / 2);
  ctx.restore();
 
- ctx.fillStyle = '#8ab8d8';
- ctx.font = '20px Arial';
- ctx.textAlign = 'left'; ctx.textBaseline = 'top';
- const words = desc.split(' ');
- let line = '', lineY = DESC_Y + 16;
- const maxW = W - EDGE*2 - 28;
- for (const word of words) {
- const test = line ? line + ' ' + word : word;
- if (ctx.measureText(test).width > maxW && line) {
- if (lineY + 24 < DESC_Y + DESC_H - 10) ctx.fillText(line, EDGE + 16, lineY);
- line = word; lineY += 26;
- } else { line = test; }
- }
- if (line && lineY + 24 < DESC_Y + DESC_H - 10) ctx.fillText(line, EDGE + 16, lineY);
-
- } else {
- // No info – empty state
- const cx = W / 2, cy = CONTENT_Y + 250;
- const phGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 180);
- phGlow.addColorStop(0, 'rgba(60,120,200,0.12)'); phGlow.addColorStop(1, 'rgba(0,0,0,0)');
- ctx.fillStyle = phGlow; ctx.fillRect(cx - 220, cy - 100, 440, 200);
- ctx.fillStyle = '#1e3a5a';
- ctx.font = '58px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
- ctx.fillText('\uD83D\uDD2D', cx, cy - 48);
- ctx.fillStyle = '#2a5a80'; ctx.font = 'bold 28px Arial';
- ctx.fillText('Aim your controller at an object', cx, cy + 22);
- ctx.fillStyle = '#1a3a54'; ctx.font = '21px Arial';
- ctx.fillText('Trigger — select it to see details here', cx, cy + 60);
- }
-
- // Info page footer
- this.vrButtons = this.vrButtons.filter(b => b.action !== 'hide' && b.action !== 'exitvr');
- btn('\uD83E\uDDED  Navigate', 'page:navigate', EDGE, FOOT_Y, closeW, BTN_H, { bg: '#0e2a18', bg2: '#07131a', border: '#1a6030', text: '#AAFFCC' });
- btn('\u2715  Close', 'hide', EDGE + closeW + GAP, FOOT_Y, closeW, BTN_H, { danger: true });
- }
-
- // ─────────────────── flush texture ─────────────────────────
  if (this.vrUIPanel?.material?.map) {
  this.vrUIPanel.material.map.needsUpdate = true;
  }
@@ -1994,6 +2209,14 @@ this.camera.near = 10.0;
  if (this._vrWarpEffect) this._vrWarpEffect.visible = false;
  }
 
+ _alignVRWarpEffect(travelWorld) {
+ if (!this._vrWarpEffect || !this.dolly || !travelWorld || travelWorld.lengthSq() < 0.0001) return;
+ this._vrWarpInverseQuat.copy(this.dolly.quaternion).invert();
+ this._vrWarpLocalDir.copy(travelWorld).normalize().applyQuaternion(this._vrWarpInverseQuat);
+ this._vrWarpQuat.setFromUnitVectors(this._vrForwardScratch.set(0, 0, -1), this._vrWarpLocalDir);
+ this._vrWarpEffect.quaternion.copy(this._vrWarpQuat);
+ }
+
  /**
  * Per-frame update: scroll all streaks toward the camera, recycle ones that pass it.
  * Called only while warp is active. Uses pre-allocated Float32Array — zero heap alloc.
@@ -2399,6 +2622,7 @@ this.camera.near = 10.0;
  if (!session) return;
  
  const inputSources = session.inputSources;
+ this._vrWarpTravel.set(0, 0, 0);
  
  // Use this.camera.getWorldDirection() — in VR mode Three.js updates this camera's
  // world pose from the HMD each frame, so it reliably reflects where the user looks.
@@ -2565,9 +2789,11 @@ this.camera.near = 10.0;
  // Forward/back: negate stickY (forward stick = negative Y on Quest)
  this._vrMoveScratch.copy(cameraForward).multiplyScalar(-stickY * baseSpeed);
  this.dolly.position.add(this._vrMoveScratch);
+ this._vrWarpTravel.add(this._vrMoveScratch);
  // Strafe: right = +X
  this._vrMoveScratch.copy(cameraRight).multiplyScalar(stickX * baseSpeed);
  this.dolly.position.add(this._vrMoveScratch);
+ this._vrWarpTravel.add(this._vrMoveScratch);
  }
  
  // UP/DOWN with Y button (X button now used for menu)
@@ -2575,10 +2801,14 @@ this.camera.near = 10.0;
  // Y button: Toggle between UP/DOWN based on thumbstick Y
  if (Math.abs(stickY) > deadzone) {
  // Use thumbstick Y to control up/down when Y is held
- this.dolly.position.y += -stickY * baseSpeed * 0.8;
+ this._vrMoveScratch.set(0, -stickY * baseSpeed * 0.8, 0);
+ this.dolly.position.add(this._vrMoveScratch);
+ this._vrWarpTravel.add(this._vrMoveScratch);
  } else {
  // Default: Y button moves UP
- this.dolly.position.y += baseSpeed * 0.8;
+ this._vrMoveScratch.set(0, baseSpeed * 0.8, 0);
+ this.dolly.position.add(this._vrMoveScratch);
+ this._vrWarpTravel.add(this._vrMoveScratch);
  }
  }
  }
@@ -2614,13 +2844,17 @@ this.camera.near = 10.0;
  // VERTICAL MOVEMENT (Up/Down in world space)
  if (Math.abs(stickY) > deadzone) {
  // Negative Y = up, Positive Y = down (inverted for intuitive)
- this.dolly.position.y += -stickY * vertSpeed;
+ this._vrMoveScratch.set(0, -stickY * vertSpeed, 0);
+ this.dolly.position.add(this._vrMoveScratch);
+ this._vrWarpTravel.add(this._vrMoveScratch);
  }
  
  // UP/DOWN with B button (A button is now menu toggle)
  if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
  // B button: Move UP
- this.dolly.position.y += 0.2 * sprintMultiplier;
+ this._vrMoveScratch.set(0, 0.2 * sprintMultiplier, 0);
+ this.dolly.position.add(this._vrMoveScratch);
+ this._vrWarpTravel.add(this._vrMoveScratch);
  }
  }
  }
@@ -2711,7 +2945,6 @@ this.camera.near = 10.0;
  if (bothTriggersHeld && !wasWarp) {
  // Just engaged — haptic + effect
  this.updateVRStatus('🚀 WARP DRIVE ENGAGED • 20× speed');
- this._activateVRWarpEffect();
  this.triggerVRHaptic(0, 0.6, 120);
  this.triggerVRHaptic(1, 0.6, 120);
  this.requestVRMenuRefresh();
@@ -2724,10 +2957,14 @@ this.camera.near = 10.0;
  }
 
  // ── Warp effect update ────────────────────────────────────────────────
- if (this._vrWarpEffect?.visible && this.vrStarshipMode) {
- // Keep streaks centred on the HMD in dolly-local space
+ if (this.vrStarshipMode && this._vrWarpTravel.lengthSq() > 0.0001) {
+ this._activateVRWarpEffect();
+ // Keep streaks centred on the HMD in dolly-local space and aligned to travel
  this._vrWarpEffect.position.copy(this.camera.position);
+ this._alignVRWarpEffect(this._vrWarpTravel);
  this._updateVRWarpEffect();
+ } else if (this._vrWarpEffect?.visible) {
+ this._deactivateVRWarpEffect();
  }
 
  // ── Panel drag update (right grip held) — independent of grab-rotate ──

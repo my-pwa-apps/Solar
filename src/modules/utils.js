@@ -21,7 +21,7 @@ export const IS_LOW_POWER = navigator.hardwareConcurrency < 4;
 export const QUALITY_PRESET = (IS_MOBILE || IS_LOW_POWER) ? 'low' : 'high';
 
 /** App version — single source of truth for SW and texture cache invalidation. */
-export const APP_VERSION = '2.10.265';
+export const APP_VERSION = '2.10.269';
 
 export const CONFIG = {
  RENDERER: {
