@@ -3030,8 +3030,12 @@ export class SolarSystemModule {
  
  // Add rings for gas giants with realistic appearance
  if (config.rings) {
- const innerR = config.radius * 1.3;
- const outerR = config.radius * 2.2;
+ // Ring radii vary by planet based on real proportions
+ let ringInnerFactor = 1.3, ringOuterFactor = 2.2;
+ if (config.id === 'uranus') { ringInnerFactor = 1.6; ringOuterFactor = 2.0; }
+ else if (config.id === 'neptune') { ringInnerFactor = 1.7; ringOuterFactor = 2.5; }
+ const innerR = config.radius * ringInnerFactor;
+ const outerR = config.radius * ringOuterFactor;
  const ringGeometry = new THREE.RingGeometry(innerR, outerR, 128);
 
  // Three.js RingGeometry UVs are wrong for radial ring textures — remap them.
@@ -3059,11 +3063,13 @@ export class SolarSystemModule {
  ringColor = 0x997755;
  ringOpacity = 0.2;
  } else if (config.id === 'uranus') {
- ringColor = 0x6688aa;
- ringOpacity = 0.3;
+ // Uranus: 13 narrow dark rings — real but nearly invisible; dark charcoal colour
+ ringColor = 0x444444;
+ ringOpacity = 0.07;
  } else if (config.id === 'neptune') {
- ringColor = 0x5577aa;
- ringOpacity = 0.25;
+ // Neptune: 5 faint dust arcs — extremely tenuous; deep dark blue-grey
+ ringColor = 0x334455;
+ ringOpacity = 0.05;
  }
  
  // For Saturn, try to load a real ring texture with transparency
