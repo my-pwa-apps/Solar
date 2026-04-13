@@ -3451,7 +3451,9 @@ export class SolarSystemModule {
  realRotationPeriod: astroData.rotationPeriod || moonOrbitalPeriodHours || 655.7, // hours
  axialTilt: astroData.axialTilt || 0,
  retrograde: astroData.retrograde || false,
- rotationPhase: Math.random() * Math.PI * 2
+ rotationPhase: Math.random() * Math.PI * 2,
+ // All moons in this simulation are tidally locked (rotation period = orbital period)
+ tidallyLocked: true
  };
 
  moon.userData.parentPlanet = planet.userData?.id || planet.userData?.name || null;
@@ -9270,6 +9272,7 @@ createHyperrealisticHubble(satData) {
  // Counter-rotate by parent's rotation.y so the moon's world-space
  // orbit is not dragged by the planet's self-rotation.
  const parentRotY = planet.rotation.y || 0;
+ let moonOrbitalAngle = 0; // used for tidal-lock rotation
  if (this.scientificMode) {
  const e = moon.userData.orbitalEccentricity || 0;
  const i = moon.userData.orbitalInclination || 0;
@@ -9285,18 +9288,28 @@ createHyperrealisticHubble(satData) {
  moon.position.x = xOrb;
  moon.position.y = zOrb * moon.userData._sinOrbInc;
  moon.position.z = zOrb * moon.userData._cosOrbInc;
+ moonOrbitalAngle = theta;
  } else {
  const adj = moon.userData.angle + parentRotY;
  moon.position.x = moon.userData.distance * Math.cos(adj);
  moon.position.z = moon.userData.distance * Math.sin(adj);
  moon.position.y = 0;
+ moonOrbitalAngle = adj;
  }
  
  // REALISTIC MOON ROTATION based on real astronomical data
  if (moon.userData.realRotationPeriod && rotationSpeed !== 0) {
- // Calculate rotation angle based on real rotation period (use shared value from outer scope)
+ let rotationAngle;
+ if (moon.userData.tidallyLocked) {
+ // True tidal locking: enforce same face always toward parent planet.
+ // With moon at position (dist*cos(α), 0, dist*sin(α)) in parent space,
+ // rotation.y = π/2 - α makes the local -Z axis point at the planet origin.
+ rotationAngle = Math.PI / 2 - moonOrbitalAngle;
+ } else {
+ // Non-tidally-locked: use real rotation period from astronomical data
  const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
- const rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
+ rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
+ }
 
  // Apply rotation (retrograde is naturally handled by axial tilts > 90)
  moon.rotation.y = rotationAngle;
