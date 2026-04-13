@@ -1369,6 +1369,7 @@ export class SolarSystemModule {
  // as a color-map fallback; it would make Earth appear as an all-white cloud
  // ball. If the surface texture fails, fall through to the procedural generator.
  const primary = [
+ './textures/planets/earth_2k.webp',
  './textures/planets/earth_1k.webp'
  ];
  // No external fallbacks - use procedural if local fails
@@ -1420,6 +1421,7 @@ export class SolarSystemModule {
  createMoonTextureReal(size) {
  const primary = [
  // Local self-hosted textures
+ './textures/moons/moon_2k.webp',
  './textures/moons/moon_1k.webp',
  './textures/moons/moon_threejs_1k.webp'
  ];

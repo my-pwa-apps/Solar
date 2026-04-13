@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
 // Version 2.10.269
 
-const CACHE_VERSION = 'v2.10.286';
+const CACHE_VERSION = 'v2.10.287';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -59,6 +59,7 @@ const STATIC_CACHE_FILES = [
   './textures/planets/sun.webp',
   './textures/planets/mercury.webp',
   './textures/planets/venus.webp',
+  './textures/planets/earth_2k.webp',
   './textures/planets/earth_1k.webp',
   './textures/planets/mars_1k.webp',
   './textures/planets/jupiter.webp',
@@ -66,6 +67,7 @@ const STATIC_CACHE_FILES = [
   './textures/planets/uranus.webp',
   './textures/planets/neptune.webp',
   // Moon textures
+  './textures/moons/moon_2k.webp',
   './textures/moons/moon_1k.webp',
   './textures/moons/moon_threejs_1k.webp',
   './textures/moons/io_2k.webp',
