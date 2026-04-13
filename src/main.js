@@ -1653,9 +1653,10 @@ class App {
  dropdown.innerHTML = '';
  const placeholder = document.createElement('option');
  placeholder.value = '';
+ const t = window.t || ((k) => k);
  placeholder.textContent = matches.length > 0
- ? `${matches.length} result${matches.length === 1 ? '' : 's'}`
- : 'No results found';
+ ? (matches.length === 1 ? t('searchResults') : t('searchResultsPlural')).replace('{n}', matches.length)
+ : t('searchNoResults');
  dropdown.appendChild(placeholder);
  
  matches.forEach(({ value, text }) => {
