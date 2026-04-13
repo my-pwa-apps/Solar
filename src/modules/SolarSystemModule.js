@@ -2787,7 +2787,8 @@ export class SolarSystemModule {
  // Uniform roughness — the procedural roughnessMap (createEarthSpecularMap) used
  // FBM noise that didn't align with the actual texture's oceans/continents, causing
  // a random shiny/matte split across the globe. A uniform value is far better.
- roughness: 0.55,
+ // ~0.3 keeps oceans visibly blue/specular; higher values make water look black.
+ roughness: 0.3,
  
  // Metalness (Earth's surface is not metallic)
  metalness: 0.0,
@@ -2795,7 +2796,7 @@ export class SolarSystemModule {
  emissive: 0x000000,
  emissiveIntensity: 0,
 
- envMapIntensity: 0.0,
+ envMapIntensity: 0.2,
  transparent: false,
  side: THREE.FrontSide,
  flatShading: false,
@@ -3263,25 +3264,17 @@ export class SolarSystemModule {
  const moonId = (config.id || config.name).toLowerCase();
  
  if (moonId.includes('moon') && !moonId.includes('ganymede') && !moonId.includes('callisto')) {
- // Earth's Moon: REAL NASA LRO texture with photorealistic craters and maria
+ // Earth's Moon: REAL NASA LRO texture — no procedural normal/bump maps needed
  const moonTexture = this.createMoonTextureReal(2048);
- const moonBumpMap = this.createMoonBumpMap(2048); // Procedural crater depth
- const moonNormalMap = this.createMoonNormalMap(2048); // Procedural normals
  
  moonMaterial = new THREE.MeshStandardMaterial({
  map: moonTexture,
- normalMap: moonNormalMap,
- normalScale: new THREE.Vector2(2.5, 2.5), // Realistic crater depth
- bumpMap: moonBumpMap,
- bumpScale: 0.015,
  roughness: 0.98, // Extremely rough - lunar regolith scatters light
  metalness: 0.0, // Zero metal - pure rock and dust
  // Critical for realistic moon phases - no ambient/emissive light
  emissive: 0x000000,
  emissiveIntensity: 0.0,
- // Enhanced physical properties for accurate light scattering
- envMapIntensity: 0.1, // Minimal environment reflection
- aoMapIntensity: 1.0 // Accurate shadowing in craters
+ envMapIntensity: 0.1
  });
  } else if (moonId.includes('phobos')) {
  // Phobos: Dark reddish-gray with Stickney crater
