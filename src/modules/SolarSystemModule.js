@@ -10870,8 +10870,8 @@ let actualRadius;
      this.cameraCoRotateMode = false;
      const objectType = userData.isSpacecraft ? 'spacecraft' : userData.type || 'orbiter';
      if (DEBUG.enabled) console.log(` Traditional tracking enabled for ${object.userData.name} (${objectType})`);
- } else if (userData.type === 'planet' || userData.isPlanet) {
-     // Planets orbiting the sun: traditional follow (no orbitPlanet field set, so
+ } else if (userData.type === 'planet' || userData.type === 'DwarfPlanet' || userData.isPlanet) {
+     // Planets and dwarf planets orbiting the sun: traditional follow
      // isOrbiter is false — handle explicitly so camera tracks the orbit)
      this.cameraFollowMode = true;
      this.cameraCoRotateMode = false;
@@ -10897,8 +10897,7 @@ let actualRadius;
          if (sl && window.app.uiManager) { sl.value = window.app.uiManager.speedToSlider(0.1); sl.dispatchEvent(new Event('input')); }
          if (DEBUG.enabled) console.log(` [Time Speed] Reduced to 0.1x for orbital spacecraft observation`);
      }
- } else if (userData.type === 'planet' || userData.isPlanet) {
-     // Planets: return to normal 1x speed
+ } else if (userData.type === 'planet' || userData.type === 'DwarfPlanet' || userData.isPlanet) {
      if (window.app && window.app.timeSpeed !== 0 && window.app.timeSpeed !== 1) {
          window.app.timeSpeed = 1;
          // Sync speed slider UI
