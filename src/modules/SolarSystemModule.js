@@ -604,8 +604,7 @@ export class SolarSystemModule {
             description: t('descJupiter'),
             funFact: t('funFactJupiter'),
             realSize: '139,820 km diameter',
-            moons: 4,
-            rings: true
+            moons: 4
         }); // Jupiter's Galilean moons (realistic sizes)
         // Io: 3,643 km / 12,742 km = 0.286
         // Orbital period: 1.769 days vs Jupiter's 4333 days = 2449x faster
