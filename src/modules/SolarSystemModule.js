@@ -517,10 +517,7 @@ export class SolarSystemModule {
             realSize: '12,104 km diameter',
             moons: 0,
             emissive: 0xFFC649,
-            emissiveIntensity: 0.3,
-            atmosphere: true,
-            atmosphereColor: 0xffcc44, // Thick sulphuric-acid haze, warm yellow
-            atmosphereOpacity: 0.22
+            emissiveIntensity: 0.3
         }); // Earth: BASE = 1.0 (12,742 km) - Most complex texture generation
  if (this.uiManager) this.uiManager.updateLoadingProgress(21, t('creatingEarth'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -537,10 +534,7 @@ export class SolarSystemModule {
             description: t('descEarth'),
             funFact: t('funFactEarth'),
             realSize: '12,742 km diameter',
-            moons: 1,
-            atmosphere: true,
-            atmosphereColor: 0x4466ff, // Blue Rayleigh-scattering glow
-            atmosphereOpacity: 0.18
+            moons: 1
         });        // Moon: 3,474 km / 12,742 km = 0.273
         // Real distance: 384,400 km / Earth radius (6,371 km) = ~60 Earth radii
         // Real orbital period: 27.32 days vs Earth's 365.25 days = 13.37x faster
@@ -570,10 +564,7 @@ export class SolarSystemModule {
             description: t('descMars'),
             funFact: t('funFactMars'),
             realSize: '6,779 km diameter',
-            moons: 2,
-            atmosphere: true,
-            atmosphereColor: 0xff6633, // Thin CO₂ dust haze, reddish-orange
-            atmosphereOpacity: 0.05
+            moons: 2
         });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny in reality, scaled up for visibility)
         // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
         this.createMoon(this.planets.mars, {
@@ -1369,7 +1360,6 @@ export class SolarSystemModule {
  // as a color-map fallback; it would make Earth appear as an all-white cloud
  // ball. If the surface texture fails, fall through to the procedural generator.
  const primary = [
- './textures/planets/earth_2k.webp',
  './textures/planets/earth_1k.webp'
  ];
  // No external fallbacks - use procedural if local fails
