@@ -10242,7 +10242,9 @@ createHyperrealisticHubble(satData) {
  const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
  const w = (elem?.periapsisDeg || 0) * Math.PI / 180;
  const distance = planet.userData.distance;
- const segments = 128;
+ // Scale segment count so arc-chord deviation stays below ~0.1× planet radius
+ // (20 units per segment arc gives ~0.025 units deviation at Pluto's scale)
+ const segments = Math.min(1024, Math.max(128, Math.round(2 * Math.PI * distance / 20)));
  const points = makeOrbitPoints(distance, e, inc, w, segments);
  
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
