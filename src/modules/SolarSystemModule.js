@@ -4384,7 +4384,7 @@ export class SolarSystemModule {
  this.cometOrbitsVisible = true; // Default
  this.orbits = [];
  
- const planetsToOrbit = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'];
+ const planetsToOrbit = Object.keys(this.planets);
  
  // Create empty line objects, we will update their geometry in updateOrbitalPaths()
  planetsToOrbit.forEach(planetName => {
