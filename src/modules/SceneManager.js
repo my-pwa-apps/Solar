@@ -9,7 +9,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
-import { CONFIG, DEBUG, IS_MOBILE } from './utils.js';
+import { CONFIG, DEBUG, IS_MOBILE, IS_LOW_POWER } from './utils.js';
 import { safeSetItem } from './storage.js';
 
 // Properties that MeshBasicMaterial does NOT support as uniforms.
@@ -267,11 +267,18 @@ export class SceneManager {
  }
 
  setupPostProcessing() {
- // Post-processing is desktop-only for performance.
- // During WebXR presentation, fall back to direct renderer.render() —
- // the XR compositor doesn't support EffectComposer render targets.
+ // Post-processing is skipped on low-power devices and during WebXR presentation.
+ // Mobile devices with enough CPU cores (IS_LOW_POWER = false) get a lighter bloom
+ // pass for Sun/corona realism; the VR render path bypasses the composer automatically
+ // (see animate() — it checks xr.isPresenting before calling composer.render()).
  this.bloomEnabled = true; // toggled via toggleBloom()
- if (IS_MOBILE) return;
+ if (IS_LOW_POWER) return; // very low-end hardware: skip entirely
+
+ // Choose bloom parameters based on device capability
+ const isMobileBloom = IS_MOBILE; // capable mobile: lighter settings
+ const bloomStrength  = isMobileBloom ? 0.35 : 0.55;
+ const bloomRadius    = isMobileBloom ? 0.4  : 0.5;
+ const bloomThreshold = isMobileBloom ? 0.88 : 0.82;
 
  try {
  this.composer = new EffectComposer(this.renderer);
@@ -280,29 +287,32 @@ export class SceneManager {
  this.composer.addPass(new RenderPass(this.scene, this.camera));
 
  // Pass 2 — UnrealBloom: glowing Sun corona + bright stars
- // High threshold (0.85) ensures only the sun and very bright elements bloom;
+ // High threshold ensures only the sun and very bright elements bloom;
  // planets stay below the threshold and are unaffected.
- this._bloomStrength = 0.55; // stored so toggle can restore it
+ this._bloomStrength = bloomStrength; // stored so toggle can restore it
  this.bloomPass = new UnrealBloomPass(
  new THREE.Vector2(window.innerWidth, window.innerHeight),
- this._bloomStrength, // strength — noticeable but not over-the-top
- 0.5, // radius — spread of the glow
- 0.82 // threshold — only very bright pixels bloom
+ bloomStrength,   // strength — noticeable but not over-the-top
+ bloomRadius,     // radius — spread of the glow
+ bloomThreshold   // threshold — only very bright pixels bloom
  );
  this.composer.addPass(this.bloomPass);
 
- // Pass 3 — SMAA: high-quality antialiasing (better than MSAA for transparencies)
+ // Pass 3 — SMAA: high-quality antialiasing (better than MSAA for transparencies).
+ // Skipped on mobile (SMAA is expensive; mobile already has lower pixel ratio).
+ if (!isMobileBloom) {
  const smaaPass = new SMAAPass(
  window.innerWidth * this.renderer.getPixelRatio(),
  window.innerHeight * this.renderer.getPixelRatio()
  );
  this.composer.addPass(smaaPass);
+ }
 
  // Pass 4 — OutputPass: colour-space conversion + tone-mapping for final canvas output
  this.composer.addPass(new OutputPass());
 
  if (DEBUG && DEBUG.enabled) {
- console.log('[PostFX] EffectComposer initialised: Bloom (strength=0.55 thresh=0.82) + SMAA + OutputPass');
+ console.log(`[PostFX] EffectComposer initialised: Bloom (strength=${bloomStrength} thresh=${bloomThreshold} radius=${bloomRadius}) ${isMobileBloom ? '[mobile-light]' : '+ SMAA'} + OutputPass`);
  }
  } catch (e) {
  // Always log — this failure silently disables the bloom button so it must be visible.
