@@ -5,7 +5,7 @@ import * as THREE from 'three';
 // CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
 import { TEXTURE_CACHE } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
-import { Lensflare, LensflareElement } from 'three/addons/objects/Lensflare.js';
+
 
 // i18n.js is loaded globally in index.html, access via window.t
 // Late-binding: always delegate to window.t at call time (not captured at import time)
@@ -407,81 +407,6 @@ export class SolarSystemModule {
  sunLight.shadow.radius = 3; // Softer shadows (PCFSoftShadowMap benefits from higher radius)
  scene.add(sunLight);
  this.sun.userData.sunLight = sunLight;
-
- // Sun lens flare — desktop only (skipped on mobile/Quest to preserve performance & VR compat).
- // Uses procedurally-generated CanvasTexture sprites so no external files are needed.
- // The Three.js Lensflare object performs an occlusion test each frame and auto-fades
- // when the sun is behind a planet.
- if (!IS_MOBILE) {
- const makeLensflareTexture = (size, drawFn) => {
- const c = document.createElement('canvas');
- c.width = c.height = size;
- drawFn(c.getContext('2d'), size);
- const tex = new THREE.CanvasTexture(c);
- tex.needsUpdate = true;
- return tex;
- };
-
- // Main glare sprite: large radial white-gold gradient
- const glareTexture = makeLensflareTexture(512, (ctx, s) => {
- const half = s / 2;
- const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
- grad.addColorStop(0.00, 'rgba(255,250,230,1)');
- grad.addColorStop(0.08, 'rgba(255,240,180,0.9)');
- grad.addColorStop(0.25, 'rgba(255,210,100,0.45)');
- grad.addColorStop(0.55, 'rgba(255,170,50,0.12)');
- grad.addColorStop(1.00, 'rgba(255,150,30,0)');
- ctx.fillStyle = grad;
- ctx.fillRect(0, 0, s, s);
- });
-
- // Small iris disc sprites: crisp ring with bright edge for secondary flare elements
- const discTexture = makeLensflareTexture(128, (ctx, s) => {
- const half = s / 2;
- const grad = ctx.createRadialGradient(half, half, half * 0.3, half, half, half);
- grad.addColorStop(0.0,  'rgba(255,255,255,0)');
- grad.addColorStop(0.6,  'rgba(200,210,255,0.5)');
- grad.addColorStop(0.85, 'rgba(180,200,255,0.9)');
- grad.addColorStop(1.0,  'rgba(150,170,255,0)');
- ctx.fillStyle = grad;
- ctx.fillRect(0, 0, s, s);
- });
-
- // Hexagonal anamorphic streak sprite (classic cinema lens artifact)
- const hexTexture = makeLensflareTexture(128, (ctx, s) => {
- const half = s / 2;
- ctx.save();
- ctx.translate(half, half);
- const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, half * 0.9);
- grad.addColorStop(0.0, 'rgba(255,250,200,0.95)');
- grad.addColorStop(0.5, 'rgba(255,220,100,0.4)');
- grad.addColorStop(1.0, 'rgba(255,200,50,0)');
- ctx.fillStyle = grad;
- ctx.beginPath();
- for (let i = 0; i < 6; i++) {
- const angle = (i / 6) * Math.PI * 2 - Math.PI / 6;
- const r = half * 0.85;
- i === 0 ? ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r)
-         : ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
- }
- ctx.closePath();
- ctx.fill();
- ctx.restore();
- });
-
- const lensflare = new Lensflare();
- // Main glare at position 0 (centred on sun)
- lensflare.addElement(new LensflareElement(glareTexture, 700, 0, new THREE.Color(0xfff4e0)));
- // Secondary iris discs scattered along the flare axis
- lensflare.addElement(new LensflareElement(discTexture,  70,  0.40, new THREE.Color(0xaaaaff)));
- lensflare.addElement(new LensflareElement(hexTexture,   90,  0.60, new THREE.Color(0xffee88)));
- lensflare.addElement(new LensflareElement(discTexture,  50,  0.70, new THREE.Color(0xffaaaa)));
- lensflare.addElement(new LensflareElement(hexTexture,   60,  0.85, new THREE.Color(0x88aaff)));
- lensflare.addElement(new LensflareElement(discTexture,  40,  1.00, new THREE.Color(0xffffff)));
- sunLight.add(lensflare);
- this.sun.userData.lensflare = lensflare;
- if (DEBUG && DEBUG.enabled) console.log('[Sun] Lens flare attached to sun point light');
- }
  
  // Ambient light - very faint fill for starlight/earthshine reflection
  // Keep LOW for realistic day/night contrast on planets
@@ -593,11 +518,7 @@ export class SolarSystemModule {
             realSize: '12,104 km diameter',
             moons: 0,
             emissive: 0xFFC649,
-            emissiveIntensity: 0.3,
-            // Venus: thick sulfuric acid cloud atmosphere — bright yellow-white limb glow
-            atmosphere: true,
-            atmosphereColor: 0xffe888,
-            atmosphereOpacity: 0.30
+            emissiveIntensity: 0.3
         }); // Earth: BASE = 1.0 (12,742 km) - Most complex texture generation
  if (this.uiManager) this.uiManager.updateLoadingProgress(21, t('creatingEarth'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -614,11 +535,7 @@ export class SolarSystemModule {
             description: t('descEarth'),
             funFact: t('funFactEarth'),
             realSize: '12,742 km diameter',
-            moons: 1,
-            // Earth: Rayleigh-scattered blue nitrogen-oxygen atmosphere — azure limb glow
-            atmosphere: true,
-            atmosphereColor: 0x4499ff,
-            atmosphereOpacity: 0.22
+            moons: 1
         });        // Moon: 3,474 km / 12,742 km = 0.273
         // Real distance: 384,400 km / Earth radius (6,371 km) = ~60 Earth radii
         // Real orbital period: 27.32 days vs Earth's 365.25 days = 13.37x faster
@@ -648,11 +565,7 @@ export class SolarSystemModule {
             description: t('descMars'),
             funFact: t('funFactMars'),
             realSize: '6,779 km diameter',
-            moons: 2,
-            // Mars: very thin CO2 atmosphere with dust — pale salmon-pink limb glow
-            atmosphere: true,
-            atmosphereColor: 0xffaa77,
-            atmosphereOpacity: 0.07
+            moons: 2
         });        // Phobos: ~22 km / 12,742 km = 0.0017 (tiny in reality, scaled up for visibility)
         // Orbital period: 0.319 days (7.65 hours) vs Mars's 687 days = 2153x faster
         this.createMoon(this.planets.mars, {
@@ -692,11 +605,7 @@ export class SolarSystemModule {
             description: t('descJupiter'),
             funFact: t('funFactJupiter'),
             realSize: '139,820 km diameter',
-            moons: 4,
-            // Jupiter: thick ammonia-cloud atmosphere — warm cream haze at limb
-            atmosphere: true,
-            atmosphereColor: 0xddbb88,
-            atmosphereOpacity: 0.05
+            moons: 4
         }); // Jupiter's Galilean moons (realistic sizes)
         // Io: 3,643 km / 12,742 km = 0.286
         // Orbital period: 1.769 days vs Jupiter's 4333 days = 2449x faster
@@ -759,11 +668,7 @@ export class SolarSystemModule {
             realSize: '116,460 km diameter',
             moons: 3,
             rings: true,
-            prominentRings: true,
-            // Saturn: hydrogen-helium cloud-top atmosphere — pale gold haze at limb
-            atmosphere: true,
-            atmosphereColor: 0xeecc88,
-            atmosphereOpacity: 0.05
+            prominentRings: true
         });
         // Enceladus: 504 km / 12,742 km = 0.040
         // Orbital period: 1.370 days vs Saturn's 10759 days = 7854x faster
@@ -801,11 +706,7 @@ export class SolarSystemModule {
             color: 0xFFAA33,
             distance: 38, // Well outside rings; scaled for visual clarity
             speed: 0.608, // 675x Saturn's speed (0.0009 * 675)
-            description: t('descTitan'),
-            // Titan: thick nitrogen-methane haze atmosphere — deep orange limb glow
-            atmosphere: true,
-            atmosphereColor: 0xff7700,
-            atmosphereOpacity: 0.30
+            description: t('descTitan')
         }); // Uranus: 50,724 km / 12,742 km = 3.98
  if (this.uiManager) this.uiManager.updateLoadingProgress(54, t('creatingUranus'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -823,11 +724,7 @@ export class SolarSystemModule {
             funFact: t('funFactUranus'),
             realSize: '50,724 km diameter',
             moons: 2,
-            rings: true,
-            // Uranus: methane-rich atmosphere scatters red light — vivid cyan limb glow
-            atmosphere: true,
-            atmosphereColor: 0x88ddff,
-            atmosphereOpacity: 0.12
+            rings: true
         });        // Titania: 1,578 km / 12,742 km = 0.124
         // Orbital period: 8.706 days vs Uranus's 30687 days = 3526x faster
         this.createMoon(this.planets.uranus, {
@@ -866,11 +763,7 @@ export class SolarSystemModule {
             funFact: t('funFactNeptune'),
             realSize: '49,244 km diameter',
             moons: 1,
-            rings: true,
-            // Neptune: deep methane atmosphere absorbs red light — vivid cobalt-blue limb glow
-            atmosphere: true,
-            atmosphereColor: 0x3366ff,
-            atmosphereOpacity: 0.12
+            rings: true
         });        // Triton: 2,707 km / 12,742 km = 0.212
         // Orbital period: 5.877 days (retrograde) vs Neptune's 60190 days = 10242x faster
         this.createMoon(this.planets.neptune, {
@@ -3106,80 +2999,6 @@ export class SolarSystemModule {
  }
  }
 
- /**
- * Adds a scientifically-accurate atmospheric glow shell to a planet or moon mesh.
- * Implements a Rayleigh-inspired BackSide shader: limb brightening + sun-side illumination.
- * Thick atmospheres (Venus, Titan) show a wider, night-side-lit glow; thin atmospheres
- * (Mars, Jupiter) show a tight limb accent only on the day side.
- *
- * @param {THREE.Mesh} mesh  - planet or moon mesh the shell is parented to
- * @param {Object}     config - planet config with radius, atmosphereColor, atmosphereOpacity
- */
- _addAtmosphereShell(mesh, config) {
- const atmosRadius  = config.radius * 1.065;
- const atmosColor   = config.atmosphereColor   !== undefined ? config.atmosphereColor   : 0x4466ff;
- const atmosOpacity = config.atmosphereOpacity !== undefined ? config.atmosphereOpacity : 0.15;
-
- // Thick atmospheres (opacity >= 0.18): wide limb glow + faint night-side scatter.
- // Thin  atmospheres (opacity <  0.18): tight day-side limb accent only.
- const isThick     = atmosOpacity >= 0.18;
- const limbPower   = isThick ? 1.5 : 2.4;   // lower = wider limb glow
- const nightScatter = isThick ? 0.06 : 0.0; // faint residual brightness on dark side
-
- const atmosGeo = new THREE.SphereGeometry(atmosRadius, 48, 48);
- const atmosMat = new THREE.ShaderMaterial({
- uniforms: {
- glowColor:    { value: new THREE.Color(atmosColor) },
- glowOpacity:  { value: atmosOpacity },
- limbPower:    { value: limbPower },
- nightScatter: { value: nightScatter },
- sunDir:       { value: new THREE.Vector3(1, 0, 0) } // updated every frame
- },
- vertexShader: /* glsl */`
- uniform vec3 sunDir;
- varying float vLimbFactor;
- varying float vSunDot;
- void main() {
- vec4 worldPos = modelMatrix * vec4(position, 1.0);
- vec3 outwardNormal = normalize(mat3(modelMatrix) * normalize(position));
- vec3 toCamera = normalize(cameraPosition - worldPos.xyz);
- float cosAngle = abs(dot(outwardNormal, toCamera));
- vLimbFactor = 1.0 - cosAngle;
- vSunDot = dot(outwardNormal, sunDir);
- gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
- }
- `,
- fragmentShader: /* glsl */`
- uniform vec3  glowColor;
- uniform float glowOpacity;
- uniform float limbPower;
- uniform float nightScatter;
- uniform vec3  sunDir;
- varying float vLimbFactor;
- varying float vSunDot;
- void main() {
- // Limb brightening: sharper falloff for thin atmospheres
- float edge = pow(vLimbFactor, limbPower);
- // Sun-side illumination with soft terminator transition
- float sunFactor = smoothstep(-0.30, 0.40, vSunDot);
- // Thick atmospheres scatter a little light onto the night limb
- float alpha = edge * glowOpacity * (1.6 * sunFactor + nightScatter);
- gl_FragColor = vec4(glowColor, clamp(alpha, 0.0, 1.0));
- }
- `,
- transparent: true,
- side: THREE.BackSide,
- blending: THREE.AdditiveBlending,
- depthWrite: false
- });
-
- const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
- atmosMesh.name = 'atmosphere';
- atmosMesh.raycast = () => {}; // Never intercept pointer clicks
- mesh.add(atmosMesh);
- mesh.userData.atmosphereMesh = atmosMesh;
- }
-
  createPlanet(scene, config) {
  // Use cached geometry or create new
  const segments = CONFIG.QUALITY.sphereSegments;
@@ -3301,14 +3120,6 @@ export class SolarSystemModule {
  // Saturn ring material: forward-scatter shader simulates light shining through
  // dusty ring particles from behind — the iconic "dark side" ring brightening.
  // The sun is always at world origin (0,0,0) in this solar system simulation.
- //
- // Cassini Division & ring structure (non-texture path only — texture already encodes them):
- //   C ring (inner, faint):   UV 0.00 – 0.17
- //   B ring (bright, opaque): UV 0.17 – 0.72
- //   Cassini Division (gap):  UV 0.72 – 0.81  ← 85% opacity reduction
- //   A ring:                  UV 0.81 – 0.96
- //   Encke Gap:               UV 0.90 – 0.92  ← 70% opacity reduction
- //   Outer edge fade:         UV 0.96 – 1.00
  const ringForwardScatterVert = /* glsl */`
  varying vec2 vUv;
  varying vec3 vWorldPos;
@@ -3328,23 +3139,6 @@ export class SolarSystemModule {
  void main() {
  vec4 texSample = useTexture ? texture2D(ringMap, vUv) : vec4(ringColor, ringOpacity);
  if (texSample.a < 0.01) discard;
-
- // Procedural ring structure — applied only when no real texture is loaded.
- // Adds scientifically accurate opacity zones and gap features.
- if (!useTexture) {
- float u = vUv.x;
- // C ring: faint inner region fades in
- float cFade = smoothstep(0.0, 0.10, u);
- float cDim  = mix(0.35, 1.0, smoothstep(0.0, 0.17, u));
- // Cassini Division: prominent gap between B and A rings
- float cassini = 1.0 - smoothstep(0.720, 0.730, u) * (1.0 - smoothstep(0.800, 0.810, u)) * 0.85;
- // Encke Gap: narrow gap within the A ring
- float encke = 1.0 - smoothstep(0.895, 0.900, u) * (1.0 - smoothstep(0.915, 0.920, u)) * 0.70;
- // Outer edge fade
- float outerFade = 1.0 - smoothstep(0.92, 1.00, u);
- texSample.a *= cFade * cDim * cassini * encke * outerFade;
- }
-
  // Forward-scatter: view looking toward the sun through the rings → brighten
  // Sun is at origin; dirToSun = normalize(-vWorldPos)
  vec3 dirToCamera = normalize(cameraPosition - vWorldPos);
@@ -3375,8 +3169,6 @@ export class SolarSystemModule {
  rings.receiveShadow = true; // But can receive shadows from moons
  planet.add(rings);
  }
-
- if (config.atmosphere) this._addAtmosphereShell(planet, config);
 
  scene.add(planet);
  this.objects.push(planet);
@@ -3654,9 +3446,6 @@ export class SolarSystemModule {
  moon.position.x = config.distance * Math.cos(moon.userData.angle);
  moon.position.z = config.distance * Math.sin(moon.userData.angle);
  moon.position.y = 0; // Keep in planet's equatorial plane
-
- // Atmosphere shell for moons with appreciable atmospheres (e.g. Titan)
- if (config.atmosphere) this._addAtmosphereShell(moon, config);
 
  planet.add(moon);
  
