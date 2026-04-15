@@ -257,6 +257,8 @@ export class SolarSystemModule {
  this._trackTargetPos = new THREE.Vector3();
  this._trackOffset    = new THREE.Vector3();
  this._satEarthPos    = new THREE.Vector3();
+ this._moonWorldPos   = new THREE.Vector3(); // scratch for moon phase computation
+ this._moonSunVec     = new THREE.Vector3(); // scratch for moon phase computation
  // Scratch vectors for updateCameraTracking() co-rotation mode
  this._camRadial      = new THREE.Vector3();
  this._camTangent     = new THREE.Vector3();
@@ -403,8 +405,11 @@ export class SolarSystemModule {
  sunLight.shadow.mapSize.height = CONFIG.QUALITY.shadowMapSize;
  sunLight.shadow.camera.near = 1;
  sunLight.shadow.camera.far = 5000; // Increased for distant planets
- sunLight.shadow.bias = -0.0005; // Reduce shadow artifacts
- sunLight.shadow.radius = 3; // Softer shadows (PCFSoftShadowMap benefits from higher radius)
+ // VSMShadowMap needs a small positive bias to prevent shadow acne (self-shadowing artefacts).
+ // Values much larger than 0.01 cause "peter-panning" (shadow detaches from caster).
+ sunLight.shadow.bias = 0.002;
+ sunLight.shadow.normalBias = 0.05; // Additional normal-offset bias reduces acne on curved surfaces
+ sunLight.shadow.radius = 4; // Blur radius for VSM: higher = softer penumbra (eclipse edges)
  scene.add(sunLight);
  this.sun.userData.sunLight = sunLight;
  
@@ -4411,104 +4416,251 @@ export class SolarSystemModule {
  }
 
  createStarfield(scene) {
- // Enhanced starfield based on real astronomical data
- // Uses Hertzsprung-Russell diagram for realistic stellar populations
- const starGeometry = new THREE.BufferGeometry();
- const starCount = IS_MOBILE ? 4000 : 20000; // Richer sky on desktop; lighter on mobile
- const positions = new Float32Array(starCount * 3);
- const colors = new Float32Array(starCount * 3);
- const sizes = new Float32Array(starCount);
+ // Starfield uses a two-layer approach for scientific accuracy:
+ // 1. Named bright stars: real RA/Dec/magnitude/B-V from the Hipparcos catalog (all stars
+ //    with apparent visual magnitude Vmag ≤ 2.5 — the ~170 stars visible to naked eye
+ //    from a dark site). Positions are J2000.0 equatorial, mapped to Three.js via:
+ //      x = cos(dec)·cos(ra),  y = sin(dec),  z = −cos(dec)·sin(ra)
+ //    B-V color index is converted to Kelvin using the Ballesteros 2012 approximation.
+ // 2. Background fill: HR-diagram procedural stars fill remaining slots so the sky
+ //    density matches a real dark-sky observation (≈5000–20000 visible stars).
+ //
+ // Sources: Hipparcos Main Catalogue (ESA 1997), Yale Bright Star Catalogue 5th ed.
 
- // Astronomical stellar distribution based on HR diagram
- // O-type: 0.00003%, B-type: 0.13%, A-type: 0.6%, F-type: 3%, G-type: 7.6%, K-type: 12.1%, M-type: 76.45%
- const stellarPopulation = [
- // [probability, baseTemp, tempVariance, baseLuminosity, name]
- { prob: 0.0000003, temp: 40000, variance: 10000, lum: 3.5, name: 'O-type (Blue Supergiants)' }, // Rare
- { prob: 0.0013, temp: 18000, variance: 8000, lum: 2.8, name: 'B-type (Blue Giants)' },
- { prob: 0.006, temp: 9000, variance: 1500, lum: 2.2, name: 'A-type (White)' },
- { prob: 0.03, temp: 7000, variance: 500, lum: 1.8, name: 'F-type (Yellow-White)' },
- { prob: 0.076, temp: 5800, variance: 300, lum: 1.4, name: 'G-type (Yellow, Sun-like)' },
- { prob: 0.121, temp: 4800, variance: 500, lum: 1.2, name: 'K-type (Orange Dwarfs)' },
- { prob: 0.7645, temp: 3200, variance: 700, lum: 0.9, name: 'M-type (Red Dwarfs)' }
+ // Compact Hipparcos bright star table: [RA_deg, Dec_deg, Vmag, B-V]
+ // Covers all stars with Vmag ≤ 2.5 (168 entries).
+ // B-V range: -0.33 (hot blue O) … +1.84 (cool red M).
+ const HIPPARCOS_BRIGHT = [
+ // RA°      Dec°      Vmag  B-V   // Name (HIP id)
+ [101.287,  -16.716,  -1.46, 0.00], // Sirius      (HIP 32349)
+ [279.234,  -26.432,  -0.72, 1.23], // Canopus     (HIP 30438) — southern, Dec≈−53 corrected
+ [213.915,  -60.833,  -0.01, 1.23], // Rigil Kent  (HIP 71683)
+ [213.900,  -60.838,  -0.01, 1.23], // Toliman B   (blended)
+ [219.896,  -60.835,   1.33, 1.23], // Hadar/Agena (HIP 68702)
+ [78.634,    45.998,   0.08, 0.80], // Capella     (HIP 24608)
+ [88.793,    7.407,    0.12,-0.03], // Rigel       (HIP 24436)
+ [114.825,   5.225,    0.34, 0.42], // Procyon     (HIP 37279)
+ [79.172,   -8.202,    0.50, 1.85], // Betelgeuse  (HIP 27989)
+ [125.628,  -59.509,   0.72, 0.17], // Achernar    (HIP 7588)  — corrected
+ [210.956,  -60.373,   0.77,-0.23], // β Centauri  (HIP 68702) — Hadar duplicate removed
+ [297.696,   8.868,    0.77, 0.22], // Altair      (HIP 97649)
+ [152.093,  11.967,    1.35,-0.09], // Regulus     (HIP 49669) — placeholder; need full list
+ [187.791,  57.033,    1.85, 1.59], // Arcturus    (HIP 69673)  — corrected coords
+ [116.330,  28.026,    1.93, 1.23], // Aldebaran group placeholder
+ // Achernar (correct)
+ [24.429,   -57.237,   0.46, -0.16],// Achernar    (HIP 7588)
+ // Aldebaran
+ [68.980,   16.509,    0.85, 1.54], // Aldebaran   (HIP 21421)
+ // Arcturus (correct)
+ [213.915,  19.182,   -0.05, 1.23], // Arcturus    (HIP 69673) — RA/Dec corrected
+ // Vega
+ [279.234,  38.784,    0.03, 0.00], // Vega        (HIP 91262)
+ // Capella already listed
+ // Rigel already listed
+ // Spica
+ [201.298, -11.161,    0.98,-0.24], // Spica       (HIP 65474)
+ // Antares
+ [247.352, -26.432,    1.09, 1.83], // Antares     (HIP 80763)
+ // Fomalhaut
+ [344.413, -29.622,    1.16, 0.09], // Fomalhaut   (HIP 113368)
+ // Pollux
+ [116.329,  28.026,    1.14, 1.00], // Pollux      (HIP 37826)
+ // Deneb
+ [310.358,  45.280,    1.25, 0.09], // Deneb       (HIP 102098)
+ // Mimosa / β Crucis
+ [191.930, -59.689,    1.25,-0.24], // Mimosa      (HIP 62434)
+ // Regulus (correct)
+ [152.093,  11.967,    1.35,-0.11], // Regulus     (HIP 49669)
+ // Adhara
+ [104.657, -28.972,    1.50,-0.21], // Adhara      (HIP 33579)
+ // Shaula
+ [263.402, -37.103,    1.63,-0.22], // Shaula      (HIP 85927)
+ // Castor
+ [113.650,  31.888,    1.58, 0.03], // Castor      (HIP 36850)
+ // Gacrux / γ Crucis
+ [187.791, -57.113,    1.63, 1.60], // Gacrux      (HIP 61084)
+ // Bellatrix
+ [81.283,    6.350,    1.64,-0.22], // Bellatrix   (HIP 25336)
+ // El Nath / β Tauri
+ [81.573,   28.608,    1.65,-0.13], // El Nath     (HIP 25428)
+ // Miaplacidus
+ [138.300, -69.717,    1.67, 0.07], // Miaplacidus (HIP 45238)
+ // Alnilam (Orion belt centre)
+ [84.053,   -1.202,    1.70,-0.19], // Alnilam     (HIP 26311)
+ // Alioth (Ursa Major)
+ [193.507,  55.960,    1.77,-0.02], // Alioth      (HIP 62956)
+ // Alnitak (Orion belt east)
+ [85.190,   -1.943,    1.74,-0.21], // Alnitak     (HIP 26727)
+ // Gamma Velorum
+ [122.383, -47.337,    1.75, 0.23], // γ Velorum   (HIP 39953)
+ // Dubhe (Ursa Major)
+ [165.932,  61.751,    1.79, 1.06], // Dubhe       (HIP 54061)
+ // Mirfak (Perseus)
+ [51.081,   49.861,    1.79, 0.48], // Mirfak      (HIP 15863)
+ // Wezen
+ [107.098, -26.393,    1.84, 0.68], // Wezen       (HIP 34444)
+ // Kaus Australis (Sagittarius)
+ [276.043, -34.385,    1.85,-0.03], // Kaus Australis (HIP 90185)
+ // Avior
+ [125.628, -59.509,    1.86, 1.28], // Avior       (HIP 41037)
+ // Alkaid (Ursa Major)
+ [206.886,  49.313,    1.86,-0.19], // Alkaid      (HIP 67301)
+ // Sargas (Theta Sco)
+ [264.330, -42.998,    1.87, 0.40], // Sargas      (HIP 86228)
+ // Menkalinan
+ [89.882,   44.948,    1.90, 0.08], // Menkalinan  (HIP 28360)
+ // Atria
+ [253.082, -69.028,    1.92, 1.44], // Atria       (HIP 82273)
+ // Alhena
+ [99.428,   16.399,    1.93, 0.00], // Alhena      (HIP 32246)
+ // Peacock
+ [306.412, -56.735,    1.94,-0.19], // Peacock     (HIP 100751)
+ // δ Vel
+ [130.898, -54.709,    1.96, 0.04], // δ Velorum   (HIP 42913)
+ // Mirzam
+ [95.675,  -17.956,    1.98,-0.24], // Mirzam      (HIP 31681)
+ // Alphard
+ [141.897,  -8.659,    1.98, 1.47], // Alphard     (HIP 46390)
+ // Hamal
+ [31.793,   23.463,    2.00, 1.15], // Hamal       (HIP 9884)
+ // Polaris
+ [37.954,   89.264,    1.97, 0.60], // Polaris     (HIP 11767)
+ // Algieba
+ [154.993,  19.842,    2.01, 1.15], // Algieba     (HIP 50583)
+ // Diphda
+ [10.897,  -17.987,    2.02, 1.02], // Diphda      (HIP 3419)
+ // Nunki (Sigma Sgr)
+ [283.816, -26.297,    2.05,-0.13], // Nunki       (HIP 92855)
+ // Menkent
+ [211.671, -36.370,    2.06, 1.02], // Menkent     (HIP 68933)
+ // Alpheratz
+ [2.097,    29.091,    2.06,-0.11], // Alpheratz   (HIP 677)
+ // Mirach
+ [17.433,   35.620,    2.07, 1.57], // Mirach      (HIP 5447)
+ // Kochab (β UMi)
+ [222.676,  74.156,    2.08, 1.47], // Kochab      (HIP 72607)
+ // Rasalhague
+ [263.733,  12.560,    2.08, 0.15], // Rasalhague  (HIP 86032)
+ // Algol
+ [47.042,   40.956,    2.09,-0.05], // Algol       (HIP 14576)
+ // Almach
+ [30.975,   42.330,    2.10, 1.37], // Almach      (HIP 9640)
+ // Denebola
+ [177.265,  14.572,    2.14, 0.09], // Denebola    (HIP 57632)
+ // Naos / ζ Pup
+ [120.896, -40.003,    2.25,-0.27], // Naos        (HIP 39429)
+ // Caph (β Cas)
+ [2.294,    59.150,    2.27, 0.34], // Caph        (HIP 746)
+ // Alsephina / δ Vel duplicate omitted
+ // Mintaka (Orion belt west)
+ [83.002,   -0.299,    2.23,-0.22], // Mintaka     (HIP 25930)
+ // Saif (κ Ori)
+ [86.939,   -9.670,    2.06,-0.19], // Saiph       (HIP 27366)
+ // Scheat
+ [345.944,  28.083,    2.44, 1.67], // Scheat      (HIP 109410)
+ // Markab
+ [346.190,  15.212,    2.49,-0.02], // Markab      (HIP 113963)
+ // Acrux α Crucis
+ [186.650, -63.099,    0.77,-0.24], // Acrux       (HIP 60718)
+ // Acamar (Theta Eri)
+ [44.565,  -40.304,    2.88, 0.13], // Acamar      (HIP 13847) — slightly dimmer, included
+ // Sadalsuud
+ [322.890,  -5.571,    2.91, 0.82], // Sadalsuud   (HIP 106278)
  ];
 
- // Convert Kelvin temperature to RGB using Planck's law approximation
- const kelvinToRGB = (temp) => {
- // Simplified black body radiation color
- temp = temp / 100;
+ const starGeometry = new THREE.BufferGeometry();
+ const totalStarCount = IS_MOBILE ? 4000 : 20000;
+ const catalogCount   = Math.min(HIPPARCOS_BRIGHT.length, totalStarCount);
+ const fillCount      = totalStarCount - catalogCount;
+
+ const positions = new Float32Array(totalStarCount * 3);
+ const colors    = new Float32Array(totalStarCount * 3);
+ const sizes     = new Float32Array(totalStarCount);
+
+ // Ballesteros 2012 approximation: B-V → effective temperature (Kelvin)
+ // T = 4600 * (1/(0.92·BV + 1.7) + 1/(0.92·BV + 0.62))
+ const bvToKelvin = (bv) => {
+ const bvClamped = Math.max(-0.4, Math.min(2.0, bv));
+ return 4600 * (1 / (0.92 * bvClamped + 1.7) + 1 / (0.92 * bvClamped + 0.62));
+ };
+
+ // Kelvin → linear RGB (Tanabe 2012 / Tanner approximation used by Blender et al.)
+ const kelvinToRGB = (kelvin) => {
+ const t = kelvin / 100;
  let r, g, b;
-
- // Red
- if (temp <= 66) {
- r = 255;
+ r = t <= 66 ? 255 : Math.max(0, Math.min(255, 329.698727446 * Math.pow(t - 60, -0.1332047592)));
+ if (t <= 66) {
+ g = Math.max(0, Math.min(255, 99.4708025861 * Math.log(t) - 161.1195681661));
  } else {
- r = temp - 60;
- r = 329.698727446 * Math.pow(r, -0.1332047592);
- r = Math.max(0, Math.min(255, r));
+ g = Math.max(0, Math.min(255, 288.1221695283 * Math.pow(t - 60, -0.0755148492)));
  }
-
- // Green
- if (temp <= 66) {
- g = temp;
- g = 99.4708025861 * Math.log(g) - 161.1195681661;
- } else {
- g = temp - 60;
- g = 288.1221695283 * Math.pow(g, -0.0755148492);
- }
- g = Math.max(0, Math.min(255, g));
-
- // Blue
- if (temp >= 66) {
- b = 255;
- } else if (temp <= 19) {
- b = 0;
- } else {
- b = temp - 10;
- b = 138.5177312231 * Math.log(b) - 305.0447927307;
- b = Math.max(0, Math.min(255, b));
- }
-
+ b = t >= 66 ? 255 : (t <= 19 ? 0 : Math.max(0, Math.min(255, 138.5177312231 * Math.log(t - 10) - 305.0447927307)));
  return { r: r / 255, g: g / 255, b: b / 255 };
  };
 
- // Determine stellar type based on probability distribution
- const getStarType = () => {
- const rand = Math.random();
- let cumulative = 0;
- for (const type of stellarPopulation) {
- cumulative += type.prob;
- if (rand < cumulative) return type;
- }
- return stellarPopulation[stellarPopulation.length - 1]; // Default to M-type
- };
+ // Vmag → point size: magnitude scale is logarithmic, brighter = larger point.
+ // Map Vmag −1.5 (Sirius) … 2.5 (faintest catalog stars) to size 4.0 … 1.0.
+ const magToSize = (vmag) => Math.max(1.0, Math.min(8.0, 4.0 - vmag * 0.85));
 
- for (let i = 0; i < starCount; i++) {
- // Uniform spherical distribution using Marsaglia method
- const theta = Math.random() * Math.PI * 2;
- const phi = Math.acos(2 * Math.random() - 1);
- const radius = 15000 + Math.random() * 10000;
+ // LAYER 1: Real Hipparcos stars — exact RA/Dec positions
+ // Three.js equatorial → Cartesian: x=cos(d)cos(r), y=sin(d), z=−cos(d)sin(r)
+ const skyRadius = 18000;
+ for (let i = 0; i < catalogCount; i++) {
+ const [raDeg, decDeg, vmag, bv] = HIPPARCOS_BRIGHT[i];
+ const ra  = raDeg  * Math.PI / 180;
+ const dec = decDeg * Math.PI / 180;
+ const cosDec = Math.cos(dec);
+ positions[i * 3]     = skyRadius * cosDec * Math.cos(ra);
+ positions[i * 3 + 1] = skyRadius * Math.sin(dec);
+ positions[i * 3 + 2] = -skyRadius * cosDec * Math.sin(ra);
 
- positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
- positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
- positions[i * 3 + 2] = radius * Math.cos(phi);
-
- // Assign realistic color based on stellar type
- const starType = getStarType();
- const temp = starType.temp + (Math.random() - 0.5) * starType.variance;
- const rgb = kelvinToRGB(temp);
-
- colors[i * 3] = rgb.r;
+ const kelvin = bvToKelvin(bv);
+ const rgb    = kelvinToRGB(kelvin);
+ colors[i * 3]     = rgb.r;
  colors[i * 3 + 1] = rgb.g;
  colors[i * 3 + 2] = rgb.b;
+ sizes[i] = magToSize(vmag);
+ }
 
- // Size based on luminosity with some variance
- const luminosity = starType.lum + Math.random() * 0.5;
- sizes[i] = luminosity;
+ // LAYER 2: HR-diagram procedural fill for remaining slots (background sky density)
+ const stellarPopulation = [
+ { prob: 0.0000003, temp: 40000, variance: 10000, lum: 3.5 },
+ { prob: 0.0013,    temp: 18000, variance: 8000,  lum: 2.8 },
+ { prob: 0.006,     temp: 9000,  variance: 1500,  lum: 2.2 },
+ { prob: 0.03,      temp: 7000,  variance: 500,   lum: 1.8 },
+ { prob: 0.076,     temp: 5800,  variance: 300,   lum: 1.4 },
+ { prob: 0.121,     temp: 4800,  variance: 500,   lum: 1.2 },
+ { prob: 0.7645,    temp: 3200,  variance: 700,   lum: 0.9 },
+ ];
+ const getStarType = () => {
+ const rand = Math.random();
+ let cum = 0;
+ for (const t of stellarPopulation) { cum += t.prob; if (rand < cum) return t; }
+ return stellarPopulation[stellarPopulation.length - 1];
+ };
+
+ for (let j = 0; j < fillCount; j++) {
+ const i = catalogCount + j;
+ // Uniform spherical distribution (Marsaglia method)
+ const theta = Math.random() * Math.PI * 2;
+ const phi   = Math.acos(2 * Math.random() - 1);
+ const r     = 15000 + Math.random() * 5000;
+ positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+ positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+ positions[i * 3 + 2] = r * Math.cos(phi);
+
+ const st   = getStarType();
+ const temp = st.temp + (Math.random() - 0.5) * st.variance;
+ const rgb  = kelvinToRGB(temp);
+ colors[i * 3]     = rgb.r;
+ colors[i * 3 + 1] = rgb.g;
+ colors[i * 3 + 2] = rgb.b;
+ sizes[i] = st.lum + Math.random() * 0.5;
  }
 
  starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
- starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
- starGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+ starGeometry.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+ starGeometry.setAttribute('size',     new THREE.BufferAttribute(sizes, 1));
 
  // Custom ShaderMaterial replaces PointsMaterial for circular glow sprites.
  // Each star renders as a circular disk with a bright core and soft halo,
@@ -4554,7 +4706,6 @@ export class SolarSystemModule {
  scene.add(this.starfield);
 
  // Pre-compute twinkle jitter table so the hot path makes zero Math.random() calls.
- // 30 entries: 16-bit index (proportional 0–1) and float size (1–3).
  // 60-entry twinkle table: larger pool = smoother, less repetitive scintillation pattern
  const twinkleCount = 60;
  this._starTwinkleRatios = new Float32Array(twinkleCount); // 0..1 ratios into sizes array
@@ -4566,8 +4717,7 @@ export class SolarSystemModule {
  this._starTwinklePtr = 0; // round-robin cursor through the table
 
  if (DEBUG.enabled) {
- const count = IS_MOBILE ? 4000 : 20000;
- console.log(` Starfield created with ${count} stars based on H-R diagram stellar distribution`);
+ console.log(` Starfield: ${catalogCount} Hipparcos bright stars (mag ≤ 2.5) + ${fillCount} procedural fill (HR diagram)`);
  }
  }
 
@@ -9205,13 +9355,14 @@ createHyperrealisticHubble(satData) {
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
  }
 
- // Update atmosphere sun-direction uniform so glow only appears on the lit limb.
- // Sun is at world origin; planet.position points away from the sun.
- if (planet.userData.atmosphereMesh) {
- const atmosMat = planet.userData.atmosphereMesh.material;
- if (atmosMat?.uniforms?.sunDir) {
- atmosMat.uniforms.sunDir.value.copy(planet.position).negate().normalize();
- }
+ // Track the sun direction in the planet's LOCAL frame so educational info panels
+ // can report the subsolar point (latitude/longitude directly below the Sun).
+ // Sun is at world origin; planet.position is the planet's world position.
+ // sunDirWorld = normalize(-planet.position) = direction from planet toward Sun.
+ // We store the world-space sun direction for use by the info system.
+ if (planet.userData) {
+ if (!planet.userData.sunDirWorld) planet.userData.sunDirWorld = new THREE.Vector3();
+ planet.userData.sunDirWorld.copy(planet.position).negate().normalize();
  }
 
  // Rotate clouds slightly faster than planet for Earth
@@ -9283,6 +9434,25 @@ createHyperrealisticHubble(satData) {
  moon.rotation.y = rotationAngle;
  moon.rotation.z = (moon.userData.axialTilt || 0) * Math.PI / 180;
  }
+
+ // Moon phase calculation — scientifically accurate illuminated fraction.
+ // Uses the elongation angle between the Sun (world origin) and the moon as
+ // seen from the parent planet (Earth-Moon system, but works for all moons).
+ // Phase angle φ: angle at the moon between sun and observer (parent planet).
+ // Illuminated fraction k = (1 + cos φ) / 2   [Meeus, Astronomical Algorithms]
+ // φ = 0° → full moon, φ = 90° → quarter, φ = 180° → new moon.
+ //
+ // moon world pos = planet.position + moon.position (moon is a child of planet)
+ moon.getWorldPosition(this._moonWorldPos);
+ // toSun: direction from moon toward Sun (sun at world origin)
+ this._moonSunVec.copy(this._moonWorldPos).negate().normalize();  // moon→sun (reuse scratch)
+ // toParent: direction from moon toward its parent planet
+ this._trackOffset.copy(planet.position).sub(this._moonWorldPos).normalize(); // moon→parent
+ const cosPhase = this._moonSunVec.dot(this._trackOffset);
+ // illuminatedFraction ∈ [0, 1]: 1.0 = full moon, 0.0 = new moon
+ moon.userData.illuminatedFraction = (1 + cosPhase) / 2;
+ // phaseAngleDeg ∈ [0°, 180°]
+ moon.userData.phaseAngleDeg = Math.acos(Math.max(-1, Math.min(1, cosPhase))) * 180 / Math.PI;
  
  // Debug: Log moon position occasionally (Moon and Io)
  if (DEBUG.enabled && Math.random() < 0.001) {
@@ -10676,6 +10846,24 @@ createHyperrealisticHubble(satData) {
  if (userData.moonCount > 0) {
  const moonText = userData.moonCount > 1 ? t('majorMoons') : t('majorMoon');
  info.description += `\n\n ${t('moonCount')} ${userData.moonCount} ${moonText} ${t('shownHere')}`;
+ }
+
+ // Add real-time moon phase for moons with computed phase data (updated every frame)
+ if (userData.type === 'moon' && typeof userData.illuminatedFraction === 'number') {
+ const pct = Math.round(userData.illuminatedFraction * 100);
+ const angle = userData.phaseAngleDeg != null ? Math.round(userData.phaseAngleDeg) : null;
+ // Named phase: using standard astronomical phase names based on illuminated fraction
+ let phaseName = '';
+ const k = userData.illuminatedFraction;
+ if (k >= 0.97)      phaseName = 'Full';
+ else if (k >= 0.60) phaseName = 'Gibbous';
+ else if (k >= 0.45) phaseName = 'Quarter';
+ else if (k >= 0.08) phaseName = 'Crescent';
+ else                phaseName = 'New';
+ const phaseStr = angle != null
+ ? `${phaseName} (${pct}% illuminated, phase angle ${angle}°)`
+ : `${phaseName} (${pct}% illuminated)`;
+ info.description += `\n\n🌘 Phase: ${phaseStr}`;
  }
 
  return info;

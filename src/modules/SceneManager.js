@@ -139,7 +139,10 @@ export class SceneManager {
  this.renderer.setPixelRatio(this._adaptivePixelRatio);
  this.renderer.xr.enabled = true;
  this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
- this.renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap deprecated in Three.js r167
+ // VSMShadowMap: Variance Shadow Maps produce smooth penumbra edges (softer eclipse shadows)
+ // versus PCFShadowMap which gives hard aliased edges. VSM is GPU-accelerated via a
+ // two-pass blur and works well with the single PointLight (Sun) setup.
+ this.renderer.shadowMap.type = THREE.VSMShadowMap;
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
  this.renderer.toneMappingExposure = 1.35; // Slightly higher to compensate for darker ambient lights
  // Suppress harmless WebGL shader VALIDATE_STATUS warnings via the official API.

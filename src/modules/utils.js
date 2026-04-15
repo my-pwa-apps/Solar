@@ -69,7 +69,9 @@ export const CONFIG = {
  particleSize: 2,
  particleCount: IS_MOBILE ? 1000 : (IS_LOW_POWER ? 2500 : 5000),
  shadows: !(IS_MOBILE || IS_LOW_POWER), // Disable shadows on mobile/low-power
- shadowMapSize: IS_MOBILE ? 512 : 1024  // Adaptive shadow map resolution
+ // 2048 on desktop gives noticeably sharper eclipse shadow edges than 1024.
+ // VSMShadowMap (used by SceneManager) requires power-of-2 sizes.
+ shadowMapSize: IS_MOBILE ? 512 : (IS_LOW_POWER ? 1024 : 2048)
  },
  CONSTELLATION: {
  // Constellation rendering constants
