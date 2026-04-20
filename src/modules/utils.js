@@ -21,7 +21,7 @@ export const IS_LOW_POWER = navigator.hardwareConcurrency < 4;
 export const QUALITY_PRESET = (IS_MOBILE || IS_LOW_POWER) ? 'low' : 'high';
 
 /** App version — single source of truth for SW and texture cache invalidation. */
-export const APP_VERSION = '2.10.269';
+export const APP_VERSION = '2.10.478';
 
 export const CONFIG = {
  RENDERER: {
@@ -70,7 +70,7 @@ export const CONFIG = {
  particleCount: IS_MOBILE ? 1000 : (IS_LOW_POWER ? 2500 : 5000),
  shadows: !(IS_MOBILE || IS_LOW_POWER), // Disable shadows on mobile/low-power
  // 2048 on desktop gives noticeably sharper eclipse shadow edges than 1024.
- // VSMShadowMap (used by SceneManager) requires power-of-2 sizes.
+ // PCFShadowMap (used by SceneManager) requires power-of-2 sizes.
  shadowMapSize: IS_MOBILE ? 512 : (IS_LOW_POWER ? 1024 : 2048)
  },
  CONSTELLATION: {

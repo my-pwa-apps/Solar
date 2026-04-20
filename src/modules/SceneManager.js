@@ -139,10 +139,9 @@ export class SceneManager {
  this.renderer.setPixelRatio(this._adaptivePixelRatio);
  this.renderer.xr.enabled = true;
  this.renderer.shadowMap.enabled = CONFIG.QUALITY.shadows;
- // VSMShadowMap: Variance Shadow Maps produce smooth penumbra edges (softer eclipse shadows)
- // versus PCFShadowMap which gives hard aliased edges. VSM is GPU-accelerated via a
- // two-pass blur and works well with the single PointLight (Sun) setup.
- this.renderer.shadowMap.type = THREE.VSMShadowMap;
+ // PCFShadowMap: Percentage-Closer Filtering produces soft shadow edges
+ // and supports PointLights (Sun). PCFSoftShadowMap was deprecated in r183.
+ this.renderer.shadowMap.type = THREE.PCFShadowMap;
  this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
  this.renderer.toneMappingExposure = 1.35; // Slightly higher to compensate for darker ambient lights
  // Suppress harmless WebGL shader VALIDATE_STATUS warnings via the official API.
@@ -214,9 +213,12 @@ export class SceneManager {
  this.renderer.domElement.addEventListener('wheel', () => {
  this._lastWheelTime = performance.now();
  const dist = this.camera.position.distanceTo(this.controls.target);
- const base = Math.max(dist, 100);
- const logFactor = Math.log10(100) / Math.log10(base);
- this.controls.zoomSpeed = CONFIG.CONTROLS.zoomSpeed * Math.max(0.2, logFactor);
+ // Adaptive zoom: power curve gives fine control near surfaces while
+ // staying responsive at all scales. pow(0.25) maps:
+ //   dist=100+ → factor=1.0 (full speed)
+ //   dist=10   → 0.56,  dist=1 → 0.32,  dist=0.01 → 0.10
+ const factor = Math.pow(Math.max(dist, 0.001) / 100, 0.25);
+ this.controls.zoomSpeed = CONFIG.CONTROLS.zoomSpeed * Math.max(0.08, Math.min(1.0, factor));
  }, { capture: true, passive: true });
 
  // Add event listeners to detect user interaction with controls

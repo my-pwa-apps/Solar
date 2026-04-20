@@ -78,7 +78,7 @@ class LanguageManager {
         const manifestLink = document.getElementById('pwa-manifest');
         if (manifestLink) {
             const manifestFile = this.manifestFiles[langCode] || './manifest.json';
-            manifestLink.href = manifestFile + '?v=2.10.173';
+            manifestLink.href = manifestFile + '?v=2.10.478';
         }
     }
 }

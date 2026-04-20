@@ -3747,7 +3747,7 @@ function setLanguage(lang) {
 
     const manifestLink = document.querySelector('link[rel="manifest"]');
     if (manifestLink) {
-        manifestLink.href = `${manifestFiles[lang] || './manifest.json'}?v=2.10.173`;
+        manifestLink.href = `${manifestFiles[lang] || './manifest.json'}?v=2.10.478`;
     }
 
     applyTranslations();

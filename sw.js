@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.269
+// Version 2.10.478
 
-const CACHE_VERSION = 'v2.10.297';
+const CACHE_VERSION = 'v2.10.478';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -120,7 +120,9 @@ const CDN_CACHE_FILES = [
   'https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js',
   'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/controls/OrbitControls.js',
   'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/renderers/CSS2DRenderer.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js'
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js',
+  'https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js',
+  'https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css'
 ];
 
 // Install event - cache static files

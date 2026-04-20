@@ -405,11 +405,11 @@ export class SolarSystemModule {
  sunLight.shadow.mapSize.height = CONFIG.QUALITY.shadowMapSize;
  sunLight.shadow.camera.near = 1;
  sunLight.shadow.camera.far = 5000; // Increased for distant planets
- // VSMShadowMap needs a small positive bias to prevent shadow acne (self-shadowing artefacts).
- // Values much larger than 0.01 cause "peter-panning" (shadow detaches from caster).
- sunLight.shadow.bias = 0.002;
+ // PCFSoftShadowMap needs a small negative bias to prevent shadow acne (self-shadowing artefacts).
+ // Values much larger than -0.005 cause "peter-panning" (shadow detaches from caster).
+ sunLight.shadow.bias = -0.001;
  sunLight.shadow.normalBias = 0.05; // Additional normal-offset bias reduces acne on curved surfaces
- sunLight.shadow.radius = 4; // Blur radius for VSM: higher = softer penumbra (eclipse edges)
+ sunLight.shadow.radius = 4; // Blur radius for PCFSoft: higher = softer penumbra (eclipse edges)
  scene.add(sunLight);
  this.sun.userData.sunLight = sunLight;
  
@@ -1370,6 +1370,937 @@ export class SolarSystemModule {
  // No external fallbacks - use procedural if local fails
  const pluginFallbacks = [];
  return this.loadPlanetTextureReal('Earth', primary, this.createEarthTexture, size, pluginFallbacks);
+ }
+
+ // ── ESRI World Imagery Earth texture via MapLibre GL JS ──────────────
+ // Two-tier approach:
+ //  • Far away (zoom 0-5): full equirectangular globe texture (≤1024 tiles)
+ //  • Close up (zoom 6-19): MapLibre renders satellite tiles to a hidden
+ //    canvas. The canvas is captured as a texture for a curved detail
+ //    overlay mesh on Earth's surface. MapLibre handles all tile loading,
+ //    caching, and LOD automatically — same engine as the SpyCam globe.
+ createEarthMapLibreTexture(size) {
+ this._earthTile = {
+     texture: null,
+     currentZoom: -1,
+     pendingZoom: -1,
+     loading: false,
+     lastCheck: 0,
+     baseSize: size,
+     // MapLibre map instance
+     map: null,
+     mapReady: false,
+     // Detail overlay state
+     detailMesh: null,
+     detailTexture: null,
+     detailActive: false,
+    directMapActive: false,
+    directMapInitialized: false,
+     detailBoundsKey: null,
+     detailLat: null,
+     detailLon: null,
+     detailZoom: -1,
+     // Scratch objects (pre-allocated, no .clone() in hot path)
+     _raycaster: new THREE.Raycaster(),
+     _dirVec: new THREE.Vector3(),
+     _localPt: new THREE.Vector3(),
+     _worldPt: new THREE.Vector3(),
+     _tmpUp: new THREE.Vector3(),
+     _tmpN: new THREE.Vector3(),
+     _tmpE: new THREE.Vector3(),
+     _tmpCamUp: new THREE.Vector3(),
+     _ndcVec: new THREE.Vector2(),
+     directMapExitZoom: 5.75,
+     // Globe tile cache (for zoom ≤ 5 equirectangular)
+     tileCache: new Map()
+ };
+
+ // Initialise MapLibre hidden map
+ this._initMapLibre();
+
+ // Ocean-blue placeholder while tiles load
+ const placeholderCanvas = document.createElement('canvas');
+ placeholderCanvas.width = 2;
+ placeholderCanvas.height = 2;
+ const pctx = placeholderCanvas.getContext('2d');
+ pctx.fillStyle = '#1a4d7a';
+ pctx.fillRect(0, 0, 2, 2);
+ const texture = new THREE.CanvasTexture(placeholderCanvas);
+ texture.needsUpdate = true;
+ this._earthTile.texture = texture;
+
+ // Kick off the initial low-res globe fetch
+ this._loadEarthGlobeAtZoom(3);
+
+ return texture;
+ }
+
+ // Create the hidden MapLibre map with ESRI satellite tiles.
+ _initMapLibre() {
+ if (typeof maplibregl === 'undefined') {
+     console.warn('[MapLibre] maplibregl not loaded — detail zoom disabled');
+     return;
+ }
+ const container = document.getElementById('earth-map');
+ if (!container) {
+     console.warn('[MapLibre] #earth-map container not found');
+     return;
+ }
+ try {
+     const map = new maplibregl.Map({
+         container,
+         style: {
+             version: 8,
+             sources: {
+                 'satellite': {
+                     type: 'raster',
+                     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                     tileSize: 256,
+                     maxzoom: 19,
+                     attribution: '&copy; Esri'
+                 }
+             },
+             layers: [{
+                 id: 'satellite-layer',
+                 type: 'raster',
+                 source: 'satellite',
+                 paint: { 'raster-fade-duration': 0 }
+             }]
+         },
+         center: [0, 0],
+         zoom: 3,
+         interactive: true,
+         attributionControl: false,
+         preserveDrawingBuffer: true  // Required for canvas capture
+     });
+     map.on('load', () => {
+         this._earthTile.mapReady = true;
+         if (DEBUG && DEBUG.enabled) console.log('[MapLibre] Satellite map ready');
+         // Set globe projection ONCE here, after style load. Switching projections
+         // later (e.g. on exit) triggers tile reloads that race with aborted
+         // in-flight requests, producing "Cannot read properties of undefined
+         // (reading 'signal')" promise rejection spam. Leaving it as globe while
+         // off-screen has no visible effect; the container is hidden anyway.
+         try {
+             if (typeof map.setProjection === 'function') {
+                 map.setProjection({ type: 'globe' });
+             }
+         } catch (err) {
+             console.warn('[MapLibre] setProjection failed:', err);
+         }
+     });
+     map.on('error', (e) => {
+         console.warn('[MapLibre] Map error:', e.error?.message || e);
+     });
+     // Only exit direct mode when the user actually zooms out below threshold.
+     // Polling on every tick caused spurious exits right after fitBounds settled.
+     map.on('zoomend', () => {
+         const state = this._earthTile;
+         if (!state?.directMapActive || !state.directMapInitialized) return;
+         // Respect a short grace period after init so the initial settle doesn't exit.
+         if (performance.now() < (state._directMapInitAt || 0) + 500) return;
+         const z = map.getZoom();
+         if (Number.isFinite(z) && z <= state.directMapExitZoom) {
+             this._exitEarthDirectMapToScene();
+         }
+     });
+     map.scrollZoom.enable();
+     if (map.scrollZoom.setZoomRate) map.scrollZoom.setZoomRate(1/90);
+     if (map.scrollZoom.setWheelZoomRate) map.scrollZoom.setWheelZoomRate(1/200);
+     map.dragPan.enable();
+     map.touchZoomRotate.enable();
+     map.doubleClickZoom.enable();
+     const exitButton = document.getElementById('earth-map-exit');
+     if (exitButton && !exitButton.dataset.boundEarthExit) {
+         exitButton.addEventListener('click', () => this._exitEarthDirectMapToScene());
+         exitButton.dataset.boundEarthExit = 'true';
+     }
+     this._earthTile.map = map;
+ } catch (e) {
+     console.warn('[MapLibre] Init failed:', e);
+ }
+ }
+
+ _isEarthFocused() {
+ const focusedData = this.focusedObject?.userData;
+ if (!focusedData) return false;
+ return (focusedData.name || '').toLowerCase() === 'earth';
+ }
+
+ _setEarthDirectMapMode(active, handoff = null) {
+ const state = this._earthTile;
+ if (!state?.map) return;
+ const controls = window.app?.sceneManager?.controls;
+ const container = document.getElementById('earth-map');
+
+ if (active) {
+     const firstActivation = !state.directMapActive;
+     if (firstActivation) {
+         // Cancel any pending unmount from a previous exit still in its fade-out window.
+         if (state._unmountTimer) {
+             clearTimeout(state._unmountTimer);
+             state._unmountTimer = null;
+         }
+         state.directMapActive = true;
+         state.directMapInitialized = false;
+         state.loading = false;
+         if (controls) controls.enabled = false;
+         this._hideEarthDetail();
+         // Projection is locked to globe in _initMapLibre's load handler.
+         // Do NOT call setProjection here — it triggers a tile reload that
+         // races with in-flight aborted requests (MapLibre v5 bug).
+         // Stage the map: fullscreen dimensions, still opacity 0 (body class not yet set)
+         // so we can synchronously resize + jumpTo while invisible, then fade in on the
+         // next frame. Produces a clean crossfade with the Three.js canvas.
+         if (container) {
+             container.classList.add('mounted');
+             // Force synchronous layout so MapLibre's resize picks up the new
+             // fullscreen dimensions instead of the hidden 2048×2048 off-screen size.
+             // eslint-disable-next-line no-unused-expressions
+             container.offsetWidth;
+         }
+         state.map.resize();
+     }
+     if (handoff && !state.directMapInitialized) {
+         const jumpOpts = {
+             center: [handoff.lon, handoff.lat],
+             zoom: handoff.zoom
+         };
+         if (Number.isFinite(handoff.pitch))   jumpOpts.pitch = handoff.pitch;
+         if (Number.isFinite(handoff.bearing)) jumpOpts.bearing = handoff.bearing;
+         state.map.jumpTo(jumpOpts);
+         state.directMapInitialized = true;
+         state._directMapInitAt = performance.now();
+         // Trigger the crossfade on the next frame so the browser has painted
+         // at least one opacity-0 frame of the mounted map before it fades in.
+         requestAnimationFrame(() => {
+             if (state.directMapActive) {
+                 document.body.classList.add('earth-direct-map-active');
+                 // Animate Earth's axial tilt to zero over the 450ms fade so
+                 // the 3D canvas visually untilts as it hands off to the
+                 // upright MapLibre view. Both layers meet at the same
+                 // orientation by the time the map reaches full opacity.
+                 this._animateEarthTilt(0, 450);
+             }
+         });
+     }
+     return;
+ }
+
+ if (!state.directMapActive) return;
+ document.body.classList.remove('earth-direct-map-active');
+ state.directMapActive = false;
+ state.directMapInitialized = false;
+ state._directMapExitedAt = performance.now();
+ // Keep projection as globe — switching it on exit causes MapLibre v5
+ // to reload tiles and dereference aborted request controllers, producing
+ // uncaught promise rejections. Map is off-screen during cooldown anyway.
+ // Restore Earth's axial tilt while the canvas fades back in.
+ this._animateEarthTilt(1, 500);
+ if (controls) controls.enabled = true;
+ // Keep the map mounted at fullscreen during the opacity fade-out; move it
+ // off-screen only after the CSS transition has finished so the user sees
+ // a crossfade instead of a hard cut.
+ if (state._unmountTimer) clearTimeout(state._unmountTimer);
+ state._unmountTimer = setTimeout(() => {
+     state._unmountTimer = null;
+     if (!state.directMapActive && container) {
+         container.classList.remove('mounted');
+         state.map.resize();
+     }
+ }, 500);
+ }
+
+ // Direct-mode exit is event-driven (map.on('zoomend')) rather than polled.
+ // This keeps the per-tick loop cheap and avoids spurious exits from fitBounds settle.
+
+ // Tween Earth's axial-tilt scale factor between 1 (full 23.44° tilt) and 0
+ // (upright) over `duration` ms. Used around MapLibre direct-mode handoff so
+ // the 3D globe's orientation matches MapLibre's tiltless globe projection
+ // by the time the crossfade completes. Multiple concurrent calls supersede
+ // the previous tween via the tokenized _tiltAnimId guard.
+ _animateEarthTilt(toFactor, duration) {
+ const earth = this.planets?.earth;
+ if (!earth || !earth.userData) return;
+ const from = earth.userData._tiltFactor ?? 1;
+ if (Math.abs(from - toFactor) < 1e-4) {
+ earth.userData._tiltFactor = toFactor;
+ return;
+ }
+ const token = (this._earthTiltAnimId = (this._earthTiltAnimId || 0) + 1);
+ const start = performance.now();
+ const tick = (now) => {
+ // Superseded by a later tween — abandon this one.
+ if (this._earthTiltAnimId !== token) return;
+ const t = Math.min(1, Math.max(0, (now - start) / duration));
+ // easeInOutCubic
+ const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+ earth.userData._tiltFactor = from + (toFactor - from) * e;
+ if (t < 1) requestAnimationFrame(tick);
+ else earth.userData._tiltFactor = toFactor;
+ };
+ requestAnimationFrame(tick);
+ }
+
+ _exitEarthDirectMapToScene() {
+ const state = this._earthTile;
+ const earth = this.planets.earth;
+ const sceneManager = window.app?.sceneManager;
+ const camera = sceneManager?.camera;
+ const controls = sceneManager?.controls;
+
+ if (!state?.map || !earth || !camera || !controls) {
+     this._setEarthDirectMapMode(false);
+     return;
+ }
+
+ const mapCenter = state.map.getCenter?.();
+ const mapZoom = state.map.getZoom?.();
+ const lat = Number.isFinite(mapCenter?.lat) ? mapCenter.lat : 0;
+ const lon = Number.isFinite(mapCenter?.lng) ? mapCenter.lng : 0;
+ const radius = earth.userData.radius || 1.0;
+
+ // Restore the 3D camera far enough that the LOD loop does not immediately
+ // re-enter direct mode on the next tick (see _earthZoomForDistance: > 1.2
+ // stays at zoom ≤ 5). Scale further out for lower map zooms.
+ let targetDistance = 1.8;
+ if (mapZoom <= 3.5) {
+     targetDistance = 10;
+ } else if (mapZoom <= 4.5) {
+     targetDistance = 3;
+ }
+
+ const worldPoint = earth.localToWorld(this._earthLatLonToLocalPoint(lat, lon, radius, state._localPt));
+ const radialDirection = state._dirVec.copy(worldPoint).sub(earth.position).normalize();
+
+ camera.position.copy(earth.position).addScaledVector(radialDirection, targetDistance);
+ controls.target.copy(earth.position);
+ controls.update();
+
+ this.focusedObject = earth;
+ this.focusedObjectDistance = targetDistance;
+ this._setEarthDirectMapMode(false);
+ }
+
+ _updateEarthDirectMap(camera, earth) {
+ const state = this._earthTile;
+ if (!state.map || !state.mapReady) return;
+
+ const dir = state._dirVec;
+ dir.copy(earth.position).sub(camera.position).normalize();
+ state._raycaster.set(camera.position, dir);
+ const hits = state._raycaster.intersectObject(earth, false);
+ if (!hits.length) {
+     this._setEarthDirectMapMode(false);
+     return;
+ }
+
+ state._localPt.copy(hits[0].point);
+ state._worldPt.copy(hits[0].point);
+ earth.worldToLocal(state._localPt);
+ const { lat, lon } = this._earthPointToLatLon(state._localPt);
+
+ // Map camera altitude (scene units, Earth radius = 1) to MapLibre zoom.
+ // MapLibre zoom z ≈ log2(earthCircumference / viewportWidthAtCenter). At
+ // altitude h above surface with a 60° FoV, the viewport covers roughly
+ // 2*h*tan(30°) ≈ 1.155*h at the tangent point. Solving for continuity
+ // with Three.js's apparent size produces z ≈ log2(2πR / (1.155*h)) where
+ // R=6371km. Simplified and tuned: rawZoom = 18 - log2(altitudeKm + 0.1).
+ const earthRadius = earth.userData.radius || 1.0;
+ const camDist = camera.position.distanceTo(earth.position);
+ const altitudeKm = Math.max(camDist - earthRadius, 0.0005) * 6371;
+ const rawZoom = 18 - Math.log2(altitudeKm + 0.1);
+ const zoom = Math.max(6, Math.min(18, rawZoom));
+
+ // --- Match camera orientation at handoff so MapLibre opens at the same
+ //     pitch/bearing the user was viewing in 3D. This keeps the crossfade
+ //     visually continuous (SpyCam-style seamless zoom).
+ //
+ // pitch = angle between view ray and local-down at the focus point.
+ //   0° = straight down, 90° = horizon.
+ const localUp = state._tmpUp.copy(state._worldPt).sub(earth.position).normalize();
+ const viewRay = state._dirVec; // already camera→earthCenter unit vec; reuse below
+ // Re-derive viewRay as camera→focusPoint for accurate pitch at off-center hits.
+ viewRay.copy(state._worldPt).sub(camera.position).normalize();
+ const cosPitch = -viewRay.dot(localUp);
+ let pitch = Math.acos(Math.max(-1, Math.min(1, cosPitch))) * 180 / Math.PI;
+ pitch = Math.max(0, Math.min(60, pitch));
+
+ // bearing = compass direction of the camera's screen-up vector projected
+ //   onto the tangent plane at the focus point. Measured clockwise from
+ //   geographic north (MapLibre convention).
+ // Earth's local +Y is its rotation axis (geographic north pole direction).
+ const worldNorth = state._tmpN.set(0, 1, 0).transformDirection(earth.matrixWorld);
+ worldNorth.addScaledVector(localUp, -worldNorth.dot(localUp));
+ const worldEast = state._tmpE.copy(worldNorth).cross(localUp);
+ let bearing = 0;
+ if (worldNorth.lengthSq() > 1e-10 && worldEast.lengthSq() > 1e-10) {
+     worldNorth.normalize();
+     worldEast.normalize();
+     const camUp = state._tmpCamUp.setFromMatrixColumn(camera.matrixWorld, 1);
+     camUp.addScaledVector(localUp, -camUp.dot(localUp));
+     if (camUp.lengthSq() > 1e-10) {
+         camUp.normalize();
+         bearing = Math.atan2(camUp.dot(worldEast), camUp.dot(worldNorth)) * 180 / Math.PI;
+     }
+ }
+ if (!Number.isFinite(bearing)) bearing = 0;
+
+ this._setEarthDirectMapMode(true, { lat, lon, zoom, pitch, bearing });
+ }
+
+ // Map camera distance from Earth CENTER → tile zoom level.
+ // Earth radius = 1.0 in scene units. Uses altitude above surface for close-up.
+ _earthZoomForDistance(camDist) {
+ if (camDist > 10)  return 3;
+ if (camDist > 3)   return 4;
+ if (camDist > 1.2) return 5;
+ // Close to surface: compute altitude and derive zoom from viewport coverage.
+ // Formula: zoom = log2(20.0 / altitude), scaled up so a 1024px canvas
+ // fills the viewport smoothly before zooming out to lower LOD.
+ const altitude = Math.max(camDist - 1.0, 0.00001);
+ const z = Math.floor(Math.log2(20.0 / altitude));
+ return Math.min(19, Math.max(6, z));
+ }
+
+ // Called from update() — check whether Earth texture/detail needs updating.
+ _updateEarthLOD(camera) {
+ if (!this._earthTile || !this.planets.earth || !camera) return;
+ const now = performance.now();
+ if (now - this._earthTile.lastCheck < 150) return;
+ this._earthTile.lastCheck = now;
+
+ // Never promote the 2D map layer over the WebXR canvas — that would blank
+ // the VR view and trap the user with OrbitControls disabled.
+ if (window.app?.sceneManager?.renderer?.xr?.isPresenting) {
+     if (this._earthTile.directMapActive) this._setEarthDirectMapMode(false);
+     return;
+ }
+
+ // Direct-mode exit is handled by the map's 'zoomend' event, not polling.
+ if (this._earthTile.directMapActive) return;
+
+ // Cooldown after an exit prevents immediate re-entry into direct mode.
+ const sinceExit = performance.now() - (this._earthTile._directMapExitedAt || 0);
+ if (sinceExit < 800) return;
+
+ const earth = this.planets.earth;
+ const dx = camera.position.x - earth.position.x;
+ const dy = camera.position.y - earth.position.y;
+ const dz = camera.position.z - earth.position.z;
+ const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+ const wantZoom = this._earthZoomForDistance(dist);
+ const earthRadius = earth.userData.radius || 1.0;
+ const altitude = dist - earthRadius;
+
+ if (wantZoom <= 5 && this._earthTile.directMapActive) {
+     this._setEarthDirectMapMode(false);
+ }
+
+ // Log once when entering/leaving detail mode
+ if (wantZoom > 5 && !this._earthTile._inDetailMode) {
+     this._earthTile._inDetailMode = true;
+     if (DEBUG && DEBUG.enabled) console.log(`[Earth LOD] ENTERING detail mode: dist=${dist.toFixed(4)}, alt=${altitude.toFixed(6)}, zoom=${wantZoom}, loading=${this._earthTile.loading}, mapReady=${this._earthTile.mapReady}`);
+ } else if (wantZoom <= 5 && this._earthTile._inDetailMode) {
+     this._earthTile._inDetailMode = false;
+     if (DEBUG && DEBUG.enabled) console.log(`[Earth LOD] LEAVING detail mode: dist=${dist.toFixed(4)}, zoom=${wantZoom}`);
+ }
+
+ // Dynamic near/far plane adjustment when close to Earth's surface
+ if (altitude < 0.2 && altitude > 0) {
+     // Near surface: shrink near plane to avoid clipping, shrink far to preserve depth precision
+     const newNear = Math.max(altitude * 0.05, 0.0000005);
+     const newFar = Math.min(CONFIG.CAMERA.far, Math.max(100, dist * 50));
+     if (Math.abs(camera.near - newNear) / (camera.near + 0.0001) > 0.1) {
+         camera.near = newNear;
+         camera.far = newFar;
+         camera.updateProjectionMatrix();
+     }
+ } else if (altitude >= 0.1 && camera.near < 0.01) {
+     // Zoomed back out: restore defaults
+     camera.near = CONFIG.CAMERA.near;
+     camera.far = CONFIG.CAMERA.far;
+     camera.updateProjectionMatrix();
+ }
+
+ if (wantZoom <= 5) {
+     this._setEarthDirectMapMode(false);
+     this._hideEarthDetail();
+     if (wantZoom !== this._earthTile.currentZoom && wantZoom !== this._earthTile.pendingZoom) {
+         this._loadEarthGlobeAtZoom(wantZoom);
+     }
+ } else {
+     if (wantZoom >= 6) {
+         this._updateEarthDirectMap(camera, earth);
+         return;
+     }
+     this._updateEarthDetail(camera, earth, wantZoom);
+ }
+ }
+
+ // ── Globe-level: full equirectangular (zoom ≤ 5) ────────────────────
+ _loadEarthGlobeAtZoom(zoom) {
+ if (!this._earthTile) return;
+ if (this._earthTile.loading && this._earthTile.pendingZoom >= zoom) return;
+
+ this._earthTile.pendingZoom = zoom;
+ this._earthTile.loading = true;
+
+ const outWidth = Math.min(this._earthTile.baseSize, 256 * (1 << Math.min(zoom, 5)));
+ const outHeight = outWidth / 2;
+
+ if (DEBUG.enabled) console.log(`[ESRI] Loading globe tiles at zoom ${zoom} (${outWidth}×${outHeight})...`);
+
+ this._fetchEsriGlobeTexture(outWidth, outHeight, zoom).then(canvas => {
+     if (this._earthTile.pendingZoom !== zoom) return;
+     const tex = this._earthTile.texture;
+     tex.image = canvas;
+     tex.offset.x = 0.5 / canvas.width;
+     tex.needsUpdate = true;
+     const earth = this.planets['earth'];
+     if (earth?.material) {
+         earth.material.map = tex;
+         earth.material.needsUpdate = true;
+     }
+     this._earthTile.currentZoom = zoom;
+     this._earthTile.loading = false;
+     if (DEBUG.enabled) console.log(`[ESRI] Globe texture updated to zoom ${zoom}`);
+ }).catch(err => {
+     console.warn(`[ESRI] Globe tiles at zoom ${zoom} failed:`, err);
+     this._earthTile.loading = false;
+     if (this._earthTile.currentZoom < 0) {
+         this.createEarthTextureRealFixed(this._earthTile.baseSize);
+     }
+ });
+ }
+
+ // Load a single ESRI tile (for globe equirectangular), with cache.
+ _loadEsriTile(z, x, y) {
+ const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+ const cache = this._earthTile?.tileCache;
+ if (cache?.has(url)) return Promise.resolve({ img: cache.get(url), tx: x, ty: y });
+ return new Promise((resolve, reject) => {
+     const img = new Image();
+     img.crossOrigin = 'anonymous';
+     img.onload = () => {
+         if (cache) {
+             cache.set(url, img);
+             if (cache.size > 256) cache.delete(cache.keys().next().value);
+         }
+         resolve({ img, tx: x, ty: y });
+     };
+     img.onerror = () => reject(new Error(`Tile ${z}/${y}/${x} failed`));
+     img.src = url;
+ });
+ }
+
+ // Fetch all tiles for a globe zoom level, stitch + reproject to equirectangular.
+ async _fetchEsriGlobeTexture(outWidth, outHeight, zoom) {
+ const n = 1 << zoom;
+ const TILE = 256;
+ const mW = n * TILE;
+ const mH = n * TILE;
+
+ const tiles = await Promise.all(
+     Array.from({ length: n * n }, (_, i) => this._loadEsriTile(zoom, i % n, (i / n) | 0))
+ );
+
+ const mc = document.createElement('canvas');
+ mc.width = mW; mc.height = mH;
+ const mx = mc.getContext('2d');
+ for (const { img, tx, ty } of tiles) mx.drawImage(img, tx * TILE, ty * TILE, TILE, TILE);
+
+ const mD = mx.getImageData(0, 0, mW, mH).data;
+ const oc = document.createElement('canvas');
+ oc.width = outWidth; oc.height = outHeight;
+ const ox = oc.getContext('2d');
+ const oD = ox.createImageData(outWidth, outHeight);
+ const o = oD.data;
+
+ for (let py = 0; py < outHeight; py++) {
+     const lat = 90 - (py / outHeight) * 180;
+     const cl = Math.max(-85.051, Math.min(85.051, lat));
+     const lr = cl * Math.PI / 180;
+     const my = Math.round((1 - Math.log(Math.tan(lr) + 1 / Math.cos(lr)) / Math.PI) / 2 * mH);
+     const ro = py * outWidth * 4;
+     if (my < 0 || my >= mH) { for (let px = 0; px < outWidth; px++) { const i = ro + px * 4; o[i]=220;o[i+1]=225;o[i+2]=235;o[i+3]=255; } continue; }
+     const sr = my * mW * 4;
+     for (let px = 0; px < outWidth; px++) {
+         const sx = Math.round((px / outWidth) * mW) % mW;
+         const i = ro + px * 4; const s = sr + sx * 4;
+         o[i]=mD[s]; o[i+1]=mD[s+1]; o[i+2]=mD[s+2]; o[i+3]=255;
+     }
+ }
+ ox.putImageData(oD, 0, 0);
+ return oc;
+ }
+
+ // ── Detail level via MapLibre (zoom > 5) ────────────────────────────
+
+ // Convert a 3D point in Earth-local space to geographic lat/lon.
+ // Matches Three.js SphereGeometry: x = -R*cos(φ)*cos(lat), y = R*sin(lat), z = R*sin(φ)*cos(lat)
+ // where φ = (lon+180)°.
+ _earthPointToLatLon(localPt) {
+ const r = localPt.length();
+ if (r < 0.0001) return { lat: 0, lon: 0 };
+ const lat = Math.asin(Math.max(-1, Math.min(1, localPt.y / r))) * 180 / Math.PI;
+ // atan2 returns [-π, π], but Three.js SphereGeometry φ is [0, 2π]
+ let phi = Math.atan2(localPt.z, -localPt.x);  // [-π, π]
+ if (phi < 0) phi += 2 * Math.PI;               // [0, 2π]
+ const lon = phi * 180 / Math.PI - 180;          // [-180, +180]
+ return { lat, lon };
+ }
+
+ _earthLatLonToLocalPoint(lat, lon, radius = 1, out = new THREE.Vector3()) {
+ const latRad = lat * Math.PI / 180;
+ const phi = (lon + 180) * Math.PI / 180;
+ const cosLat = Math.cos(latRad);
+ out.set(
+     -radius * Math.cos(phi) * cosLat,
+     radius * Math.sin(latRad),
+     radius * Math.sin(phi) * cosLat
+ );
+ return out;
+ }
+
+ _normalizeLongitudeNear(lon, referenceLon) {
+ let normalizedLon = lon;
+ while (normalizedLon - referenceLon > 180) normalizedLon -= 360;
+ while (normalizedLon - referenceLon < -180) normalizedLon += 360;
+ return normalizedLon;
+ }
+
+ _computeEarthVisibleBounds(camera, earth, centerLat, centerLon) {
+ const state = this._earthTile;
+ const sampleCoords = [-1, -0.85, -0.5, 0, 0.5, 0.85, 1];
+ const raycaster = state._raycaster;
+ const ndc = state._ndcVec;
+ let north = centerLat;
+ let south = centerLat;
+ let west = centerLon;
+ let east = centerLon;
+ let sampleHits = 0;
+
+ for (const y of sampleCoords) {
+     for (const x of sampleCoords) {
+         ndc.set(x, y);
+         raycaster.setFromCamera(ndc, camera);
+         const intersections = raycaster.intersectObject(earth, false);
+         if (!intersections.length) continue;
+
+         state._localPt.copy(intersections[0].point);
+         earth.worldToLocal(state._localPt);
+         const pointLatLon = this._earthPointToLatLon(state._localPt);
+         const normalizedLon = this._normalizeLongitudeNear(pointLatLon.lon, centerLon);
+
+         north = Math.max(north, pointLatLon.lat);
+         south = Math.min(south, pointLatLon.lat);
+         west = Math.min(west, normalizedLon);
+         east = Math.max(east, normalizedLon);
+         sampleHits++;
+     }
+ }
+
+ if (!sampleHits) return null;
+
+ const latPadding = Math.max(0.03, (north - south) * 0.2);
+ const lonPadding = Math.max(0.03, (east - west) * 0.2);
+ north = Math.min(85, north + latPadding);
+ south = Math.max(-85, south - latPadding);
+ west -= lonPadding;
+ east += lonPadding;
+
+ return {
+     north,
+     south,
+     west,
+     east,
+     centerLat: (north + south) * 0.5,
+     centerLon: (west + east) * 0.5
+ };
+ }
+
+ // Convert lat/lon to tile x,y at a given zoom level.
+ _latLonToTile(lat, lon, zoom) {
+ const n = 1 << zoom;
+ const x = Math.floor((lon + 180) / 360 * n);
+ const lr = lat * Math.PI / 180;
+ const y = Math.floor((1 - Math.log(Math.tan(lr) + 1 / Math.cos(lr)) / Math.PI) / 2 * n);
+ return { x: ((x % n) + n) % n, y: Math.max(0, Math.min(n - 1, y)) };
+ }
+
+ // Convert tile coords to NW-corner lat/lon.
+ _tileToLatLon(tx, ty, zoom) {
+ const n = 1 << zoom;
+ const lon = tx / n * 360 - 180;
+ const lr = Math.atan(Math.sinh(Math.PI * (1 - 2 * ty / n)));
+ return { lat: lr * 180 / Math.PI, lon };
+ }
+
+ // Raycast to Earth, get lat/lon of camera look-at, then tell MapLibre to render
+ // that area. On idle, capture the canvas and apply it as a curved detail overlay.
+ _updateEarthDetail(camera, earth, wantZoom) {
+ const state = this._earthTile;
+ if (state.loading) return;
+ if (!state.map || !state.mapReady) {
+     // MapLibre not available — fall back to direct ESRI tiles
+     this._updateEarthDetailDirect(camera, earth, wantZoom);
+     return;
+ }
+
+ // Raycast from camera toward Earth centre
+ const dir = state._dirVec;
+ dir.copy(earth.position).sub(camera.position).normalize();
+ state._raycaster.set(camera.position, dir);
+ const hits = state._raycaster.intersectObject(earth, false);
+ if (!hits.length) { this._hideEarthDetail(); return; }
+
+ // Convert hit to Earth-local lat/lon (accounts for Earth rotation)
+ state._localPt.copy(hits[0].point);
+ earth.worldToLocal(state._localPt);
+ const { lat, lon } = this._earthPointToLatLon(state._localPt);
+
+ const visibleBounds = this._computeEarthVisibleBounds(camera, earth, lat, lon);
+ if (!visibleBounds) { this._hideEarthDetail(); return; }
+
+ const boundsKey = [
+     visibleBounds.north,
+     visibleBounds.south,
+     visibleBounds.west,
+     visibleBounds.east
+ ].map((value) => value.toFixed(3)).join('|');
+
+ // Check if we need to update (changed position or zoom)
+ const latSnap = Math.round(lat * 200) / 200;
+ const lonSnap = Math.round(lon * 200) / 200;
+ if (boundsKey === state.detailBoundsKey && wantZoom === state.detailZoom) return;
+
+ state.loading = true;
+ state.detailBoundsKey = boundsKey;
+ state.detailLat = latSnap;
+ state.detailLon = lonSnap;
+ state.detailZoom = wantZoom;
+
+ // Tell MapLibre to render this area. Use the actual requested zoom so the
+ // captured detail view really gets sharper as the user zooms in.
+ const map = state.map;
+
+ // Limit to 2048px maximum to prevent MapLibre from freezing the browser by loading 256+ tiles
+ const containerSize = Math.floor(Math.min(2048, Math.max(1024, 1024 * Math.pow(1.2, wantZoom - 5))));
+ const container = document.getElementById('earth-map');
+ if (container && container.style.width !== containerSize + 'px') {
+     if (DEBUG && DEBUG.enabled) console.log(`[Earth Detail] Resizing MapLibre canvas to ${containerSize}px for higher LOD`);
+     container.style.width = containerSize + 'px';
+     container.style.height = containerSize + 'px';
+     map.resize();
+ }
+
+ map.fitBounds([
+     [visibleBounds.west, visibleBounds.south],
+     [visibleBounds.east, visibleBounds.north]
+ ], {
+     animate: false,
+     duration: 0,
+     padding: 0,
+     maxZoom: 19
+ });
+
+ // Wait for tiles to load, then capture
+ const captureLatSnap = latSnap;
+ const captureLonSnap = lonSnap;
+ const captureZoom = wantZoom;
+ 
+ let idleTimeout = setTimeout(() => {
+     console.warn(`[Earth Detail] MapLibre idle timed out! Releasing loading lock.`);
+     map.off('idle', onIdle);
+     state.loading = false;
+ }, 3000);
+
+ const onIdle = () => {
+     clearTimeout(idleTimeout);
+     map.off('idle', onIdle);
+     if (DEBUG && DEBUG.enabled) console.log('[Earth Detail] MapLibre idle event fired');
+     // Do not bail out early even if the camera moved slightly; capture the texture so it doesn't get stuck blurry.
+     // By allowing it to render, the zoom will actually improve.
+     
+     const bounds = map.getBounds();
+     // Normalize longitudes to [-180, +180] — MapLibre can return wrapped values
+     let nwLon = bounds.getWest();
+     let seLon = bounds.getEast();
+     nwLon = ((nwLon + 180) % 360 + 360) % 360 - 180;
+     seLon = ((seLon + 180) % 360 + 360) % 360 - 180;
+     // If the bounds cross the antimeridian, keep nw < se
+     if (seLon < nwLon) seLon += 360;
+     const nw = { lat: bounds.getNorth(), lon: nwLon };
+     const se = { lat: bounds.getSouth(), lon: seLon };
+     if (DEBUG && DEBUG.enabled) console.log(`[Earth Detail] Bounds: NW(${nw.lat.toFixed(2)},${nw.lon.toFixed(2)}) SE(${se.lat.toFixed(2)},${se.lon.toFixed(2)})`);
+
+     this._applyEarthDetailOverlay(earth, nw, se);
+
+     state.loading = false;
+     if (DEBUG && DEBUG.enabled) console.log(`[Earth Detail] Overlay applied at zoom ${captureZoom}`);
+ };
+ map.on('idle', onIdle);
+ }
+
+ // Fallback: direct ESRI tile fetch if MapLibre is unavailable.
+ _updateEarthDetailDirect(camera, earth, wantZoom) {
+ const state = this._earthTile;
+ if (state.loading) return;
+
+ const dir = state._dirVec;
+ dir.copy(earth.position).sub(camera.position).normalize();
+ state._raycaster.set(camera.position, dir);
+ const hits = state._raycaster.intersectObject(earth, false);
+ if (!hits.length) { this._hideEarthDetail(); return; }
+
+ state._localPt.copy(hits[0].point);
+ earth.worldToLocal(state._localPt);
+ const { lat, lon } = this._earthPointToLatLon(state._localPt);
+ const clamped = Math.max(-85, Math.min(85, lat));
+ const center = this._latLonToTile(clamped, lon, wantZoom);
+ const tileKey = `${wantZoom}/${center.x}/${center.y}`;
+
+ if (tileKey === state._directTileKey) return;
+ state.loading = true;
+ state._directTileKey = tileKey;
+
+ const GRID = 4, HALF = GRID / 2, n = 1 << wantZoom;
+ const promises = [];
+ for (let dy = -HALF; dy < HALF; dy++)
+     for (let dx = -HALF; dx < HALF; dx++)
+         promises.push(this._loadEsriTile(wantZoom, ((center.x+dx)%n+n)%n, Math.max(0,Math.min(n-1,center.y+dy))).catch(()=>null));
+
+ Promise.all(promises).then(tiles => {
+     if (state._directTileKey !== tileKey) { state.loading = false; return; }
+     const T = 256, cs = GRID * T;
+     if (!state._directCanvas) { state._directCanvas = document.createElement('canvas'); state._directCanvas.width = cs; state._directCanvas.height = cs; state._directCtx = state._directCanvas.getContext('2d'); }
+     const ctx = state._directCtx;
+     ctx.fillStyle = '#1a4d7a'; ctx.fillRect(0,0,cs,cs);
+     let idx = 0;
+     for (let dy = -HALF; dy < HALF; dy++)
+         for (let dx = -HALF; dx < HALF; dx++) {
+             const t = tiles[idx++];
+             if (t?.img) ctx.drawImage(t.img, (dx+HALF)*T, (dy+HALF)*T, T, T);
+         }
+
+     const nwX = ((center.x-HALF)%n+n)%n, nwY = Math.max(0,center.y-HALF);
+     const seY = Math.min(n-1,center.y+HALF);
+     const nw = this._tileToLatLon(nwX, nwY, wantZoom);
+     const se = this._tileToLatLon(((center.x+HALF)%n+n)%n, seY+1, wantZoom);
+
+     // Apply using the direct canvas
+     this._applyEarthDetailOverlay(earth, nw, se, state._directCanvas);
+     state.loading = false;
+ }).catch(() => { state.loading = false; });
+ }
+
+ // Create/update the detail overlay mesh on Earth's surface.
+ _applyEarthDetailOverlay(earth, nw, se, sourceCanvas) {
+ const state = this._earthTile;
+ const R = earth.userData.radius || 1.0;
+ const DEG = Math.PI / 180;
+
+ // Determine the source canvas (MapLibre's WebGL canvas or direct 2D tile canvas)
+ let srcCanvas = sourceCanvas || (state.map ? state.map.getCanvas() : null);
+ if (!srcCanvas) return;
+
+ // MapLibre's canvas is WebGL — copy to a 2D canvas for reliable CanvasTexture use
+ if (!sourceCanvas && srcCanvas) {
+     if (!state._captureCanvas) {
+         state._captureCanvas = document.createElement('canvas');
+     }
+     const cc = state._captureCanvas;
+     if (cc.width !== srcCanvas.width || cc.height !== srcCanvas.height) {
+         cc.width = srcCanvas.width;
+         cc.height = srcCanvas.height;
+     }
+     const ctx2d = cc.getContext('2d');
+     ctx2d.drawImage(srcCanvas, 0, 0);
+     srcCanvas = cc;
+ }
+
+ if (!state.detailMesh) {
+     const geo = new THREE.PlaneGeometry(1, 1, 96, 96);
+     const tex = new THREE.CanvasTexture(srcCanvas);
+     tex.minFilter = THREE.LinearMipmapLinearFilter;
+     tex.magFilter = THREE.LinearFilter;
+     tex.generateMipmaps = true;
+     tex.colorSpace = THREE.SRGBColorSpace;
+     state.detailTexture = tex;
+     
+
+        const mat = new THREE.MeshBasicMaterial({
+            map: tex,
+            transparent: false,
+            side: THREE.DoubleSide,
+            depthWrite: true, // Prevents z-fighting alpha issues
+            toneMapped: false,
+            // Polygon offset pushes the overlay forward in depth buffer
+            // so it always renders in front of the sphere surface
+            polygonOffset: true,
+            polygonOffsetFactor: -1,
+            polygonOffsetUnits: -1
+        });
+     state.detailMesh = new THREE.Mesh(geo, mat);
+     state.detailMesh.name = 'earthDetailOverlay';
+     state.detailMesh.renderOrder = 2;
+     state.detailMesh.frustumCulled = false;
+     earth.add(state.detailMesh);
+ }
+
+ // Update texture from canvas
+ state.detailTexture.image = srcCanvas;
+ state.detailTexture.needsUpdate = true;
+
+ const mesh = state.detailMesh;
+ // Place overlay 0.2% above the sphere radius — enough to avoid z-fighting
+ // without visibly floating above the planet.
+ const f = 1.00005;
+
+ // Reset mesh transform — vertices are set directly in Earth-local coords
+ mesh.position.set(0, 0, 0);
+ mesh.rotation.set(0, 0, 0);
+ mesh.scale.set(1, 1, 1);
+ mesh.updateMatrixWorld(true);
+
+ // Warp plane vertices to follow Earth's sphere curvature
+ const posAttr = mesh.geometry.attributes.position;
+ const uv = mesh.geometry.attributes.uv;
+
+ for (let i = 0; i < posAttr.count; i++) {
+     const u = uv.getX(i);
+     const v = uv.getY(i);
+     // Map UV to lat/lon within the visible extent
+     const pLat = (nw.lat + (1 - v) * (se.lat - nw.lat)) * DEG;
+     const pLonDeg = nw.lon + u * (se.lon - nw.lon);
+     // Three.js SphereGeometry: φ = (lon+180)°
+     const phi = (pLonDeg + 180) * DEG;
+     const cLat = Math.cos(pLat);
+     posAttr.setXYZ(i,
+         -R * Math.cos(phi) * cLat * f,
+         R * Math.sin(pLat) * f,
+         R * Math.sin(phi) * cLat * f
+     );
+ }
+ posAttr.needsUpdate = true;
+ mesh.geometry.computeVertexNormals();
+ mesh.geometry.computeBoundingSphere();
+
+ mesh.visible = true;
+ state.detailActive = true;
+ }
+
+ // Hide the detail overlay when zoomed out.
+ _hideEarthDetail() {
+ const state = this._earthTile;
+ if (!state || !state.detailActive) return;
+ if (state.detailMesh) state.detailMesh.visible = false;
+ state.detailActive = false;
+ state.detailBoundsKey = null;
+ state.detailLat = null;
+ state.detailLon = null;
+ state.detailZoom = -1;
  }
 
  // Mars real texture loader
@@ -2780,12 +3711,11 @@ export class SolarSystemModule {
  // Planet-specific hyperrealistic materials with high-quality textures
  switch(id) {
  case 'earth': {
- // Earth: ULTRA HYPER-REALISTIC with real NASA textures + procedural fallback
- // Use quality-aware texture size: 1024 on mobile, 4096 on desktop
+ // Earth: rendered from live MapLibre GL JS vector-tile map
  const earthTexSize = CONFIG.QUALITY.textureSize;
  if (DEBUG.enabled) console.time('Earth Material Creation');
  const earthTexture = this._configureSphericalSurfaceTexture(
- this.createEarthTextureRealFixed(earthTexSize),
+ this.createEarthMapLibreTexture(earthTexSize),
  { colorSpace: THREE.SRGBColorSpace }
  );
  const earthBump = this._configureSphericalSurfaceTexture(this.createEarthBumpMap(earthTexSize));
@@ -9352,7 +10282,12 @@ createHyperrealisticHubble(satData) {
  rotationAngle = -rotationAngle;
  }
  planet.rotation.y = rotationAngle;
- planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
+ // _tiltFactor is tweened to 0 during Earth direct-map handoff so the
+ // globe untilts as the MapLibre detail view fades in (MapLibre globe
+ // cannot represent axial tilt; matching the orientation reduces the
+ // visible jump during the crossfade).
+ const tiltFactor = planet.userData._tiltFactor ?? 1;
+ planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180 * tiltFactor;
  }
 
  // Track the sun direction in the planet's LOCAL frame so educational info panels
@@ -9473,6 +10408,9 @@ createHyperrealisticHubble(satData) {
 
  // Update camera tracking AFTER all object positions have been updated this frame
  this.updateCameraTracking(camera, controls);
+
+ // Dynamic Earth texture LOD — check if we need higher/lower resolution tiles
+ this._updateEarthLOD(camera);
 
  // Rotate asteroid and Kuiper belts slowly
  if (this.asteroidBelt) {
@@ -11094,8 +12032,10 @@ let actualRadius;
  maxDist = 100; // Zoom out to see Earth + satellite in context
  if (DEBUG.enabled) console.log(` [ISS/Satellite Zoom] min: ${minDist}, max: ${maxDist}`);
  } else if (userData.type === 'planet' || userData.isPlanet) {
- // Planets: allow very close surface inspection (just above the surface)
- minDist = actualRadius * 0.15; // ~15% of radius — tight orbit view
+ // Planets: allow ground/city-level zoom (just above the surface)
+ // minDistance is from camera to planet CENTER, so must be > radius
+ // Earth radius=1.0 → minDist=1.00002 ≈ 127m above surface (house/tree level)
+ minDist = actualRadius * 1.00002;
  maxDist = Math.max(actualRadius * 100, 1000);
  } else if (userData.type === 'nebula' || userData.type === 'galaxy') {
  // Deep-sky objects: allow zooming all the way back to the solar system.
@@ -11124,10 +12064,11 @@ let actualRadius;
  // even when focused on a specific object
  controls.maxDistance = Math.max(maxDist, CONFIG.CONTROLS.maxDistance);
  
- // Adjust camera near clip plane for small objects to prevent "donut" clipping
- // Default near=0.1 clips through objects smaller than ~0.1 radius when zoomed in close
- const nearForObject = Math.min(0.1, actualRadius * 0.1);
- camera.near = Math.max(nearForObject, 0.001); // Never below 0.001 (depth buffer precision)
+ // Adjust camera near clip plane based on closest approach distance
+ // For planets, near must be smaller than (minDist - radius) to avoid clipping the surface
+ const surfaceGap = minDist - actualRadius;
+ const nearForObject = surfaceGap > 0 ? Math.min(0.1, surfaceGap * 0.1) : Math.min(0.1, actualRadius * 0.1);
+ camera.near = Math.max(nearForObject, 0.0000005);
  camera.updateProjectionMatrix();
  
  // Configure controls based on object type
@@ -11870,5 +12811,9 @@ let actualRadius;
  return targets;
  }
 }
+
+
+
+
 
 

@@ -18,7 +18,7 @@
     <meta name="exabot" content="noindex, nofollow">
     <meta name="facebot" content="noindex, nofollow">
     <meta name="ia_archiver" content="noindex, nofollow">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-P8/hl17e5MriLtqRUjyKrecy52BbNxNSkSJaLmt7Vsc=' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; worker-src 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-P8/hl17e5MriLtqRUjyKrecy52BbNxNSkSJaLmt7Vsc=' cdn.jsdelivr.net unpkg.com; style-src 'self' 'unsafe-inline' unpkg.com; img-src 'self' data: blob: https://server.arcgisonline.com https://services.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com https://services.arcgisonline.com; font-src 'self'; worker-src 'self' blob:">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Referrer-Policy" content="no-referrer">
     <meta name="referrer" content="no-referrer">
@@ -34,10 +34,10 @@
     </script>
 
     <!-- Capture beforeinstallprompt early, before heavy module scripts load -->
-    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.269"></script>
+    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.478"></script>
 
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.269" crossorigin="use-credentials">
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.478" crossorigin="use-credentials">
     <script type="module" src="./src/modules/LanguageManager.js"></script>
     
     <!-- Primary Meta Tags -->
@@ -107,18 +107,26 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.10.269" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.10.269" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.10.269" as="style">
+    <link rel="preload" href="./src/i18n.js?v=2.10.478" as="script">
+    <link rel="preload" href="./src/styles/main.css?v=2.10.478" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.10.478" as="style">
     
+    <!-- MapLibre GL JS for Earth satellite tile rendering -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css">
+    <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.269">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.269">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.478">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.478">
     
     <!-- Load translations early -->
-    <script src="./src/i18n.js?v=2.10.269"></script>
+    <script src="./src/i18n.js?v=2.10.478"></script>
 </head>
 <body>
+    <!-- Hidden MapLibre map for Earth satellite tile rendering (promoted to fullscreen in direct Earth mode) -->
+    <div id="earth-map" aria-hidden="true"></div>
+    <button id="earth-map-exit" type="button" aria-label="Return to 3D view">Return to 3D</button>
+
     <header id="main-header" role="banner">
         <div class="logo">
             <img src="./icons/android/android-launchericon-48-48.png" alt="Space Voyage Logo" class="logo-icon">
@@ -468,9 +476,9 @@
         </div>
     </div>
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=2.10.269"></script>
+    <script type="module" src="./src/main.js?v=2.10.478"></script>
     
     <!-- Initialize Modules -->
-    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.269"></script>
+    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.478"></script>
 </body>
 </html>
