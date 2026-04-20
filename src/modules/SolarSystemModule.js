@@ -3442,8 +3442,12 @@ export class SolarSystemModule {
  axialTilt: astroData.axialTilt || 0,
  retrograde: astroData.retrograde || false,
  rotationPhase: Math.random() * Math.PI * 2,
- // All moons in this simulation are tidally locked (rotation period = orbital period)
- tidallyLocked: true
+ // Tidal locking: defaults to true because every moon currently in the catalog
+ // (Earth's Moon, Phobos/Deimos, the Galilean moons, Titan/Enceladus/Rhea,
+ // Titania/Miranda, Triton, Charon) is genuinely tidally locked. Add
+ // `tidallyLocked: false` to the createMoon config for any irregular or
+ // chaotic moons (e.g., Hyperion, Phoebe, Nereid) added later.
+ tidallyLocked: config.tidallyLocked !== undefined ? !!config.tidallyLocked : true
  };
 
  moon.userData.parentPlanet = planet.userData?.id || planet.userData?.name || null;
@@ -9278,7 +9282,10 @@ createHyperrealisticHubble(satData) {
  moon.position.x = xOrb;
  moon.position.y = zOrb * moon.userData._sinOrbInc;
  moon.position.z = zOrb * moon.userData._cosOrbInc;
- moonOrbitalAngle = theta;
+ // Use the post-tilt world-XZ azimuth so tidal lock stays correct for
+ // inclined orbits (Triton ~157°, Miranda ~4°, Moon ~5°). Pre-tilt theta
+ // would drift the locked face off the planet for any non-zero inclination.
+ moonOrbitalAngle = Math.atan2(moon.position.z, moon.position.x);
  } else {
  const adj = moon.userData.angle + parentRotY;
  moon.position.x = moon.userData.distance * Math.cos(adj);
@@ -9287,8 +9294,10 @@ createHyperrealisticHubble(satData) {
  moonOrbitalAngle = adj;
  }
  
- // REALISTIC MOON ROTATION based on real astronomical data
- if (moon.userData.realRotationPeriod && rotationSpeed !== 0) {
+ // REALISTIC MOON ROTATION based on real astronomical data.
+ // Tidally-locked moons are evaluated even when rotationSpeed === 0 (paused
+ // sim) so the locked face stays oriented toward the parent planet.
+ if (moon.userData.tidallyLocked || (moon.userData.realRotationPeriod && rotationSpeed !== 0)) {
  let rotationAngle;
  if (moon.userData.tidallyLocked) {
  // True tidal locking: enforce same face always toward parent planet.
