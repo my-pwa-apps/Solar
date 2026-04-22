@@ -2210,11 +2210,16 @@ this.camera.near = 10.0;
  }
 
  _alignVRWarpEffect(travelWorld) {
- if (!this._vrWarpEffect || !this.dolly || !travelWorld || travelWorld.lengthSq() < 0.0001) return;
- this._vrWarpInverseQuat.copy(this.dolly.quaternion).invert();
- this._vrWarpLocalDir.copy(travelWorld).normalize().applyQuaternion(this._vrWarpInverseQuat);
- this._vrWarpQuat.setFromUnitVectors(this._vrForwardScratch.set(0, 0, -1), this._vrWarpLocalDir);
- this._vrWarpEffect.quaternion.copy(this._vrWarpQuat);
+ if (!this._vrWarpEffect || !this.dolly) return;
+ // The streak tunnel extends along its local -Z axis. Aligning it to the
+ // camera's orientation (the user's gaze) means the streaks always project
+ // forward from where the viewer is looking — turn your head and the tunnel
+ // turns with you. We previously aligned to the travel vector, which left the
+ // streaks behind / off-axis when the user looked anywhere other than the
+ // direction of motion.
+ // The warp effect is a child of dolly, and so is the camera, so the camera's
+ // *local* quaternion already expresses the gaze direction in dolly space.
+ this._vrWarpEffect.quaternion.copy(this.camera.quaternion);
  }
 
  /**

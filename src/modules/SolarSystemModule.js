@@ -1285,13 +1285,19 @@ export class SolarSystemModule {
         planet.material.needsUpdate = true;
         planet.userData.remoteTextureLoaded = true;
         planet.userData.remoteTextureURL = url;
-        
-        const meta = this._pendingTextureMeta?.[planetName.toLowerCase()];
-        if (meta) {
-            meta.success = true;
-            meta.finalURL = url;
-            meta.finishedAt = performance.now();
-            meta.durationMs = meta.finishedAt - meta.startedAt;
+
+ // Earth: derive an ocean/land roughness map from the loaded color image so
+ // oceans get a sharp specular highlight while continents stay matte.
+ if (lowerName === 'earth' && planet.material.isMeshStandardMaterial) {
+ this._buildEarthOceanLandRoughnessMap(tex).then((roughnessMap) => {
+ if (!planet.material) return;
+ planet.material.roughnessMap = roughnessMap;
+ // With a roughness map, the scalar `roughness` is multiplied per-pixel,
+ // so reset it to 1.0 to use the map values directly.
+ planet.material.roughness = 1.0;
+ planet.material.needsUpdate = true;
+ }).catch(() => { /* keep matte fallback */ });
+ }
             meta.remoteSourceType = sourceType;
             meta.phase = 'done';
         }
@@ -1350,6 +1356,62 @@ export class SolarSystemModule {
  './textures/planets/venus.webp'
  ];
  return this.loadPlanetTextureReal('Venus', primary, this.createVenusTexture, size, []);
+ }
+
+ /**
+  * Build an ocean/land roughness map for Earth from its loaded color texture.
+  * Pixels where blue clearly dominates red+green are classified as ocean
+  * (roughness ~0.35 for a sharp specular highlight); everything else is treated
+  * as land (~0.95, fully matte). Resolves with a THREE.CanvasTexture ready to
+  * assign as material.roughnessMap. Rejects if the source image is unusable.
+  */
+ _buildEarthOceanLandRoughnessMap(colorTexture) {
+     return new Promise((resolve, reject) => {
+         const img = colorTexture?.image;
+         if (!img) { reject(new Error('no image')); return; }
+
+         const build = () => {
+             try {
+                 const W = 512, H = 256; // downsampled — roughness map doesn't need full res
+                 const canvas = document.createElement('canvas');
+                 canvas.width = W; canvas.height = H;
+                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                 ctx.drawImage(img, 0, 0, W, H);
+                 const imgData = ctx.getImageData(0, 0, W, H);
+                 const data = imgData.data;
+                 const OCEAN = 0x59; // ~0.35 * 255
+                 const LAND = 0xF2;  // ~0.95 * 255
+                 for (let i = 0; i < data.length; i += 4) {
+                     const r = data[i], g = data[i + 1], b = data[i + 2];
+                     // Ocean heuristic: blue notably exceeds red and green, and the pixel
+                     // isn't near-white (clouds/ice). Cheap and robust on the NASA Blue Marble.
+                     const isOcean = (b > r + 12) && (b > g + 6) && (r + g + b < 600);
+                     const v = isOcean ? OCEAN : LAND;
+                     data[i] = data[i + 1] = data[i + 2] = v;
+                     data[i + 3] = 255;
+                 }
+                 ctx.putImageData(imgData, 0, 0);
+                 const tex = new THREE.CanvasTexture(canvas);
+                 tex.wrapS = THREE.RepeatWrapping;
+                 tex.wrapT = THREE.ClampToEdgeWrapping;
+                 tex.anisotropy = 8;
+                 tex.needsUpdate = true;
+                 resolve(tex);
+             } catch (err) {
+                 reject(err);
+             }
+         };
+
+         if (img.complete && img.naturalWidth > 0) {
+             build();
+         } else if (typeof img.addEventListener === 'function') {
+             img.addEventListener('load', build, { once: true });
+             img.addEventListener('error', () => reject(new Error('image load failed')), { once: true });
+         } else {
+             // ImageBitmap or already-decoded source
+             build();
+         }
+     });
  }
  
  // Earth real texture loader - Optimized with reliable fallback chain
@@ -2773,11 +2835,11 @@ export class SolarSystemModule {
  bumpMap: earthBump,
  bumpScale: 0.08,
  
- // Uniform roughness — the procedural roughnessMap (createEarthSpecularMap) used
- // FBM noise that didn't align with the actual texture's oceans/continents, causing
- // a random shiny/matte split across the globe. A uniform value is far better.
- // ~0.3 keeps oceans visibly blue/specular; higher values make water look black.
- roughness: 0.3,
+ // Roughness: continents are matte, oceans get a sharp specular highlight.
+ // The actual ocean/land roughness map is generated from the loaded color
+ // texture in _onPlanetTextureSuccess (oceans → ~0.35, land → 0.95). Until
+ // that map arrives we render fully matte so land never looks plastic.
+ roughness: 0.95,
  
  // Metalness (Earth's surface is not metallic)
  metalness: 0.0,
@@ -2785,7 +2847,7 @@ export class SolarSystemModule {
  emissive: 0x000000,
  emissiveIntensity: 0,
 
- envMapIntensity: 0.2,
+ // No scene.environment is assigned anywhere, so envMapIntensity is a no-op.
  transparent: false,
  side: THREE.FrontSide,
  flatShading: false,
@@ -3138,60 +3200,6 @@ export class SolarSystemModule {
  rings.castShadow = false; // Rings don't cast meaningful shadows at solar system scale
  rings.receiveShadow = true; // But can receive shadows from moons
  planet.add(rings);
- }
-
- // Atmosphere glow — thin transparent sphere around planets with appreciable atmospheres.
- // Sun-aware: glow only appears on the sunlit limb, fading into darkness on the shadow side.
- if (config.atmosphere) {
- const atmosRadius = config.radius * 1.06;
- const atmosGeo = new THREE.SphereGeometry(atmosRadius, 48, 48);
- const atmosColor = config.atmosphereColor !== undefined ? config.atmosphereColor : 0x4466ff;
- const atmosOpacity = config.atmosphereOpacity !== undefined ? config.atmosphereOpacity : 0.15;
- const atmosColorVec = new THREE.Color(atmosColor);
-
- const atmosMat = new THREE.ShaderMaterial({
- uniforms: {
- glowColor: { value: atmosColorVec },
- glowOpacity: { value: atmosOpacity },
- sunDir: { value: new THREE.Vector3(1, 0, 0) } // updated each frame
- },
- vertexShader: /* glsl */`
- uniform vec3 sunDir;
- varying float vLimbFactor;
- varying float vSunDot;
- void main() {
- vec4 worldPos = modelMatrix * vec4(position, 1.0);
- vec3 outwardNormal = normalize(mat3(modelMatrix) * normalize(position));
- vec3 toCamera = normalize(cameraPosition - worldPos.xyz);
- float cosAngle = abs(dot(outwardNormal, toCamera));
- vLimbFactor = 1.0 - cosAngle;
- vSunDot = dot(outwardNormal, sunDir);
- gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
- }
- `,
- fragmentShader: /* glsl */`
- uniform vec3 glowColor;
- uniform float glowOpacity;
- varying float vLimbFactor;
- varying float vSunDot;
- void main() {
- float edge = pow(vLimbFactor, 1.6);
- // Fade glow on the shadow side; soft transition around the terminator.
- float sunFactor = smoothstep(-0.25, 0.4, vSunDot);
- gl_FragColor = vec4(glowColor, edge * glowOpacity * 1.6 * sunFactor);
- }
- `,
- transparent: true,
- side: THREE.BackSide,
- blending: THREE.AdditiveBlending,
- depthWrite: false
- });
-
- const atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
- atmosMesh.name = 'atmosphere';
- atmosMesh.raycast = () => {}; // Never intercept pointer clicks — let the planet underneath receive them
- planet.add(atmosMesh);
- planet.userData.atmosphereMesh = atmosMesh;
  }
 
  scene.add(planet);
@@ -4388,7 +4396,13 @@ export class SolarSystemModule {
  this.cometOrbitsVisible = true; // Default
  this.orbits = [];
  
- const planetsToOrbit = Object.keys(this.planets);
+ const planetsToOrbit = Object.keys(this.planets).filter(k => {
+ // Only draw a heliocentric orbit for bodies that actually orbit the sun.
+ // Guards against future entries (barycenters, system roots, etc.) that
+ // happen to be stored in this.planets but have no real heliocentric path.
+ const ud = this.planets[k]?.userData;
+ return ud && typeof ud.distance === 'number' && ud.distance > 0;
+ });
  
  // Create empty line objects, we will update their geometry in updateOrbitalPaths()
  planetsToOrbit.forEach(planetName => {
@@ -9229,15 +9243,6 @@ createHyperrealisticHubble(satData) {
  }
  planet.rotation.y = rotationAngle;
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
- }
-
- // Update atmosphere sun-direction uniform so glow only appears on the lit limb.
- // Sun is at world origin; planet.position points away from the sun.
- if (planet.userData.atmosphereMesh) {
- const atmosMat = planet.userData.atmosphereMesh.material;
- if (atmosMat?.uniforms?.sunDir) {
- atmosMat.uniforms.sunDir.value.copy(planet.position).negate().normalize();
- }
  }
 
  // Rotate clouds slightly faster than planet for Earth
