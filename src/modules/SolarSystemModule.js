@@ -1298,6 +1298,13 @@ export class SolarSystemModule {
  planet.material.needsUpdate = true;
  }).catch(() => { /* keep matte fallback */ });
  }
+
+        const meta = this._pendingTextureMeta?.[lowerName];
+        if (meta) {
+            meta.success = true;
+            meta.finishedAt = performance.now();
+            meta.durationMs = meta.finishedAt - meta.startedAt;
+            meta.remoteURL = url;
             meta.remoteSourceType = sourceType;
             meta.phase = 'done';
         }
