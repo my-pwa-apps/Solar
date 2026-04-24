@@ -188,6 +188,7 @@ export class UIManager {
  * Stores the previously focused element and restores it on release.
  */
  _trapFocus(container) {
+ this._releaseFocusTrap();
  this._focusTrapPrev = document.activeElement;
  this._focusTrapContainer = container;
  const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');

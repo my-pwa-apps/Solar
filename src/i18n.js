@@ -3580,6 +3580,15 @@ const translations = {
     }
 };
 
+const I18N_ASSET_VERSION = (() => {
+    const script = document.currentScript || document.querySelector('script[src*="src/i18n.js"]');
+    try {
+        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.298';
+    } catch {
+        return '2.10.298';
+    }
+})();
+
 const localeParityFallbackKeys = [
     'descSputnik1',
     'eventApollo111969',
@@ -3747,7 +3756,7 @@ function setLanguage(lang) {
 
     const manifestLink = document.querySelector('link[rel="manifest"]');
     if (manifestLink) {
-        manifestLink.href = `${manifestFiles[lang] || './manifest.json'}?v=2.10.173`;
+        manifestLink.href = `${manifestFiles[lang] || './manifest.json'}?v=${I18N_ASSET_VERSION}`;
     }
 
     applyTranslations();

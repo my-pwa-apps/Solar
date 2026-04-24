@@ -692,16 +692,33 @@ this.camera.near = 10.0;
  }
  });
 
- hud.innerHTML = `
- <div style="color:#ffaa00;font-weight:bold;margin-bottom:4px">🥽 VR EMULATION MODE</div>
- <div>Dolly: (${this.dolly.position.x.toFixed(1)}, ${this.dolly.position.y.toFixed(1)}, ${this.dolly.position.z.toFixed(1)})</div>
- <div>Camera World: (${wp.x.toFixed(1)}, ${wp.y.toFixed(1)}, ${wp.z.toFixed(1)})</div>
- <div>Near: ${this.camera.near} | Far: ${this.camera.far}</div>
- <div>FOV: ${this.camera.fov.toFixed(0)}°</div>
- <div>Meshes: ${visibleMeshes}/${meshCount} visible</div>
- <div>Scene children: ${this.scene.children.length}</div>
- <div style="margin-top:6px;color:#888">Use OrbitControls to look around from VR start pos</div>
- `;
+ const title = document.createElement('div');
+ title.textContent = '🥽 VR EMULATION MODE';
+ title.style.color = '#ffaa00';
+ title.style.fontWeight = 'bold';
+ title.style.marginBottom = '4px';
+
+ const hint = document.createElement('div');
+ hint.textContent = 'Use OrbitControls to look around from VR start pos';
+ hint.style.marginTop = '6px';
+ hint.style.color = '#888';
+
+ const line = (text) => {
+ const div = document.createElement('div');
+ div.textContent = text;
+ return div;
+ };
+
+ hud.replaceChildren(
+ title,
+ line(`Dolly: (${this.dolly.position.x.toFixed(1)}, ${this.dolly.position.y.toFixed(1)}, ${this.dolly.position.z.toFixed(1)})`),
+ line(`Camera World: (${wp.x.toFixed(1)}, ${wp.y.toFixed(1)}, ${wp.z.toFixed(1)})`),
+ line(`Near: ${this.camera.near} | Far: ${this.camera.far}`),
+ line(`FOV: ${this.camera.fov.toFixed(0)}°`),
+ line(`Meshes: ${visibleMeshes}/${meshCount} visible`),
+ line(`Scene children: ${this.scene.children.length}`),
+ hint
+ );
  };
 
  updateHUD();

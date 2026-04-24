@@ -1613,8 +1613,8 @@ class App {
  
  if (!searchInput || !dropdown) return;
  
- // Preserve full original HTML for restoring the complete grouped dropdown.
- const originalHTML = dropdown.innerHTML;
+ // Preserve original nodes for restoring the complete grouped dropdown.
+ const originalNodes = Array.from(dropdown.children).map((child) => child.cloneNode(true));
 
  // Translated option data — built lazily on the first keystroke so that
  // window.applyTranslations() has already run by then. Invalidated on restore.
@@ -1629,7 +1629,7 @@ class App {
  };
 
  const restoreDropdown = () => {
- dropdown.innerHTML = originalHTML;
+ dropdown.replaceChildren(...originalNodes.map((child) => child.cloneNode(true)));
  // Re-apply translations only once on restore (this is a rare event).
  if (window.applyTranslations) window.applyTranslations();
  _cachedOptions = null; // invalidate so next filter re-reads translated text
@@ -1650,14 +1650,13 @@ class App {
  );
  
  // Rebuild dropdown with matches (no optgroups during search).
- dropdown.innerHTML = '';
  const placeholder = document.createElement('option');
  placeholder.value = '';
  const t = window.t || ((k) => k);
  placeholder.textContent = matches.length > 0
  ? (matches.length === 1 ? t('searchResults') : t('searchResultsPlural')).replace('{n}', matches.length)
  : t('searchNoResults');
- dropdown.appendChild(placeholder);
+ dropdown.replaceChildren(placeholder);
  
  matches.forEach(({ value, text }) => {
  const opt = document.createElement('option');

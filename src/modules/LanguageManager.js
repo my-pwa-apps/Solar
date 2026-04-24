@@ -2,7 +2,7 @@
  * LanguageManager - Handles language detection and manifest switching
  * This module must load before other modules to set document.lang correctly
  */
-import { DEBUG } from './utils.js';
+import { APP_VERSION, DEBUG } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
 
 class LanguageManager {
@@ -78,7 +78,7 @@ class LanguageManager {
         const manifestLink = document.getElementById('pwa-manifest');
         if (manifestLink) {
             const manifestFile = this.manifestFiles[langCode] || './manifest.json';
-            manifestLink.href = manifestFile + '?v=2.10.173';
+            manifestLink.href = manifestFile + '?v=' + APP_VERSION;
         }
     }
 }
