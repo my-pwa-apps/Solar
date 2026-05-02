@@ -3583,9 +3583,9 @@ const translations = {
 const I18N_ASSET_VERSION = (() => {
     const script = document.currentScript || document.querySelector('script[src*="src/i18n.js"]');
     try {
-        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.298';
+        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.302';
     } catch {
-        return '2.10.298';
+        return '2.10.302';
     }
 })();
 

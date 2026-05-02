@@ -270,7 +270,7 @@
     max-width: min(340px, calc(100vw - 48px));
     max-height: 45vh;
     transition: all var(--transition);
-    z-index: 50;
+    z-index: 95;
     font-size: 14px;
     overflow: hidden;
     display: flex;
@@ -1464,7 +1464,7 @@ select {
         top: auto; /* Use bottom positioning instead */
         max-width: calc(100vw - 30px); /* Responsive with left padding */
         max-height: 40vh; /* Limit to 40% of viewport height */
-        z-index: 50; /* Below header - panel always beneath top bar */
+        z-index: 95; /* Above speed panel, below header/footer */
     }
     
     #speed-control {

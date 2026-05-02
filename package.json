@@ -1,0 +1,18 @@
+{
+  "name": "space-voyage",
+  "version": "2.10.302",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:basic": "playwright test tests/e2e/app.spec.js tests/static-regression.spec.js",
+    "test:full": "playwright test tests/e2e/full-functionality.spec.js",
+    "test:e2e": "playwright test tests/e2e",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "http-server": "^14.1.1"
+  }
+}

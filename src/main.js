@@ -1259,6 +1259,9 @@ class App {
  this._fpsLastTime = performance.now();
  this._fpsValueEl = document.getElementById('fps-value');
  this._fpsCounterEl = document.getElementById('fps-counter');
+ if (DEBUG.PERFORMANCE && this._fpsCounterEl) {
+ this._fpsCounterEl.classList.remove('hidden');
+ }
  }
 
  updateFPSCounter() {
@@ -1630,10 +1633,24 @@ class App {
 
  const restoreDropdown = () => {
  dropdown.replaceChildren(...originalNodes.map((child) => child.cloneNode(true)));
- // Re-apply translations only once on restore (this is a rare event).
- if (window.applyTranslations) window.applyTranslations();
+ dropdown.querySelectorAll('[data-i18n]').forEach((element) => {
+ const key = element.getAttribute('data-i18n');
+ const translation = t(key);
+ if (element.tagName === 'OPTGROUP') {
+ element.setAttribute('label', translation);
+ } else {
+ element.textContent = translation;
+ }
+ });
  _cachedOptions = null; // invalidate so next filter re-reads translated text
  };
+
+ // The main navigation change listener resets dropdown.value to the placeholder.
+ // Capture the selected value first so the search cleanup listener can still
+ // restore the full grouped dropdown after filtered navigation.
+ dropdown.addEventListener('change', () => {
+ dropdown.dataset.pendingSearchValue = dropdown.value;
+ }, true);
  
  searchInput.addEventListener('input', (e) => {
  const query = e.target.value.toLowerCase().trim();
@@ -1668,7 +1685,9 @@ class App {
  
  // Clear search when dropdown is used
  dropdown.addEventListener('change', () => {
- if (dropdown.value) {
+ const selectedValue = dropdown.value || dropdown.dataset.pendingSearchValue;
+ delete dropdown.dataset.pendingSearchValue;
+ if (selectedValue && searchInput.value) {
  searchInput.value = '';
  restoreDropdown();
  }

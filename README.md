@@ -74,6 +74,23 @@ npx http-server -p 8000
 # Navigate to: http://localhost:8000
 ```
 
+## Regression Tests
+
+The app includes a Playwright regression suite that starts a local static server and runs desktop plus mobile Chromium checks against the real browser app.
+
+```bash
+# Install dependencies once
+npm install
+
+# Run the full regression suite after changes
+npm test
+
+# Optional: debug tests in a visible browser
+npm run test:headed
+```
+
+The suite verifies version/cache consistency, service-worker cached file references, app boot, WebGL canvas creation, navigation dropdown behavior, core controls, modals, manifest loading, and service worker registration.
+
 ### Option 3: Install as PWA
 1. Visit the deployed app (requires HTTPS)
 2. Click the "Install" button in your browser
