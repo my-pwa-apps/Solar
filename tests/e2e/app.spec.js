@@ -85,7 +85,7 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
   }));
 
   expect(appState).toMatchObject({
-    version: '2.10.302',
+    version: '2.10.303',
     hasCamera: true,
     hasScene: true,
     hasControls: true,
@@ -145,7 +145,7 @@ test('keeps core navigation and controls working', async ({ page }) => {
 
   await openModalFromButton(page, '#settings-button', '#settings-modal');
   await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#settings-modal')).toContainText('v2.10.302');
+  await expect(page.locator('#settings-modal')).toContainText('v2.10.303');
   await page.locator('button[aria-label="Close settings dialog"]').click({ force: true });
   await expect(page.locator('#settings-modal')).toHaveClass(/hidden/);
 

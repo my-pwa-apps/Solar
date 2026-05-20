@@ -1106,7 +1106,7 @@ const translations = {
         // Wetenswaardigheden voor extra objecten
         funFactAsteroidBelt: 'In tegenstelling tot films zijn asteroïden heel ver van elkaar - ruimtevaartuigen kunnen er veilig doorheen vliegen!',
         funFactKuiperBelt: 'De Kuipergordel is 20 keer breder dan de asteroïdengordel en bevat miljarden objecten!',
-        funFactOortCloud: 'De Oortwolk is zo ver weg dat licht van de Zon er meer dan 1,5 jaar over doet om de buitenrand te bereiken! Voyager 1 zou er zo\'n 300 jaar over doen om de binnenrand te bereiken.',
+        funFactOortCloud: 'De Oortwolk is zo ver weg dat licht van de Zon er meer dan 3 jaar over doet om de buitenrand op 200.000 AU te bereiken! Voyager 1 zou er zo\'n 300 jaar over doen om de binnenrand te bereiken.',
         funFactHeliopause: 'Toen Voyager 1 de heliopauze passeerde, detecteerde het een 40-voudige toename van kosmische straling — het bewijs dat het de beschermende bubbel van de Zon had verlaten!',
         funFactCeres: 'Ceres heeft mogelijk vloeibaar water onder het oppervlak - een topkandidaat voor leven!',
         funFactHaumea: 'Een rotatieperiode van ~4 uur geeft Haumea zijn unieke eivormige triaxiale ellipsoïdevorm!',
@@ -1699,8 +1699,8 @@ const translations = {
 
         // Faits amusants pour les objets supplémentaires
         funFactAsteroidBelt: 'Contrairement aux films, les astéroïdes sont très éloignés - les sondes spatiales peuvent les traverser sans danger!',
-        funFactKuiperBelt: 'La ceinture de Kuiper est 20 fois plus large que la ceinture d\'astéroïdes et contient des milliards d\'objets!',
-        funFactOortCloud: 'Le nuage de Oort est si loin que la lumière du Soleil met plus d\'1,5 an pour atteindre sa lisière externe! Voyager 1 mettrait environ 300 ans pour atteindre la lisière interne.',
+        funFactKuiperBelt: 'La ceinture de Kuiper is 20 fois plus large que la ceinture d\'astéroïdes et contient des milliards d\'objets!',
+        funFactOortCloud: 'Le nuage de Oort est si loin que la lumière du Soleil met plus de 3 ans pour atteindre sa lisière externe à 200 000 UA ! Voyager 1 mettrait environ 300 ans pour atteindre la lisière interne.',
         funFactHeliopause: 'Quand Voyager 1 a franchi l\'héliopause, elle a détecté une augmentation de 40 fois de l\'intensité des rayons cosmiques — confirmant qu\'elle avait quitté la bulle protectrice du Soleil!',
         funFactCeres: 'Cérès pourrait abriter de l\'eau liquide souterraine - un candidat de premier plan pour la vie!',
         funFactHaumea: 'Une période de rotation de ~4 heures donne à Hauméa sa forme unique d\'ellipsoïde triaxial en œuf!',
@@ -2292,7 +2292,7 @@ const translations = {
         // Wissenswertes für zusätzliche Objekte
         funFactAsteroidBelt: 'Entgegen Filmdarstellungen sind Asteroiden sehr weit voneinander entfernt - Raumfahrzeuge können sicher hindurchfliegen!',
         funFactKuiperBelt: 'Der Kuiper-Gürtel ist 20-mal breiter als der Asteroidengürtel und enthält Milliarden von Objekten!',
-        funFactOortCloud: 'Die Oort-Wolke ist so weit entfernt, dass Licht der Sonne über 1,5 Jahre braucht, um ihren Außenrand zu erreichen! Voyager 1 würde etwa 300 Jahre brauchen, um den Innenrand zu erreichen.',
+        funFactOortCloud: 'Die Oort-Wolke ist so weit entfernt, dass Licht der Sonne über 3 Jahre braucht, um ihren Außenrand bei 200.000 AE zu erreichen! Voyager 1 würde etwa 300 Jahre brauchen, um den Innenrand zu erreichen.',
         funFactHeliopause: 'Als Voyager 1 die Heliopause überquerte, stellte sie einen 40-fachen Anstieg der kosmischen Strahlung fest — ein Beweis, dass sie die schützende Blase der Sonne verlassen hatte!',
         funFactCeres: 'Ceres könnte unterirdisches flüssiges Wasser beherbergen - ein Spitzenkandidat für Leben!',
         funFactHaumea: 'Eine Rotationsperiode von ~4 Stunden verleiht Haumea seine einzigartige eiförmige dreiachsige Ellipsoidform!',
@@ -2884,7 +2884,7 @@ const translations = {
         // Datos curiosos para objetos adicionales
         funFactAsteroidBelt: '¡Al contrario de lo que muestran las películas, los asteroides están muy lejos unos de otros - las naves espaciales pueden atravesarlos con seguridad!',
         funFactKuiperBelt: '¡El cinturón de Kuiper es 20 veces más ancho que el cinturón de asteroides y contiene miles de millones de objetos!',
-        funFactOortCloud: '¡La nube de Oort está tan lejos que la luz del Sol tarda más de 1,5 años en alcanzar su borde exterior! Voyager 1 tardaría unos 300 años en alcanzar el borde interior.',
+        funFactOortCloud: '¡La nube de Oort está tan lejos que la luz del Sol tarda más de 3 años en alcanzar su borde exterior a 200.000 UA! Voyager 1 tardaría unos 300 años en alcanzar el borde interior.',
         funFactHeliopause: 'Cuando Voyager 1 cruzó la heliopausa, detectó un aumento de 40 veces en la intensidad de rayos cósmicos — ¡confirmando que había abandonado la burbuja protectora del Sol!',
         funFactCeres: '¡Ceres podría albergar agua líquida subterránea - un candidato principal para la vida!',
         funFactHaumea: '¡Un período de rotación de ~4 horas le da a Haumea su forma única de elipsoide triaxial como un huevo!',
@@ -3476,7 +3476,7 @@ const translations = {
         // Fatos divertidos para objetos adicionais
         funFactAsteroidBelt: 'Ao contrário do que os filmes mostram, os asteroides estão muito distantes uns dos outros - sondas espaciais podem passar com segurança!',
         funFactKuiperBelt: 'O cinturão de Kuiper é 20 vezes mais largo que o cinturão de asteroides e contém bilhões de objetos!',
-        funFactOortCloud: 'A nuvem de Oort está tão distante que a luz do Sol leva mais de 1,5 ano para alcançar sua borda externa! A Voyager 1 levaria cerca de 300 anos para alcançar a borda interna.',
+        funFactOortCloud: 'A nuvem de Oort está tão distante que a luz do Sol leva mais de 3 anos para alcançar sua borda externa a 200.000 UA! A Voyager 1 levaria cerca de 300 anos para alcançar a borda interna.',
         funFactHeliopause: 'Quando a Voyager 1 atravessou a heliopausa, detetou um aumento de 40 vezes na intensidade dos raios cósmicos — confirmando que tinha saído da bolha protetora do Sol!',
         funFactCeres: 'Ceres pode abrigar água líquida subterrânea - um candidato de topo para a vida!',
         funFactHaumea: 'Um período de rotação de ~4 horas dá a Haumea sua forma única de elipsoide triaxial semelhante a um ovo!',
@@ -3583,9 +3583,9 @@ const translations = {
 const I18N_ASSET_VERSION = (() => {
     const script = document.currentScript || document.querySelector('script[src*="src/i18n.js"]');
     try {
-        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.302';
+        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.303';
     } catch {
-        return '2.10.302';
+        return '2.10.303';
     }
 })();
 

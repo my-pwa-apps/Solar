@@ -3048,8 +3048,8 @@ export class SolarSystemModule {
 
  const planet = new THREE.Mesh(geometry, material);
  planet.position.set(config.distance, 0, 0);
- planet.castShadow = CONFIG.QUALITY.shadows; // Enable eclipses on desktop; mobile stays off for performance
- planet.receiveShadow = true; // But can receive shadows from moons
+ planet.castShadow = false;
+ planet.receiveShadow = false;
  planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 
  // Get real astronomical data for this planet - USE ENGLISH KEY, NOT TRANSLATED NAME
@@ -3424,8 +3424,8 @@ export class SolarSystemModule {
  }
 
  const moon = new THREE.Mesh(geometry, moonMaterial);
- moon.castShadow = true;
- moon.receiveShadow = true;
+ moon.castShadow = false;
+ moon.receiveShadow = false;
  
  // Verify texture is applied
  if (DEBUG.enabled) {
