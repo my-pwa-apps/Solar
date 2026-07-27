@@ -1,4 +1,11 @@
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// package.json is the single source of truth for the app version.
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const APP_VERSION = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')).version;
 
 test.use({ viewport: { width: 1440, height: 900 } });
 test.describe.configure({ mode: 'serial' });
@@ -185,7 +192,7 @@ test('full functionality: every navigation target and all main controls work', a
 
     await page.locator('#settings-button').click();
     await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
-    await expect(page.locator('#settings-modal')).toContainText('v2.10.302');
+    await expect(page.locator('#settings-modal')).toContainText(`v${APP_VERSION}`);
 
     const languages = await page.locator('#language-selector option').evaluateAll((options) =>
       options.map((option) => option.value)
@@ -199,7 +206,8 @@ test('full functionality: every navigation target and all main controls work', a
 
     const soundToggle = page.locator('#sound-toggle');
     const soundChecked = await soundToggle.isChecked();
-    await soundToggle.setChecked(!soundChecked);
+    // Since the input has display: none, click the custom styled slider to toggle state
+    await page.locator('.settings-toggle-slider').click();
     await expect(soundToggle).toBeChecked({ checked: !soundChecked });
 
     await page.locator('button[aria-label="Close settings dialog"]').click({ force: true });

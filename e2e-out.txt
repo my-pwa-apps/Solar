@@ -1,0 +1,6 @@
+
+Running 3 tests using 1 worker
+
+[1A[2K[1/3] [desktop-chromium] ΓÇ║ tests\e2e\app.spec.js:67:1 ΓÇ║ boots the full 3D app without critical browser errors
+[1A[2K[2/3] [desktop-chromium] ΓÇ║ tests\e2e\app.spec.js:99:1 ΓÇ║ keeps core navigation and controls working
+[1A[2K[3/3] [desktop-chromium] ΓÇ║ tests\e2e\app.spec.js:155:1 ΓÇ║ registers PWA assets and service worker

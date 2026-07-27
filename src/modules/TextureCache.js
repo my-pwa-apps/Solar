@@ -195,9 +195,13 @@ export async function warmupTextureCache() {
  await new Promise((resolve) => {
  img.onload = () => {
  const canvas = document.createElement('canvas');
- const size = key.includes('4096') ? 4096 : 2048;
+ // Use the decoded image's own dimensions. The previous
+ // `key.includes('4096') ? 4096 : 2048` guess produced a 2048 canvas
+ // for the 1024 mobile textures, upscaling every bump/normal/specular
+ // map and quadrupling its memory footprint on the weakest devices.
+ const size = img.naturalWidth || textureSize;
  canvas.width = size;
- canvas.height = size;
+ canvas.height = img.naturalHeight || size;
  const ctx = canvas.getContext('2d');
  ctx.drawImage(img, 0, 0);
  

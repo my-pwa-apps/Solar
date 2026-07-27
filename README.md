@@ -3,7 +3,7 @@
 An immersive, educational Progressive Web App for exploring our Solar System in stunning 3D with VR/AR support.
 
 ![Space Voyage](https://img.shields.io/badge/PWA-Ready-success)
-![Three.js](https://img.shields.io/badge/Three.js-v0.183.0-blue)
+![Three.js](https://img.shields.io/badge/Three.js-v0.183.2-blue)
 ![WebXR](https://img.shields.io/badge/WebXR-Supported-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -91,6 +91,23 @@ npm run test:headed
 
 The suite verifies version/cache consistency, service-worker cached file references, app boot, WebGL canvas creation, navigation dropdown behavior, core controls, modals, manifest loading, and service worker registration.
 
+## Releasing / Bumping the Version
+
+`package.json` is the **single source of truth** for the app version. The same string must appear in
+`sw.js` (`CACHE_VERSION`), `src/modules/utils.js` (`APP_VERSION`), `src/i18n.js`, and every `?v=`
+cache-buster in `index.html`. Editing those by hand has repeatedly caused red builds, so use the script:
+
+```bash
+# Bump the patch version everywhere (do this for any change to a cached file)
+npm run version:bump
+
+# Re-stamp all files from the current package.json version
+npm run version:sync
+
+# Verify only - non-zero exit if anything drifted (also runs automatically on `npm test`)
+npm run version:check
+```
+
 ### Option 3: Install as PWA
 1. Visit the deployed app (requires HTTPS)
 2. Click the "Install" button in your browser
@@ -148,7 +165,7 @@ Test your PWA at [PWABuilder.com](https://www.pwabuilder.com/) with your deploye
 
 ## Technology Stack
 
-- **3D Graphics:** Three.js v0.183.0
+- **3D Graphics:** Three.js v0.183.2
 - **VR/AR:** WebXR Device API
 - **Offline Support:** Service Workers
 - **UI Framework:** Custom CSS with Fluent Design

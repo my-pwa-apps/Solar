@@ -4,6 +4,7 @@
  */
 import { DEBUG } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
+import { t } from './i18n-t.js';
 
 export class PWAManager {
     constructor() {
@@ -187,13 +188,6 @@ export class PWAManager {
                 clearTimeout(this.installPromptTimer);
                 this.installPromptTimer = null;
             }
-            
-            if (window.gtag) {
-                gtag('event', 'pwa_installed', {
-                    event_category: 'engagement',
-                    event_label: 'PWA Installation'
-                });
-            }
         });
 
         // Expose public function
@@ -224,7 +218,7 @@ export class PWAManager {
         const acceptBtn = document.getElementById('install-accept');
         if (acceptBtn) {
             acceptBtn.textContent = this.platform.isWindows || this.platform.isEdge 
-                ? 'Install (Add to apps)' 
+                ? t('installAddToApps') 
                 : acceptBtn.textContent;
             
             acceptBtn.addEventListener('click', async () => {
@@ -261,11 +255,11 @@ export class PWAManager {
         if (iconDiv) iconDiv.textContent = '🧭';
         
         const title = document.getElementById('install-title');
-        if (title) title.textContent = 'Add to Home Screen';
+        if (title) title.textContent = t('installIosTitle');
         
         const msgP = promptElement.querySelector('p');
         if (msgP) {
-            msgP.textContent = 'Tap the Share icon \u25b5 then choose "Add to Home Screen" to install.';
+            msgP.textContent = t('installIosInstructions');
         }
         
         const buttons = promptElement.querySelector('.install-buttons');
@@ -273,7 +267,7 @@ export class PWAManager {
             const dismiss = document.getElementById('install-dismiss');
             const accept = document.getElementById('install-accept');
             if (accept) accept.style.display = 'none';
-            if (dismiss) dismiss.textContent = 'Got it';
+            if (dismiss) dismiss.textContent = t('installGotIt');
         }
     }
 
@@ -308,14 +302,6 @@ export class PWAManager {
             if (installPrompt) {
                 installPrompt.classList.add('hidden');
                 installPrompt.setAttribute('aria-hidden', 'true');
-            }
-            
-            // Track PWA usage
-            if (window.gtag) {
-                gtag('event', 'pwa_used', {
-                    event_category: 'engagement',
-                    event_label: 'PWA Active Session'
-                });
             }
         }
     }

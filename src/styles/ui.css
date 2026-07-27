@@ -924,181 +924,11 @@
     animation: btn-spin 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* ─────────────────────────────────────────────────────
-   Time Machine panel
-───────────────────────────────────────────────────── */
-.time-machine {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid var(--fluent-border);
-    padding-top: 12px;
-    margin-top: 4px;
-}
-
-/* Date display row */
-.tm-date-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-}
-
-.tm-date {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--fluent-accent);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    letter-spacing: 0.02em;
-    flex: 1;
-    text-align: center;
-}
-
-/* Step buttons row */
-.tm-step-row {
-    display: flex;
-    gap: 3px;
-    justify-content: center;
-    flex-wrap: wrap; /* allow wrapping on very small screens */
-}
-
-/* Small compact time-step buttons */
-.tm-step, .tm-reverse, .tm-now-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--fluent-border);
-    border-radius: 5px;
-    color: var(--fluent-text-primary);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 4px 5px;
-    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-    white-space: nowrap;
-    line-height: 1.2;
-}
-
-.tm-step:hover, .tm-reverse:hover, .tm-now-btn:hover,
-.tm-step:focus-visible, .tm-reverse:focus-visible, .tm-now-btn:focus-visible {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: var(--fluent-accent);
-    outline: none;
-}
-
-.tm-step:active, .tm-reverse:active, .tm-now-btn:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.25);
-}
-
-.tm-reverse {
-    font-size: 12px;
-    padding: 4px 6px;
-}
-
-.tm-reverse.active,
-.tm-reverse[aria-pressed="true"] {
-    background: rgba(0, 120, 212, 0.35);
-    border-color: var(--fluent-accent);
-    color: var(--fluent-accent);
-    box-shadow: 0 0 8px rgba(0, 120, 212, 0.4);
-}
-
-.tm-now-btn {
-    font-size: 10px;
-    padding: 3px 8px;
-    background: rgba(0, 120, 212, 0.2);
-    border-color: rgba(0, 120, 212, 0.5);
-    color: var(--fluent-accent);
-    flex-shrink: 0;
-}
-
-.tm-now-btn:hover {
-    background: rgba(0, 120, 212, 0.4);
-}
-
-/* Seek input row */
-.tm-seek-row {
-    width: 100%;
-}
-
-.tm-seek-input {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--fluent-border);
-    border-radius: 5px;
-    color: var(--fluent-text-primary);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    font-size: 11px;
-    padding: 5px 8px;
-    cursor: pointer;
-    box-sizing: border-box;
-    transition: border-color 0.15s ease;
-    color-scheme: dark;
-}
-
-.tm-seek-input:hover,
-.tm-seek-input:focus {
-    border-color: var(--fluent-accent);
-    outline: none;
-}
-
-/* Notable events dropdown — hidden until feature is complete */
-.tm-events-row {
-    display: none;
-}
-
-.tm-events-select {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--fluent-border);
-    border-radius: 5px;
-    color: var(--fluent-text-primary);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    font-size: 11px;
-    padding: 5px 6px;
-    cursor: pointer;
-    box-sizing: border-box;
-    transition: border-color 0.15s ease;
-    color-scheme: dark;
-}
-
-.tm-events-select:hover,
-.tm-events-select:focus {
-    border-color: var(--fluent-accent);
-    outline: none;
-}
-
-.tm-events-select optgroup {
-    color: var(--fluent-text-secondary, #aaa);
-    font-weight: 600;
-}
-
-.tm-events-select option {
-    background: #1a1a2e;
-    color: var(--fluent-text-primary);
-}
-
-/* ── Mobile: streamlined Time Machine ──────────────────────────────── */
-/* On touch/mobile devices hide the advanced time-machine controls that
-   don't fit in the narrow speed panel. Users still see the date display,
-   Now button and speed slider. Desktop keeps the full feature set. */
+/* ── Mobile ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-    .tm-step-row,
-    .tm-seek-row,
-    .tm-events-row {
-        display: none !important;
-    }
-
     /* FPS counter is a debug aid — hide on mobile */
     #fps-counter {
         display: none !important;
-    }
-}
-
-@media (max-width: 480px) {
-    #time-step-back-decade, #time-step-fwd-decade {
-        display: none;
     }
 }
 
@@ -2250,36 +2080,6 @@ select {
 }
 
 /* ── Event Toast Notification ─────────────────────────────────────────── */
-.event-toast {
-    position: fixed;
-    top: 72px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-16px);
-    background: rgba(8, 18, 38, 0.93);
-    border: 1px solid rgba(80, 160, 255, 0.45);
-    color: #d8eeff;
-    padding: 9px 20px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 500;
-    max-width: 400px;
-    text-align: center;
-    z-index: 9500;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.event-toast--visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
 @media (pointer: coarse), (max-width: 768px) {
     #main-header,
     .draggable-panel,
@@ -2291,8 +2091,7 @@ select {
     #install-prompt,
     #offline-indicator,
     #update-notification,
-    .gesture-hint,
-    .event-toast {
+    .gesture-hint {
         -webkit-backdrop-filter: blur(8px) saturate(120%) !important;
         backdrop-filter: blur(8px) saturate(120%) !important;
     }
@@ -2308,8 +2107,7 @@ body.xr-active #hover-label,
 body.xr-active #install-prompt,
 body.xr-active #offline-indicator,
 body.xr-active #update-notification,
-body.xr-active .gesture-hint,
-body.xr-active .event-toast {
+body.xr-active .gesture-hint {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     background: rgba(20, 20, 28, 0.94) !important;

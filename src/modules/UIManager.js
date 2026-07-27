@@ -5,7 +5,8 @@ import { DEBUG, APP_VERSION } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
 
 export class UIManager {
- constructor() {
+ constructor(app) {
+ this.app = app;
  // Cache DOM elements
  this.elements = {
  loading: document.getElementById('loading'),
@@ -292,7 +293,7 @@ export class UIManager {
   * Format speed value for display
   */
  formatSpeed(speed) {
- if (speed === 0) return 'Paused';
+ if (speed === 0) return (window.t ? window.t('speedPaused') : 'Paused');
  if (speed === 1) return '1x';
  if (speed < 0.1) return `${speed.toFixed(2)}x`;
  if (speed < 1) return `${speed.toFixed(1)}x`;
@@ -315,18 +316,8 @@ export class UIManager {
  const speed = this.sliderToSpeed(sliderValue);
  
  // Update app timeSpeed
- if (window.app) {
- window.app.timeSpeed = speed;
- 
- // Reset reverse if speed becomes paused
- if (speed === 0 && window.app.isTimeReversed) {
- window.app.isTimeReversed = false;
- const revBtn = document.getElementById('time-reverse');
- if (revBtn) {
- revBtn.setAttribute('aria-pressed', 'false');
- revBtn.classList.remove('active');
- }
- }
+ if (this.app) {
+ this.app.timeSpeed = speed;
  }
  
  // Update labels

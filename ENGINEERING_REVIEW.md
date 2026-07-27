@@ -1,5 +1,10 @@
 # Space Voyage — Principal Engineering Review
 
+> **⚠️ SUPERSEDED (2026-05-29):** This review reflects an older codebase snapshot
+> (CACHE_VERSION v2.10.250, Three.js 0.183.0) and contains stale version/finding
+> references. For the current state, see the **"Pre-Deployment Review — 2026-05-29"**
+> section in [BACKLOG.md](BACKLOG.md). Retained for historical context only.
+
 **Reviewer:** AI Principal Engineer  
 **Date:** 2026-06-12  
 **Codebase snapshot:** sw.js CACHE_VERSION v2.10.250 · Three.js 0.183.0  

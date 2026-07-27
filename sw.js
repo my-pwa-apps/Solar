@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.303
+// Version 2.10.312
 
-const CACHE_VERSION = '2.10.303';
+const CACHE_VERSION = '2.10.312';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -18,12 +18,25 @@ const STATIC_CACHE_FILES = [
   './index.html',
   './src/main.js',
   './src/modules/storage.js',
-    './src/modules/AppFeatures.js',
+  './src/modules/AppFeatures.js',
   './src/i18n.js',
+  './src/i18n/en.js',
+  './src/i18n/nl.js',
+  './src/i18n/fr.js',
+  './src/i18n/de.js',
+  './src/i18n/es.js',
+  './src/i18n/pt.js',
   './src/bootstrap/installPromptCapture.js',
+  './src/bootstrap/earlyLanguageApply.js',
   './src/bootstrap/initManagers.js',
   './src/modules/SceneManager.js',
   './src/modules/SolarSystemModule.js',
+  './src/modules/solar-system/celestial-data.js',
+  './src/modules/solar-system/celestial-factory.js',
+  './src/modules/solar-system/texture-generator.js',
+  './src/modules/solar-system/deep-space.js',
+  './src/modules/solar-system/comets-spacecraft.js',
+  './src/modules/solar-system/orbital-mechanics.js',
   './src/modules/TextureCache.js',
   './src/modules/UIManager.js',
   './src/modules/PanelManager.js',
@@ -31,6 +44,7 @@ const STATIC_CACHE_FILES = [
   './src/modules/ServiceWorkerManager.js',
   './src/modules/LanguageManager.js',
   './src/modules/AudioManager.js',
+  './src/modules/i18n-t.js',
   './src/modules/utils.js',
   './src/styles/main.css',
   './src/styles/ui.css',
@@ -258,16 +272,30 @@ self.addEventListener('fetch', (event) => {
             throw error;
           }
         } else {
-          // Cache first strategy (default)
-          // ignoreSearch: true allows versioned URLs (e.g. ?v=2.10.6) to match
-          // plain paths stored in the SW install cache, ensuring offline reliability
-          const cachedResponse = await caches.match(cacheKey);
+          // Cache-first strategy (default).
+          //
+          // Look in the strategy's own cache FIRST. Only if that misses do we
+          // consult the install-time precache (CACHE_NAME) - install puts every
+          // texture there, while the runtime strategy for images is IMAGE_CACHE.
+          // The previous code used the global caches.match() and then
+          // revalidated into the *strategy* cache, which silently duplicated
+          // every precached texture into IMAGE_CACHE (doubling storage) and
+          // then let trimCache() evict them at the 50-item limit.
+          const cacheStorage = await caches.open(cache);
+          let cachedResponse = await cacheStorage.match(cacheKey);
+          let revalidateCache = cache;
+
+          if (!cachedResponse && cache !== CACHE_NAME) {
+            const precache = await caches.open(CACHE_NAME);
+            cachedResponse = await precache.match(cacheKey);
+            if (cachedResponse) revalidateCache = CACHE_NAME;
+          }
+
           if (cachedResponse) {
-            // Return cached version and update in background
-            // Skip revalidation for immutable CDN resources (versioned URLs can't change)
-            const reqUrl = new URL(request.url);
-            if (!reqUrl.hostname.includes('jsdelivr.net')) {
-              event.waitUntil(updateCache(request, cache, cacheKey));
+            // Return cached version and update in background.
+            // Skip revalidation for immutable CDN resources (versioned URLs can't change).
+            if (!url.hostname.includes('jsdelivr.net')) {
+              event.waitUntil(updateCache(request, revalidateCache, cacheKey));
             }
             return cachedResponse;
           }
@@ -277,7 +305,6 @@ self.addEventListener('fetch', (event) => {
           
           // Cache successful responses
           if (networkResponse && networkResponse.status === 200) {
-            const cacheStorage = await caches.open(cache);
             await cacheStorage.put(cacheKey, networkResponse.clone());
             
             // Enforce cache limits if specified

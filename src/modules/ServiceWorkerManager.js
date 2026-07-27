@@ -7,6 +7,14 @@ import { DEBUG } from './utils.js';
 export class ServiceWorkerManager {
     constructor() {
         this.registration = null;
+        this._reloadTriggered = false;
+        // True when the page was ALREADY controlled by a service worker at
+        // registration time. On a first visit this is false, and the SW's
+        // clients.claim() will fire `controllerchange` for the very first
+        // activation - reloading there throws away a fully-booted 3D scene
+        // for no benefit. Only an *update* (page was already controlled)
+        // justifies a reload.
+        this._hadControllerAtStartup = false;
     }
 
     /**
@@ -33,6 +41,8 @@ export class ServiceWorkerManager {
      */
     async register() {
         try {
+            this._hadControllerAtStartup = Boolean(navigator.serviceWorker.controller);
+
             this.registration = await navigator.serviceWorker.register('./sw.js', {
                 scope: './'
             });
@@ -73,11 +83,24 @@ export class ServiceWorkerManager {
     setupControllerChangeListener() {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (DEBUG && DEBUG.enabled) console.log('New Service Worker activated');
-            if (!this._reloadTriggered) {
-                this._reloadTriggered = true;
-                window.location.reload();
+            // First-ever activation on a fresh visit: clients.claim() takes
+            // control of this uncontrolled page. Nothing is stale, so do not
+            // reload - it would restart a ~10s 3D boot for no reason.
+            if (!this._hadControllerAtStartup) {
+                this._hadControllerAtStartup = true;
+                return;
             }
+            this.reloadOnce();
         });
+    }
+
+    /**
+     * Reload the page exactly once, no matter how many SW signals arrive.
+     */
+    reloadOnce() {
+        if (this._reloadTriggered) return;
+        this._reloadTriggered = true;
+        window.location.reload();
     }
 
     /**
@@ -97,7 +120,9 @@ export class ServiceWorkerManager {
                     break;
                 case 'SW_SKIP_WAITING_COMPLETE':
                     if (DEBUG && DEBUG.enabled) console.log('[SW] Skip waiting complete; reloading');
-                    window.location.reload();
+                    // controllerchange will usually fire too - reloadOnce()
+                    // makes sure we do not reload twice.
+                    this.reloadOnce();
                     break;
             }
         });

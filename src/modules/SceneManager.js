@@ -24,7 +24,8 @@ const _VR_TABS = [
 ];
 
 export class SceneManager {
- constructor() {
+ constructor(app) {
+ this.app = app;
  this.scene = new THREE.Scene();
  this.camera = new THREE.PerspectiveCamera(
  CONFIG.CAMERA.fov,
@@ -220,7 +221,7 @@ export class SceneManager {
  // Note: Do not toggle follow/co-rotate modes on controls input here.
  // SolarSystemModule owns tracking policy based on focused object type.
  this.controls.addEventListener('start', () => {
- const mod = window.app?.solarSystemModule;
+ const mod = this.app?.solarSystemModule;
  if (mod) {
  // If the OrbitControls 'start' fired within 50 ms of a wheel event it's
  // a scroll-zoom. Notify via onControlsZoom so auto-orbit is preserved.
@@ -786,7 +787,7 @@ this.camera.near = 10.0;
  }
 
  getVRMenuState() {
- const app = window.app || {};
+ const app = this.app || {};
  const module = app.solarSystemModule;
  const ns = this.vrNavState || {};
  return {
@@ -1659,7 +1660,7 @@ this.camera.near = 10.0;
 
 
  focusVRTarget(targetId) {
- const app = window.app || this;
+ const app = this.app || this;
  const module = app.solarSystemModule;
  if (!module) return false;
 
@@ -1687,12 +1688,12 @@ this.camera.near = 10.0;
  const info = typeof module.getObjectInfo === 'function' ? module.getObjectInfo(target) : null;
  if (info) {
  this.vrLastObjectInfo = info;
- window.app?.uiManager?.updateInfoPanel(info);
+ this.app?.uiManager?.updateInfoPanel(info);
  if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
  }
 
- window.app?.uiManager?.setQuickNavValue?.(targetId);
+ this.app?.uiManager?.setQuickNavValue?.(targetId);
  const name = target.userData?.name || 'Object';
  this.updateVRStatus('✔ → ' + name);
  this.requestVRMenuRefresh();
@@ -1700,7 +1701,7 @@ this.camera.near = 10.0;
  }
 
  navigateVRTarget(value) {
- const app = window.app || this;
+ const app = this.app || this;
  if (!app || typeof app.findObjectByNavigationValue !== 'function') {
  // fallback: try focusVRTarget
  this.focusVRTarget(value);
@@ -1809,7 +1810,7 @@ this.camera.near = 10.0;
  if (DEBUG.VR) console.log('[VR] Selected:', hitObject.name || hitObject.type);
  
  // Try to focus on the selected object
- const app = window.app || this;
+ const app = this.app || this;
  if (app.solarSystemModule) {
  const module = app.solarSystemModule;
  
@@ -2293,7 +2294,7 @@ this.camera.near = 10.0;
  handleVRAction(action) {
  if (DEBUG.VR) console.log('[VR] Action: "' + action + '"');
 
- const app = window.app || this;
+ const app = this.app || this;
  if (!app || !action) return;
 
  const scheduleRefresh = (delay = 0) => {
@@ -2391,7 +2392,7 @@ this.camera.near = 10.0;
 
  case 'scale':
  document.getElementById('toggle-scale')?.click();
- if (window.app?.solarSystemModule?.scientificMode) {
+ if (this.app?.solarSystemModule?.scientificMode) {
  this.updateVRStatus('🧪 Scientific mode enabled');
  } else {
  this.updateVRStatus('📚 Educational mode enabled');
@@ -2580,7 +2581,7 @@ this.camera.near = 10.0;
  this._vrIntersections.length = 0;
  // Use pickableObjects (planets/moons/comets/satellites/spacecraft/sun) — avoids testing
  // ~400 meshes including galaxies, belt particles, constellation lines, orbit rings, etc.
- const ssm = window.app?.solarSystemModule;
+ const ssm = this.app?.solarSystemModule;
  const allPick = ssm?.pickableObjects || ssm?.objects || this.scene.children;
  // Further narrow by distance: objects farther than 3000 units can't be usefully selected in VR
  const dollyPos = this.dolly ? this.dolly.position : this.camera.position;
@@ -2741,7 +2742,7 @@ this.camera.near = 10.0;
  }
  } else if (!prevState) {
  // Right thumbstick tap = pause toggle
- const app = window.app || this;
+ const app = this.app || this;
  if (app.timeSpeed === 0) { app.timeSpeed = 1; this.updateVRStatus('\u25B6 Playing'); }
  else { app.timeSpeed = 0; this.updateVRStatus('\u23F8 Paused'); }
  this.requestVRMenuRefresh();
@@ -2755,7 +2756,7 @@ this.camera.near = 10.0;
  this._confirmVRRadialSelection();
  } else if ((this._vrRadialPressFrames || 0) > 0 && (this._vrRadialPressFrames || 0) < 8) {
  // Short tap — pause toggle
- const app = window.app || this;
+ const app = this.app || this;
  if (app.timeSpeed === 0) { app.timeSpeed = 1; this.updateVRStatus('\u25B6 Playing'); }
  else { app.timeSpeed = 0; this.updateVRStatus('\u23F8 Paused'); }
  this.requestVRMenuRefresh();
@@ -2914,7 +2915,7 @@ this.camera.near = 10.0;
  // Check distance to nearest planet/moon and lower near plane accordingly.
  // Throttled to every 10th frame to keep hot-path cheap.
  if ((this._vrLaserFrame & 0xF) === 0) { // every 16 frames
- const solarSystem = window.app?.solarSystemModule;
+ const solarSystem = this.app?.solarSystemModule;
  if (solarSystem?.planets) {
  this.camera.getWorldPosition(this._vrNearCheckPos);
  let minDist = Infinity;

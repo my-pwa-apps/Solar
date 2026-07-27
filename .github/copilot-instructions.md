@@ -11,7 +11,7 @@
 
 ### 1. Pure ES6 Modules (No Build Step)
 - **No bundlers:** Direct ES6 module imports, runs natively in browsers
-- **ImportMap:** Three.js v0.183.0 loaded via CDN importmap in `index.html`
+- **ImportMap:** Three.js v0.183.2 loaded via CDN importmap in `index.html`
 - **Module structure:** Each module is an exported singleton class
 - Cache busting via URL version params on static imports
 
@@ -35,7 +35,7 @@ export const myModule = new MyModule();
 
 ### 3. Service Worker Caching (current: v2.10.1)
 - **Strategy:** Cache-first for static assets, network-first for HTML
-- **Always bump `CACHE_VERSION` in `sw.js`** whenever ANY cached file is modified (modules, CSS, textures, icons)
+- **Always run `npm run version:bump`** whenever ANY cached file is modified (modules, CSS, textures, icons). `package.json` is the single source of truth; the script stamps `sw.js` (header + `CACHE_VERSION`), `src/modules/utils.js`, `src/i18n.js` and every `?v=` in `index.html`. `npm run version:check` (also wired as `pretest`) fails the build on drift.
 - Add new files to `STATIC_CACHE_FILES` array in `sw.js`
 - Verify with hard refresh → DevTools → Application → Service Workers
 
@@ -121,7 +121,7 @@ HTTPS is required for Service Workers, PWA install prompts, and WebXR. The site 
 ### File Change Impact Matrix
 | Change Type | Required Action |
 |---|---|
-| Any `.js` / `.css` module | Bump `CACHE_VERSION` in `sw.js` |
+| Any `.js` / `.css` module | Run `npm run version:bump` |
 | New texture file | Add path to `STATIC_CACHE_FILES` in `sw.js` |
 | New JS module | Import in `index.html`, add to SW cache |
 | i18n text changes | Update all 6 `manifest.*.json` files |
@@ -165,7 +165,7 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 2. Create `createXTextureReal(size)` using `loadTextureWithFallback`
 3. Add procedural fallback to `TextureGeneratorUtils` in `utils.js`
 4. Add to navigation dropdown in `index.html`
-5. Bump SW cache version in `sw.js`
+5. Run `npm run version:bump`
 
 ## Encoding Rules
 - **All files: UTF-8 without BOM**
@@ -173,7 +173,7 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 - Watch for garbled patterns in `src/i18n.js`: `Ã©`→`é`, `Ã¼`→`ü`, `cÅ"ur`→`cœur`, `â»×¹â´`→`⁻¹⁴`
 
 ## Pre-Coding Checklist
-1. Touching a cached file? → bump `CACHE_VERSION` in `sw.js`
+1. Touching a cached file? → `npm run version:bump`
 2. VR movement/teleport? → use `dolly`, never `camera.position`
 3. In the animate hot path? → use pre-allocated scratch vectors, no `.clone()`
 4. New texture? → self-hosted + procedural fallback, never CDN
@@ -182,5 +182,5 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 
 ---
 
-**Last Updated:** March 3, 2026 | **SW Version:** 2.10.33 | **Three.js:** v0.183.0
+**Last Updated:** July 26, 2026 | **Version:** `package.json` is the single source of truth (`npm run version:check`) | **Three.js:** v0.183.2
 ```

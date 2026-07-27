@@ -1,4 +1,12 @@
 import { expect, test } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// package.json is the single source of truth for the app version.
+// Never hardcode it here - that made every version bump turn CI red.
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const APP_VERSION = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')).version;
 
 function collectDiagnostics(page) {
   const diagnostics = [];
@@ -37,9 +45,9 @@ async function prepareStableFirstRun(page) {
   });
 }
 
-async function openApp(page) {
+async function openApp(page, url = '/') {
   await prepareStableFirstRun(page);
-  await page.goto('/');
+  await page.goto(url);
 
   await page.waitForFunction(() => {
     const app = window.app;
@@ -85,7 +93,7 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
   }));
 
   expect(appState).toMatchObject({
-    version: '2.10.303',
+    version: APP_VERSION,
     hasCamera: true,
     hasScene: true,
     hasControls: true,
@@ -145,9 +153,43 @@ test('keeps core navigation and controls working', async ({ page }) => {
 
   await openModalFromButton(page, '#settings-button', '#settings-modal');
   await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#settings-modal')).toContainText('v2.10.303');
+  await expect(page.locator('#settings-modal')).toContainText(`v${APP_VERSION}`);
   await page.locator('button[aria-label="Close settings dialog"]').click({ force: true });
   await expect(page.locator('#settings-modal')).toHaveClass(/hidden/);
+
+  expect(diagnostics).toEqual([]);
+});
+
+test('never paints raw i18n keys before the language bundle resolves', async ({ page }) => {
+  // Regression guard: the early language bootstrap used to call applyTranslations()
+  // while the dictionaries were still empty, replacing the hand-written English
+  // defaults in index.html with literal keys ("preparingJourney", "initializing").
+  // Stalling the bundles makes that pre-translation paint deterministic.
+  await prepareStableFirstRun(page);
+  await page.route('**/src/i18n/*.js', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
+    await route.continue();
+  });
+
+  await page.goto('/', { waitUntil: 'commit' });
+
+  for (const selector of ['#loading h2', '#loading-text', '#fact-text']) {
+    const element = page.locator(selector);
+    await expect(element).toBeVisible();
+    const key = await element.getAttribute('data-i18n');
+    const text = (await element.textContent())?.trim() ?? '';
+    expect(text.length).toBeGreaterThan(0);
+    if (key) expect(text).not.toBe(key);
+  }
+});
+
+test('honours the ?planet= PWA jump-list shortcut', async ({ page }) => {
+  const diagnostics = collectDiagnostics(page);
+  await openApp(page, '/?planet=mars');
+
+  await expect(page.locator('#object-dropdown')).toHaveValue('mars');
+  await expect(page.locator('#info-panel')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#object-name')).toContainText(/mars/i);
 
   expect(diagnostics).toEqual([]);
 });

@@ -20,7 +20,7 @@ window.APP_VERSION = APP_VERSION;
 
 // i18n.js is loaded globally in index.html. Use a late-binding wrapper so calls always use
 // the fully-initialised translation function rather than capturing window.t at import time.
-const t = (key) => (window.t || ((k) => k))(key);
+import { t } from './modules/i18n-t.js';
 
 // ===========================
 // CONSTANTS
@@ -41,11 +41,6 @@ const UI_ELEMENTS = {
  DROPDOWN: 'object-dropdown',
  SPEED_SLIDER: 'time-speed'
 };
-
-// Utility: Julian Date → JavaScript Date
-function jdToDate(jd) {
- return new Date((jd - 2440587.5) * 86400000);
-}
 
 // LocalStorage Keys
 const STORAGE_KEYS = {
@@ -148,7 +143,6 @@ class App {
  this.solarSystemModule = null;
  this.lastTime = 0;
  this.timeSpeed = 1; // Default to 1x real-time
- this.isTimeReversed = false; // Time Machine: reverse playback flag
 
  // Pre-allocate reusable objects for raycast hot path (avoid per-hover GC)
  this._mouseVec = new THREE.Vector2();
@@ -171,9 +165,12 @@ class App {
  this._vrMoveErrLogged = false;
  this._vrLaserErrLogged = false;
 
- // Make this app instance globally accessible for VR and other modules
+ // Cross-module access is primarily via explicit constructor injection (this.app).
+ // window.app is exposed only as a stable handle for the Playwright e2e suite and
+ // any legacy callers. ACCEPTED RISK: documented global; CSP keeps script-src free
+ // of unsafe-inline so an injected <script> cannot reach it without an XSS bypass.
  window.app = this;
- 
+
  this.init();
  }
 
@@ -181,6 +178,11 @@ class App {
  const appStartTime = performance.now();
  
  try {
+ // Wait for translations to be fully loaded first
+ if (window.i18nReady) {
+     await window.i18nReady;
+ }
+
  // ALWAYS warm up cache from IndexedDB (loads cached textures into memory)
  const cacheReady = await warmupTextureCache();
  if (cacheReady && DEBUG && DEBUG.PERFORMANCE) {
@@ -188,8 +190,8 @@ class App {
  }
  
  // Initialize managers
- this.sceneManager = new SceneManager();
- this.uiManager = new UIManager();
+ this.sceneManager = new SceneManager(this);
+ this.uiManager = new UIManager(this);
  
  this.uiManager.showLoading(t('initializing'));
  this.uiManager.updateLoadingProgress(0, t('settingUpScene'));
@@ -206,7 +208,7 @@ class App {
  this.uiManager.updateLoadingProgress(15, t('loadingSolarSystem'));
 
  // Load Solar System module
- this.solarSystemModule = new SolarSystemModule(this.uiManager);
+ this.solarSystemModule = new SolarSystemModule(this.uiManager, this);
  this.uiManager.updateLoadingProgress(20, t('creatingSun'));
  
  // Init handles async loading and calls startExperience() when done
@@ -257,6 +259,12 @@ class App {
  // Hide loading screen
  this.uiManager.hideLoading();
  
+ // PWA jump-list shortcuts (./?planet=mars, ./?vr=true) take priority over
+ // the default first-visit Earth pre-select.
+ if (!this.applyStartupShortcuts()) {
+ this.preSelectEarth();
+ }
+ 
  // Setup new UX features
  setupOnboarding(this.uiManager);
  this.setupRandomDiscovery();
@@ -264,7 +272,6 @@ class App {
  this.setupMobileGestureHints();
  this.setupSoundToggle();
  this.setupButtonSounds();
- this.setupTimeMachine();
  this.syncLocalizedControlStates();
 
  window.addEventListener('app-language-changed', () => {
@@ -276,9 +283,6 @@ class App {
  this.uiManager.showHelp(t('helpContent'));
  }
  });
-
- // Pre-select Earth on first load for better first impression
- this.preSelectEarth();
  
  // Start animation loop
  this.sceneManager.animate(() => {
@@ -313,8 +317,7 @@ class App {
  
  // Update Solar System module every frame
  if (this.solarSystemModule) {
- const effectiveSpeed = this.isTimeReversed ? -this.timeSpeed : this.timeSpeed;
- this.solarSystemModule.update(deltaTime, effectiveSpeed,
+ this.solarSystemModule.update(deltaTime, this.timeSpeed,
  this.sceneManager.camera, this.sceneManager.controls);
  }
 
@@ -512,7 +515,6 @@ class App {
  }
 
  _orbitModeLabel(mode) {
- const t = window.t || (k => k);
  const labels = {
  'all': t('orbitModeAll') || 'All Orbits',
  'planets': t('orbitModePlanets') || 'Planets',
@@ -1122,10 +1124,6 @@ class App {
  case 'h':
  document.getElementById(UI_ELEMENTS.HELP_BUTTON)?.click();
  break;
- case 'n':
- // N = jump to Now (today's real date)
- document.getElementById('time-now')?.click();
- break;
  case 'r':
  document.getElementById(UI_ELEMENTS.RESET_VIEW)?.click();
  break;
@@ -1177,33 +1175,16 @@ class App {
  }
  break;
  }
- case '[': {
- // Step Time Machine back 1 month
- const ssmBack = this.solarSystemModule;
- if (ssmBack) {
- const d = jdToDate(ssmBack.simulatedJD);
- d.setUTCMonth(d.getUTCMonth() - 1);
- ssmBack.seekToDate(d);
- audioManager.playSpeedTick();
- }
- break;
- }
- case ']': {
- // Step Time Machine forward 1 month
- const ssmFwd = this.solarSystemModule;
- if (ssmFwd) {
- const d = jdToDate(ssmFwd.simulatedJD);
- d.setUTCMonth(d.getUTCMonth() + 1);
- ssmFwd.seekToDate(d);
- audioManager.playSpeedTick();
- }
- break;
- }
- case 'escape':
- this.uiManager.closeInfoPanel();
+ case 'escape': {
+ if (this.uiManager.elements.helpModal && !this.uiManager.elements.helpModal.classList.contains('hidden')) {
  this.uiManager.closeHelpModal();
+ } else if (this.uiManager.elements.settingsModal && !this.uiManager.elements.settingsModal.classList.contains('hidden')) {
  this.uiManager.closeSettingsModal();
+ } else if (this.uiManager.elements.infoPanel && !this.uiManager.elements.infoPanel.classList.contains('hidden')) {
+ this.uiManager.closeInfoPanel();
+ }
  break;
+ }
  case ',':
  // Comma = open Settings (matches tooltip hint)
  document.getElementById(UI_ELEMENTS.SETTINGS_BUTTON)?.click();
@@ -1270,20 +1251,22 @@ class App {
 
  if (currentTime >= this._fpsLastTime + 1000) {
  const fps = Math.round((this._fpsFrameCount * 1000) / (currentTime - this._fpsLastTime));
+
+ // Textual qualifier so the reading does not rely on colour alone (WCAG 1.4.1).
+ let quality;
+ if (fps >= 55) quality = 'good';
+ else if (fps >= 30) quality = 'warning';
+ else quality = 'bad';
+ const qualityLabel = quality === 'good' ? t('fpsGood') : quality === 'warning' ? t('fpsFair') : t('fpsLow');
+
  if (this._fpsValueEl) {
- this._fpsValueEl.textContent = fps;
+ this._fpsValueEl.textContent = `${fps} (${qualityLabel})`;
  }
 
  // Update color based on FPS
  if (this._fpsCounterEl) {
  this._fpsCounterEl.classList.remove('good', 'warning', 'bad');
- if (fps >= 55) {
- this._fpsCounterEl.classList.add('good');
- } else if (fps >= 30) {
- this._fpsCounterEl.classList.add('warning');
- } else {
- this._fpsCounterEl.classList.add('bad');
- }
+ this._fpsCounterEl.classList.add(quality);
  }
 
  this._fpsFrameCount = 0;
@@ -1295,13 +1278,53 @@ class App {
  // UX IMPROVEMENTS v2.3
  // ===========================
  
+ /**
+  * Apply the PWA jump-list shortcut parameters captured by PWAManager
+  * (./?planet=<id>, ./?vr=true — declared in every manifest.*.json).
+  * Without this the shortcuts were inert: PWAManager only parked the values
+  * on window and nothing ever read them.
+  * @returns {boolean} true when a shortcut was handled (suppresses preSelectEarth)
+  */
+ applyStartupShortcuts() {
+ let handled = false;
+
+ const requested = window.startupPlanet;
+ window.startupPlanet = null;
+ if (requested && this.solarSystemModule) {
+ const key = String(requested).toLowerCase();
+ const target = this.findObjectByNavigationValue(key);
+ if (target) {
+ const info = this.solarSystemModule.getObjectInfo(target);
+ if (info) this.uiManager.updateInfoPanel(info);
+ this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
+ const dropdown = document.getElementById(UI_ELEMENTS.DROPDOWN);
+ if (dropdown) dropdown.value = key;
+ handled = true;
+ } else if (DEBUG.enabled) {
+ console.warn(`[Shortcut] Unknown navigation target "${requested}"`);
+ }
+ }
+
+ // ?vr=true: WebXR requires a user gesture, so a shortcut can never enter VR
+ // automatically. Reveal and focus the Enter VR button instead so the user is
+ // one tap away, which is the best a launch URL can legitimately do.
+ if (window.startupVR) {
+ window.startupVR = false;
+ const vrButton = document.getElementById('vr-button')?.querySelector('button');
+ if (vrButton) {
+ vrButton.focus();
+ handled = true;
+ }
+ }
+
+ return handled;
+ }
+
  preSelectEarth() {
  // Pre-select Earth on first visit to show users what to expect
  const isFirstVisit = !safeGetItem('space_voyage_visited');
  
  if (isFirstVisit && this.solarSystemModule?.planets?.earth) {
- // Small delay to ensure everything is rendered
- setTimeout(() => {
  // Skip if user already interacted with something
  if (this.solarSystemModule.focusedObject) return;
  const earth = this.solarSystemModule.planets.earth;
@@ -1309,7 +1332,6 @@ class App {
  this.uiManager.updateInfoPanel(info);
  this.solarSystemModule.focusOnObject(earth, this.sceneManager.camera, this.sceneManager.controls);
  safeSetItem('space_voyage_visited', 'true');
- }, 500);
  }
  }
  
@@ -1345,269 +1367,6 @@ class App {
  setTimeout(() => audioManager.playDiscovery(), 300);
  }
  });
- }
-
- setupTimeMachine() {
- const ssm = this.solarSystemModule;
- if (!ssm) return;
-
- const dateDisplay = document.getElementById('sim-date-display');
- const reverseBtn = document.getElementById('time-reverse');
- const nowBtn = document.getElementById('time-now');
-
- // Prevent duplicate listeners if setup is ever invoked more than once
- if (this._onSimulatedDateChanged) {
- window.removeEventListener('simulatedDateChanged', this._onSimulatedDateChanged);
- this._onSimulatedDateChanged = null;
- }
-
- // Formatter rebuilt lazily whenever <html lang> changes (language switch mid-session)
- let _fmtLocale = '';
- let _fmtObj = null;
- let lastIsoDate = '';
- const _getDateFormatter = () => {
- const locale = document.documentElement?.lang || navigator.language || 'en-US';
- if (locale !== _fmtLocale) {
- _fmtLocale = locale;
- _fmtObj = new Intl.DateTimeFormat(locale, {
- year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC'
- });
- lastIsoDate = ''; // force re-render with new locale even if date unchanged
- }
- return _fmtObj;
- };
-
- // ── Date display updater ──────────────────────────────────────────────
- const updateDateDisplay = (jd) => {
- if (!dateDisplay) return;
- const d = jdToDate(jd);
- const iso = d.toISOString().slice(0, 10);
- if (iso === lastIsoDate) return;
- lastIsoDate = iso;
-
- dateDisplay.textContent = _getDateFormatter().format(d);
- };
-
- // Listen for the date-changed event emitted by SolarSystemModule
- this._onSimulatedDateChanged = (e) => {
- const jd = e?.detail?.jd;
- if (typeof jd !== 'number' || !Number.isFinite(jd)) return;
- updateDateDisplay(jd);
- };
- window.addEventListener('simulatedDateChanged', this._onSimulatedDateChanged);
- // Trigger once immediately so the display isn't blank
- updateDateDisplay(ssm.simulatedJD);
-
- // ── Step helper ───────────────────────────────────────────────────────
- // Steps always match button labels: −10y always goes 10 yrs back.
- // isTimeReversed only affects auto-play direction, not manual jumps.
- const stepDate = (years, months, days) => {
- const current = jdToDate(ssm.simulatedJD);
- if (years) current.setUTCFullYear(current.getUTCFullYear() + years);
- if (months) current.setUTCMonth(current.getUTCMonth() + months);
- if (days) current.setUTCDate(current.getUTCDate() + days);
- ssm.seekToDate(current);
- audioManager.playClick();
- };
-
- // ── Step buttons ──────────────────────────────────────────────────────
- const steps = [
- ['time-step-back-decade', -10, 0, 0],
- ['time-step-back-year', -1, 0, 0],
- ['time-step-back-month', 0, -1, 0],
- ['time-step-fwd-month', 0, 1, 0],
- ['time-step-fwd-year', 1, 0, 0],
- ['time-step-fwd-decade', 10, 0, 0],
- ];
- steps.forEach(([id, y, mo, d]) => {
- const btn = document.getElementById(id);
- if (!btn) return;
- btn.addEventListener('click', () => stepDate(y, mo, d));
- });
-
- // ── Reverse toggle ────────────────────────────────────────────────────
- if (reverseBtn) {
- reverseBtn.addEventListener('click', () => {
- this.isTimeReversed = !this.isTimeReversed;
- reverseBtn.setAttribute('aria-pressed', this.isTimeReversed.toString());
- reverseBtn.classList.toggle('active', this.isTimeReversed);
- audioManager.playSpeedTick();
- });
- }
-
- // ── Now button ────────────────────────────────────────────────────────
- if (nowBtn) {
- nowBtn.addEventListener('click', () => {
- this.isTimeReversed = false;
- if (reverseBtn) {
- reverseBtn.setAttribute('aria-pressed', 'false');
- reverseBtn.classList.remove('active');
- }
- ssm.seekToDate(new Date());
- });
- }
-
- }
-
- showEventToast(text) {
- const existing = document.getElementById('event-toast');
- if (existing) existing.remove();
- const toast = document.createElement('div');
- toast.id = 'event-toast';
- toast.className = 'event-toast';
- toast.textContent = text;
- document.body.appendChild(toast);
- requestAnimationFrame(() => toast.classList.add('event-toast--visible'));
- clearTimeout(this._toastTimer);
- this._toastTimer = setTimeout(() => {
- toast.classList.remove('event-toast--visible');
- setTimeout(() => toast.remove(), 400);
- }, 3500);
- }
-
- // Notable event descriptions keyed by ISO date value.
- // The outer object is allocated once and cached on the instance.
- _getEventDescriptions() {
- if (this._cachedEventDescriptions) return this._cachedEventDescriptions;
- this._cachedEventDescriptions = {
- // Solar Eclipses
- '2024-04-08': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2024' },
- '2025-03-29': { name: 'Partial Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2025Mar' },
- '2026-02-17': { name: 'Annular Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2026Feb' },
- '2026-08-12': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2026Aug' },
- '2027-08-02': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2027' },
- '2028-07-22': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2028' },
- '2030-06-01': { name: 'Annular Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2030Jun' },
- '2030-11-25': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2030Nov' },
- '2033-03-30': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2033' },
- '2035-09-02': { name: 'Total Solar Eclipse', type: '🌑 Solar Eclipse', i18nKey: 'eventSolarEclipse2035' },
- // Mars Oppositions
- '2025-01-16': { name: 'Mars at Opposition', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2025' },
- '2027-02-19': { name: 'Mars at Opposition', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2027' },
- '2029-03-29': { name: 'Mars at Opposition', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2029' },
- '2031-05-04': { name: 'Mars at Opposition (Perihelic)', type: '🔴 Mars Opposition', i18nKey: 'eventMarsOpposition2031' },
- // Outer Planet Oppositions
- '2024-11-16': { name: 'Uranus at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventUranusOpposition' },
- '2025-09-21': { name: 'Saturn at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventSaturnOpposition' },
- '2025-09-23': { name: 'Neptune at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventNeptuneOpposition' },
- '2025-11-05': { name: 'Jupiter at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventJupiterOpposition' },
- '2025-11-21': { name: 'Uranus at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventUranusOpposition' },
- '2026-09-24': { name: 'Neptune at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventNeptuneOpposition' },
- '2026-10-04': { name: 'Saturn at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventSaturnOpposition' },
- '2026-12-02': { name: 'Uranus at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventUranusOpposition' },
- '2026-12-07': { name: 'Jupiter at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventJupiterOpposition' },
- '2027-10-17': { name: 'Saturn at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventSaturnOpposition' },
- '2028-01-10': { name: 'Jupiter at Opposition', type: '🟤 Outer Planet Opposition', i18nKey: 'eventJupiterOpposition' },
- // Conjunctions & Alignments
- '2020-12-21': { name: 'Great Jupiter–Saturn Conjunction', type: '✨ Conjunction', i18nKey: 'eventGreatConjunction2020' },
- '2022-06-24': { name: '5-Planet Alignment', type: '✨ Alignment', i18nKey: 'eventPlanetAlignment2022' },
- '2023-03-01': { name: 'Jupiter–Venus Conjunction', type: '✨ Conjunction', i18nKey: 'eventJupiterVenus2023' },
- '2024-08-14': { name: 'Mars–Jupiter Conjunction', type: '✨ Conjunction', i18nKey: 'eventMarsJupiter2024' },
- '2025-02-01': { name: 'Venus–Saturn Close Conjunction', type: '✨ Conjunction', i18nKey: 'eventVenusSaturn2025' },
- '2025-08-12': { name: 'Venus–Jupiter Close Conjunction', type: '✨ Conjunction', i18nKey: 'eventVenusJupiter2025' },
- '2040-10-31': { name: 'Jupiter–Saturn Great Conjunction', type: '✨ Conjunction', i18nKey: 'eventGreatConjunction2040' },
- // Famous Comets
- '1910-04-20': { name: "Halley's Comet Perihelion", type: '☄️ Comet', i18nKey: 'eventHalley1910' },
- '1986-02-09': { name: "Halley's Comet Perihelion", type: '☄️ Comet', i18nKey: 'eventHalley1986' },
- '1997-03-22': { name: 'Comet Hale-Bopp Perihelion', type: '☄️ Comet', i18nKey: 'eventHaleBopp1997' },
- '2020-07-23': { name: 'Comet NEOWISE Closest Approach', type: '☄️ Comet', i18nKey: 'eventNeowise2020' },
- '2024-10-12': { name: 'Comet Tsuchinshan-ATLAS', type: '☄️ Comet', i18nKey: 'eventTsuchinshan2024' },
- '2061-07-28': { name: "Halley's Comet Next Perihelion", type: '☄️ Comet', i18nKey: 'eventHalley2061' },
- // Space Age Milestones
- '1957-10-04': { name: 'Sputnik 1', type: '🚀 Space Milestone', i18nKey: 'eventSputnik1957' },
- '1961-04-12': { name: 'Yuri Gagarin — First Human in Space', type: '🚀 Space Milestone', i18nKey: 'eventGagarin1961' },
- '1969-07-20': { name: 'Apollo 11 — First Moon Landing', type: '🚀 Space Milestone', i18nKey: 'eventApollo111969' },
- '1972-12-07': { name: 'Apollo 17 — Last Moon Landing', type: '🚀 Space Milestone', i18nKey: 'eventApollo171972' },
- '1977-09-05': { name: 'Voyager 1 Launch', type: '🚀 Space Milestone', i18nKey: 'eventVoyager1Launch' },
- '1990-02-14': { name: 'Voyager 1 — "Pale Blue Dot" Photo', type: '🚀 Space Milestone', i18nKey: 'eventPaleBlueDot' },
- '1994-07-16': { name: 'Shoemaker-Levy 9 Impacts Jupiter', type: '🚀 Space Milestone', i18nKey: 'eventShoemakerLevy1994' },
- '2006-01-19': { name: 'New Horizons Launch toward Pluto', type: '🚀 Space Milestone', i18nKey: 'eventNewHorizonsLaunch' },
- '2015-07-14': { name: 'New Horizons — Pluto Flyby', type: '🚀 Space Milestone', i18nKey: 'eventNewHorizonsFlyby' },
- '2021-02-18': { name: 'Perseverance Rover — Mars Landing', type: '🚀 Space Milestone', i18nKey: 'eventPerseverance2021' },
- // Historic Discoveries
- '1543-05-24': { name: 'Copernicus Publishes Heliocentric Model', type: '📜 Historic Discovery', i18nKey: 'eventCopernicus1543' },
- '1066-04-24': { name: "Halley's Comet — Battle of Hastings Era", type: '📜 Historic Discovery', i18nKey: 'eventHalley1066' },
- '1610-01-07': { name: "Galileo Discovers Jupiter's Moons", type: '📜 Historic Discovery', i18nKey: 'eventGalileo1610' },
- '1655-03-25': { name: 'Huygens Discovers Titan', type: '📜 Historic Discovery', i18nKey: 'eventHuygens1655' },
- '1781-03-13': { name: 'Herschel Discovers Uranus', type: '📜 Historic Discovery', i18nKey: 'eventHerschel1781' },
- '1846-09-23': { name: 'Discovery of Neptune', type: '📜 Historic Discovery', i18nKey: 'eventNeptune1846' },
- '1930-02-18': { name: 'Tombaugh Discovers Pluto', type: '📜 Historic Discovery', i18nKey: 'eventPluto1930' },
- '1979-03-05': { name: 'Voyager 1 — Jupiter Flyby', type: '📜 Historic Discovery', i18nKey: 'eventVoyager1Jupiter1979' },
- };
- return this._cachedEventDescriptions;
- }
-
- _showEventInfo(dateValue, eventLabel, focusKey) {
- const t = window.t || ((key) => key);
- const eventDescs = this._getEventDescriptions();
- // Try composite key (date|focus) first, then date-only fallback
- const eventData = eventDescs[`${dateValue}|${focusKey}`] || eventDescs[dateValue];
-
- if (eventData) {
- const descKey = eventData.i18nKey;
- const translatedDesc = (window.t && t(descKey) !== descKey) ? t(descKey) : eventData.name;
- const dateObj = new Date(dateValue + 'T12:00:00Z');
- const dateStr = dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
- this.uiManager.updateInfoPanel({
- name: eventData.name,
- type: eventData.type,
- distance: dateStr,
- size: '',
- description: translatedDesc
- });
- } else if (focusKey) {
- // Fallback: show focused object info
- const focusTarget = this.findObjectByNavigationValue(focusKey);
- if (focusTarget) {
- const info = this.solarSystemModule.getObjectInfo(focusTarget);
- if (info) this.uiManager.updateInfoPanel(info);
- }
- }
- }
-
- _handlePaleBlueDot(ssm) {
- // Voyager 1 took the Pale Blue Dot photo on Feb 14, 1990 at ~6 billion km (40 AU) from Earth.
- // Position the camera at Voyager 1's location, looking back toward Earth.
- const voyager1 = this.findObjectByNavigationValue('voyager-1');
- const earth = this.findObjectByNavigationValue('earth');
- if (!voyager1 || !earth) {
- // Fallback: focus on Earth
- if (earth) {
- this.solarSystemModule.focusOnObject(earth, this.sceneManager.camera, this.sceneManager.controls);
- }
- return;
- }
-
- const camera = this.sceneManager.camera;
- const controls = this.sceneManager.controls;
-
- // Get Voyager 1 and Earth world positions
- const voyagerPos = new THREE.Vector3();
- const earthPos = new THREE.Vector3();
- voyager1.getWorldPosition(voyagerPos);
- earth.getWorldPosition(earthPos);
-
- // Position camera near Voyager 1, slightly offset so the spacecraft is visible
- const dirToEarth = new THREE.Vector3().subVectors(earthPos, voyagerPos).normalize();
- // Offset camera slightly to the side so Voyager 1 is in the corner of the view
- const side = new THREE.Vector3().crossVectors(dirToEarth, new THREE.Vector3(0, 1, 0)).normalize();
- const cameraOffset = 3; // Small offset from Voyager
- camera.position.copy(voyagerPos).add(side.clone().multiplyScalar(cameraOffset)).add(new THREE.Vector3(0, 1, 0));
-
- // Look toward Earth (the pale blue dot in the distance)
- controls.target.copy(earthPos);
- controls.update();
-
- // Disable tracking/follow so camera stays fixed at this dramatic viewpoint
- this.solarSystemModule.cameraFollowMode = false;
- this.solarSystemModule.cameraCoRotateMode = false;
- this.solarSystemModule.focusedObject = voyager1;
-
- // Set zoom limits appropriate for this extreme distance
- controls.minDistance = 1;
- controls.maxDistance = 50000;
-
- if (DEBUG.enabled) console.log(' [Pale Blue Dot] Camera at Voyager 1 position, looking back at Earth');
  }
 
  setupNavigationSearch() {
@@ -1669,7 +1428,6 @@ class App {
  // Rebuild dropdown with matches (no optgroups during search).
  const placeholder = document.createElement('option');
  placeholder.value = '';
- const t = window.t || ((k) => k);
  placeholder.textContent = matches.length > 0
  ? (matches.length === 1 ? t('searchResults') : t('searchResultsPlural')).replace('{n}', matches.length)
  : t('searchNoResults');
