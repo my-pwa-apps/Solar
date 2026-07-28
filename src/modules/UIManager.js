@@ -292,7 +292,9 @@ export class UIManager {
   * Format speed value for display
   */
  formatSpeed(speed) {
- if (speed === 0) return 'Paused';
+ // Resolved per call: window.t is installed by i18n.js and swapped on every
+ // language change, so caching it here would freeze the label in English.
+ if (speed === 0) return (window.t ? window.t('paused') : 'Paused');
  if (speed === 1) return '1x';
  if (speed < 0.1) return `${speed.toFixed(2)}x`;
  if (speed < 1) return `${speed.toFixed(1)}x`;

@@ -931,7 +931,6 @@ this.camera.near = 10.0;
  const MAIN_X = PAD + RAIL_W + GAP;
  const MAIN_Y = PAD;
  const MAIN_W = W - MAIN_X - PAD;
- const MAIN_H = H - PAD * 2;
  const BODY_X = MAIN_X + 24;
  const BODY_Y = MAIN_Y + HEADER_H + 20;
  const BODY_W = MAIN_W - 48;
@@ -2526,7 +2525,7 @@ this.camera.near = 10.0;
  }
  srcIndex++;
  }
- } catch (e) {
+ } catch {
  // Haptics are optional; swallow errors silently
  }
  }
@@ -2840,7 +2839,6 @@ this.camera.near = 10.0;
  // ============================================
  if (handedness === 'right') {
  const starshipMult = this.vrStarshipMode ? 20.0 : 1.0;
- const turnSpeed = 0.03;
  const vertSpeed = 0.25 * sprintMultiplier * starshipMult;
  
  // TURN LEFT/RIGHT (only if NOT grab-rotating)

@@ -47,6 +47,9 @@ function jdToDate(jd) {
  return new Date((jd - 2440587.5) * 86400000);
 }
 
+// Form controls that own their keystrokes — app shortcuts must stay out of the way.
+const EDITABLE_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT', 'OPTION']);
+
 // LocalStorage Keys
 const STORAGE_KEYS = {
  ORBITS: 'orbitsVisible',
@@ -173,8 +176,31 @@ class App {
 
  // Make this app instance globally accessible for VR and other modules
  window.app = this;
- 
+
+ this.setupGlobalErrorReporting();
+
  this.init();
+ }
+
+ /**
+  * Last-resort visibility for failures that escape every local try/catch.
+  *
+  * Without this, an unhandled rejection in texture loading or WebXR setup
+  * leaves the user on a frozen loading screen with nothing in the console
+  * that points at the cause. These are always logged (not DEBUG-gated),
+  * because by definition they are unexpected.
+  */
+ setupGlobalErrorReporting() {
+ window.addEventListener('unhandledrejection', (event) => {
+ console.error('[App] Unhandled promise rejection:', event.reason);
+ });
+
+ window.addEventListener('error', (event) => {
+ // Resource load errors (img/script) surface here with no `error` object;
+ // they are already handled by the texture fallback chain.
+ if (!event.error) return;
+ console.error('[App] Uncaught error:', event.error);
+ });
  }
 
  async init() {
@@ -512,7 +538,6 @@ class App {
  }
 
  _orbitModeLabel(mode) {
- const t = window.t || (k => k);
  const labels = {
  'all': t('orbitModeAll') || 'All Orbits',
  'planets': t('orbitModePlanets') || 'Planets',
@@ -552,20 +577,9 @@ class App {
  }
 
  setupGlobalFunctions() {
- // Close info panel
- window.closeInfoPanel = () => {
- this.uiManager.closeInfoPanel();
- };
- 
- // Close help modal
- window.closeHelpModal = () => {
- this.uiManager.closeHelpModal();
- };
-
- // Close settings modal
- window.closeSettingsModal = () => {
- this.uiManager.closeSettingsModal();
- };
+ // NOTE: window.closeInfoPanel / closeHelpModal / closeSettingsModal used to be
+ // published here for inline onclick handlers. Those handlers no longer exist,
+ // so the globals were removed — every close path is a real event listener below.
 
  // Wire up help close button (replaces inline onclick)
  const helpCloseBtn = document.getElementById('help-close-btn');
@@ -589,13 +603,14 @@ class App {
  const closeBtn = infoPanel.querySelector('.close-btn');
  if (!closeBtn) return;
  
- // Add direct click listener as backup to inline onclick
+ // stopPropagation keeps the click from reaching the canvas picker underneath.
  closeBtn.addEventListener('click', (e) => {
  e.stopPropagation();
  this.uiManager.closeInfoPanel();
  });
  
- // Ensure touch events work properly on mobile
+ // Touch: preventDefault() suppresses the synthetic click that would otherwise
+ // follow, so this does not double-fire with the listener above.
  closeBtn.addEventListener('touchend', (e) => {
  e.preventDefault();
  e.stopPropagation();
@@ -1113,10 +1128,37 @@ class App {
  }
  }
  
+ /**
+  * True when a keystroke must NOT be interpreted as an app shortcut:
+  * the user is typing into a form control, editing rich text, or holding a
+  * browser/OS modifier (Ctrl+R, Cmd+S, Alt+D … must keep their native meaning).
+  */
+ _shouldIgnoreShortcut(e) {
+ if (e.ctrlKey || e.metaKey || e.altKey) return true;
+ const el = e.target;
+ if (!el) return false;
+ if (el.isContentEditable) return true;
+ // SELECT is included deliberately: native type-ahead search inside the
+ // navigation dropdown would otherwise also toggle scale/orbits/labels.
+ return EDITABLE_TAGS.has(el.tagName);
+ }
+
+ /**
+  * Close only the frontmost open dialog, in reverse stacking order.
+  * @returns {boolean} true when something was closed.
+  */
+ _closeTopmostOverlay() {
+ const ui = this.uiManager;
+ const isOpen = (el) => el && !el.classList.contains('hidden');
+ if (isOpen(ui?.elements?.settingsModal)) { ui.closeSettingsModal(); return true; }
+ if (isOpen(ui?.elements?.helpModal)) { ui.closeHelpModal(); return true; }
+ if (isOpen(ui?.elements?.infoPanel)) { ui.closeInfoPanel(); return true; }
+ return false;
+ }
+
  setupKeyboardShortcuts() {
  document.addEventListener('keydown', (e) => {
- // Ignore if typing in input
- if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+ if (this._shouldIgnoreShortcut(e)) return;
  
  switch(e.key.toLowerCase()) {
  case 'h':
@@ -1200,9 +1242,7 @@ class App {
  break;
  }
  case 'escape':
- this.uiManager.closeInfoPanel();
- this.uiManager.closeHelpModal();
- this.uiManager.closeSettingsModal();
+ this._closeTopmostOverlay();
  break;
  case ',':
  // Comma = open Settings (matches tooltip hint)
@@ -1538,7 +1578,6 @@ class App {
  }
 
  _showEventInfo(dateValue, eventLabel, focusKey) {
- const t = window.t || ((key) => key);
  const eventDescs = this._getEventDescriptions();
  // Try composite key (date|focus) first, then date-only fallback
  const eventData = eventDescs[`${dateValue}|${focusKey}`] || eventDescs[dateValue];
@@ -1669,7 +1708,6 @@ class App {
  // Rebuild dropdown with matches (no optgroups during search).
  const placeholder = document.createElement('option');
  placeholder.value = '';
- const t = window.t || ((k) => k);
  placeholder.textContent = matches.length > 0
  ? (matches.length === 1 ? t('searchResults') : t('searchResultsPlural')).replace('{n}', matches.length)
  : t('searchNoResults');

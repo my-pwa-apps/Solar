@@ -1,0 +1,28 @@
+# EditorConfig — https://editorconfig.org
+# The JS sources historically use a single space per indent level; this file
+# records the intended convention so new/edited code converges on 4 spaces
+# without forcing a repo-wide reformat (see BACKLOG.md).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[{sw.js,eslint.config.js,playwright.config.js}]
+indent_size = 2
+
+[scripts/**.mjs]
+indent_size = 2
+
+[tests/**.js]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

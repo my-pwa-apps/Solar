@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.302
+// Version 2.10.303
 
-const CACHE_VERSION = '2.10.302';
+const CACHE_VERSION = '2.10.303';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -12,13 +12,14 @@ const CACHE_LIMITS = {
   images: 50
 };
 
-// Files to cache immediately on install
-const STATIC_CACHE_FILES = [
+// App shell — the app cannot work offline without these, so install fails loudly
+// if any of them cannot be cached.
+const CORE_CACHE_FILES = [
   './',
   './index.html',
   './src/main.js',
   './src/modules/storage.js',
-    './src/modules/AppFeatures.js',
+  './src/modules/AppFeatures.js',
   './src/i18n.js',
   './src/bootstrap/installPromptCapture.js',
   './src/bootstrap/initManagers.js',
@@ -41,8 +42,12 @@ const STATIC_CACHE_FILES = [
   './manifest.es.json',
   './manifest.pt.json',
   './browserconfig.xml',
-  './favicon.ico',
-  // Windows taskbar and Start Menu icons (critical for PWA)
+  './favicon.ico'
+];
+
+// Icons and textures — cached best-effort. A single missing or oversized asset
+// degrades one object's appearance; it must never break the whole install.
+const ASSET_CACHE_FILES = [
   './icons/windows11/Square44x44Logo.altform-unplated_targetsize-16.png',
   './icons/windows11/Square44x44Logo.altform-unplated_targetsize-24.png',
   './icons/windows11/Square44x44Logo.altform-unplated_targetsize-32.png',
@@ -115,6 +120,16 @@ const STATIC_CACHE_FILES = [
   './textures/dwarf-planets/eris_2k.webp'
 ];
 
+// Full precache manifest. Everything here is served straight from cache without
+// a background revalidation round-trip — CACHE_VERSION is the invalidation signal.
+const STATIC_CACHE_FILES = [...CORE_CACHE_FILES, ...ASSET_CACHE_FILES];
+
+// Normalised same-origin paths of everything we precache, used to skip
+// stale-while-revalidate for immutable, version-scoped assets.
+const PRECACHED_PATHS = new Set(
+  STATIC_CACHE_FILES.map((file) => new URL(file, self.location).pathname)
+);
+
 // CDN files to cache (Three.js and dependencies)
 const CDN_CACHE_FILES = [
   'https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js',
@@ -129,10 +144,14 @@ self.addEventListener('install', (event) => {
     (async () => {
       try {
         const cache = await caches.open(CACHE_NAME);
-        
-        // Cache static files
-        await cache.addAll(STATIC_CACHE_FILES);
-        
+
+        // App shell must be complete for the PWA to boot offline.
+        await cache.addAll(CORE_CACHE_FILES);
+
+        // Media is best-effort: addAll() is atomic, so a single 404 would
+        // otherwise discard every successfully fetched asset.
+        await Promise.allSettled(ASSET_CACHE_FILES.map((url) => cache.add(url)));
+
         // Try to cache CDN files in parallel (don't fail if they're not available)
         await Promise.allSettled(CDN_CACHE_FILES.map(url => cache.add(url)));
         
@@ -142,7 +161,16 @@ self.addEventListener('install', (event) => {
         // update notification first; skipWaiting is triggered via the
         // SKIP_WAITING message when the user clicks "Update".
       } catch (error) {
-        // console.error('[SW] Installation failed:', error);
+        // A failed install means the app will not work offline. Staying silent
+        // here made this class of failure undiagnosable in the field, so it is
+        // reported both to the console and to any already-controlled client.
+        console.error('[SW] Installation failed:', error);
+        broadcastMessage({
+          type: 'SW_INSTALL_FAILED',
+          version: CACHE_VERSION,
+          message: error && error.message ? error.message : String(error)
+        });
+        throw error;
       }
     })()
   );
@@ -263,10 +291,12 @@ self.addEventListener('fetch', (event) => {
           // plain paths stored in the SW install cache, ensuring offline reliability
           const cachedResponse = await caches.match(cacheKey);
           if (cachedResponse) {
-            // Return cached version and update in background
-            // Skip revalidation for immutable CDN resources (versioned URLs can't change)
-            const reqUrl = new URL(request.url);
-            if (!reqUrl.hostname.includes('jsdelivr.net')) {
+            // Precached assets are immutable for the lifetime of this CACHE_VERSION,
+            // and jsdelivr URLs are version-pinned. Revalidating either would re-download
+            // the whole app shell plus every texture on every single page load.
+            const isImmutable = url.hostname.includes('jsdelivr.net')
+              || (url.origin === location.origin && PRECACHED_PATHS.has(url.pathname));
+            if (!isImmutable) {
               event.waitUntil(updateCache(request, cache, cacheKey));
             }
             return cachedResponse;
@@ -288,9 +318,9 @@ self.addEventListener('fetch', (event) => {
           
           return networkResponse;
         }
-      } catch (error) {
-        // console.error('[SW] Fetch failed:', error);
-
+      } catch {
+        // Expected whenever the user is offline and the asset was never cached;
+        // only surfaced for navigations, which fall through to the offline page.
         if (!isNavigationRequest(request)) {
           return Response.error();
         }
@@ -334,7 +364,7 @@ self.addEventListener('fetch', (event) => {
                 font-size: 1.2rem;
                 opacity: 0.8;
               }
-              button {
+              .button {
                 margin-top: 2rem;
                 padding: 1rem 2rem;
                 font-size: 1rem;
@@ -343,8 +373,10 @@ self.addEventListener('fetch', (event) => {
                 border: none;
                 border-radius: 4px;
                 cursor: pointer;
+                text-decoration: none;
+                display: inline-block;
               }
-              button:hover {
+              .button:hover {
                 background: #106ebe;
               }
             </style>
@@ -353,7 +385,7 @@ self.addEventListener('fetch', (event) => {
             <div class="offline-content">
               <h1>Offline</h1>
               <p>You're currently offline. Please check your internet connection.</p>
-              <button onclick="window.location.reload()">Try Again</button>
+              <a class="button" href="./">Try Again</a>
             </div>
           </body>
           </html>`,
@@ -374,7 +406,7 @@ async function updateCache(request, cacheName = CACHE_NAME, cacheKey = request) 
       const cache = await caches.open(cacheName);
       await cache.put(cacheKey, response);
     }
-  } catch (error) {
+  } catch {
     // Silently fail - we're already serving from cache
   }
 }
@@ -390,7 +422,7 @@ async function trimCache(cacheName, maxItems) {
       const keysToDelete = keys.slice(0, keys.length - maxItems);
       await Promise.all(keysToDelete.map(key => cache.delete(key)));
     }
-  } catch (error) {
+  } catch {
     // Silently fail - cache trimming is optimization
   }
 }

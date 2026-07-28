@@ -1,6 +1,8 @@
 # Dependencies
+# NOTE: package-lock.json is intentionally TRACKED. Without it `npm ci` cannot
+# run, dev/CI installs are not reproducible, and transitive dependency updates
+# land silently.
 node_modules/
-package-lock.json
 yarn.lock
 
 # Build outputs
@@ -29,6 +31,8 @@ yarn-error.log*
 # Test artifacts
 playwright-report/
 test-results/
+e2e-out.txt
+full-run.txt
 
 # Environment variables
 .env
@@ -42,10 +46,9 @@ test-results/
 *.p12
 *.pfx
 
-# Python virtualenv and scripts
+# Python virtualenv (one-off .py scratch scripts are covered below)
 .venv/
 __pycache__/
-*.py
 *.pyc
 
 # Dev scratch files

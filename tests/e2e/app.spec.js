@@ -1,4 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
+
+// Read from package.json rather than hardcoding: a hardcoded literal turned every
+// routine version bump into three unrelated test failures, and asserted nothing
+// beyond "someone remembered to edit the spec".
+const APP_VERSION = JSON.parse(
+  readFileSync(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8')
+).version;
 
 function collectDiagnostics(page) {
   const diagnostics = [];
@@ -85,7 +94,7 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
   }));
 
   expect(appState).toMatchObject({
-    version: '2.10.302',
+    version: APP_VERSION,
     hasCamera: true,
     hasScene: true,
     hasControls: true,
@@ -145,7 +154,7 @@ test('keeps core navigation and controls working', async ({ page }) => {
 
   await openModalFromButton(page, '#settings-button', '#settings-modal');
   await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
-  await expect(page.locator('#settings-modal')).toContainText('v2.10.302');
+  await expect(page.locator('#settings-modal')).toContainText(`v${APP_VERSION}`);
   await page.locator('button[aria-label="Close settings dialog"]').click({ force: true });
   await expect(page.locator('#settings-modal')).toHaveClass(/hidden/);
 

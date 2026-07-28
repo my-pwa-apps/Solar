@@ -1,4 +1,3 @@
-import { audioManager } from './AudioManager.js';
 import { safeGetItem, safeSetItem } from './storage.js';
 
 export function setupOnboarding(uiManager) {

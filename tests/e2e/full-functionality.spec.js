@@ -1,4 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
+
+// See app.spec.js: the version is read from package.json so a bump does not
+// require editing unrelated assertions.
+const APP_VERSION = JSON.parse(
+  readFileSync(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8')
+).version;
 
 test.use({ viewport: { width: 1440, height: 900 } });
 test.describe.configure({ mode: 'serial' });
@@ -185,7 +193,7 @@ test('full functionality: every navigation target and all main controls work', a
 
     await page.locator('#settings-button').click();
     await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
-    await expect(page.locator('#settings-modal')).toContainText('v2.10.302');
+    await expect(page.locator('#settings-modal')).toContainText(`v${APP_VERSION}`);
 
     const languages = await page.locator('#language-selector option').evaluateAll((options) =>
       options.map((option) => option.value)

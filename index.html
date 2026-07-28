@@ -4,20 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
-    <!-- Search Engine Blocking - Prevent indexing (paid app in Windows Store) -->
+    <!-- Search engine blocking - the web build is a demo; the product ships paid in the Windows Store.
+         The generic `robots` directive is honoured by every major crawler (Bing/msnbot, Slurp,
+         DuckDuckBot, Baiduspider, Yandex, Sogou, Exabot, facebot, ia_archiver), so the twelve
+         per-bot duplicates that used to live here were redundant. `googlebot` is kept because
+         Google documents it as a genuine per-crawler override. robots.txt is the real enforcement. -->
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     <meta name="googlebot" content="noindex, nofollow">
-    <meta name="googlebot-news" content="noindex, nofollow">
-    <meta name="bingbot" content="noindex, nofollow">
-    <meta name="msnbot" content="noindex, nofollow">
-    <meta name="slurp" content="noindex, nofollow">
-    <meta name="duckduckbot" content="noindex, nofollow">
-    <meta name="baiduspider" content="noindex, nofollow">
-    <meta name="yandex" content="noindex, nofollow">
-    <meta name="sogou" content="noindex, nofollow">
-    <meta name="exabot" content="noindex, nofollow">
-    <meta name="facebot" content="noindex, nofollow">
-    <meta name="ia_archiver" content="noindex, nofollow">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-P8/hl17e5MriLtqRUjyKrecy52BbNxNSkSJaLmt7Vsc=' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self'; worker-src 'self'">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Referrer-Policy" content="no-referrer">
@@ -34,11 +27,11 @@
     </script>
 
     <!-- Capture beforeinstallprompt early, before heavy module scripts load -->
-    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.302"></script>
+    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.303"></script>
 
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.302" crossorigin="use-credentials">
-    <script type="module" src="./src/modules/LanguageManager.js?v=2.10.302"></script>
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.303" crossorigin="use-credentials">
+    <script type="module" src="./src/modules/LanguageManager.js?v=2.10.303"></script>
     
     <!-- Primary Meta Tags -->
     <title>Space Voyage - Interactive 3D Solar System & VR Experience</title>
@@ -107,16 +100,16 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.10.302" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.10.302" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.10.302" as="style">
+    <link rel="preload" href="./src/i18n.js?v=2.10.303" as="script">
+    <link rel="preload" href="./src/styles/main.css?v=2.10.303" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.10.303" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.302">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.302">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.303">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.303">
     
     <!-- Load translations early -->
-    <script src="./src/i18n.js?v=2.10.302"></script>
+    <script src="./src/i18n.js?v=2.10.303"></script>
 </head>
 <body>
     <header id="main-header" role="banner">
@@ -468,9 +461,9 @@
         </div>
     </div>
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=2.10.302"></script>
+    <script type="module" src="./src/main.js?v=2.10.303"></script>
     
     <!-- Initialize Modules -->
-    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.302"></script>
+    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.303"></script>
 </body>
 </html>

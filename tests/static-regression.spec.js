@@ -28,12 +28,23 @@ test('app version and service worker cache manifest stay in sync', async ({}, te
   expect(i18n).toContain(`|| '${version}'`);
   expect(indexHtml.match(new RegExp(`v=${version.replaceAll('.', '\\.')}`, 'g'))?.length).toBeGreaterThanOrEqual(10);
 
-  const cacheFilesMatch = serviceWorker.match(/const STATIC_CACHE_FILES = \[([\s\S]*?)\];/);
-  expect(cacheFilesMatch, 'STATIC_CACHE_FILES should be parseable').not.toBeNull();
+  const readManifest = (name) => {
+    const match = serviceWorker.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
+    expect(match, `${name} should be parseable`).not.toBeNull();
+    return [...match[1].matchAll(/'([^']+)'/g)]
+      .map((entry) => entry[1])
+      .filter((entry) => entry.startsWith('./'));
+  };
 
-  const cachedFiles = [...cacheFilesMatch[1].matchAll(/'([^']+)'/g)]
-    .map((match) => match[1])
-    .filter((entry) => entry.startsWith('./'));
+  const coreFiles = readManifest('CORE_CACHE_FILES');
+  const assetFiles = readManifest('ASSET_CACHE_FILES');
+  const cachedFiles = [...coreFiles, ...assetFiles];
+
+  // Guard against the manifest silently emptying out (e.g. a refactor that
+  // replaces the literals with spreads would otherwise make this test vacuous).
+  expect(coreFiles.length).toBeGreaterThan(20);
+  expect(assetFiles.length).toBeGreaterThan(40);
+  expect(new Set(cachedFiles).size, 'precache manifest must not contain duplicates').toBe(cachedFiles.length);
 
   const missingFiles = [];
   for (const cachedFile of cachedFiles) {

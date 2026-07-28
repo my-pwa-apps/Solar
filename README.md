@@ -58,7 +58,8 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 ## Quick Start
 
 ### Option 1: Visit Live Demo
-*Coming soon after deployment*
+
+**https://my-pwa-apps.github.io/Solar/**
 
 ### Option 2: Run Locally
 
@@ -68,28 +69,49 @@ git clone https://github.com/my-pwa-apps/Solar.git
 cd Solar
 
 # Serve locally (requires Node.js)
-npx http-server -p 8000
+npm install
+npm run dev
 
 # Open in browser
 # Navigate to: http://localhost:8000
 ```
 
-## Regression Tests
+> **HTTPS is required** for service-worker registration, PWA install prompts and
+> WebXR. `http://localhost` is treated as a secure origin by browsers, so local
+> development works, but testing on a headset or phone needs a real HTTPS origin.
 
-The app includes a Playwright regression suite that starts a local static server and runs desktop plus mobile Chromium checks against the real browser app.
+## Development Workflow
 
 ```bash
-# Install dependencies once
-npm install
+# Install dependencies once (uses the committed lockfile)
+npm ci
+
+# Static analysis
+npm run lint
 
 # Run the full regression suite after changes
 npm test
+
+# Lint + tests, the same gate CI runs
+npm run verify
 
 # Optional: debug tests in a visible browser
 npm run test:headed
 ```
 
-The suite verifies version/cache consistency, service-worker cached file references, app boot, WebGL canvas creation, navigation dropdown behavior, core controls, modals, manifest loading, and service worker registration.
+### Versioning is enforced
+
+The service worker only invalidates its caches when `CACHE_VERSION` changes, and
+that version is repeated in five places (`package.json`, `sw.js`,
+`src/modules/utils.js`, `src/i18n.js` and the `?v=` stamps in `index.html`).
+Never edit them by hand:
+
+```bash
+npm run version:bump    # bump the patch version and stamp every file
+npm run version:check   # fail if anything is out of sync (runs before npm test)
+```
+
+The suite verifies version/cache consistency, service-worker cached file references, app boot, WebGL canvas creation, navigation dropdown behavior, core controls, keyboard shortcut scoping, modals, manifest loading, and service worker registration.
 
 ### Option 3: Install as PWA
 1. Visit the deployed app (requires HTTPS)
@@ -117,7 +139,9 @@ The suite verifies version/cache consistency, service-worker cached file referen
 - **Left Stick:** Move forward/back/strafe
 - **Right Stick:** Turn left/right, move up/down
 - **Trigger:** Sprint mode
-- **Grip Button:** Toggle VR menu
+- **X Button (left controller):** Toggle VR menu
+- **Left Grip:** Grab and rotate the scene
+- **Right Grip:** Drag the VR menu panel
 - **Point + Trigger:** Select objects
 
 ### Mobile
@@ -141,11 +165,6 @@ Deploy to any HTTPS-enabled host:
 ### 3. Validate
 Test your PWA at [PWABuilder.com](https://www.pwabuilder.com/) with your deployed URL.
 
-**For detailed instructions, see:**
-- 📄 [`PWA_COMPLETE.md`](PWA_COMPLETE.md) - Complete PWA overview
-- 📄 [`PWA_SETUP.md`](PWA_SETUP.md) - Detailed setup guide
-- 📄 [`PWA_CHECKLIST.md`](PWA_CHECKLIST.md) - Step-by-step checklist
-
 ## Technology Stack
 
 - **3D Graphics:** Three.js v0.183.0
@@ -159,20 +178,33 @@ Test your PWA at [PWABuilder.com](https://www.pwabuilder.com/) with your deploye
 
 ```
 Solar/
-├── index.html              # Main HTML file
-├── manifest.json           # PWA manifest
-├── sw.js                   # Service worker
+├── index.html                  # Shell, CSP, importmap, all UI markup
+├── manifest*.json              # PWA manifests (one per supported language)
+├── sw.js                       # Service worker: precache + runtime caching
+├── eslint.config.js            # Flat ESLint config
+├── playwright.config.js        # Regression suite config
+├── .github/workflows/ci.yml    # Lint + version check + Playwright on every push
+├── scripts/
+│   └── sync-version.mjs        # Single-source-of-truth version stamping
 ├── src/
-│   ├── main.js            # Main application code
+│   ├── main.js                 # App entry point, controls, shortcuts, navigation
+│   ├── i18n.js                 # Translations (6 languages)
+│   ├── bootstrap/              # Pre-module-load setup (language, install prompt)
+│   ├── modules/
+│   │   ├── SceneManager.js     # Three.js scene, camera, renderer, all WebXR
+│   │   ├── SolarSystemModule.js# Celestial objects, orbits, textures
+│   │   ├── UIManager.js        # Panels, modals, loading, speed controls
+│   │   ├── TextureCache.js     # IndexedDB + in-memory texture cache
+│   │   ├── utils.js            # DEBUG/CONFIG flags, material & geometry factories
+│   │   └── …                   # Audio, PWA, service worker, language, panels
 │   └── styles/
-│       ├── main.css       # Core styles
-│       └── ui.css         # UI component styles
-├── icons/                 # PWA icons (generate these)
-├── screenshots/           # App screenshots
-├── PWA_COMPLETE.md        # PWA overview
-├── PWA_SETUP.md           # Setup guide
-├── PWA_CHECKLIST.md       # Certification checklist
-└── README.md              # This file
+│       ├── main.css            # Core styles
+│       └── ui.css              # UI component styles
+├── textures/                   # Self-hosted planet/moon/ring/deep-sky textures
+├── icons/                      # PWA icons
+├── tests/                      # Playwright specs
+├── BACKLOG.md                  # Prioritised engineering backlog
+└── README.md                   # This file
 ```
 
 ## Features in Detail

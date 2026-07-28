@@ -1,18 +1,28 @@
 {
   "name": "space-voyage",
-  "version": "2.10.302",
+  "version": "2.10.303",
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "http-server . -p 8000 -a 127.0.0.1 -c-1",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "version:sync": "node scripts/sync-version.mjs",
+    "version:check": "node scripts/sync-version.mjs --check",
+    "version:bump": "node scripts/sync-version.mjs --bump",
+    "pretest": "node scripts/sync-version.mjs --check",
     "test": "playwright test",
     "test:basic": "playwright test tests/e2e/app.spec.js tests/static-regression.spec.js",
     "test:full": "playwright test tests/e2e/full-functionality.spec.js",
     "test:e2e": "playwright test tests/e2e",
     "test:headed": "playwright test --headed",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "verify": "npm run lint && npm test"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",
+    "eslint": "^9.19.0",
+    "globals": "^15.14.0",
     "http-server": "^14.1.1"
   }
 }

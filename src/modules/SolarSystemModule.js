@@ -1097,7 +1097,7 @@ export class SolarSystemModule {
                 currentTimeout = setTimeout(() => {
                     loadTimedOut = true;
                     meta.timeouts++;
-                    console.warn(`[TEX] ${planetName}: TIMEOUT after ${LOAD_TIMEOUT/1000}s: ${url}`);
+                    if (DEBUG && DEBUG.TEXTURES) console.warn(`[TEX] ${planetName}: TIMEOUT after ${LOAD_TIMEOUT/1000}s: ${url}`);
                     meta.errors.push({ url, error: `Timeout after ${LOAD_TIMEOUT/1000}s`, phase: 'primary' });
                     primaryIndex++;
                     tryNext();
@@ -1119,7 +1119,7 @@ export class SolarSystemModule {
                             clearTimeout(currentTimeout);
                             currentTimeout = null;
                             const errorMsg = error?.message || error?.type || 'Network or CORS issue';
-                            console.warn(`[TEX] ${planetName}: network load FAILED: ${url} — ${errorMsg}`);
+                            if (DEBUG && DEBUG.TEXTURES) console.warn(`[TEX] ${planetName}: network load FAILED: ${url} — ${errorMsg}`);
                             meta.errors.push({ url, error: errorMsg, phase: 'primary' });
                             primaryIndex++;
                             tryNext();
@@ -1946,7 +1946,6 @@ export class SolarSystemModule {
                 const downY = Math.min(size - 1, y + 1);
 
                 // Sample height at neighboring pixels
-                const h = turbulence(nx, ny, 128) / 128;
                 const hL = turbulence(leftX / size * 2, ny, 128) / 128;
                 const hR = turbulence(rightX / size * 2, ny, 128) / 128;
                 const hU = turbulence(nx, upY / size * 2, 128) / 128;
@@ -3147,7 +3146,7 @@ export class SolarSystemModule {
  const ringLoader = new THREE.TextureLoader();
  try {
  ringMap = ringLoader.load('./textures/rings/saturn_ring_alpha.webp');
- } catch(e) { ringMap = null; }
+ } catch { ringMap = null; }
  }
  // Provide a 1×1 fallback so the sampler2D uniform is always a valid texture
  // (avoids driver issues on GPUs that evaluate both GLSL ternary branches)
@@ -3755,7 +3754,6 @@ export class SolarSystemModule {
  const parentRotY = moon.parent ? (moon.parent.rotation.y || 0) : 0;
  if (this.scientificMode) {
  const e = moon.userData.orbitalEccentricity || 0;
- const i = moon.userData.orbitalInclination || 0;
  const w = moon.userData.orbitalPeriapsis || 0;
  const a = moon.userData.distance;
  const nu = moon.userData.angle;
@@ -9207,7 +9205,6 @@ createHyperrealisticHubble(satData) {
  
  if (this.scientificMode) {
  const e = planet.userData.orbitalEccentricity || 0;
- const i = planet.userData.orbitalInclination || 0;
  const w = planet.userData.orbitalPeriapsis || 0;
  const a = planet.userData.distance;
  // angle = true anomaly ν; use ν for correct Keplerian r, then rotate by periapsis ω
@@ -9281,7 +9278,6 @@ createHyperrealisticHubble(satData) {
  let moonOrbitalAngle = 0; // used for tidal-lock rotation
  if (this.scientificMode) {
  const e = moon.userData.orbitalEccentricity || 0;
- const i = moon.userData.orbitalInclination || 0;
  const w = moon.userData.orbitalPeriapsis || 0;
  const a = moon.userData.distance;
  const nu = moon.userData.angle;
@@ -10656,7 +10652,6 @@ createHyperrealisticHubble(satData) {
 
  getObjectInfo(object) {
  const userData = object.userData;
- const t = window.t || ((key) => key);
  
  // Translate object name
  const nameKey = userData.name?.replace(/\s+/g, '');

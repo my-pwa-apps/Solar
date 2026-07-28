@@ -187,13 +187,6 @@ export class PWAManager {
                 clearTimeout(this.installPromptTimer);
                 this.installPromptTimer = null;
             }
-            
-            if (window.gtag) {
-                gtag('event', 'pwa_installed', {
-                    event_category: 'engagement',
-                    event_label: 'PWA Installation'
-                });
-            }
         });
 
         // Expose public function
@@ -308,14 +301,6 @@ export class PWAManager {
             if (installPrompt) {
                 installPrompt.classList.add('hidden');
                 installPrompt.setAttribute('aria-hidden', 'true');
-            }
-            
-            // Track PWA usage
-            if (window.gtag) {
-                gtag('event', 'pwa_used', {
-                    event_category: 'engagement',
-                    event_label: 'PWA Active Session'
-                });
             }
         }
     }
