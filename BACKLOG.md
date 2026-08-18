@@ -160,6 +160,76 @@ Estimated effort: Small
 Business value: High
 Technical debt reduction: Medium
 
+- [ ] Keep Earth's rotation axis fixed in inertial space
+
+Priority: High
+Category: Bug
+Area: `solar-system/orbital-mechanics.js`
+Affected files: `src/modules/solar-system/orbital-mechanics.js`
+Problem: `_applyEarthOrientation()` maps the object-space sub-solar direction onto the
+scene Sun direction, then rotates about that axis to bring the pole as close to scene
++Y as possible. That leaves the pole in the plane spanned by the Sun direction and +Y,
+so as Earth orbits the axis swings with the Sun instead of pointing at a fixed
+celestial point. Earth's true axis is inertially fixed at ecliptic latitude 66.56 deg,
+longitude 90 deg. Found by an independent model audit (Gemini 3.1 Pro), confirmed by
+inspection.
+Impact: Solar declination and the sub-solar point are still exact, so eclipse
+placement is unaffected (Earth verified to 0.2 deg, city test 9/9). What is wrong is
+the azimuthal orientation of the tilt: Earth's visual lean is wrong through the year
+and its alignment against the star field does not hold.
+Recommended solution: Replace the "closest to +Y" heuristic with the true pole
+direction. In a scene whose XZ plane is the ecliptic, the celestial north pole sits at
+(0, cos eps, sin eps) once the scene frame is aligned to the ecliptic. Build the
+orientation from the fixed pole plus a sidereal spin angle rather than from a
+shortest-arc fit to the Sun.
+Acceptance criteria: Earth's world-space axis direction is constant to within 0.01 deg
+across a full simulated year; sub-solar latitude and longitude remain accurate to the
+current tolerances; the eclipse regression tests still pass.
+Estimated effort: Medium
+Business value: High
+Technical debt reduction: Medium
+
+- [ ] Make eclipse `gamma` signed
+
+Priority: Medium
+Category: Bug
+Area: `src/modules/astro/Eclipse.js`
+Affected files: `src/modules/astro/Eclipse.js`, `tests/unit/astro.test.mjs`
+Problem: `gamma` is computed as `len(closestPoint) / EARTH_RADIUS_KM` and is therefore
+always positive. The published parameter is signed, positive when the axis passes
+north of Earth's centre. Found by an independent model audit (GPT-5.5).
+Impact: The 2026 test passes only because that eclipse's gamma happens to be positive.
+A southern-node eclipse would disagree with published values and the test would not
+catch it, so the assertion is weaker than it appears.
+Recommended solution: Project the closest-approach point onto the fundamental plane
+and take the sign from its north component, then assert a signed value in the tests
+using an eclipse with negative gamma as well.
+Acceptance criteria: `gamma` matches published sign and magnitude for one positive and
+one negative gamma eclipse.
+Estimated effort: Small
+Business value: Medium
+Technical debt reduction: Low
+
+- [ ] Reposition the Moon mesh inside `seekToDate`
+
+Priority: Low
+Category: Bug
+Area: `solar-system/orbital-mechanics.js`
+Affected files: `src/modules/solar-system/orbital-mechanics.js`
+Problem: `seekToDate()` calls `_applyEarthOrientation()` and `_updateEclipse(true)` but
+never applies `_moonDirectionObjectSpace()`, so the Moon mesh keeps its previous
+position until the next animation frame runs the planet loop.
+Impact: Immediately after a date jump the Moon is visibly in the wrong place while the
+shadow is already correct. Tests must wait two frames to observe the Moon, which is a
+workaround for the bug rather than a property of the app.
+Recommended solution: Set Earth's Moon position directly in `seekToDate`, reusing the
+same code path as the update loop.
+Acceptance criteria: Immediately after `seekToDate` to a totality instant, and before
+any frame is rendered, the Moon lies within 2 deg of the Earth-Sun line.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
 - [ ] Reconcile planet radii and moon orbital distances onto one scale
 
 Priority: High
