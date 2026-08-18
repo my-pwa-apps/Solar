@@ -58,3 +58,75 @@ test('app version and service worker cache manifest stay in sync', async ({}, te
 
   expect(missingFiles).toEqual([]);
 });
+
+test('every three.js addon the app imports is pinned and precached at one version', async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
+
+  const [indexHtml, serviceWorker] = await Promise.all([readText('index.html'), readText('sw.js')]);
+
+  // The importmap is covered by a CSP hash, so a version bump there must be a
+  // deliberate, reviewed change — and sw.js must be bumped in the same commit.
+  const importmapVersions = new Set(
+    [...indexHtml.matchAll(/cdn\.jsdelivr\.net\/npm\/three@([\d.]+)\//g)].map((m) => m[1])
+  );
+  expect(importmapVersions.size, 'index.html must pin exactly one three.js version').toBe(1);
+  const [pinnedVersion] = [...importmapVersions];
+
+  const cdnMatch = serviceWorker.match(/const CDN_CACHE_FILES = \[([\s\S]*?)\];/);
+  expect(cdnMatch, 'CDN_CACHE_FILES should be parseable').not.toBeNull();
+  const cdnFiles = [...cdnMatch[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+
+  for (const url of cdnFiles) {
+    expect(url, `${url} must use the pinned three.js version`).toContain(`three@${pinnedVersion}/`);
+  }
+
+  // Collect the addon specifiers actually imported by application code. An addon
+  // that is imported but not precached silently breaks the first offline launch;
+  // one that is precached but not imported wastes install bandwidth forever.
+  const sourceFiles = ['src/main.js', 'src/modules/SceneManager.js', 'src/modules/SolarSystemModule.js', 'src/modules/utils.js'];
+  const importedAddons = new Set();
+  for (const file of sourceFiles) {
+    const source = await readText(file);
+    for (const match of source.matchAll(/from 'three\/addons\/([^']+)'/g)) {
+      importedAddons.add(match[1]);
+    }
+  }
+  expect(importedAddons.size).toBeGreaterThan(0);
+
+  const precachedAddons = new Set(
+    cdnFiles
+      .map((url) => url.split('/examples/jsm/')[1])
+      .filter(Boolean)
+  );
+
+  expect([...importedAddons].sort(), 'every imported three.js addon must be precached in sw.js')
+    .toEqual([...precachedAddons].sort());
+
+  expect(cdnFiles.some((url) => url.endsWith('/build/three.module.js')), 'the three.js core build must be precached').toBe(true);
+});
+
+test('all localized manifests expose the same capabilities', async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
+
+  const locales = ['', '.nl', '.fr', '.de', '.es', '.pt'];
+  const manifests = await Promise.all(
+    locales.map(async (suffix) => ({
+      name: `manifest${suffix}.json`,
+      json: JSON.parse(await readText(`manifest${suffix}.json`))
+    }))
+  );
+
+  // Locale manifests drifted apart once already: de/es/pt silently lost
+  // handle_links, launch_handler and display_override, so installed apps in
+  // those languages behaved differently from the English one for no reason.
+  const referenceKeys = Object.keys(manifests[0].json).sort();
+  for (const { name, json } of manifests) {
+    expect(Object.keys(json).sort(), `${name} must declare the same fields as manifest.json`).toEqual(referenceKeys);
+  }
+
+  // A declared share_target that has no route behind it makes the OS offer the
+  // app as a share destination and then fail. Only declare it once it is served.
+  for (const { name, json } of manifests) {
+    expect(json.share_target, `${name} must not declare an unimplemented share target`).toBeUndefined();
+  }
+});

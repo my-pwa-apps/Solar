@@ -43,6 +43,142 @@ body {
     display: none !important;
 }
 
+/* Keyboard bypass for the header/footer control clusters (WCAG 2.4.1).
+   Off-screen until focused rather than display:none, so it stays reachable. */
+.skip-link {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10001;
+    padding: 12px 20px;
+    background: var(--fluent-accent, #0078D4);
+    color: #fff;
+    font-size: 14px;
+    text-decoration: none;
+    border-radius: 0 0 6px 0;
+    transform: translateY(-120%);
+}
+
+.skip-link:focus-visible,
+.skip-link:focus {
+    transform: translateY(0);
+    outline: 2px solid #fff;
+    outline-offset: -4px;
+}
+
+/* ===========================   FATAL ERROR OVERLAY
+   ===========================
+   Injected by src/modules/FatalError.js when the app cannot boot. Deliberately
+   depends on no other component so it still renders when everything else failed. */
+#fatal-error {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 17, 0.92);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+.fatal-error-panel {
+    max-width: 560px;
+    width: 100%;
+    padding: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: #12121c;
+    text-align: left;
+}
+
+.fatal-error-panel h2 {
+    margin-bottom: 12px;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.fatal-error-panel p {
+    margin-bottom: 24px;
+    opacity: 0.85;
+    line-height: 1.5;
+}
+
+.fatal-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.fatal-error-actions button {
+    flex: 1 1 auto;
+    min-width: 140px;
+    min-height: 44px;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.fatal-error-actions .btn-primary {
+    background: var(--fluent-accent, #0078D4);
+    color: #fff;
+}
+
+.fatal-error-actions .btn-secondary {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+.fatal-error-actions button:disabled {
+    opacity: 0.5;
+    cursor: progress;
+}
+
+.fatal-error-actions button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.fatal-error-panel summary {
+    cursor: pointer;
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+.fatal-error-panel pre {
+    margin-top: 12px;
+    max-height: 30vh;
+    overflow: auto;
+    padding: 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ===========================
+   REDUCED MOTION
+   ===========================
+   The 3D simulation itself is the point of the app and keeps running, but every
+   decorative transition, spinner and camera fly-to is suppressed. The JS side
+   reads the same media query via prefersReducedMotion() in utils.js. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* ===========================
    LOADING SCREEN
    =========================== */

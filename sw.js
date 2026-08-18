@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.303
+// Version 2.10.304
 
-const CACHE_VERSION = '2.10.303';
+const CACHE_VERSION = '2.10.304';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -20,6 +20,7 @@ const CORE_CACHE_FILES = [
   './src/main.js',
   './src/modules/storage.js',
   './src/modules/AppFeatures.js',
+  './src/modules/FatalError.js',
   './src/i18n.js',
   './src/bootstrap/installPromptCapture.js',
   './src/bootstrap/initManagers.js',
@@ -130,12 +131,19 @@ const PRECACHED_PATHS = new Set(
   STATIC_CACHE_FILES.map((file) => new URL(file, self.location).pathname)
 );
 
-// CDN files to cache (Three.js and dependencies)
+// Third-party module graph pulled in by the importmap in index.html. Must stay in
+// step with the `three/addons/...` imports in src/ — tests/static-regression.spec.js
+// fails the build when it drifts. Transitive imports (Pass.js, shader chunks) are
+// not listed here; they are picked up by the runtime cache-first handler below.
 const CDN_CACHE_FILES = [
   'https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js',
   'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/controls/OrbitControls.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/renderers/CSS2DRenderer.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js'
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/EffectComposer.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/RenderPass.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/UnrealBloomPass.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/OutputPass.js',
+  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/SMAAPass.js'
 ];
 
 // Install event - cache static files

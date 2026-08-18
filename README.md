@@ -113,6 +113,39 @@ npm run version:check   # fail if anything is out of sync (runs before npm test)
 
 The suite verifies version/cache consistency, service-worker cached file references, app boot, WebGL canvas creation, navigation dropdown behavior, core controls, keyboard shortcut scoping, modals, manifest loading, and service worker registration.
 
+### Invariants the static regression suite enforces
+
+`tests/static-regression.spec.js` fails the build — rather than shipping a subtly
+broken offline experience — when any of these drift:
+
+- **Version stamps** in `package.json`, `sw.js`, `src/modules/utils.js`,
+  `src/i18n.js` and `index.html` disagree.
+- **Precache manifest** entries in `sw.js` point at files that do not exist, or
+  contain duplicates.
+- **Three.js module graph:** every `three/addons/*` module imported anywhere in
+  `src/` must appear in `CDN_CACHE_FILES`, and nothing may appear there that is
+  not imported. `index.html` and `sw.js` must agree on exactly one pinned version.
+- **Manifest parity:** all six `manifest*.json` files must declare the same
+  top-level fields, so an installed app behaves identically in every language.
+  `share_target` is explicitly rejected until a `./share` route actually exists.
+
+### Accessibility
+
+`prefers-reduced-motion` is honoured on both sides: `prefersReducedMotion()` in
+`src/modules/utils.js` short-circuits the camera fly-to, and the matching
+`@media` block in `src/styles/main.css` suppresses CSS animation. The simulation
+itself keeps running. `tests/e2e/accessibility.spec.js` covers this, the skip
+link and the `aria-hidden` state of decorative icons.
+
+### Failure handling
+
+A throw during boot renders the recovery dialog in `src/modules/FatalError.js`
+instead of leaving the user on the loading spinner. It shows the app version,
+user agent and stack under "technical details", and offers Reload plus
+Clear-cache-and-reload (which unregisters the service worker and deletes all
+caches and IndexedDB databases) — the usual fix for a half-written cache after
+an interrupted update.
+
 ### Option 3: Install as PWA
 1. Visit the deployed app (requires HTTPS)
 2. Click the "Install" button in your browser

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 // CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
 import { TEXTURE_CACHE } from './TextureCache.js';
-import { CONFIG, DEBUG, IS_MOBILE, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
+import { CONFIG, DEBUG, IS_MOBILE, prefersReducedMotion, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
 
 // i18n.js is loaded globally in index.html, access via window.t
 // Late-binding: always delegate to window.t at call time (not captured at import time)
@@ -1188,7 +1188,12 @@ export class SolarSystemModule {
             phase = 'procedural';
         }
         if (phase === 'procedural') {
-            console.warn(`[TEX] ${planetName}: ALL SOURCES FAILED → generating procedural. Errors:`, meta.errors);
+            // Gated: falling back to a procedural texture is a designed, expected
+            // outcome for every object that ships without a photographic map, so
+            // logging it unconditionally floods the console on a healthy install.
+            if (DEBUG && DEBUG.TEXTURES) {
+                console.warn(`[TEX] ${planetName}: ALL SOURCES FAILED → generating procedural. Errors:`, meta.errors);
+            }
             meta.phase = 'procedural';
             
             // Wrap procedural generation in try-catch for Quest safety
@@ -11274,7 +11279,11 @@ let actualRadius;
  solarAnchorCameraPos.copy(anchorDirection).multiplyScalar(1200);
  }
 
- const duration = isFastOrbiter ? 1000 : 1500; // Faster transition for fast orbiters
+ // A swooping fly-to across the Solar System is exactly the kind of large-field
+ // optical flow that triggers vestibular discomfort, so cut straight to the target
+ // when the user has asked the OS for reduced motion. 1ms rather than 0 keeps the
+ // progress calculation (elapsed / duration) away from 0/0 = NaN on the first frame.
+ const duration = prefersReducedMotion() ? 1 : (isFastOrbiter ? 1000 : 1500); // Faster transition for fast orbiters
  const startTime = performance.now();
 
  const finalizeFocusTransition = () => {

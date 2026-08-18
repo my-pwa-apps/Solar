@@ -12,28 +12,48 @@ export class TextureCache {
  this.storeName = 'textures';
  this.textureVersion = APP_VERSION; // Single source of truth — stays in sync with APP_VERSION in utils.js
  this.db = null;
+ this.unavailableReason = null; // Set when IndexedDB cannot be opened; memory cache still works
  this.initPromise = this.initDB();
  }
 
+ /**
+  * Opens the persistent store. Never rejects: IndexedDB is unavailable in Safari
+  * private mode, in sandboxed iframes and under some enterprise policies, and a
+  * rejected `initPromise` that nobody awaits surfaces as an unhandled rejection
+  * on every boot. Failure degrades to the in-memory cache only, and is recorded
+  * on `unavailableReason` so it can be diagnosed instead of guessed at.
+  */
  async initDB() {
- return new Promise((resolve, reject) => {
- const request = indexedDB.open(this.dbName, this.dbVersion);
- 
- request.onerror = () => reject(request.error);
+ this.unavailableReason = null;
+ return new Promise((resolve) => {
+ let request;
+ try {
+ request = indexedDB.open(this.dbName, this.dbVersion);
+ } catch (error) {
+ this.unavailableReason = error;
+ if (DEBUG && DEBUG.enabled) console.warn('[Cache] IndexedDB unavailable:', error);
+ resolve(null);
+ return;
+ }
+
+ const fail = (reason) => {
+ this.unavailableReason = reason;
+ if (DEBUG && DEBUG.enabled) console.warn('[Cache] IndexedDB unavailable:', reason);
+ resolve(null);
+ };
+
+ request.onerror = () => fail(request.error);
+ request.onblocked = () => fail(new Error('IndexedDB blocked by another tab'));
  request.onsuccess = () => {
  this.db = request.result;
  this._checkVersion().then(() => resolve(this.db)).catch(() => resolve(this.db));
  };
- 
+
  request.onupgradeneeded = (event) => {
  const db = event.target.result;
  if (!db.objectStoreNames.contains(this.storeName)) {
  db.createObjectStore(this.storeName);
  }
- };
-
- request.onblocked = () => {
- reject(new Error('IndexedDB blocked by another tab'));
  };
  });
  }
@@ -49,19 +69,17 @@ export class TextureCache {
  });
  if (stored !== this.textureVersion) {
  if (DEBUG && DEBUG.enabled) console.log(`[Cache] Texture version changed (${stored} → ${this.textureVersion}), clearing stale textures`);
- const clearTx = this.db.transaction([this.storeName], 'readwrite');
- const clearStore = clearTx.objectStore(this.storeName);
+ // Clear and re-stamp in ONE transaction. Split across two, a tab closed in
+ // between leaves an empty store still tagged with the old version, so the
+ // next boot clears an already-empty store and re-downloads everything again.
+ const writeTx = this.db.transaction([this.storeName], 'readwrite');
+ const writeStore = writeTx.objectStore(this.storeName);
+ writeStore.clear();
+ writeStore.put(this.textureVersion, '__texture_cache_version__');
  await new Promise((resolve) => {
- const req = clearStore.clear();
- req.onsuccess = () => resolve();
- req.onerror = () => resolve();
- });
- const versionTx = this.db.transaction([this.storeName], 'readwrite');
- const versionStore = versionTx.objectStore(this.storeName);
- await new Promise((resolve) => {
- const req = versionStore.put(this.textureVersion, '__texture_cache_version__');
- req.onsuccess = () => resolve();
- req.onerror = () => resolve();
+ writeTx.oncomplete = () => resolve();
+ writeTx.onerror = () => resolve();
+ writeTx.onabort = () => resolve();
  });
  this.cache.clear();
  }
@@ -84,7 +102,7 @@ export class TextureCache {
  const tx = this.db.transaction([this.storeName], 'readonly');
  const store = tx.objectStore(this.storeName);
  
- return new Promise((resolve, reject) => {
+ return new Promise((resolve) => {
  const request = store.get(key);
  request.onsuccess = () => {
  if (request.result) {
@@ -96,7 +114,13 @@ export class TextureCache {
  resolve(null);
  }
  };
- request.onerror = () => reject(request.error);
+ // A read failure is a cache miss, not an application error. Rejecting here
+ // escaped the surrounding try/catch (the promise is returned, not awaited)
+ // and surfaced as an unhandled rejection in every texture-loading path.
+ request.onerror = () => {
+ if (DEBUG && DEBUG.enabled) console.warn('Cache read error:', request.error);
+ resolve(null);
+ };
  });
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.warn('Cache read error:', error);
@@ -120,7 +144,7 @@ export class TextureCache {
  const tx = this.db.transaction([this.storeName], 'readwrite');
  const store = tx.objectStore(this.storeName);
  
- return new Promise((resolve, reject) => {
+ return new Promise((resolve) => {
  const request = store.put(dataURL, key);
  request.onsuccess = () => {
  if (DEBUG && DEBUG.PERFORMANCE) console.log(`💾 Cache SET: ${key} (${typeof dataURL === 'string' ? (dataURL.length / 1024).toFixed(0) + 'KB' : 'blob'})`);
@@ -195,9 +219,12 @@ export async function warmupTextureCache() {
  await new Promise((resolve) => {
  img.onload = () => {
  const canvas = document.createElement('canvas');
- const size = key.includes('4096') ? 4096 : 2048;
- canvas.width = size;
- canvas.height = size;
+ // Size from the decoded image, not from the key. Keys carry the configured
+ // texture size (1024 on mobile, 4096 on desktop); the old `key.includes('4096')`
+ // test silently produced a 2048 canvas for every non-desktop key, leaving
+ // three quarters of every mobile bump/normal/specular map transparent.
+ canvas.width = img.naturalWidth || img.width;
+ canvas.height = img.naturalHeight || img.height;
  const ctx = canvas.getContext('2d');
  ctx.drawImage(img, 0, 0);
  

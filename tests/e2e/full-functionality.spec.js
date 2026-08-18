@@ -207,7 +207,10 @@ test('full functionality: every navigation target and all main controls work', a
 
     const soundToggle = page.locator('#sound-toggle');
     const soundChecked = await soundToggle.isChecked();
-    await soundToggle.setChecked(!soundChecked);
+    // The input is `display: none` (ui.css `.settings-toggle input`) and is driven by its
+    // label, so setChecked() can never satisfy actionability — it hangs until the test
+    // timeout. Click what the user clicks.
+    await page.locator('label.settings-toggle[for="sound-toggle"]').click();
     await expect(soundToggle).toBeChecked({ checked: !soundChecked });
 
     await page.locator('button[aria-label="Close settings dialog"]').click({ force: true });

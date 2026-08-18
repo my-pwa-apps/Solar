@@ -20,8 +20,16 @@ export const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 export const IS_LOW_POWER = navigator.hardwareConcurrency < 4;
 export const QUALITY_PRESET = (IS_MOBILE || IS_LOW_POWER) ? 'low' : 'high';
 
+// Motion preference. Continuous 3D motion plus camera fly-to animations can cause
+// nausea for vestibular-sensitive users, so honour the OS setting. Read through a
+// getter rather than a snapshot because the preference can change while the tab is open.
+const _reducedMotionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)') ?? null;
+export function prefersReducedMotion() {
+ return _reducedMotionQuery ? _reducedMotionQuery.matches : false;
+}
+
 /** App version — single source of truth for SW and texture cache invalidation. */
-export const APP_VERSION = '2.10.303';
+export const APP_VERSION = '2.10.304';
 
 export const CONFIG = {
  RENDERER: {

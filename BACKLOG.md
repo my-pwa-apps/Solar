@@ -6,6 +6,510 @@ leave the entry in place so the history of the decision survives.
 
 ---
 
+## Review — 2026-08-18 (branch `main`, v2.10.304)
+
+Scope: second full-repository review. Findings from the 2026-07-27 pass that are
+still open are **not** repeated here — see that section below. This pass focused on
+areas the first review did not reach: the third-party dependency supply chain, the
+offline module graph, PWA manifest parity, IndexedDB behaviour, accessibility, and
+the failure surface. Items fixed during this pass are listed at the bottom.
+
+Three findings from the previous review were re-verified and turned out to be
+**inaccurate**, and are struck through in that section: `SceneManager` already has a
+`dispose()`, `optgroup` labels *are* translated by `applyTranslations()`, and
+`document.documentElement.lang` *is* updated by `setLanguage()`.
+
+---
+
+### Critical
+
+- [ ] Self-host Three.js instead of loading the 3D engine from a public CDN
+
+Priority: Critical
+Category: Security
+Area: Dependency supply chain / first-load reliability
+Affected files: `index.html`, `sw.js`, `package.json`, `vendor/` (new)
+Problem: The entire rendering engine — `three@0.183.2` plus eight `three/addons/*`
+modules — is fetched at runtime from `cdn.jsdelivr.net`, listed in an importmap and
+allowed by `script-src` in the CSP. There is no Subresource Integrity (importmap
+entries cannot carry one), and `three` appears in no dependency manifest, so
+`npm audit`, Dependabot and every SCA tool are blind to it.
+Impact: Two distinct risks. (1) Supply chain: a jsdelivr compromise or a mutated
+package executes arbitrary script with full DOM access in every user's browser, and
+nothing in the repository would detect it. (2) Availability: a first-time visitor
+behind a firewall that blocks jsdelivr, or on a network where the CDN is slow, gets a
+permanently blank screen — the app cannot boot at all, and its own stated design
+principle ("fully self-hosted for offline reliability") is violated by its single
+largest dependency.
+Recommended solution: Vendor the pinned build and the addons actually imported into
+`vendor/three/`, point the importmap at those relative paths, drop `cdn.jsdelivr.net`
+from the CSP `script-src`, add the vendored files to `CORE_CACHE_FILES`, and record
+the version in `package.json` so tooling can see it. Recompute the CSP hash for the
+inline importmap in the same commit. Keep the update procedure in `CONTRIBUTING.md`.
+Acceptance criteria: The app boots with `cdn.jsdelivr.net` blocked at the network
+level; CSP `script-src` is `'self'` plus the importmap hash only; `npm ls three`
+reports the same version the importmap serves; the static regression spec asserts it.
+Estimated effort: Medium
+Business value: High
+Technical debt reduction: High
+
+---
+
+### High
+
+- [ ] Bound the IndexedDB texture cache and store binary instead of data URLs
+
+Priority: High
+Category: Performance
+Area: `TextureCache`
+Affected files: `src/modules/TextureCache.js`
+Problem: The memory cache evicts past 200 entries, but the IndexedDB store has no
+eviction policy at all — it only ever grows, and is cleared wholesale on an
+`APP_VERSION` change. Entries are base64 **data URLs**, which are ~33% larger than the
+bytes they encode and must be decoded on the main thread on every read.
+Impact: On the mobile devices the app explicitly targets, a handful of 4096px maps can
+exhaust the origin quota. When it is exhausted every write fails silently
+(`request.onerror` resolves rather than surfacing `QuotaExceededError`), so the app
+permanently loses persistence with no diagnostic and re-downloads everything forever.
+Recommended solution: Store `Blob`s rather than data URLs and read them back with
+`createImageBitmap`, which removes the base64 overhead and the main-thread decode.
+Add an LRU index (a second object store keyed by `lastAccess`) and trim to a byte
+budget derived from `navigator.storage.estimate()`. Detect `QuotaExceededError`
+specifically and trim-then-retry once before giving up.
+Acceptance criteria: Cache size stays under an explicit byte budget across a session
+that visits every object; a simulated quota error triggers a trim and a successful
+retry; texture reads no longer decode base64.
+Estimated effort: Medium
+Business value: High
+Technical debt reduction: Medium
+
+- [ ] Route production diagnostics through a logger and enforce a clean lint baseline
+
+Priority: High
+Category: Technical Debt
+Area: Lint / observability
+Affected files: `src/**/*.js`, `sw.js`, `eslint.config.js`, `package.json`
+Problem: 209 ESLint warnings persist, overwhelmingly `no-console`. (Carried forward
+and **re-prioritised from Medium to High**: a warning baseline that survives two
+consecutive reviews is a baseline nobody will ever clear, and it now hides genuinely
+ungated calls — one unguarded `console.warn` on the *expected* texture-fallback path
+was found and fixed in this pass precisely because it was buried in the noise.)
+Impact: Lint output is ignored, so it no longer catches anything. Real production
+console spam ships undetected.
+Recommended solution: Add `src/modules/logger.js` exposing `debug/info/warn/error`
+that no-op unless the matching `DEBUG` flag is set, mechanically replace the call
+sites, then set `no-console` and `prefer-const` to `error` and add `--max-warnings=0`
+to the `lint` script so CI enforces it.
+Acceptance criteria: `npm run lint -- --max-warnings=0` exits 0; a production load
+with no debug URL parameter produces zero console output.
+Estimated effort: Medium
+Business value: Medium
+Technical debt reduction: High
+
+- [ ] Trap focus and restore it for every modal, and stop delaying the onboarding trap
+
+Priority: High
+Category: Accessibility
+Area: Modal dialogs
+Affected files: `src/modules/AppFeatures.js`, `src/modules/UIManager.js`, `index.html`
+Problem: `setupOnboarding()` reveals the overlay and installs the focus trap inside the
+same `setTimeout(…, 1000)`, but the overlay is a real, focusable subtree the whole time
+— during that window a keyboard user can tab behind the modal. There is also no
+documented restore-focus-on-close behaviour, so dismissing a dialog drops focus to
+`<body>`.
+Impact: Fails WCAG 2.4.3 (Focus Order) and 2.1.2 (No Keyboard Trap escape contract).
+Keyboard and screen-reader users lose their place after every dialog.
+Recommended solution: Make the overlay genuinely inert until shown (`inert` attribute
+or `display:none`), install the trap in the same tick as the reveal, and have
+`_trapFocus`/`_releaseFocusTrap` record and restore the previously focused element.
+Acceptance criteria: A spec tabs 20 times with each dialog open and asserts focus never
+leaves the dialog; closing any dialog returns focus to the control that opened it.
+Estimated effort: Small
+Business value: Medium
+Technical debt reduction: Low
+
+---
+
+### Medium
+
+- [ ] Stop long-timeout Playwright tests from masking hard failures as slowness
+
+Priority: Medium
+Category: Testing
+Area: E2E test suite
+Affected files: `tests/e2e/full-functionality.spec.js`, `playwright.config.js`
+Problem: `full-functionality.spec.js` sets `test.setTimeout(900_000)` for a single
+mega-test. A genuine actionability failure — `setChecked('#sound-toggle')` against an
+input that `ui.css` declares `display: none` — sat in the actionability retry loop for
+the full 15 minutes before reporting. The suite looked "slow", not "broken". A single
+900 s test also means one failure costs a quarter of an hour of feedback. (The
+`setChecked` call itself was fixed during this review by clicking the visible label.)
+Impact: Real regressions are indistinguishable from a slow machine, so the signal is
+routinely ignored; contributors are discouraged from running the suite at all.
+Recommended solution: Split the mega-test into per-concern tests (navigation sweep,
+controls, modals, mobile layout) so each carries a normal timeout; add
+`expect: { timeout: 10_000 }` and a per-action `actionTimeout` in `playwright.config.js`
+so an unactionable element fails in seconds rather than at the test ceiling.
+Acceptance criteria: No individual test exceeds a 120 s timeout; an intentionally
+unactionable locator fails the suite in under 30 s.
+Estimated effort: Medium
+Business value: Medium
+Technical debt reduction: Medium
+
+- [ ] Handle storage-quota failures in the service worker instead of reporting "offline"
+
+Priority: Medium
+Category: Reliability
+Area: Service worker
+Affected files: `sw.js`
+Problem: `caches.open()` and `cache.put()` are called without dedicated error handling.
+A `QuotaExceededError` propagates to the single outer `catch`, which is written for the
+offline case and therefore serves the offline page.
+Impact: A user who is fully online but out of storage is told they are offline. The
+real cause is invisible, and the condition is self-perpetuating because nothing evicts.
+Recommended solution: Wrap the cache writes, distinguish `QuotaExceededError`, trim the
+runtime and image caches and retry once, and broadcast a distinct `SW_QUOTA_EXCEEDED`
+message so the client can surface a real explanation.
+Acceptance criteria: With the quota artificially exhausted the app still serves from
+network and reports a storage problem rather than an offline state.
+Estimated effort: Small
+Business value: Medium
+Technical debt reduction: Low
+
+- [ ] Replace FIFO cache trimming with recency-aware eviction
+
+Priority: Medium
+Category: Performance
+Area: Service worker
+Affected files: `sw.js`
+Problem: `trimCache()` deletes by insertion order. `cache.keys()` order has nothing to
+do with how useful an entry is.
+Impact: The most-visited textures are evicted as readily as ones fetched once, so the
+50-item image cache thrashes and re-downloads assets the user looks at constantly.
+Recommended solution: Record `lastAccess` per cache key in a small IndexedDB index
+updated from the fetch handler, and evict the least recently used. If that is judged
+too heavy, at minimum exempt precached paths from trimming.
+Acceptance criteria: Repeatedly visiting a small set of objects stops producing network
+requests for their textures once cached.
+Estimated effort: Medium
+Business value: Medium
+Technical debt reduction: Low
+
+- [ ] Give language configuration a single source of truth
+
+Priority: Medium
+Category: Refactor
+Area: Internationalisation
+Affected files: `src/i18n.js`, `src/modules/LanguageManager.js`
+Problem: The supported-language list and the language→manifest map are declared twice,
+once in `LanguageManager` and again inside `setLanguage()` in `i18n.js`. `i18n.js` also
+writes `localStorage` directly instead of using the `safeSetItem` wrapper that exists
+specifically to survive Safari private mode.
+Impact: Adding a seventh language requires edits in two unrelated places, and missing
+one produces a half-supported locale that validates. The direct `localStorage` write
+throws in exactly the environment `storage.js` was written to protect against — it is
+caught by a bare `try {} catch {}`, so the preference silently fails to persist.
+Recommended solution: Export the language table from one module, import it in the
+other, and route the write through `safeSetItem`.
+Acceptance criteria: `supportedLanguages` and the manifest map each appear exactly
+once; no module writes `localStorage` outside `storage.js`.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Medium
+
+- [ ] Release Web Audio nodes after they finish
+
+Priority: Medium
+Category: Performance
+Area: `AudioManager`
+Affected files: `src/modules/AudioManager.js`
+Problem: Every sound builds fresh `OscillatorNode`/`GainNode`/`BiquadFilterNode`
+objects, calls `stop()`, and never disconnects them from `masterGain`.
+Impact: The graph attached to `masterGain` grows for the lifetime of the page. In a
+long session with frequent UI sounds this is a steady, unbounded leak on the audio
+thread.
+Recommended solution: Attach `source.onended = () => { source.disconnect(); gain.disconnect(); }`
+in a small `_playVoice()` helper and route all seven generators through it — which also
+removes the duplicated create/connect/schedule boilerplate.
+Acceptance criteria: Playing 1,000 sounds leaves the node count attached to
+`masterGain` flat; each generator is under 20 lines.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Medium
+
+- [ ] Introduce z-index tokens
+
+Priority: Medium
+Category: Maintainability
+Area: CSS
+Affected files: `src/styles/ui.css`, `src/styles/main.css`
+Problem: Fourteen distinct `z-index` literals span 90–20000, and four unrelated
+components (header, footer, install prompt, XR buttons) all sit at exactly 100, so
+their stacking is decided by document order.
+Impact: Every new overlay is a guess, and overlaps are discovered by users rather than
+by review.
+Recommended solution: Define a `--z-*` custom-property scale in `:root` with one token
+per layer and replace every literal.
+Acceptance criteria: No bare `z-index` literal remains outside the token definitions.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Medium
+
+- [ ] Extract the triplicated belt-rescaling loop
+
+Priority: Medium
+Category: Refactor
+Area: `SolarSystemModule.updateBelts()`
+Affected files: `src/modules/SolarSystemModule.js`
+Problem: The asteroid belt, Kuiper belt and Oort cloud each carry a near-identical
+~40-line loop that reprojects particle positions when the scale mode changes; only the
+radial parameters and cylindrical-vs-spherical projection differ.
+Impact: ~100 lines of duplication in the largest file in the repository. A fix applied
+to one copy has twice been needed in the others.
+Recommended solution: Extract `_rescaleParticleSystem(system, oldParams, newParams, { spherical })`
+and call it three times.
+Acceptance criteria: The three call sites are one line each; belt geometry is
+pixel-identical before and after a scale toggle.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Medium
+
+- [ ] Add an automated accessibility audit to CI
+
+Priority: Medium
+Category: Testing
+Area: CI
+Affected files: `.github/workflows/ci.yml`, `tests/e2e/accessibility.spec.js`, `package.json`
+Problem: Accessibility is now asserted by three hand-written specs. Nothing scans for
+the whole class of regressions (contrast, name/role/value, landmark structure).
+Impact: Each a11y defect has to be found by a human before it can be tested for.
+Recommended solution: Add `@axe-core/playwright`, run it against the booted app and
+against each dialog, and fail on serious/critical violations with an explicit,
+shrinking allowlist for known issues.
+Acceptance criteria: CI fails on a newly introduced serious axe violation; the
+allowlist is empty or itemised with a backlog link per entry.
+Estimated effort: Small
+Business value: Medium
+Technical debt reduction: Low
+
+- [ ] Enable automated dependency and action updates
+
+Priority: Medium
+Category: Security
+Area: Supply chain
+Affected files: `.github/dependabot.yml` (new)
+Problem: There is no Dependabot or Renovate configuration, so neither npm devDependencies
+nor the pinned GitHub Actions are ever updated automatically.
+Impact: Security patches for the toolchain land only when someone remembers. Combined
+with the un-declared CDN copy of Three.js, effectively nothing in this project is
+monitored for vulnerabilities.
+Recommended solution: Add a `dependabot.yml` covering the `npm` and `github-actions`
+ecosystems, weekly, grouped.
+Acceptance criteria: Dependabot opens grouped update PRs; CI gates them.
+Estimated effort: Small
+Business value: Medium
+Technical debt reduction: Low
+
+---
+
+### Low
+
+- [ ] Add `type="button"` to every non-submit button
+
+Priority: Low
+Category: Bug
+Area: `index.html`
+Affected files: `index.html`
+Problem: None of the ~30 `<button>` elements declare a type, so they default to
+`submit`.
+Impact: Latent only — there is no `<form>` in the document today. It becomes a real
+defect the moment one is added (e.g. a feedback or settings form).
+Recommended solution: Add `type="button"` throughout and assert it in the static
+regression spec.
+Acceptance criteria: No `<button>` without an explicit `type` remains.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Remove the redundant nested `aria-live` on the loading percentage
+
+Priority: Low
+Category: Accessibility
+Area: Loading screen
+Affected files: `index.html`
+Problem: `#loading` is `role="status"` (implicitly `aria-live="polite"`) and contains
+`#loading-percentage` with its own `aria-live="polite"`.
+Impact: Screen readers announce the same progress update twice during boot.
+Recommended solution: Drop the inner attribute and let it inherit.
+Acceptance criteria: One announcement per progress change.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Key object lookups by a stable id rather than the English display name
+
+Priority: Low
+Category: Technical Debt
+Area: `SolarSystemModule`
+Affected files: `src/modules/SolarSystemModule.js`, `src/main.js`
+Problem: `spacecraftScaleFactors` is keyed by `'James Webb Space Telescope'`, and the
+`i`/`v`/`p` keyboard shortcuts locate objects with `userData.name.includes('ISS')`,
+`.includes('Voyager')` and so on. This is correct **today** only because
+`userData.name` is never reassigned — translation happens at render time.
+Impact: Latent. The first change that localises `userData.name` in place silently
+breaks scaling and three keyboard shortcuts, with no error.
+Recommended solution: Give every object a language-independent `userData.id` at
+creation and key all lookups off it.
+Acceptance criteria: No lookup in the codebase matches on a human-readable name.
+Estimated effort: Medium
+Business value: Low
+Technical debt reduction: Medium
+
+- [ ] Name the star-twinkle batch size
+
+Priority: Low
+Category: Cleanup
+Area: `SolarSystemModule`
+Affected files: `src/modules/SolarSystemModule.js`
+Problem: `for (let i = 0; i < 30 && tblLen > 0; i++)` and the matching
+`(this._starTwinklePtr + 30) % tblLen` use a bare literal in two places.
+Impact: Changing the twinkle density means finding both copies.
+Recommended solution: Hoist to a named constant.
+Acceptance criteria: The literal appears once, named.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Correct the throttle comment on the VR laser update
+
+Priority: Low
+Category: Documentation
+Area: `SceneManager`
+Affected files: `src/modules/SceneManager.js`
+Problem: The comment says "throttled to every 10th frame"; `(this._vrLaserFrame & 0xF) === 0`
+is every 16th.
+Impact: Misleads anyone tuning VR pointer responsiveness.
+Recommended solution: Fix the comment.
+Acceptance criteria: Comment matches the mask.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Remove dead VR state left over from earlier iterations
+
+Priority: Low
+Category: Cleanup
+Area: `SceneManager`
+Affected files: `src/modules/SceneManager.js`
+Problem: `this._vrWarpLocalDir` and `this._vrWarpInverseQuat` are allocated in the
+constructor and never read. `grabRotateState.startDollyRotation` is written on grab
+start and never consulted — grab-to-rotate is purely delta-driven.
+Impact: Suggests behaviour that does not exist; the next reader will try to preserve it.
+Recommended solution: Delete all three.
+Acceptance criteria: No unread instance field remains in the VR state block.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Match haptics to controller handedness rather than input-source order
+
+Priority: Low
+Category: Bug
+Area: VR input
+Affected files: `src/modules/SceneManager.js`
+Problem: `triggerVRHaptic()` walks `session.inputSources` and counts to
+`controllerIndex`, assuming index 0/1 are the two controllers.
+Impact: With hand tracking active, or any transient input source, the pulse can be sent
+to the wrong device or to none. The codebase already documents that hand tracking adds
+input sources mid-session — that is why `previousButtonStates` is reset on `sessionstart`.
+Recommended solution: Select by `inputSource.handedness`.
+Acceptance criteria: Haptics fire on the correct controller with hand tracking enabled.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Retain CI artefacts long enough to investigate flakes
+
+Priority: Low
+Category: Developer Experience
+Area: CI
+Affected files: `.github/workflows/ci.yml`
+Problem: The Playwright report is kept for 7 days and `test-results/` (traces, videos)
+is not uploaded at all.
+Impact: A flake noticed a week later has no evidence left, and traces — the only useful
+artefact for a 3D/WebGL failure — are never captured.
+Recommended solution: Upload `test-results/` on failure with 30-day retention.
+Acceptance criteria: A failed run leaves a downloadable trace.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+---
+
+### Resolved during this review
+
+Found, fixed and covered by tests in this pass.
+
+- [x] **The "full functionality" E2E test could never pass.** `setChecked('#sound-toggle')`
+      targets an input that `ui.css` declares `display: none` (it is driven by its
+      `<label class="settings-toggle">`), so Playwright's actionability check never
+      resolved and the test burned its entire 900 s timeout on every run. The suite's
+      15-minute runtime was almost entirely this one dead wait. Now clicks the label the
+      user actually clicks.
+- [x] **Mobile bump/normal/specular maps were three-quarters blank.** `warmupTextureCache()`
+      sized the restored canvas with `key.includes('4096') ? 4096 : 2048`, but cache keys
+      carry the *configured* texture size — 1024 on mobile. Every mobile device drew a
+      1024px image into a 2048px canvas and cached the result as the object's surface
+      detail map. Now sized from `img.naturalWidth`.
+- [x] **Clicking "Update" reloaded the page twice.** Activating the waiting worker fires
+      both `controllerchange` and the worker's own `SW_SKIP_WAITING_COMPLETE` broadcast;
+      each called `window.location.reload()` independently, the second landing mid-boot
+      of the first. Both now route through a single `_reloadOnce()` guard.
+- [x] Repeated `register()` calls stacked duplicate `updatefound`, `controllerchange` and
+      `message` listeners, multiplying update prompts. Registration is now idempotent.
+- [x] **Five of the eight CDN modules the app imports were never precached**, while one
+      that is precached (`CSS2DRenderer`) has not been imported since labels moved to
+      sprites. The postprocessing chain (`EffectComposer`, `RenderPass`, `UnrealBloomPass`,
+      `OutputPass`, `SMAAPass`) is now in `CDN_CACHE_FILES`, and a static regression test
+      fails the build whenever the import list and the precache list diverge, or the
+      pinned three.js version drifts between `index.html` and `sw.js`.
+- [x] **The German, Spanish and Portuguese manifests had silently lost `features`,
+      `handle_links`, `launch_handler` and `display_override`**, so installed apps in those
+      three languages did not capture links and had no display fallback. All six manifests
+      are now identical in shape, enforced by a test.
+- [x] `share_target` advertised a `./share` endpoint that does not exist and that the
+      service worker explicitly skips (non-GET). The OS offered the app as a share target
+      and the share then failed. Removed from all manifests until it is implemented.
+- [x] **`TextureCache.get()` rejected on an IndexedDB read error from inside a returned
+      promise**, escaping the surrounding `try/catch` and surfacing as an unhandled
+      rejection in every texture-loading path. A read failure is now a cache miss.
+- [x] `initDB()` rejected when IndexedDB is unavailable (Safari private mode, sandboxed
+      iframe, enterprise policy), producing an unhandled rejection on boot for a condition
+      the app is designed to tolerate. It now resolves and records `unavailableReason`.
+- [x] The texture-cache version check cleared the store and stamped the new version in
+      two separate transactions; a tab closed in between left an emptied store still
+      tagged with the old version, forcing a redundant clear and re-download on next boot.
+- [x] **No recovery path from a boot failure.** A throw during `init()` left the user on a
+      spinner forever with nothing to report. Added `src/modules/FatalError.js`: an
+      accessible `alertdialog` with the app version, user agent and stack under "technical
+      details", plus Reload and Clear-cache-and-reload actions (the latter unregisters the
+      service worker and deletes all caches and IndexedDB databases). Built with DOM APIs
+      only, so an arbitrary thrown value can never be parsed as markup.
+- [x] An unguarded `console.warn` fired on the *expected* procedural-texture fallback path
+      for every object shipped without a photographic map.
+- [x] **No `prefers-reduced-motion` support** in an app whose core interaction is
+      continuous 3D motion. Camera fly-to now cuts straight to the target, and all CSS
+      transitions and animations are suppressed, when the OS preference is set. Verified by
+      a spec that also asserts the default path still animates, so it cannot go vacuous.
+- [x] **No keyboard bypass** for the header and footer control clusters (WCAG 2.4.1). Added
+      a translated skip link, tested as the first tab stop.
+- [x] All ten decorative SVG icons were exposed to assistive technology as unlabelled
+      graphics; now `aria-hidden="true"`, enforced by a test.
+- [x] `case 'l'` in the keyboard handler dereferenced `this.sceneManager.renderer.xr`
+      without guards.
+
+---
+
 ## Review — 2026-07-27 (branch `opus5`, v2.10.303)
 
 Scope: full-repository product, architecture, code, performance, security,
@@ -99,19 +603,25 @@ Priority: High
 Category: Bug
 Area: VR/XR lifecycle
 Affected files: `src/modules/SceneManager.js`
-Problem: XR session listeners, controller listeners and interval timers are registered
-on `sessionstart` but there is no symmetric teardown on `sessionend`. There is also no
-`dispose()`/`destroy()` path for the renderer, geometry cache or materials.
-Impact: Entering and leaving VR repeatedly accumulates listeners and timers, degrading
-frame time over a long session on exactly the hardware least able to absorb it (Quest).
-Recommended solution: Store every `addEventListener` and `setInterval` handle on the
-session object; remove/clear them all in a single `_teardownXRSession()` bound to
-`sessionend`. Add `SceneManager.dispose()` that disposes the renderer, clears
-`GeometryFactory`'s cache and disposes materials/textures.
-Acceptance criteria: Entering and exiting VR ten times leaves listener and timer counts
-flat; `dispose()` releases all GPU resources; verified with a heap snapshot.
-Estimated effort: Medium
-Business value: High
+**Correction (2026-08-18):** this item overstated the problem. `SceneManager.dispose()`
+*does* exist and already clears `vrFlashTimeout`, `_vrMenuRefreshTimer` and
+`_vrDebugHUDInterval`, ends the XR session, and disposes the renderer and controls.
+The `sessionstart`/`sessionend` listeners are bound once to `renderer.xr`, not per
+session, so they do not accumulate either. What remains genuinely open is narrower:
+there is no symmetric `_teardownXRSession()` for per-session state (controller input
+listeners, `previousButtonStates`, the VR panel drag state and the VR UI canvas
+texture), and `GeometryFactory`'s cache is never cleared by `dispose()`.
+Problem: Entering and leaving VR repeatedly leaves per-session state and the VR UI
+canvas texture in place; `dispose()` does not release cached geometry.
+Impact: Long multi-session VR use accumulates state on exactly the hardware least able
+to absorb it (Quest). Not the unbounded listener leak originally described.
+Recommended solution: Add `_teardownXRSession()` bound to `sessionend` that resets
+per-session state and disposes the VR panel texture, and have `dispose()` clear
+`GeometryFactory`'s cache.
+Acceptance criteria: Entering and exiting VR ten times leaves listener, timer and GPU
+resource counts flat, verified with a heap snapshot.
+Estimated effort: Small
+Business value: Medium
 Technical debt reduction: Medium
 
 - [ ] Break up `SceneManager.drawVRMenu()` (600+ lines of imperative canvas drawing)
@@ -153,7 +663,12 @@ Estimated effort: Large
 Business value: High
 Technical debt reduction: Medium
 
-- [ ] Give the app a real "something went wrong" recovery path
+- [ ] Give the app a real "something went wrong" recovery path — **superseded 2026-08-18**
+
+**Status:** largely delivered by `src/modules/FatalError.js` (see the 2026-08-18
+"Resolved" list). What remains open is only the second half: the `unhandledrejection`
+handler still logs without surfacing anything, and the 30-second force-start path does
+not record which stage stalled.
 
 Priority: High
 Category: Reliability
@@ -197,7 +712,10 @@ Estimated effort: Medium
 Business value: Low
 Technical debt reduction: High
 
-- [ ] Clear the 209 outstanding ESLint warnings and raise them to errors
+- [ ] Clear the 209 outstanding ESLint warnings and raise them to errors — **superseded 2026-08-18**
+
+**Status:** re-raised to High in the 2026-08-18 section; see "Route production
+diagnostics through a logger and enforce a clean lint baseline".
 
 Priority: Medium
 Category: Technical Debt
@@ -367,7 +885,7 @@ Estimated effort: Small
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Remove committed test-run artefacts and prevent recurrence
+- [x] Remove committed test-run artefacts and prevent recurrence — **done 2026-07-27**
 
 Priority: Low
 Category: Cleanup
@@ -401,7 +919,7 @@ Estimated effort: Medium
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Add `prefers-reduced-motion` support
+- [x] Add `prefers-reduced-motion` support — **done 2026-08-18**
 
 Priority: Low
 Category: Accessibility

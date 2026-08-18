@@ -7,6 +7,22 @@ import { DEBUG } from './utils.js';
 export class ServiceWorkerManager {
     constructor() {
         this.registration = null;
+        this._listenersBound = false;
+        this._reloadTriggered = false;
+    }
+
+    /**
+     * Reload exactly once.
+     *
+     * Activating a waiting worker fires BOTH `controllerchange` and the worker's
+     * own SW_SKIP_WAITING_COMPLETE broadcast. Each used to call reload()
+     * independently, so clicking "Update" reloaded the page twice — the second
+     * reload landing mid-boot of the first.
+     */
+    _reloadOnce() {
+        if (this._reloadTriggered) return;
+        this._reloadTriggered = true;
+        window.location.reload();
     }
 
     /**
@@ -40,8 +56,13 @@ export class ServiceWorkerManager {
             if (DEBUG && DEBUG.enabled) console.log('Service Worker registered successfully:', this.registration.scope);
             
             this.setupUpdateListener();
-            this.setupControllerChangeListener();
-            this.setupMessageListener();
+            // Bound to navigator.serviceWorker rather than the registration, so they
+            // must survive (and not be duplicated by) a repeated register() call.
+            if (!this._listenersBound) {
+                this._listenersBound = true;
+                this.setupControllerChangeListener();
+                this.setupMessageListener();
+            }
             
         } catch (error) {
             if (DEBUG && DEBUG.enabled) console.warn('Service Worker registration failed:', error);
@@ -53,6 +74,10 @@ export class ServiceWorkerManager {
      */
     setupUpdateListener() {
         if (!this.registration) return;
+        // register() resolves to the same registration object for a given scope,
+        // so a retry would otherwise stack a second 'updatefound' handler.
+        if (this._updateListenerTarget === this.registration) return;
+        this._updateListenerTarget = this.registration;
 
         this.registration.addEventListener('updatefound', () => {
             const newWorker = this.registration.installing;
@@ -73,10 +98,7 @@ export class ServiceWorkerManager {
     setupControllerChangeListener() {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (DEBUG && DEBUG.enabled) console.log('New Service Worker activated');
-            if (!this._reloadTriggered) {
-                this._reloadTriggered = true;
-                window.location.reload();
-            }
+            this._reloadOnce();
         });
     }
 
@@ -97,7 +119,7 @@ export class ServiceWorkerManager {
                     break;
                 case 'SW_SKIP_WAITING_COMPLETE':
                     if (DEBUG && DEBUG.enabled) console.log('[SW] Skip waiting complete; reloading');
-                    window.location.reload();
+                    this._reloadOnce();
                     break;
             }
         });

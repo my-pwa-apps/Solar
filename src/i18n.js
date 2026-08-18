@@ -9,6 +9,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        skipToContent: "Skip to the 3D view",
         search: "Search...",
         
         // Object categories
@@ -257,6 +258,9 @@ const translations = {
         // Errors
         errorLoading: "Error loading Space Voyage",
         errorMessage: "Please refresh the page to try again.",
+        errorReload: "Reload",
+        errorClearCache: "Clear cache and reload",
+        errorDetails: "Technical details",
 
         // Help content
         helpContent: '<h3>Controls</h3><p><strong>Click &amp; Drag:</strong> Rotate view around the selected object</p><p><strong>Scroll wheel:</strong> Zoom in and out</p><p><strong>Right-click &amp; Drag:</strong> Pan the camera</p><p><strong>Click any object:</strong> Select and fly to it</p><h3>Keyboard Shortcuts</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset view <span class="keyboard-shortcut">O</span> Cycle orbit modes <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Scale mode</p><p><span class="keyboard-shortcut">Space</span> Pause / Resume <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager 1 <span class="keyboard-shortcut">+/-</span> Speed <span class="keyboard-shortcut">ESC</span> Close panel</p><h3>Navigation</h3><p>Use the search bar or dropdown to jump to any of 100+ objects: planets, moons, dwarf planets, comets, spacecraft, constellations, nebulae, and galaxies.</p><p>The <strong>Discover</strong> button picks a random object. The <strong>Time Machine</strong> lets you step through dates and witness historic events.</p><h3>Object Inspection</h3><p>After selecting an object the camera tracks it automatically. Drag to orbit around it, scroll to zoom. An info panel shows physical data and fun facts.</p><h3>VR / AR Mode</h3><p>Click <strong>Enter VR</strong> on a compatible headset. Left stick moves, right stick turns, trigger selects objects, <strong>X</strong> opens the menu, grip drags the UI panel.</p><h3>Tips</h3><p>Use the speed slider to fast-forward orbits. Toggle between educational and scientific scale modes. Zoom out far enough and the Milky Way galaxy disc appears with our solar system marked on it. Open Settings (gear icon, top-right) to change language or toggle sound.</p>',
@@ -616,6 +620,7 @@ const translations = {
         
         // Navigatie
         quickNavigation: "Navigatie",
+        skipToContent: "Ga direct naar de 3D-weergave",
         search: "Zoeken...",
         searchObjects: "🔍 Objecten zoeken...",
         
@@ -860,6 +865,9 @@ const translations = {
         // Fouten
         errorLoading: "Fout bij laden Ruimtereis",
         errorMessage: "Ververs de pagina om het opnieuw te proberen.",
+        errorReload: "Opnieuw laden",
+        errorClearCache: "Cache wissen en opnieuw laden",
+        errorDetails: "Technische details",
 
         helpContent: '<h3>Bediening</h3><p><strong>Klik &amp; sleep:</strong> Draai het zicht rond het geselecteerde object</p><p><strong>Scrollwiel:</strong> In- en uitzoomen</p><p><strong>Rechtsklik &amp; sleep:</strong> Camera verschuiven</p><p><strong>Klik op een object:</strong> Selecteren en ernaartoe vliegen</p><h3>Sneltoetsen</h3><p><span class="keyboard-shortcut">H</span> Help <span class="keyboard-shortcut">R</span> Reset <span class="keyboard-shortcut">O</span> Banen <span class="keyboard-shortcut">C</span> Sterrenbeelden <span class="keyboard-shortcut">D</span> Labels <span class="keyboard-shortcut">S</span> Schaalmodus</p><p><span class="keyboard-shortcut">Spatie</span> Pauze <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Snelheid <span class="keyboard-shortcut">ESC</span> Paneel sluiten</p><h3>Navigatie</h3><p>Gebruik de zoekbalk of het keuzemenu om naar 100+ objecten te springen: planeten, manen, dwergplaneten, kometen, ruimtevaartuigen, sterrenbeelden, nevels en sterrenstelsels.</p><p>De knop <strong>Ontdek</strong> kiest een willekeurig object. De <strong>Tijdmachine</strong> laat je door datums stappen en historische gebeurtenissen bekijken.</p><h3>Objectinspectie</h3><p>Na het selecteren van een object volgt de camera het automatisch. Sleep om eromheen te draaien, scroll om te zoomen. Een infopaneel toont fysieke gegevens en leuke weetjes.</p><h3>VR / AR-modus</h3><p>Klik <strong>Enter VR</strong> op een compatibele headset. Linker stick beweegt, rechter stick draait, trigger selecteert objecten, <strong>X</strong> opent het menu, grip sleept het UI-paneel.</p><h3>Tips</h3><p>Gebruik de snelheidsschuif om banen te versnellen. Wissel tussen educatieve en wetenschappelijke schaalmodus. Zoom ver genoeg uit en de Melkwegschijf verschijnt met ons zonnestelsel erop gemarkeerd. Open Instellingen (tandwiel, rechtsboven) om de taal te wijzigen of geluid in te schakelen.</p>',
         
@@ -1216,6 +1224,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        skipToContent: "Aller à la vue 3D",
         search: "Rechercher...",
         searchObjects: "🔍 Rechercher des objets...",
         
@@ -1454,6 +1463,9 @@ const translations = {
         update: "Mettre à jour",
         errorLoading: "Erreur de chargement de Voyage Spatial",
         errorMessage: "Veuillez actualiser la page pour réessayer.",
+        errorReload: "Recharger",
+        errorClearCache: "Vider le cache et recharger",
+        errorDetails: "Détails techniques",
 
         helpContent: '<h3>Commandes</h3><p><strong>Cliquer &amp; glisser :</strong> Tourner la vue autour de l\'objet</p><p><strong>Molette :</strong> Zoom avant/arrière</p><p><strong>Clic droit &amp; glisser :</strong> Déplacer la caméra</p><p><strong>Cliquer un objet :</strong> Sélectionner et focaliser</p><h3>Raccourcis clavier</h3><p><span class="keyboard-shortcut">H</span> Aide <span class="keyboard-shortcut">R</span> Réinitialiser <span class="keyboard-shortcut">O</span> Orbites <span class="keyboard-shortcut">C</span> Constellations <span class="keyboard-shortcut">D</span> Étiquettes <span class="keyboard-shortcut">S</span> Mode</p><p><span class="keyboard-shortcut">Espace</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Vitesse <span class="keyboard-shortcut">Échap</span> Fermer</p><h3>Inspection</h3><p>Glissez pour tourner, scrollez pour zoomer, caméra suit les objets en orbite</p><h3>Mode VR</h3><p>Cliquez "Enter VR" — stick gauche bouge, stick droit tourne, gâchette sélectionne, grip ouvre le menu</p><h3>Astuces</h3><p>Curseur de vitesse pour accélérer • Cliquez objets ou utilisez le panneau explorateur • Zoomez pour les détails de surface</p>',
         
@@ -1810,6 +1822,7 @@ const translations = {
         
         // Navigation
         quickNavigation: "Navigation",
+        skipToContent: "Zur 3D-Ansicht springen",
         search: "Suchen...",
         searchObjects: "🔍 Objekte suchen...",
         
@@ -2046,6 +2059,9 @@ const translations = {
         update: "Aktualisieren",
         errorLoading: "Fehler beim Laden der Weltraumreise",
         errorMessage: "Bitte aktualisieren Sie die Seite, um es erneut zu versuchen.",
+        errorReload: "Neu laden",
+        errorClearCache: "Cache leeren und neu laden",
+        errorDetails: "Technische Details",
 
         helpContent: '<h3>Steuerung</h3><p><strong>Klicken &amp; ziehen:</strong> Ansicht um ausgew\u00e4hltes Objekt drehen</p><p><strong>Scrollen:</strong> Rein-/Rauszoomen</p><p><strong>Rechtsklick &amp; ziehen:</strong> Kamera verschieben</p><p><strong>Objekt anklicken:</strong> Ausw\u00e4hlen und fokussieren</p><h3>Tastaturk\u00fcrzel</h3><p><span class="keyboard-shortcut">H</span> Hilfe <span class="keyboard-shortcut">R</span> Zur\u00fccksetzen <span class="keyboard-shortcut">O</span> Bahnen <span class="keyboard-shortcut">C</span> Sternbilder <span class="keyboard-shortcut">D</span> Beschriftungen <span class="keyboard-shortcut">S</span> Skalenmodus</p><p><span class="keyboard-shortcut">Leertaste</span> Pause <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Geschwindigkeit <span class="keyboard-shortcut">ESC</span> Schlie\u00dfen</p><h3>Objektinspektion</h3><p>Ziehen zum Drehen, Scrollen zum Zoomen, Kamera folgt umlaufenden Objekten</p><h3>VR-Modus</h3><p>"Enter VR" klicken \u2014 linker Stick bewegt, rechter Stick dreht, Trigger w\u00e4hlt aus, Grip \u00f6ffnet Men\u00fc</p><h3>Tipps</h3><p>Geschwindigkeitsregler f\u00fcr Zeitraffer \u2022 Objekte klicken oder Explorer-Panel nutzen \u2022 Reinzoomen f\u00fcr Oberfl\u00e4chendetails</p>',
         
@@ -2402,6 +2418,7 @@ const translations = {
         
         // Navegación
         quickNavigation: "Navegación",
+        skipToContent: "Saltar a la vista 3D",
         search: "Buscar...",
         searchObjects: "🔍 Buscar objetos...",
         
@@ -2638,6 +2655,9 @@ const translations = {
         update: "Actualizar",
         errorLoading: "Error al cargar Viaje Espacial",
         errorMessage: "Por favor, actualiza la página para intentarlo de nuevo.",
+        errorReload: "Recargar",
+        errorClearCache: "Borrar caché y recargar",
+        errorDetails: "Detalles técnicos",
 
         helpContent: '<h3>Controles</h3><p><strong>Clic y arrastrar:</strong> Rotar la vista alrededor del objeto seleccionado</p><p><strong>Rueda del ratón:</strong> Acercar y alejar</p><p><strong>Clic derecho y arrastrar:</strong> Desplazar cámara</p><p><strong>Clic en un objeto:</strong> Seleccionar y volar hacia él</p><h3>Atajos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ayuda <span class="keyboard-shortcut">R</span> Restablecer <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelaciones <span class="keyboard-shortcut">D</span> Etiquetas <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espacio</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidad <span class="keyboard-shortcut">ESC</span> Cerrar</p><h3>Inspección</h3><p>Arrastrar para rotar, scroll para zoom, cámara sigue objetos en órbita</p><h3>Modo VR</h3><p>Clic "Enter VR" — stick izquierdo mueve, stick derecho gira, gatillo selecciona, grip abre menú</p><h3>Consejos</h3><p>Control de velocidad para avance rápido • Clic en objetos o usar panel explorador • Acercar para detalles de superficie</p>',
         
@@ -2994,6 +3014,7 @@ const translations = {
         
         // Navegação
         quickNavigation: "Navegação",
+        skipToContent: "Ir para a vista 3D",
         search: "Pesquisar...",
         searchObjects: "🔍 Pesquisar objetos...",
         
@@ -3230,6 +3251,9 @@ const translations = {
         update: "Atualizar",
         errorLoading: "Erro ao carregar Viagem Espacial",
         errorMessage: "Por favor, atualize a página para tentar novamente.",
+        errorReload: "Recarregar",
+        errorClearCache: "Limpar cache e recarregar",
+        errorDetails: "Detalhes técnicos",
 
         helpContent: '<h3>Controles</h3><p><strong>Clicar e arrastar:</strong> Rotacionar a vista ao redor do objeto selecionado</p><p><strong>Roda do rato:</strong> Aproximar e afastar</p><p><strong>Clique direito e arrastar:</strong> Mover a câmera</p><p><strong>Clicar num objeto:</strong> Selecionar e voar até ele</p><h3>Atalhos de teclado</h3><p><span class="keyboard-shortcut">H</span> Ajuda <span class="keyboard-shortcut">R</span> Resetar <span class="keyboard-shortcut">O</span> Órbitas <span class="keyboard-shortcut">C</span> Constelações <span class="keyboard-shortcut">D</span> Rótulos <span class="keyboard-shortcut">S</span> Modo escala</p><p><span class="keyboard-shortcut">Espaço</span> Pausa <span class="keyboard-shortcut">I</span> ISS <span class="keyboard-shortcut">V</span> Voyager <span class="keyboard-shortcut">+/-</span> Velocidade <span class="keyboard-shortcut">ESC</span> Fechar</p><h3>Inspeção</h3><p>Arraste para rotacionar, scroll para zoom, câmera segue objetos em órbita</p><h3>Modo VR</h3><p>Clique "Enter VR" — stick esquerdo move, stick direito gira, gatilho seleciona, grip abre menu</p><h3>Dicas</h3><p>Controle de velocidade para avanço rápido • Clique objetos ou use painel explorador • Aproxime para detalhes de superfície</p>',
         
@@ -3583,7 +3607,7 @@ const translations = {
 const I18N_ASSET_VERSION = (() => {
     const script = document.currentScript || document.querySelector('script[src*="src/i18n.js"]');
     try {
-        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.303';
+        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.304';
     } catch {
         return '2.10.302';
     }

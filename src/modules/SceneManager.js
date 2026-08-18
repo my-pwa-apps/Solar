@@ -3242,12 +3242,18 @@ this.camera.near = 10.0;
  }
 
  showError(message) {
+ // Delegates so there is exactly one terminal-failure surface. Imported lazily
+ // to keep SceneManager's module graph free of a UI-only dependency at boot.
+ import('./FatalError.js')
+ .then(({ showFatalError }) => showFatalError(message))
+ .catch(() => {
  const loading = document.getElementById('loading');
  if (loading) {
  loading.querySelector('h2').textContent = '⚠️ Error';
  loading.querySelector('#loading-text').textContent = message;
  loading.classList.remove('hidden');
  }
+ });
  }
 
  dispose() {

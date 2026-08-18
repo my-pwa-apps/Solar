@@ -13,6 +13,7 @@ import { SolarSystemModule } from './modules/SolarSystemModule.js';
 import { audioManager } from './modules/AudioManager.js';
 import { safeGetItem, safeSetItem, safeRemoveItem } from './modules/storage.js';
 import { setupOnboarding } from './modules/AppFeatures.js';
+import { showFatalError } from './modules/FatalError.js';
 
 // Make audio manager globally accessible
 window.audioManager = audioManager;
@@ -254,8 +255,10 @@ class App {
  console.log(`📦 Loaded in ${(performance.now() - appStartTime).toFixed(0)}ms`);
  }
  } catch (error) {
- if (DEBUG && DEBUG.enabled) console.error('[App] Failed to initialize Space Voyage:', error);
- this.sceneManager?.showError(t('errorLoading') + '. ' + t('errorMessage'));
+ // Always logged: a boot failure is never expected, and without it the only
+ // symptom is a spinner that never stops.
+ console.error('[App] Failed to initialize Space Voyage:', error);
+ showFatalError(t('errorLoading') + '. ' + t('errorMessage'), error);
  }
  }
  
@@ -1193,7 +1196,7 @@ class App {
  }
  case 'l':
  // Toggle VR laser pointers via the dedicated helper (no getObjectByName in hot path)
- if (this.sceneManager.renderer.xr.isPresenting) {
+ if (this.sceneManager?.renderer?.xr?.isPresenting) {
  this.sceneManager._setLasersVisible(!this.sceneManager.lasersVisible);
  }
  break;
