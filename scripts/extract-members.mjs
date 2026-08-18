@@ -14,6 +14,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const SOURCE = 'src/modules/SolarSystemModule.js';
 
@@ -157,7 +158,7 @@ function buildHeader(body, exportName) {
     }
 
     // The module reads translations through the global set up by src/i18n.js.
-    if (uses('t\\(')) lines.push("\nconst t = (key) => (window.t || ((k) => k))(key);");
+    if (/[^\w.]t\(/.test(body)) lines.push("\nconst t = (key) => (window.t || ((k) => k))(key);");
 
     return `// Extracted from SolarSystemModule.js — methods are mixed into its prototype.\n`
         + `${lines.join('\n')}\n\nexport const ${exportName} = {\n`;
@@ -201,4 +202,6 @@ function main() {
     console.log(`extracted ${found.length} members (~${movedLines} lines) -> ${outFile}`);
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) main();
+// pathToFileURL handles Windows drive letters and percent-encoded spaces, which
+// a hand-built `file://${argv[1]}` string does not.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) main();

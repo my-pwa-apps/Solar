@@ -118,7 +118,15 @@ test('keeps core navigation and controls working', async ({ page }) => {
   await page.locator('#object-dropdown').selectOption('jupiter');
   await expect(page.locator('#object-name')).toHaveText('Jupiter');
   await expect(page.locator('#nav-search')).toHaveValue('');
-  await expect.poll(() => page.locator('#object-dropdown option[value]').evaluateAll((options) => options.filter((option) => option.value).length)).toBeGreaterThan(70);
+  // Evaluated in-page rather than via expect.poll: polling round-trips contend
+  // with the render loop and can stall long enough to exhaust the test timeout,
+  // even though the dropdown has already been restored.
+  await page.waitForFunction(
+    () => Array.from(document.querySelectorAll('#object-dropdown option'))
+      .filter((option) => option.value).length > 70,
+    null,
+    { timeout: 15_000 }
+  );
 
   const constellations = page.locator('#toggle-constellations');
   await expect(constellations).toHaveAttribute('aria-pressed', 'false');

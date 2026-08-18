@@ -384,7 +384,19 @@
 }
 
 #time-machine.collapsed {
-    min-width: 50px;
+    /* Shrink to the header, which keeps showing the date as a compact readout. */
+    min-width: auto;
+}
+
+#time-machine.collapsed .panel-content {
+    display: none;
+}
+
+#time-machine-content.collapsed {
+    max-height: 0;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 #time-machine .panel-header {
@@ -494,6 +506,20 @@
     background: rgba(255, 180, 60, 0.12);
     border: 1px solid rgba(255, 180, 60, 0.35);
     border-radius: 6px;
+    cursor: pointer;
+}
+
+.eclipse-status:hover {
+    background: rgba(255, 180, 60, 0.22);
+    border-color: rgba(255, 180, 60, 0.6);
+}
+
+.eclipse-status::after {
+    content: attr(data-hint);
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    opacity: 0.75;
 }
 
 #speed-control .panel-header {
@@ -1617,8 +1643,8 @@ select {
     }
 
     #time-machine.collapsed {
-        min-width: 45px;
-        max-width: 120px;
+        min-width: auto;
+        max-width: 140px;
     }
     
     #speed-panel-content {

@@ -96,3 +96,31 @@ Running 23 tests using 1 worker
 
 [1A[2K[9/23] [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:68:3 ΓÇ║ eclipse ephemeris ΓÇ║ places totality over northern Spain and excludes Madrid and Barcelona
 [1A[2K[10/23] [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:139:3 ΓÇ║ eclipse ephemeris ΓÇ║ reports no central eclipse on an ordinary day, and finds the real one
+[1A[2K[11/23] [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:170:3 ΓÇ║ eclipse rendering and date controls ΓÇ║ Earth is oriented so the real sub-solar point faces the Sun
+[1A[2K[12/23] [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:203:3 ΓÇ║ eclipse rendering and date controls ΓÇ║ seeking to totality darkens the globe where the shadow falls
+[1A[2K[13/23] [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:264:3 ΓÇ║ eclipse rendering and date controls ΓÇ║ the Moon is placed between Earth and the Sun during totality
+[1A[2K[14/23] [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:307:3 ΓÇ║ eclipse rendering and date controls ΓÇ║ the date panel drives the simulation and Now returns to today
+[1A[2K[15/23] [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:334:3 ΓÇ║ eclipse rendering and date controls ΓÇ║ the app opens at today's date
+[1A[2K[16/23] [desktop-chromium] ΓÇ║ tests\e2e\full-functionality.spec.js:78:1 ΓÇ║ full functionality: every navigation target and all main controls work
+[1A[2K[17/23] [desktop-chromium] ΓÇ║ tests\e2e\keyboard-shortcuts.spec.js:41:3 ΓÇ║ keyboard shortcut scoping ΓÇ║ modifier chords do not trigger app shortcuts
+[1A[2K[18/23] [desktop-chromium] ΓÇ║ tests\e2e\keyboard-shortcuts.spec.js:56:3 ΓÇ║ keyboard shortcut scoping ΓÇ║ typing in a focused form control does not trigger shortcuts
+[1A[2K[19/23] [desktop-chromium] ΓÇ║ tests\e2e\keyboard-shortcuts.spec.js:74:3 ΓÇ║ keyboard shortcut scoping ΓÇ║ unmodified shortcut still works, proving the guard is not over-broad
+[1A[2K[20/23] [desktop-chromium] ΓÇ║ tests\e2e\keyboard-shortcuts.spec.js:89:3 ΓÇ║ keyboard shortcut scoping ΓÇ║ Escape closes only the frontmost overlay
+[1A[2K[21/23] [desktop-chromium] ΓÇ║ tests\static-regression.spec.js:62:1 ΓÇ║ every three.js addon the app imports is pinned and precached at one version
+[1A[2K  4) [desktop-chromium] ΓÇ║ tests\static-regression.spec.js:62:1 ΓÇ║ every three.js addon the app imports is pinned and precached at one version 
+
+    Test not found in the worker process. Make sure test title does not change.
+
+
+[1A[2K[22/23] [desktop-chromium] ΓÇ║ tests\static-regression.spec.js:12:1 ΓÇ║ app version and service worker cache manifest stay in sync
+[1A[2K[23/23] [desktop-chromium] ΓÇ║ tests\static-regression.spec.js:108:1 ΓÇ║ all localized manifests expose the same capabilities
+[1A[2K  Slow test file: [desktop-chromium] ΓÇ║ tests\e2e\full-functionality.spec.js (14.2m)
+  Slow test file: [desktop-chromium] ΓÇ║ tests\e2e\keyboard-shortcuts.spec.js (5.9m)
+  Slow test file: [desktop-chromium] ΓÇ║ tests\e2e\accessibility.spec.js (5.2m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  4 failed
+    [desktop-chromium] ΓÇ║ tests\e2e\app.spec.js:108:1 ΓÇ║ keeps core navigation and controls working ΓöÇΓöÇ
+    [desktop-chromium] ΓÇ║ tests\e2e\app.spec.js:164:1 ΓÇ║ registers PWA assets and service worker ΓöÇΓöÇΓöÇΓöÇΓöÇ
+    [desktop-chromium] ΓÇ║ tests\e2e\eclipse.spec.js:30:3 ΓÇ║ eclipse ephemeris ΓÇ║ reproduces the published circumstances of two real total eclipses 
+    [desktop-chromium] ΓÇ║ tests\static-regression.spec.js:62:1 ΓÇ║ every three.js addon the app imports is pinned and precached at one version 
+  19 passed (46.0m)

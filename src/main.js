@@ -1522,12 +1522,43 @@ class App {
  eclipseStatus.textContent =
  `${type} — ${Math.abs(eclipse.latDeg).toFixed(1)}°${ns} ` +
  `${Math.abs(eclipse.lonDeg).toFixed(1)}°${ew}`;
+ eclipseStatus.setAttribute('data-hint', t('flyToShadow'));
  eclipseStatus.classList.remove('hidden');
  };
 
  this._onEclipseStateChanged = (e) => renderEclipseStatus(e?.detail?.eclipse);
  window.addEventListener('eclipseStateChanged', this._onEclipseStateChanged);
  renderEclipseStatus(ssm.currentEclipse);
+
+ // Clicking the readout flies to the shadow. The umbra is only ~110 km across
+ // on a 12,742 km globe, so it is effectively unfindable by hand.
+ if (eclipseStatus) {
+ eclipseStatus.addEventListener('click', () => {
+ const e = ssm.currentEclipse;
+ if (!e || !e.umbraRadiusKm) return;
+ const earth = ssm.planets?.earth;
+ const sm = this.sceneManager;
+ if (!earth || !sm) return;
+
+ const lat = e.latDeg * Math.PI / 180;
+ const lon = e.lonDeg * Math.PI / 180;
+ const cosLat = Math.cos(lat);
+ const local = new THREE.Vector3(cosLat * Math.cos(lon), Math.sin(lat), -cosLat * Math.sin(lon));
+
+ const surface = local.clone();
+ earth.localToWorld(surface);
+ const centre = new THREE.Vector3();
+ earth.getWorldPosition(centre);
+ const outward = surface.clone().sub(centre).normalize();
+
+ // Close enough that the umbra spans a useful fraction of the screen.
+ sm.camera.position.copy(centre).addScaledVector(outward, 1.6);
+ sm.camera.lookAt(centre);
+ if (sm.controls) { sm.controls.target.copy(centre); sm.controls.update(); }
+ ssm.focusedObject = null;
+ audioManager.playDiscovery();
+ });
+ }
 
  // ── Jump to the next central eclipse ──────────────────────────────────
  const eclipseBtn = document.getElementById('jump-next-eclipse');

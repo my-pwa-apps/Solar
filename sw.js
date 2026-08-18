@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.308
+// Version 2.10.311
 
-const CACHE_VERSION = '2.10.308';
+const CACHE_VERSION = '2.10.311';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -26,6 +26,11 @@ const CORE_CACHE_FILES = [
   './src/bootstrap/initManagers.js',
   './src/modules/SceneManager.js',
   './src/modules/SolarSystemModule.js',
+  './src/modules/solar-system/texture-generator.js',
+  './src/modules/solar-system/celestial-factory.js',
+  './src/modules/solar-system/comets-spacecraft.js',
+  './src/modules/solar-system/deep-space.js',
+  './src/modules/solar-system/orbital-mechanics.js',
   './src/modules/astro/Ephemeris.js',
   './src/modules/astro/Eclipse.js',
   './src/modules/astro/EclipseRenderer.js',

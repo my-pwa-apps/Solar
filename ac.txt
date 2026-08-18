@@ -1,0 +1,5 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [desktop-chromium] ΓÇ║ tests\e2e\accessibility.spec.js:44:3 ΓÇ║ accessibility affordances ΓÇ║ camera fly-to is skipped when the user prefers reduced motion
+[1A[2K  1 passed (1.5m)

@@ -10,6 +10,7 @@ const translations = {
         // Navigation
         quickNavigation: "Navigation",
         skipToContent: "Skip to the 3D view",
+        flyToShadow: "Click to fly to the shadow",
         jumpToDate: "Jump to date",
         nowButton: "Now",
         reverseTime: "Reverse",
@@ -629,6 +630,7 @@ const translations = {
         // Navigatie
         quickNavigation: "Navigatie",
         skipToContent: "Ga direct naar de 3D-weergave",
+        flyToShadow: "Klik om naar de schaduw te vliegen",
         jumpToDate: "Ga naar datum",
         nowButton: "Nu",
         reverseTime: "Omkeren",
@@ -1241,6 +1243,7 @@ const translations = {
         // Navigation
         quickNavigation: "Navigation",
         skipToContent: "Aller à la vue 3D",
+        flyToShadow: "Cliquez pour voler jusqu'à l'ombre",
         jumpToDate: "Aller à la date",
         nowButton: "Maintenant",
         reverseTime: "Inverser",
@@ -1847,6 +1850,7 @@ const translations = {
         // Navigation
         quickNavigation: "Navigation",
         skipToContent: "Zur 3D-Ansicht springen",
+        flyToShadow: "Klicken, um zum Schatten zu fliegen",
         jumpToDate: "Zum Datum springen",
         nowButton: "Jetzt",
         reverseTime: "Umkehren",
@@ -2451,6 +2455,7 @@ const translations = {
         // Navegación
         quickNavigation: "Navegación",
         skipToContent: "Saltar a la vista 3D",
+        flyToShadow: "Haz clic para volar hasta la sombra",
         jumpToDate: "Ir a la fecha",
         nowButton: "Ahora",
         reverseTime: "Invertir",
@@ -3055,6 +3060,7 @@ const translations = {
         // Navegação
         quickNavigation: "Navegação",
         skipToContent: "Ir para a vista 3D",
+        flyToShadow: "Clique para voar até à sombra",
         jumpToDate: "Ir para a data",
         nowButton: "Agora",
         reverseTime: "Inverter",
@@ -3655,7 +3661,7 @@ const translations = {
 const I18N_ASSET_VERSION = (() => {
     const script = document.currentScript || document.querySelector('script[src*="src/i18n.js"]');
     try {
-        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.308';
+        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.311';
     } catch {
         return '2.10.302';
     }
