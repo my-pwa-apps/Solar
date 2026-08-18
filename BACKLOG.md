@@ -160,6 +160,54 @@ Estimated effort: Small
 Business value: High
 Technical debt reduction: Medium
 
+- [ ] Reconcile planet radii and moon orbital distances onto one scale
+
+Priority: High
+Category: Business Logic
+Area: `solar-system/celestial-factory.js`
+Affected files: `src/modules/solar-system/celestial-factory.js`
+Problem: Planet radii use true size ratios (Jupiter = 10.97 scene units) while moon
+distances were compressed to fit the composition. Jupiter's Galilean moons orbit at
+1.1-2.1 Jupiter radii against a true 6.0-26.9, so Io appears to skim the cloud tops
+and the 1:2:4 Laplace resonance spacing is invisible. The two quantities sit on
+incompatible scales, so no distance value satisfies correct ratios, moons outside the
+planet, and the current visual envelope at once: true ratios put Callisto at ~295
+units, beyond Jupiter's own orbital radius of 266.
+Impact: The most visible remaining scientific inaccuracy. It also produced a
+misleading artifact — an over-large moon shadow is indistinguishable from a rendering
+fault, which is what prompted this investigation.
+Recommended solution: Pick one scale and apply it consistently. Either reduce planet
+radii so a true-ratio moon halo fits, or expand the halo and widen `focusOnObject`
+framing for gas giants. Drive it from the existing educational/scientific toggle so
+the exaggeration is explicit rather than hidden, and state the active mode in the UI.
+Acceptance criteria: In scientific mode every moon's orbital radius expressed in
+planet radii matches reality within 10%; no moon intersects its planet in either
+mode; a regression test asserts both.
+Estimated effort: Medium
+Business value: High
+Technical debt reduction: Medium
+
+- [ ] Restore moon transit shadows analytically
+
+Priority: Low
+Category: Feature
+Area: Rendering
+Affected files: `src/modules/solar-system/celestial-factory.js`, `src/modules/astro/`
+Problem: `sunLight.castShadow` was disabled in v2.10.311 because a point-light cube
+shadow with a 1024px map and `far = 5000` spans the whole solar system; each texel
+covers an enormous volume and the depth comparison degenerates into hard-edged black
+discs that appear even with no moon in front of the planet.
+Impact: Galilean moon transits — a genuinely striking real phenomenon — are no longer
+drawn at all.
+Recommended solution: Reuse the analytic approach already proven for solar eclipses:
+compute the shadow cone in real kilometres and project it in the planet's shader.
+`astro/Eclipse.js` generalises to any occluder/primary pair.
+Acceptance criteria: A known Io transit date shows a shadow at the correct longitude;
+no shadow appears when no moon lies between the Sun and the planet.
+Estimated effort: Medium
+Business value: Medium
+Technical debt reduction: Low
+
 - [ ] Re-base the scene's orbital frame onto the true ecliptic
 
 Priority: High
