@@ -1490,6 +1490,84 @@ class App {
  });
  }
 
+ // ── Direct date entry ─────────────────────────────────────────────────
+ // datetime-local has no timezone, and the whole simulation is UTC, so the
+ // field value is read and written as UTC rather than local wall time.
+ const dateInput = document.getElementById('sim-date-input');
+ const toInputValue = (d) => d.toISOString().slice(0, 19);
+
+ if (dateInput) {
+ dateInput.value = toInputValue(jdToDate(ssm.simulatedJD));
+ dateInput.addEventListener('change', () => {
+ if (!dateInput.value) return;
+ const parsed = new Date(`${dateInput.value}Z`);
+ if (isNaN(parsed.getTime())) return;
+ ssm.seekToDate(parsed);
+ audioManager.playClick();
+ });
+ }
+
+ // ── Eclipse readout ───────────────────────────────────────────────────
+ const eclipseStatus = document.getElementById('eclipse-status');
+ const renderEclipseStatus = (eclipse) => {
+ if (!eclipseStatus) return;
+ if (!eclipse || !eclipse.umbraRadiusKm) {
+ eclipseStatus.classList.add('hidden');
+ eclipseStatus.textContent = '';
+ return;
+ }
+ const type = eclipse.type === 'annular' ? t('eclipseAnnular') : t('eclipseTotal');
+ const ns = eclipse.latDeg >= 0 ? 'N' : 'S';
+ const ew = eclipse.lonDeg >= 0 ? 'E' : 'W';
+ eclipseStatus.textContent =
+ `${type} — ${Math.abs(eclipse.latDeg).toFixed(1)}°${ns} ` +
+ `${Math.abs(eclipse.lonDeg).toFixed(1)}°${ew}`;
+ eclipseStatus.classList.remove('hidden');
+ };
+
+ this._onEclipseStateChanged = (e) => renderEclipseStatus(e?.detail?.eclipse);
+ window.addEventListener('eclipseStateChanged', this._onEclipseStateChanged);
+ renderEclipseStatus(ssm.currentEclipse);
+
+ // ── Jump to the next central eclipse ──────────────────────────────────
+ const eclipseBtn = document.getElementById('jump-next-eclipse');
+ if (eclipseBtn) {
+ eclipseBtn.addEventListener('click', async () => {
+ eclipseBtn.disabled = true;
+ try {
+ const { findNextSolarEclipse } = await import('./modules/astro/Eclipse.js');
+ // Start a day ahead so repeated presses advance instead of
+ // re-finding the eclipse already on screen.
+ const found = findNextSolarEclipse(ssm.simulatedJD + 1, 400);
+ if (found) {
+ ssm.seekToDate(jdToDate(found.jd));
+ if (dateInput) dateInput.value = toInputValue(jdToDate(found.jd));
+ audioManager.playDiscovery();
+ } else {
+ this.showEventToast(t('noEclipseFound'));
+ }
+ } catch (err) {
+ console.error('[Eclipse] lookup failed', err);
+ } finally {
+ eclipseBtn.disabled = false;
+ }
+ });
+ }
+
+ // Keep the input in step with stepping buttons and free-running time.
+ const syncInput = (jd) => {
+ if (!dateInput || dateInput === document.activeElement) return;
+ dateInput.value = toInputValue(jdToDate(jd));
+ };
+ const previousDateHandler = this._onSimulatedDateChanged;
+ this._onSimulatedDateChanged = (e) => {
+ previousDateHandler(e);
+ const jd = e?.detail?.jd;
+ if (typeof jd === 'number' && Number.isFinite(jd)) syncInput(jd);
+ };
+ window.removeEventListener('simulatedDateChanged', previousDateHandler);
+ window.addEventListener('simulatedDateChanged', this._onSimulatedDateChanged);
+
  }
 
  showEventToast(text) {

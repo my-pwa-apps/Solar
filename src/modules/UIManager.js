@@ -388,6 +388,38 @@ export class UIManager {
  // Make the panel draggable by its header
  const panelHeader = speedControl?.querySelector('.panel-header');
  this._setupPanelDrag(speedControl, panelHeader, speedToggle);
+
+ this.setupTimeMachinePanelToggle();
+ }
+
+ setupTimeMachinePanelToggle() {
+ const toggle = document.getElementById('time-machine-toggle');
+ const content = document.getElementById('time-machine-content');
+ const panel = document.getElementById('time-machine');
+
+ if (!toggle || !content) return;
+
+ const isCollapsed = safeGetItem('time_machine_collapsed') === 'true';
+ if (isCollapsed) {
+ content.classList.add('collapsed');
+ panel?.classList.add('collapsed');
+ toggle.setAttribute('aria-expanded', 'false');
+ }
+
+ toggle.addEventListener('click', () => {
+ const wasCollapsed = content.classList.contains('collapsed');
+ content.classList.toggle('collapsed');
+ panel?.classList.toggle('collapsed');
+ toggle.setAttribute('aria-expanded', wasCollapsed ? 'true' : 'false');
+ safeSetItem('time_machine_collapsed', !wasCollapsed);
+
+ if (window.audioManager) {
+ if (wasCollapsed) window.audioManager.playExpand();
+ else window.audioManager.playCollapse();
+ }
+ });
+
+ this._setupPanelDrag(panel, panel?.querySelector('.panel-header'), toggle);
  }
 
  _setupPanelDrag(panel, handle, toggleBtn) {

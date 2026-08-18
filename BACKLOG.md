@@ -6,6 +6,241 @@ leave the entry in place so the history of the decision survives.
 
 ---
 
+## Review — 2026-08-18 (branch `opus5realtime`, v2.10.305)
+
+Feature work: real-ephemeris date control and solar eclipse shadow.
+
+### Resolved
+
+- [x] **Three.js is no longer loaded from a third-party CDN.** *(Closes the
+      Critical item carried since 2026-07-27.)* Vendored to
+      `vendor/three@0.183.2/`. Recursively resolving the addons' imports turned up
+      **20** required files, not the 8 that were precached — `three.core.js`,
+      `Pass.js`, `GLTFLoader.js`, `motion-controllers.module.js` and four shader
+      modules were all missing, so a cold offline start could never have worked.
+      `cdn.jsdelivr.net` is now absent from the CSP, the importmap, the
+      preconnect hints and `sw.js`; the static regression test asserts it stays
+      that way and that every precached vendor file exists on disk.
+- [x] **CSP inline-script hashes are now generated, not hand-maintained.** New
+      `scripts/update-csp-hash.mjs` (`npm run csp:sync` / `csp:check`, wired into
+      `pretest`). While building it, a genuine trap surfaced: the HTML parser
+      normalises CRLF to LF before the CSP hash is computed, but `index.html` is
+      CRLF on disk — hashing the raw bytes yields a digest the browser never
+      sees, and the failure mode is a silent hang on the loading screen with no
+      obvious cause.
+- [x] **The pure astronomy is now tested under Node.** `npm run test:unit` runs
+      14 assertions in ~0.5 s against code that previously needed a five-minute
+      Playwright run. Added coverage that did not exist before: annular
+      classification, rejection when the Moon is anti-solar, lunar perigee/apogee
+      and inclination bounds, GMST rate, and far-future stability.
+- [x] **Removed the dead Earth rotation branch.** Guarded by
+      `planet.userData.name === 'Earth'` while the field holds `'earth'`, it had
+      never executed. Earth is now explicitly excluded from the generic rotation
+      path, since `_applyEarthOrientation()` owns its orientation.
+- [x] **Earth's Moon was never actually repositioned.** The guard read
+      `planet.userData.name === 'Earth'`, but that field holds `'earth'`, so the
+      ephemeris override never ran and the Moon stayed on its decorative circular
+      orbit — 120° away from the Sun during totality, while the shadow was drawn
+      from the real ephemeris. Now compared by object identity
+      (`planet === this.planets.earth`). Caught by a user, not by the tests; a
+      regression test was added.
+- [x] **The full lunar series ran twice per frame.** `_applyEarthOrientation()`
+      and `_moonDirectionObjectSpace()` each called `sunMoonVectors()` with the
+      same instant, evaluating ~120 periodic terms twice every frame.
+      `sunMoonVectors()` now memoises on the exact Julian Day.
+- [x] **The eclipse finder sampled every instant twice.** Replaced the
+      look-ahead with a three-sample sliding window, halving a synchronous
+      main-thread scan that spans up to 400 days.
+- [x] **`EclipseRenderer.attach()` could return a permanently inert renderer.**
+      It reported success on an already-patched material without restoring
+      `this.uniforms`, so a second instance would silently never draw. It now
+      recovers the uniforms from `material.userData`.
+- [x] **The eclipse readout froze at first contact.** The state event only fired
+      on transitions, so the displayed coordinates never followed the moving
+      shadow. It now also fires while an eclipse is active.
+- [x] **The Time Machine was dead code.** `setupTimeMachine()` in `src/main.js` was
+      fully implemented — date stepping, reverse, "Now", a throttled
+      `simulatedDateChanged` event — but not one of its DOM elements existed in
+      `index.html`, so every `getElementById` returned null and the whole feature
+      silently no-opped. Added the panel markup, a `datetime-local` input, an
+      eclipse readout and a "Next eclipse" jump, plus styles, i18n for all six
+      locales, drag support and a collapse toggle.
+- [x] **Earth's orientation did not match the sky.** The scene put the sub-solar
+      point at 21.5°S 24.6°E when the true one was 14.8°N 96.1°W.
+      `_applyEarthOrientation()` now aligns the true sub-solar point with the
+      scene's Sun, fixing the lit hemisphere, the terminator and the seasons.
+
+### New
+
+- [ ] Remove the dead `userData.name === 'Earth'` rotation branch
+
+Priority: Medium
+Category: Cleanup
+Area: `SolarSystemModule`
+Affected files: `src/modules/SolarSystemModule.js`
+Problem: The planet update loop has a carefully written Earth special case that
+computes GMST and the Sun's right ascension to derive the sub-solar longitude. It
+is guarded by `planet.userData.name === 'Earth'`, but the field holds `'earth'`,
+so the branch has never executed — Earth silently fell through to the generic
+rotation path. This is the same class of defect that left the Moon misplaced.
+Impact: Roughly 20 lines of plausible-looking dead code that a future maintainer
+will read as authoritative. `_applyEarthOrientation()` now supersedes it entirely,
+so leaving both invites a contradictory "fix".
+Recommended solution: Delete the branch and the now-unused `_sunRA()` helper if
+nothing else references it. Audit for other string comparisons against
+`userData.name`, which is a localised display value.
+Acceptance criteria: No comparison of `userData.name` against a hardcoded English
+name remains; a test asserts Earth's orientation still tracks the sub-solar point.
+Estimated effort: Small
+Business value: Medium
+Technical debt reduction: Medium
+
+- [ ] Give celestial objects a stable, non-localised identity
+
+Priority: High
+Category: Technical Debt
+Area: `SolarSystemModule`
+Affected files: `src/modules/SolarSystemModule.js`, `src/main.js`
+Problem: `userData.name` is used both as a display string and as an identity key,
+and its casing is inconsistent (`'earth'` for planets, `'Earth'` assumed by
+comparisons, translated values elsewhere). Two real bugs in this branch alone
+traced back to it. Object lookups elsewhere match on English display names, which
+breaks under translation.
+Impact: Silent, hard-to-spot failures where a guard simply never fires. Nothing
+throws; the feature just does not happen.
+Recommended solution: Introduce `userData.id` on every object as a lowercase,
+stable, never-translated key, and use it for all comparisons and lookups. Reserve
+`userData.name` strictly for display.
+Acceptance criteria: No behavioural code compares `userData.name`; switching
+language does not change any lookup result. Merges with the existing Low-priority
+item on keying lookups by stable id.
+Estimated effort: Medium
+Business value: High
+Technical debt reduction: High
+
+- [ ] Move the eclipse search off the main thread
+
+Priority: Low
+Category: Performance
+Area: `src/modules/astro/Eclipse.js`
+Affected files: `src/modules/astro/Eclipse.js`, `src/main.js`
+Problem: "Next eclipse" runs a synchronous scan of up to 1,600 quarter-day steps,
+each evaluating the ~120-term lunar series, then a 60-iteration golden-section
+refinement. The sliding-window change halved it, but it still blocks the render
+loop for a visible pause.
+Impact: A frame hitch on desktop and a longer stall on mobile, during an
+interaction that is meant to feel instant.
+Recommended solution: Move the scan into a Web Worker, or yield to
+`requestIdleCallback` between coarse steps. A precomputed table of central
+eclipses for 1900-2100 would be smaller than one texture and effectively free.
+Acceptance criteria: Pressing "Next eclipse" never blocks the main thread for
+more than 16 ms.
+Estimated effort: Medium
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Test the astronomy without booting the whole 3D app
+
+Priority: Medium
+Category: Testing
+Area: Test suite
+Affected files: `tests/e2e/eclipse.spec.js`, `package.json`
+Problem: `src/modules/astro/*` is pure, dependency-free maths, but every
+assertion about it runs through Playwright: launch Chromium, load Three.js,
+build a 213-object scene, wait for textures. The ephemeris suite takes over five
+minutes to test code that would run in milliseconds under Node.
+Impact: Slow feedback discourages running the tests, which is precisely how the
+misplaced-Moon bug reached a user.
+Recommended solution: Add a Node test runner (`node --test`) for the pure modules
+and keep Playwright for rendering and DOM behaviour. The modules are already
+plain ESM and import nothing from Three.js.
+Acceptance criteria: Ephemeris and eclipse-geometry assertions run under Node in
+under two seconds via `npm test`; Playwright retains only the rendering tests.
+Estimated effort: Small
+Business value: High
+Technical debt reduction: Medium
+
+- [ ] Re-base the scene's orbital frame onto the true ecliptic
+
+Priority: High
+Category: Correctness
+Area: `SolarSystemModule`
+Affected files: `src/modules/SolarSystemModule.js`
+Problem: Planet orbital angles are seeded for appearance, not coordinates. Earth's
+scene angle is 216.7° when its true heliocentric ecliptic longitude is 320.1° — a
+103° error. Every planet is affected, so "today's configuration" is only genuinely
+correct for the Earth-Moon-Sun subsystem, which this branch aligns explicitly.
+Impact: Planetary alignments, conjunctions and the relative geometry of the outer
+planets are decorative rather than accurate, which undercuts the educational claim.
+Recommended solution: Seed each planet's mean longitude from its VSOP87 elements at
+the simulated epoch and map scene azimuth directly to ecliptic longitude. Then
+`_applyEarthOrientation()` reduces to a plain sidereal spin.
+Acceptance criteria: For any date, every planet's scene azimuth matches its true
+heliocentric ecliptic longitude within 1°; a regression test asserts this for all
+eight planets on three separate dates.
+Estimated effort: Large
+Business value: High
+Technical debt reduction: High
+
+- [ ] Make the umbra discoverable without extreme zoom
+
+Priority: Medium
+Category: UX
+Area: Eclipse rendering
+Affected files: `src/modules/astro/EclipseRenderer.js`
+Problem: The umbra is drawn at its true size — about 110 km across on a 12,742 km
+globe, under 1% of Earth's width. At any normal viewing distance it is a couple of
+pixels, so users are unlikely to find the very thing the feature exists to show.
+Impact: The headline feature is effectively invisible unless the camera is placed
+within roughly 1,000 km of the shadow.
+Recommended solution: Draw a thin ring or crosshair at the shadow centre that holds
+a minimum screen size, and offer a "fly to the shadow" action from the eclipse
+readout. Keep the shaded area itself physically exact.
+Acceptance criteria: From a default Earth view the shadow location is visible; the
+shaded region's angular size is unchanged.
+Estimated effort: Medium
+Business value: High
+Technical debt reduction: Low
+
+- [ ] Draw partial (non-central) eclipses
+
+Priority: Low
+Category: Feature
+Area: Eclipse rendering
+Affected files: `src/modules/astro/EclipseRenderer.js`, `src/modules/astro/Eclipse.js`
+Problem: `EclipseRenderer.update()` deliberately skips events where the shadow axis
+misses Earth. `Eclipse.js` already classifies these as partial and computes the
+penumbra, but a penumbra covering most of a hemisphere reads as a rendering fault
+rather than an eclipse, so nothing is drawn.
+Impact: Partial solar eclipses — the majority of events — produce no visual at all.
+Recommended solution: Render the penumbra with a much shallower curve and label it
+in the readout so the dimming is clearly intentional.
+Acceptance criteria: A known partial eclipse produces visible, clearly-labelled
+limb dimming.
+Estimated effort: Small
+Business value: Low
+Technical debt reduction: Low
+
+- [ ] Model eclipse timing to better than a minute
+
+Priority: Low
+Category: Correctness
+Area: `src/modules/astro/Ephemeris.js`
+Problem: The truncated Meeus lunar series places the shadow within about 20 km of
+the truth, rising to ~60 km at grazing incidence. Gamma and magnitude match
+published values to ~5e-4, but the along-track position drifts by 40–80 s, and the
+ΔT polynomial over-estimates by ~6 s for the 2020s.
+Impact: Contact times for a specific location can be a minute out. Fine for showing
+where the shadow falls; not adequate for planning an observation.
+Recommended solution: Add the remaining ELP terms or adopt a compact VSOP87/ELP
+implementation, and use a measured ΔT table for 2000-2030.
+Acceptance criteria: Greatest-eclipse position within 10 km for gamma below 0.5.
+Estimated effort: Medium
+Business value: Low
+Technical debt reduction: Low
+
+---
+
 ## Review — 2026-08-18 (branch `main`, v2.10.304)
 
 Scope: second full-repository review. Findings from the 2026-07-27 pass that are

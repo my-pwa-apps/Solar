@@ -59,15 +59,20 @@ test('app version and service worker cache manifest stay in sync', async ({}, te
   expect(missingFiles).toEqual([]);
 });
 
-test('every three.js addon the app imports is pinned and precached at one version', async ({}, testInfo) => {
+test('every three.js addon the app imports is vendored, pinned and precached', async ({}, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
 
   const [indexHtml, serviceWorker] = await Promise.all([readText('index.html'), readText('sw.js')]);
 
-  // The importmap is covered by a CSP hash, so a version bump there must be a
-  // deliberate, reviewed change — and sw.js must be bumped in the same commit.
+  // Three.js is self-hosted: a CDN outage would blank the app, and the CSP hash
+  // only covers the importmap's text, never the code it resolves to.
+  expect(indexHtml, 'index.html must not load scripts from a third-party CDN')
+    .not.toContain('cdn.jsdelivr.net');
+  expect(serviceWorker, 'sw.js must not reference a third-party CDN')
+    .not.toContain('jsdelivr');
+
   const importmapVersions = new Set(
-    [...indexHtml.matchAll(/cdn\.jsdelivr\.net\/npm\/three@([\d.]+)\//g)].map((m) => m[1])
+    [...indexHtml.matchAll(/\.\/vendor\/three@([\d.]+)\//g)].map((m) => m[1])
   );
   expect(importmapVersions.size, 'index.html must pin exactly one three.js version').toBe(1);
   const [pinnedVersion] = [...importmapVersions];
@@ -81,8 +86,7 @@ test('every three.js addon the app imports is pinned and precached at one versio
   }
 
   // Collect the addon specifiers actually imported by application code. An addon
-  // that is imported but not precached silently breaks the first offline launch;
-  // one that is precached but not imported wastes install bandwidth forever.
+  // that is imported but not precached silently breaks the first offline launch.
   const sourceFiles = ['src/main.js', 'src/modules/SceneManager.js', 'src/modules/SolarSystemModule.js', 'src/modules/utils.js'];
   const importedAddons = new Set();
   for (const file of sourceFiles) {
@@ -94,15 +98,24 @@ test('every three.js addon the app imports is pinned and precached at one versio
   expect(importedAddons.size).toBeGreaterThan(0);
 
   const precachedAddons = new Set(
-    cdnFiles
-      .map((url) => url.split('/examples/jsm/')[1])
-      .filter(Boolean)
+    cdnFiles.map((url) => url.split('/examples/jsm/')[1]).filter(Boolean)
   );
 
-  expect([...importedAddons].sort(), 'every imported three.js addon must be precached in sw.js')
-    .toEqual([...precachedAddons].sort());
+  // Precache is a superset: the addons also pull in shaders, Pass.js, GLTFLoader
+  // and three.core.js transitively, and every one of those must be cached too or
+  // a cold offline start fails.
+  for (const addon of importedAddons) {
+    expect(precachedAddons.has(addon), `${addon} is imported but not precached in sw.js`).toBe(true);
+  }
 
   expect(cdnFiles.some((url) => url.endsWith('/build/three.module.js')), 'the three.js core build must be precached').toBe(true);
+  expect(cdnFiles.some((url) => url.endsWith('/build/three.core.js')), 'three.core.js is re-exported by three.module.js and must be precached').toBe(true);
+
+  // Every precached vendor file must actually exist on disk.
+  for (const rel of cdnFiles) {
+    await expect(readText(rel.replace(/^\.\//, '')), `${rel} is precached but missing from the repo`)
+      .resolves.toBeTruthy();
+  }
 });
 
 test('all localized manifests expose the same capabilities', async ({}, testInfo) => {

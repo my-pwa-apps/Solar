@@ -10,6 +10,14 @@ const translations = {
         // Navigation
         quickNavigation: "Navigation",
         skipToContent: "Skip to the 3D view",
+        jumpToDate: "Jump to date",
+        nowButton: "Now",
+        reverseTime: "Reverse",
+        nextEclipse: "Next eclipse",
+        dateHintUtc: "Times are UTC",
+        eclipseTotal: "Total solar eclipse",
+        eclipseAnnular: "Annular solar eclipse",
+        noEclipseFound: "No central eclipse found within the next year",
         search: "Search...",
         
         // Object categories
@@ -621,6 +629,14 @@ const translations = {
         // Navigatie
         quickNavigation: "Navigatie",
         skipToContent: "Ga direct naar de 3D-weergave",
+        jumpToDate: "Ga naar datum",
+        nowButton: "Nu",
+        reverseTime: "Omkeren",
+        nextEclipse: "Volgende eclips",
+        dateHintUtc: "Tijden zijn UTC",
+        eclipseTotal: "Totale zonsverduistering",
+        eclipseAnnular: "Ringvormige zonsverduistering",
+        noEclipseFound: "Geen centrale eclips gevonden in het komende jaar",
         search: "Zoeken...",
         searchObjects: "🔍 Objecten zoeken...",
         
@@ -1225,6 +1241,14 @@ const translations = {
         // Navigation
         quickNavigation: "Navigation",
         skipToContent: "Aller à la vue 3D",
+        jumpToDate: "Aller à la date",
+        nowButton: "Maintenant",
+        reverseTime: "Inverser",
+        nextEclipse: "Prochaine éclipse",
+        dateHintUtc: "Heures en UTC",
+        eclipseTotal: "Éclipse solaire totale",
+        eclipseAnnular: "Éclipse solaire annulaire",
+        noEclipseFound: "Aucune éclipse centrale trouvée dans l'année à venir",
         search: "Rechercher...",
         searchObjects: "🔍 Rechercher des objets...",
         
@@ -1823,6 +1847,14 @@ const translations = {
         // Navigation
         quickNavigation: "Navigation",
         skipToContent: "Zur 3D-Ansicht springen",
+        jumpToDate: "Zum Datum springen",
+        nowButton: "Jetzt",
+        reverseTime: "Umkehren",
+        nextEclipse: "Nächste Finsternis",
+        dateHintUtc: "Zeiten in UTC",
+        eclipseTotal: "Totale Sonnenfinsternis",
+        eclipseAnnular: "Ringförmige Sonnenfinsternis",
+        noEclipseFound: "Keine zentrale Finsternis im kommenden Jahr gefunden",
         search: "Suchen...",
         searchObjects: "🔍 Objekte suchen...",
         
@@ -2419,6 +2451,14 @@ const translations = {
         // Navegación
         quickNavigation: "Navegación",
         skipToContent: "Saltar a la vista 3D",
+        jumpToDate: "Ir a la fecha",
+        nowButton: "Ahora",
+        reverseTime: "Invertir",
+        nextEclipse: "Próximo eclipse",
+        dateHintUtc: "Horas en UTC",
+        eclipseTotal: "Eclipse solar total",
+        eclipseAnnular: "Eclipse solar anular",
+        noEclipseFound: "No se encontró ningún eclipse central en el próximo año",
         search: "Buscar...",
         searchObjects: "🔍 Buscar objetos...",
         
@@ -3015,6 +3055,14 @@ const translations = {
         // Navegação
         quickNavigation: "Navegação",
         skipToContent: "Ir para a vista 3D",
+        jumpToDate: "Ir para a data",
+        nowButton: "Agora",
+        reverseTime: "Inverter",
+        nextEclipse: "Próximo eclipse",
+        dateHintUtc: "Horas em UTC",
+        eclipseTotal: "Eclipse solar total",
+        eclipseAnnular: "Eclipse solar anular",
+        noEclipseFound: "Nenhum eclipse central encontrado no próximo ano",
         search: "Pesquisar...",
         searchObjects: "🔍 Pesquisar objetos...",
         
@@ -3607,7 +3655,7 @@ const translations = {
 const I18N_ASSET_VERSION = (() => {
     const script = document.currentScript || document.querySelector('script[src*="src/i18n.js"]');
     try {
-        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.304';
+        return new URL(script?.src || '', window.location.href).searchParams.get('v') || '2.10.308';
     } catch {
         return '2.10.302';
     }

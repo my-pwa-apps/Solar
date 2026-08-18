@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.304
+// Version 2.10.308
 
-const CACHE_VERSION = '2.10.304';
+const CACHE_VERSION = '2.10.308';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -26,6 +26,9 @@ const CORE_CACHE_FILES = [
   './src/bootstrap/initManagers.js',
   './src/modules/SceneManager.js',
   './src/modules/SolarSystemModule.js',
+  './src/modules/astro/Ephemeris.js',
+  './src/modules/astro/Eclipse.js',
+  './src/modules/astro/EclipseRenderer.js',
   './src/modules/TextureCache.js',
   './src/modules/UIManager.js',
   './src/modules/PanelManager.js',
@@ -125,26 +128,39 @@ const ASSET_CACHE_FILES = [
 // a background revalidation round-trip — CACHE_VERSION is the invalidation signal.
 const STATIC_CACHE_FILES = [...CORE_CACHE_FILES, ...ASSET_CACHE_FILES];
 
-// Normalised same-origin paths of everything we precache, used to skip
-// stale-while-revalidate for immutable, version-scoped assets.
-const PRECACHED_PATHS = new Set(
-  STATIC_CACHE_FILES.map((file) => new URL(file, self.location).pathname)
-);
-
-// Third-party module graph pulled in by the importmap in index.html. Must stay in
-// step with the `three/addons/...` imports in src/ — tests/static-regression.spec.js
-// fails the build when it drifts. Transitive imports (Pass.js, shader chunks) are
-// not listed here; they are picked up by the runtime cache-first handler below.
+// Vendored Three.js. Every file the app resolves at runtime must be listed:
+// the addons pull in shaders, Pass.js, GLTFLoader and three.core.js, and a
+// missing entry only shows up as a blank screen on a cold offline start.
 const CDN_CACHE_FILES = [
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/build/three.module.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/controls/OrbitControls.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/EffectComposer.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/RenderPass.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/UnrealBloomPass.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/OutputPass.js',
-  'https://cdn.jsdelivr.net/npm/three@0.183.2/examples/jsm/postprocessing/SMAAPass.js'
+  './vendor/three@0.183.2/build/three.module.js',
+  './vendor/three@0.183.2/build/three.core.js',
+  './vendor/three@0.183.2/examples/jsm/controls/OrbitControls.js',
+  './vendor/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js',
+  './vendor/three@0.183.2/examples/jsm/loaders/GLTFLoader.js',
+  './vendor/three@0.183.2/examples/jsm/libs/motion-controllers.module.js',
+  './vendor/three@0.183.2/examples/jsm/utils/BufferGeometryUtils.js',
+  './vendor/three@0.183.2/examples/jsm/utils/SkeletonUtils.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/EffectComposer.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/RenderPass.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/UnrealBloomPass.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/OutputPass.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/SMAAPass.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/MaskPass.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/Pass.js',
+  './vendor/three@0.183.2/examples/jsm/postprocessing/ShaderPass.js',
+  './vendor/three@0.183.2/examples/jsm/shaders/CopyShader.js',
+  './vendor/three@0.183.2/examples/jsm/shaders/LuminosityHighPassShader.js',
+  './vendor/three@0.183.2/examples/jsm/shaders/OutputShader.js',
+  './vendor/three@0.183.2/examples/jsm/shaders/SMAAShader.js'
 ];
+
+// Normalised paths of everything we precache, used to skip stale-while-revalidate
+// for immutable, version-scoped assets. Declared after the vendor list so the
+// Three.js build is covered too.
+const PRECACHED_PATHS = new Set(
+  [...STATIC_CACHE_FILES, ...CDN_CACHE_FILES]
+    .map((file) => new URL(file, self.location).pathname)
+);
 
 // Install event - cache static files
 self.addEventListener('install', (event) => {
@@ -237,8 +253,7 @@ function getCacheStrategy(request, url) {
   }
   
   // Static assets - cache first
-  if (url.pathname.match(/\.(css|js|woff2?|ttf|eot)$/i) || 
-      url.hostname.includes('jsdelivr.net')) {
+  if (url.pathname.match(/\.(css|js|woff2?|ttf|eot)$/i)) {
     return { cache: CACHE_NAME, strategy: 'cache-first' };
   }
   
@@ -256,8 +271,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
-  // Skip cross-origin requests that aren't from CDN
-  if (url.origin !== location.origin && !url.hostname.includes('jsdelivr.net')) {
+  // Everything is same-origin now that Three.js is vendored.
+  if (url.origin !== location.origin) {
     return;
   }
   
@@ -299,11 +314,10 @@ self.addEventListener('fetch', (event) => {
           // plain paths stored in the SW install cache, ensuring offline reliability
           const cachedResponse = await caches.match(cacheKey);
           if (cachedResponse) {
-            // Precached assets are immutable for the lifetime of this CACHE_VERSION,
-            // and jsdelivr URLs are version-pinned. Revalidating either would re-download
-            // the whole app shell plus every texture on every single page load.
-            const isImmutable = url.hostname.includes('jsdelivr.net')
-              || (url.origin === location.origin && PRECACHED_PATHS.has(url.pathname));
+            // Precached assets are immutable for the lifetime of this CACHE_VERSION.
+            // Revalidating them would re-download the whole app shell plus every
+            // texture on every single page load.
+            const isImmutable = PRECACHED_PATHS.has(url.pathname);
             if (!isImmutable) {
               event.waitUntil(updateCache(request, cache, cacheKey));
             }

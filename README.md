@@ -242,6 +242,43 @@ Solar/
 
 ## Features in Detail
 
+### Date Control and Solar Eclipses
+
+The app opens at **today's date** (`initPositionsToDate(new Date())`) and the Time
+Machine panel shows the simulated date, steps it by month/year/decade, accepts a
+date directly, and returns to the present with **Now**.
+
+Eclipses are computed from a real ephemeris in `src/modules/astro/`:
+
+| Module | Responsibility |
+|---|---|
+| `Ephemeris.js` | Sun and Moon positions (Meeus ch. 25 / 47), obliquity, nutation, GMST, ΔT |
+| `Eclipse.js` | Shadow-cone geometry intersected with the WGS-84 ellipsoid |
+| `EclipseRenderer.js` | Projects the umbra and penumbra onto Earth in a shader |
+
+Two things are worth knowing before changing this code:
+
+- **The shadow is not a shadow map.** The scene draws the Moon at ~4 Earth radii
+  instead of the true ~60, and a 1024px shadow map spanning the solar system
+  cannot resolve a ~110 km umbra on a 12,742 km globe. The shadow is computed
+  analytically in real kilometres and projected onto Earth's surface. The shader
+  measures each fragment's perpendicular distance to the true 3D shadow axis,
+  which produces the correct *elliptical* footprint at oblique incidence for free.
+- **Earth's orientation is driven by the ephemeris.** `_applyEarthOrientation()`
+  rotates Earth so the true sub-solar point faces the scene's Sun. Without it the
+  scene's sub-solar point is out by more than 100° and the shadow lands on the
+  night side. Note this fixes the Earth-Moon-Sun subsystem only — the scene's
+  planetary orbital phases are still not on the true ecliptic (see `BACKLOG.md`).
+
+**Accuracy.** Validated against published NASA/EclipseWise circumstances for the
+2024-04-08, 2026-08-12 and 2027-08-02 total eclipses: gamma and magnitude match to
+~5×10⁻⁴, and the shadow lands within ~20 km of the published track (up to ~60 km at
+grazing incidence, where the truncated lunar series is amplified). That is well
+inside the width of the path of totality, but contact times for a single site can
+be up to a minute out. `tests/e2e/eclipse.spec.js` locks this in, including the
+check that totality covers A Coruña, Bilbao, León, Zaragoza and Palma while
+correctly excluding Madrid and Barcelona.
+
 ### Time Control
 - 13 speed levels from real-time to 1 year/minute
 - Pause/play functionality

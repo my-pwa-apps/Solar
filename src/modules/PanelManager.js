@@ -23,12 +23,16 @@ export class PanelManager {
         const initPanels = () => {
             const infoPanelElement = document.getElementById('info-panel');
             const speedControlElement = document.getElementById('speed-control');
+            const timeMachineElement = document.getElementById('time-machine');
             
             if (infoPanelElement) {
                 this.makeDraggable(infoPanelElement);
             }
             if (speedControlElement) {
                 this.makeDraggable(speedControlElement);
+            }
+            if (timeMachineElement) {
+                this.makeDraggable(timeMachineElement);
             }
 
             // Ensure close buttons work on touch devices

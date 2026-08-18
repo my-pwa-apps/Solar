@@ -1,6 +1,6 @@
 {
   "name": "space-voyage",
-  "version": "2.10.304",
+  "version": "2.10.308",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,14 +10,17 @@
     "version:sync": "node scripts/sync-version.mjs",
     "version:check": "node scripts/sync-version.mjs --check",
     "version:bump": "node scripts/sync-version.mjs --bump",
-    "pretest": "node scripts/sync-version.mjs --check",
+    "csp:sync": "node scripts/update-csp-hash.mjs",
+    "csp:check": "node scripts/update-csp-hash.mjs --check",
+    "pretest": "node scripts/sync-version.mjs --check && node scripts/update-csp-hash.mjs --check",
     "test": "playwright test",
+    "test:unit": "node --test \"tests/unit/*.test.mjs\"",
     "test:basic": "playwright test tests/e2e/app.spec.js tests/static-regression.spec.js",
     "test:full": "playwright test tests/e2e/full-functionality.spec.js",
     "test:e2e": "playwright test tests/e2e",
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
-    "verify": "npm run lint && npm test"
+    "verify": "npm run lint && npm run test:unit && npm test"
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

@@ -372,6 +372,130 @@
     min-width: 50px;
 }
 
+/* ── Time Machine ─────────────────────────────────────────────────────────
+   Sits directly under the speed panel and shares its panel chrome. */
+#time-machine {
+    top: 210px;
+    right: clamp(12px, 3vw, 24px);
+    min-width: 230px;
+    max-width: calc(100vw - 24px);
+    border-radius: var(--radius-md);
+    z-index: 90;
+}
+
+#time-machine.collapsed {
+    min-width: 50px;
+}
+
+#time-machine .panel-header {
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+#time-machine .panel-header:active {
+    cursor: grabbing;
+}
+
+#time-machine .panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 10px 10px;
+}
+
+.sim-date-display {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.time-step-row,
+.time-jump-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.time-step-row {
+    justify-content: space-between;
+}
+
+.time-step-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 5px 4px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    background: var(--fluent-bg-secondary, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--fluent-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.time-step-btn:hover {
+    background: rgba(96, 165, 250, 0.22);
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.time-step-btn[aria-pressed="true"] {
+    background: rgba(96, 165, 250, 0.3);
+    border-color: rgba(96, 165, 250, 0.65);
+}
+
+#sim-date-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 5px 6px;
+    font-size: 11px;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: var(--fluent-bg-secondary, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--fluent-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    /* Keep the native picker glyph legible on the dark panel */
+    color-scheme: dark;
+}
+
+.time-now-btn {
+    flex: 0 0 auto;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(96, 165, 250, 0.25);
+    border: 1px solid rgba(96, 165, 250, 0.5);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.time-now-btn:hover {
+    background: rgba(96, 165, 250, 0.4);
+}
+
+.time-hint {
+    margin: 0;
+    font-size: 10px;
+    opacity: 0.65;
+}
+
+.eclipse-status {
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.35;
+    color: #ffd479;
+    background: rgba(255, 180, 60, 0.12);
+    border: 1px solid rgba(255, 180, 60, 0.35);
+    border-radius: 6px;
+}
+
 #speed-control .panel-header {
     padding: 8px;
     display: flex;
@@ -1481,6 +1605,20 @@ select {
     
     #speed-control input[type="range"] {
         height: 100px; /* Shorter on mobile */
+    }
+
+    /* The date panel needs real width for the native picker, so give it the
+       full column under the speed panel rather than the narrow compact form. */
+    #time-machine {
+        right: 10px;
+        top: 150px;
+        min-width: 200px;
+        max-width: calc(100vw - 20px);
+    }
+
+    #time-machine.collapsed {
+        min-width: 45px;
+        max-width: 120px;
     }
     
     #speed-panel-content {

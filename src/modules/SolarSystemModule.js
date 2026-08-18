@@ -5,6 +5,8 @@ import * as THREE from 'three';
 // CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
 import { TEXTURE_CACHE } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, prefersReducedMotion, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
+import { EclipseRenderer } from './astro/EclipseRenderer.js';
+import { sunMoonVectors, gmst as astroGmst, subPoint as astroSubPoint } from './astro/Ephemeris.js';
 
 // i18n.js is loaded globally in index.html, access via window.t
 // Late-binding: always delegate to window.t at call time (not captured at import time)
@@ -251,6 +253,25 @@ export class SolarSystemModule {
  // Using this instead of a wall-clock anchor keeps planet self-rotation in sync with the
  // speed slider so moons never appear to reverse when the slider is set very low.
  this.simulatedHours = 0;
+
+ // Real-ephemeris eclipse shadow, projected onto Earth's surface. The scene's
+ // Moon orbit is visually exaggerated, so the shadow is computed from true
+ // kilometres rather than from the rendered geometry.
+ this.eclipseRenderer = new EclipseRenderer(THREE);
+ this.currentEclipse = null;
+ this._lastEclipseJD = null;
+ this._eclipseEventDetail = { eclipse: null };
+ this._eclipseEvent = new CustomEvent('eclipseStateChanged', { detail: this._eclipseEventDetail });
+
+ // Scratch objects for _applyEarthOrientation — runs every frame.
+ this._earthOrientScratchA = new THREE.Vector3();
+ this._earthOrientScratchB = new THREE.Vector3();
+ this._earthOrientScratchC = new THREE.Vector3();
+ this._earthOrientScratchD = new THREE.Vector3();
+ this._earthOrientScratchE = new THREE.Vector3();
+ this._earthOrientScratchF = new THREE.Vector3();
+ this._earthOrientQuatA = new THREE.Quaternion();
+ this._earthOrientQuatB = new THREE.Quaternion();
 
  // Pre-allocated scratch vectors for update() hot path — avoids per-frame GC pressure
  this._trackTargetPos = new THREE.Vector3();
@@ -3823,6 +3844,145 @@ export class SolarSystemModule {
  return;
  }
  this.initPositionsToDate(date);
+ // Recompute immediately so a seek that lands on an eclipse shows the
+ // shadow before the next animation frame.
+ this._applyEarthOrientation(this.simulatedJD);
+ this._updateEclipse(true);
+ }
+
+ /**
+  * Direction of the real Moon from Earth's centre, expressed in Earth's mesh
+  * object space (the same Earth-fixed frame the eclipse shader uses).
+  * @returns {{x:number,y:number,z:number}|null} unit vector
+  */
+ _moonDirectionObjectSpace(jd) {
+ try {
+ const { moon } = sunMoonVectors(jd);
+ const g = astroGmst(jd);
+ const cosG = Math.cos(g);
+ const sinG = Math.sin(g);
+ const x = moon.x * cosG + moon.y * sinG;
+ const y = moon.z;
+ const z = moon.x * sinG - moon.y * cosG;
+ const len = Math.hypot(x, y, z);
+ if (!len || !isFinite(len)) return null;
+ return { x: x / len, y: y / len, z: z / len };
+ } catch (err) {
+ if (DEBUG.enabled) console.warn('[Eclipse] moon direction failed', err);
+ return null;
+ }
+ }
+
+ /**
+  * Refresh the projected eclipse shadow. Throttled by simulated time: the
+  * geometry changes slowly, and the ephemeris series are far too heavy to
+  * evaluate on every frame of the render loop.
+  * @param {boolean} [force] recompute even if the date has barely moved
+  */
+ _updateEclipse(force = false) {
+ if (!this.eclipseRenderer) return;
+
+ // Attach lazily; Earth's material does not exist until textures resolve.
+ if (!this.eclipseRenderer.uniforms) {
+ const earth = this.planets && this.planets.earth;
+ if (!earth) return;
+ if (!this.eclipseRenderer.attach(earth)) return;
+ }
+
+ // ~4 simulated minutes is well under the time the umbra needs to move one
+ // of its own diameters, so the shadow still tracks smoothly.
+ const jd = this.simulatedJD;
+ if (!force && this._lastEclipseJD !== null
+ && Math.abs(jd - this._lastEclipseJD) < 0.003) {
+ return;
+ }
+ this._lastEclipseJD = jd;
+
+ try {
+ const eclipse = this.eclipseRenderer.update(jd);
+ const wasActive = !!(this.currentEclipse && this.currentEclipse.umbraRadiusKm > 0);
+ const isActive = !!(eclipse && eclipse.umbraRadiusKm > 0);
+ this.currentEclipse = eclipse;
+
+ // Fire on entry, on exit, and while active so the readout's coordinates
+ // track the shadow instead of freezing at wherever it first appeared.
+ if (wasActive !== isActive || isActive) {
+ this._eclipseEventDetail.eclipse = isActive ? eclipse : null;
+ window.dispatchEvent(this._eclipseEvent);
+ }
+ } catch (err) {
+ if (DEBUG.enabled) console.warn('[Eclipse] update failed', err);
+ }
+ }
+
+ /**
+  * Orient Earth so that the true sub-solar point faces the Sun.
+  *
+  * The scene's orbital phase does not sit on the real ecliptic (planet angles
+  * are seeded for looks, not for coordinates), so Earth's own rotation formula
+  * puts the sub-solar point in the wrong hemisphere. Rather than re-basing the
+  * whole scene, this makes the Earth-Moon-Sun subsystem internally correct:
+  * the lit hemisphere, the terminator, the Moon's direction and the eclipse
+  * shadow all agree with each other and with the real sky.
+  *
+  * The Sun direction is matched exactly; the remaining spin about that axis is
+  * chosen to keep the pole as close to the scene's north as possible, which
+  * reproduces the correct axial tilt and season.
+  */
+ _applyEarthOrientation(jd) {
+ const earth = this.planets && this.planets.earth;
+ if (!earth) return;
+
+ try {
+ const { sun } = sunMoonVectors(jd);
+ const sub = astroSubPoint(sun, jd);
+
+ const lat = sub.latDeg * Math.PI / 180;
+ const lon = sub.lonDeg * Math.PI / 180;
+ const cosLat = Math.cos(lat);
+ // Object-space direction of the sub-solar point, matching the
+ // equirectangular convention used by the eclipse shader.
+ const sObj = this._earthOrientScratchA.set(
+ cosLat * Math.cos(lon),
+ Math.sin(lat),
+ -cosLat * Math.sin(lon)
+ );
+
+ // Scene-space direction from Earth to the Sun (the Sun sits at the origin).
+ const sWorld = this._earthOrientScratchB.copy(earth.position).negate();
+ if (sWorld.lengthSq() < 1e-9) return;
+ sWorld.normalize();
+
+ const q1 = this._earthOrientQuatA.setFromUnitVectors(sObj, sWorld);
+
+ // Where the pole ends up after that shortest-arc rotation.
+ const pole = this._earthOrientScratchC.set(0, 1, 0).applyQuaternion(q1);
+
+ // Remove the component along the Sun axis from both the actual and the
+ // desired pole, then rotate about the Sun axis to line them up. This
+ // preserves the solar declination while fixing which way Earth leans.
+ const along = pole.dot(sWorld);
+ const polePerp = this._earthOrientScratchD
+ .copy(pole).addScaledVector(sWorld, -along);
+ const wantPerp = this._earthOrientScratchE
+ .set(0, 1, 0).addScaledVector(sWorld, -sWorld.y);
+
+ if (polePerp.lengthSq() > 1e-8 && wantPerp.lengthSq() > 1e-8) {
+ polePerp.normalize();
+ wantPerp.normalize();
+ let angle = Math.acos(Math.min(1, Math.max(-1, polePerp.dot(wantPerp))));
+ // Signed rotation about the Sun axis.
+ if (this._earthOrientScratchF.crossVectors(polePerp, wantPerp).dot(sWorld) < 0) {
+ angle = -angle;
+ }
+ const q2 = this._earthOrientQuatB.setFromAxisAngle(sWorld, angle);
+ earth.quaternion.copy(q2.multiply(q1));
+ } else {
+ earth.quaternion.copy(q1);
+ }
+ } catch (err) {
+ if (DEBUG.enabled) console.warn('[Eclipse] Earth orientation failed', err);
+ }
  }
 
  createAsteroidBelt(scene) {
@@ -9173,6 +9333,8 @@ createHyperrealisticHubble(satData) {
  this._dateEventDetail.jd = this.simulatedJD;
  window.dispatchEvent(this._dateEvent);
  }
+
+ this._updateEclipse();
  const now = performance.now();
  const elapsedHours = this.simulatedHours;
  
@@ -9229,22 +9391,15 @@ createHyperrealisticHubble(satData) {
  planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
  }
  
- // REALISTIC PLANET ROTATION based on real astronomical data
- if (planet.userData.realRotationPeriod && rotationSpeed !== 0) {
- let rotationAngle;
- if (planet.userData.name === 'Earth') {
- // Compute Earth's rotation so the correct subsolar longitude faces the Sun.
- // Formula: rotation.y = orbital_angle + PI + SunRA - GMST
- // where orbital_angle = atan2(earth.z, earth.x) in the scene.
- const d = this.simulatedJD - 2451545.0;
- const gmst = ((280.46061837 + 360.98564736629 * d) % 360 + 360) % 360 * Math.PI / 180;
- const sunRA = this._sunRA(d);
- const orbAngle = Math.atan2(planet.position.z, planet.position.x);
- rotationAngle = orbAngle + Math.PI + sunRA - gmst;
- } else {
+ // REALISTIC PLANET ROTATION based on real astronomical data.
+ // Earth is deliberately excluded: _applyEarthOrientation() sets its full
+ // orientation from the ephemeris after this loop, so anything written here
+ // would be discarded. (The old Earth branch here compared userData.name to
+ // 'Earth' while the field holds 'earth', so it never ran at all.)
+ if (planet.userData.realRotationPeriod && rotationSpeed !== 0
+ && planet !== this.planets.earth) {
  const rotationsComplete = elapsedHours / planet.userData.realRotationPeriod;
- rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
- }
+ let rotationAngle = (rotationsComplete * Math.PI * 2) + planet.userData.rotationPhase;
 
  // Apply rotation — explicit retrograde handling for planets with tilt > 90°
  if (planet.userData.retrograde) {
@@ -9306,7 +9461,20 @@ createHyperrealisticHubble(satData) {
  moon.position.y = 0;
  moonOrbitalAngle = adj;
  }
- 
+
+ // Earth's Moon is steered by the real ephemeris so that its direction
+ // from Earth is truthful and eclipses line up with the projected
+ // shadow. The orbital *radius* stays exaggerated for legibility.
+ // Compared by identity: userData.name is a localised display string.
+ if (planet === this.planets.earth && moon.userData.id === 'moon') {
+ const dir = this._moonDirectionObjectSpace(this.simulatedJD);
+ if (dir) {
+ const d = moon.userData.distance;
+ moon.position.set(dir.x * d, dir.y * d, dir.z * d);
+ moonOrbitalAngle = Math.atan2(moon.position.z, moon.position.x);
+ }
+ }
+
  // REALISTIC MOON ROTATION based on real astronomical data.
  // Tidally-locked moons are evaluated even when rotationSpeed === 0 (paused
  // sim) so the locked face stays oriented toward the parent planet.
@@ -9340,6 +9508,10 @@ createHyperrealisticHubble(satData) {
  }
  }
  });
+
+ // Must run after the loop above, which would otherwise overwrite Earth's
+ // orientation with the scene's own (non-ecliptic) rotation formula.
+ this._applyEarthOrientation(this.simulatedJD);
  
  // Camera tracking is handled by updateCameraTracking() called after all position updates.
  // Do NOT duplicate tracking logic here — it would overwrite the co-rotation chase-cam
