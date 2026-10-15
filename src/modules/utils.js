@@ -29,7 +29,7 @@ export function prefersReducedMotion() {
 }
 
 /** App version — single source of truth for SW and texture cache invalidation. */
-export const APP_VERSION = '2.10.305';
+export const APP_VERSION = '2.10.306';
 
 export const CONFIG = {
  RENDERER: {
@@ -273,13 +273,22 @@ export class MaterialFactory {
  });
  }
  
+ static _spacecraftMaterialCache = new Map();
+ static _constellationStarMaterials = new Map();
+ static _constellationGlowMaterials = new Map();
+ static _constellationLineMaterial = null;
+
  /**
-  * Create a spacecraft material from preset type
-  * Common materials used across multiple spacecraft (Hubble, JWST, Voyager, etc.)
+  * Create or retrieve a cached spacecraft material from preset type.
+  * Sharing materials across spacecraft parts eliminates redundant GPU state switches
+  * and allows BufferGeometryUtils.mergeGeometries to batch static sub-meshes.
   * @param {string} type - Material type: 'gold', 'silver', 'dark', 'solarPanel', 'body', 'structure', 'white'
   * @returns {THREE.MeshStandardMaterial}
   */
  static createSpacecraftMaterial(type) {
+ if (MaterialFactory._spacecraftMaterialCache.has(type)) {
+ return MaterialFactory._spacecraftMaterialCache.get(type);
+ }
  const presets = {
  // Gold foil/thermal blankets (common on JWST, Juno, Voyager)
  gold: {
@@ -346,10 +355,29 @@ export class MaterialFactory {
  
  if (!presets[type]) {
  if (DEBUG && DEBUG.enabled) console.warn(`Unknown spacecraft material type: ${type}, using silver as fallback`);
- return MaterialFactory.createStandardMaterial(presets.silver);
+ return MaterialFactory.createSpacecraftMaterial('silver');
  }
  
- return MaterialFactory.createStandardMaterial(presets[type]);
+ const mat = MaterialFactory.createStandardMaterial(presets[type]);
+ mat.userData.isSharedPreset = true;
+ MaterialFactory._spacecraftMaterialCache.set(type, mat);
+ return mat;
+ }
+
+ /**
+  * Clear and dispose all shared material caches (called on full scene cleanup).
+  */
+ static clearCaches() {
+ MaterialFactory._spacecraftMaterialCache.forEach(m => m.dispose());
+ MaterialFactory._spacecraftMaterialCache.clear();
+ MaterialFactory._constellationStarMaterials.forEach(m => m.dispose());
+ MaterialFactory._constellationStarMaterials.clear();
+ MaterialFactory._constellationGlowMaterials.forEach(m => m.dispose());
+ MaterialFactory._constellationGlowMaterials.clear();
+ if (MaterialFactory._constellationLineMaterial) {
+ MaterialFactory._constellationLineMaterial.dispose();
+ MaterialFactory._constellationLineMaterial = null;
+ }
  }
 }
 
@@ -553,13 +581,16 @@ export class ConstellationFactory {
  if (geometryCache) geometryCache.set(cacheKey, starGeom);
  }
  
- const starMat = new THREE.MeshBasicMaterial({
+ let starMat = MaterialFactory._constellationStarMaterials.get(star.color);
+ if (!starMat) {
+ starMat = new THREE.MeshBasicMaterial({
  color: star.color,
  transparent: true,
  opacity: CONFIG.CONSTELLATION.STAR_OPACITY
  });
- // Store original opacity for highlighting effects
- starMat.userData = { originalOpacity: CONFIG.CONSTELLATION.STAR_OPACITY };
+ starMat.userData = { originalOpacity: CONFIG.CONSTELLATION.STAR_OPACITY, isSharedConstellationMat: true };
+ MaterialFactory._constellationStarMaterials.set(star.color, starMat);
+ }
  
  const starMesh = new THREE.Mesh(starGeom, starMat);
  starMesh.position.set(position.x, position.y, position.z);
@@ -591,15 +622,18 @@ export class ConstellationFactory {
  if (geometryCache) geometryCache.set(cacheKey, glowGeom);
  }
  
- const glowMat = new THREE.MeshBasicMaterial({
+ let glowMat = MaterialFactory._constellationGlowMaterials.get(star.color);
+ if (!glowMat) {
+ glowMat = new THREE.MeshBasicMaterial({
  color: star.color,
  transparent: true,
  opacity: CONFIG.CONSTELLATION.GLOW_OPACITY,
  blending: THREE.AdditiveBlending,
  depthWrite: false // Don't block objects behind the glow
  });
- // Store original opacity for highlighting effects
- glowMat.userData = { originalOpacity: CONFIG.CONSTELLATION.GLOW_OPACITY };
+ glowMat.userData = { originalOpacity: CONFIG.CONSTELLATION.GLOW_OPACITY, isSharedConstellationMat: true };
+ MaterialFactory._constellationGlowMaterials.set(star.color, glowMat);
+ }
  
  return new THREE.Mesh(glowGeom, glowMat);
  }
@@ -613,16 +647,51 @@ export class ConstellationFactory {
  static createLine(pos1, pos2) {
  const points = [pos1, pos2];
  const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
- const lineMat = new THREE.LineBasicMaterial({
+ if (!MaterialFactory._constellationLineMaterial) {
+ MaterialFactory._constellationLineMaterial = new THREE.LineBasicMaterial({
  color: CONFIG.CONSTELLATION.LINE_COLOR,
  transparent: true,
  opacity: CONFIG.CONSTELLATION.LINE_OPACITY,
  linewidth: CONFIG.CONSTELLATION.LINE_WIDTH
  });
- // Store original opacity for highlighting effects
- lineMat.userData = { originalOpacity: CONFIG.CONSTELLATION.LINE_OPACITY };
+ MaterialFactory._constellationLineMaterial.userData = {
+ originalOpacity: CONFIG.CONSTELLATION.LINE_OPACITY,
+ isSharedConstellationMat: true
+ };
+ }
  
- return new THREE.Line(lineGeom, lineMat);
+ return new THREE.Line(lineGeom, MaterialFactory._constellationLineMaterial);
+ }
+
+ /**
+  * Create a single batched LineSegments mesh for all line connections in a constellation.
+  * Reduces N individual THREE.Line draw calls per constellation down to 1 draw call.
+  * @param {Array<Array<number>>} lines - Pairs of star indices [[i, j], ...]
+  * @param {Array<THREE.Mesh>} starMeshes - Star meshes in the constellation
+  * @returns {THREE.LineSegments}
+  */
+ static createLineSegments(lines, starMeshes) {
+ const points = [];
+ for (let i = 0; i < lines.length; i++) {
+ const [a, b] = lines[i];
+ if (starMeshes[a] && starMeshes[b]) {
+ points.push(starMeshes[a].position, starMeshes[b].position);
+ }
+ }
+ const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
+ if (!MaterialFactory._constellationLineMaterial) {
+ MaterialFactory._constellationLineMaterial = new THREE.LineBasicMaterial({
+ color: CONFIG.CONSTELLATION.LINE_COLOR,
+ transparent: true,
+ opacity: CONFIG.CONSTELLATION.LINE_OPACITY,
+ linewidth: CONFIG.CONSTELLATION.LINE_WIDTH
+ });
+ MaterialFactory._constellationLineMaterial.userData = {
+ originalOpacity: CONFIG.CONSTELLATION.LINE_OPACITY,
+ isSharedConstellationMat: true
+ };
+ }
+ return new THREE.LineSegments(lineGeom, MaterialFactory._constellationLineMaterial);
  }
  
  /**

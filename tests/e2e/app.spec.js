@@ -175,6 +175,28 @@ test('keeps core navigation and controls working', async ({ page }) => {
   });
   expect(vrSelectedName).toBe('mars');
 
+  // Verify draw-call optimizations:
+  // 1) Each constellation batches its lines into a single THREE.LineSegments object
+  // 2) Spacecraft/satellite static sub-meshes sharing materials are merged via mergeGeometries
+  const drawCallStats = await page.evaluate(() => {
+    const ssm = window.app.solarSystemModule;
+    let constellationLineObjects = 0;
+    ssm.constellations.forEach(c => c.traverse(o => {
+      if (o.isLine || o.isLineSegments) constellationLineObjects++;
+    }));
+    let spacecraftMeshCount = 0;
+    [...ssm.satellites, ...ssm.spacecraft].forEach(s => s.traverse(o => {
+      if (o.isMesh) spacecraftMeshCount++;
+    }));
+    return {
+      constellationCount: ssm.constellations.length,
+      constellationLineObjects,
+      spacecraftMeshCount
+    };
+  });
+  expect(drawCallStats.constellationLineObjects).toBe(drawCallStats.constellationCount);
+  expect(drawCallStats.spacecraftMeshCount).toBeLessThanOrEqual(65);
+
   const speed = page.locator('#time-speed');
   await speed.evaluate((input) => {
     input.value = '0';

@@ -2,6 +2,7 @@
 // SOLAR SYSTEM MODULE
 // ===========================
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
 import { TEXTURE_CACHE } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, prefersReducedMotion, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
@@ -6052,14 +6053,11 @@ export class SolarSystemModule {
  starMesh.add(glow);
  });
  
- // Create constellation lines using factory
- constData.lines.forEach(line => {
- const lineMesh = ConstellationFactory.createLine(
- starMeshes[line[0]].position,
- starMeshes[line[1]].position
- );
- group.add(lineMesh);
- });
+ // Create all constellation lines as a single batched LineSegments draw call
+ if (constData.lines && constData.lines.length > 0) {
+ const lineSegments = ConstellationFactory.createLineSegments(constData.lines, starMeshes);
+ group.add(lineSegments);
+ }
  
  // Calculate constellation center and bounding radius using factory method
  const { center, radius } = ConstellationFactory.calculateCenter(starMeshes);
@@ -8737,11 +8735,78 @@ createHyperrealisticHubble(satData) {
                 planet: this.planets.earth,
                 isSpacecraft: true, // Mark as spacecraft for camera logic
                 inclination: (index * 30) * Math.PI / 180 // Different orbital inclinations
-            }; scene.add(satellite);
+            };
+            this._mergeStaticGroupMeshes(satellite);
+            scene.add(satellite);
  this.objects.push(satellite);
  this.satellites.push(satellite);
  this.pickableObjects.push(satellite);
  });
+ }
+
+ /**
+  * Merge static child meshes that share a material inside a spacecraft/satellite group
+  * into one BufferGeometry per material. Reduces ~160 spacecraft sub-mesh draw calls
+  * down to ~35 without changing appearance or root-group animation/raycasting.
+  * @param {THREE.Object3D} rootGroup
+  */
+ _mergeStaticGroupMeshes(rootGroup) {
+ if (!rootGroup || !rootGroup.isGroup) return;
+ rootGroup.updateMatrixWorld(true);
+ const invRoot = rootGroup.matrixWorld.clone().invert();
+ const buckets = new Map(); // material -> { geos: BufferGeometry[], meshes: Mesh[] }
+
+ rootGroup.traverse(child => {
+ if (!child.isMesh || child === rootGroup || !child.geometry || Array.isArray(child.material)) return;
+ // Only merge children that have no sub-children of their own
+ if (child.children && child.children.length > 0) return;
+ const mat = child.material;
+ let bucket = buckets.get(mat);
+ if (!bucket) {
+ bucket = { geos: [], meshes: [] };
+ buckets.set(mat, bucket);
+ }
+ const cloned = child.geometry.clone();
+ const relMatrix = invRoot.clone().multiply(child.matrixWorld);
+ cloned.applyMatrix4(relMatrix);
+ // Convert indexed geometry to non-indexed so all primitives (cylinders, boxes, cones, extrudes) merge cleanly
+ const nonIndexed = cloned.index ? cloned.toNonIndexed() : cloned;
+ if (nonIndexed !== cloned) cloned.dispose();
+ // Keep only standard attributes (position, normal, uv) so attribute layouts match across primitive types
+ for (const attrName of Object.keys(nonIndexed.attributes)) {
+ if (attrName !== 'position' && attrName !== 'normal' && attrName !== 'uv') {
+ nonIndexed.deleteAttribute(attrName);
+ }
+ }
+ if (!nonIndexed.attributes.uv && nonIndexed.attributes.position) {
+ const count = nonIndexed.attributes.position.count;
+ nonIndexed.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2));
+ }
+ bucket.geos.push(nonIndexed);
+ bucket.meshes.push(child);
+ });
+
+ for (const [mat, { geos, meshes }] of buckets.entries()) {
+ if (geos.length < 2) {
+ geos.forEach(g => g.dispose());
+ continue;
+ }
+ const merged = mergeGeometries(geos, false);
+ geos.forEach(g => g.dispose());
+ if (!merged) continue;
+ meshes.forEach(m => {
+ if (m.parent) m.parent.remove(m);
+ });
+ const mergedMesh = new THREE.Mesh(merged, mat);
+ rootGroup.add(mergedMesh);
+ }
+ // Remove any empty intermediate groups left behind
+ for (let i = rootGroup.children.length - 1; i >= 0; i--) {
+ const c = rootGroup.children[i];
+ if (c.isGroup && c.children.length === 0) {
+ rootGroup.remove(c);
+ }
+ }
  }
 
  createSpacecraft(scene) {
@@ -9098,6 +9163,7 @@ createHyperrealisticHubble(satData) {
  };
  
  if (DEBUG.enabled) console.log(` ${craft.name} created`);
+ this._mergeStaticGroupMeshes(spacecraftGroup);
  
  // Position spacecraft
  if (craft.orbitPlanet) {
@@ -9770,11 +9836,15 @@ createHyperrealisticHubble(satData) {
  if (this.satellites) this.satellites.forEach(s => { s.visible = true; });
  if (this.nearbyStars) this.nearbyStars.forEach(s => { s.visible = true; });
  if (this.exoplanets) this.exoplanets.forEach(p => { p.visible = true; });
- // Restore opacities that were faded to 0
+ //Restore opacities that were faded to 0
  if (this.milkyWay) this.milkyWay.material.opacity = 0.65;
  if (this.starfield) this.starfield.material.uniforms.opacityFade.value = 1;
  if (this.constellations) this.constellations.forEach(c => {
- c.traverse(child => { if (child.material) child.material.opacity = 1; });
+ c.traverse(child => {
+ if (child.material) {
+ child.material.opacity = child.material.userData?.originalOpacity ?? 1;
+ }
+ });
  });
  if (this.nebulae) this.nebulae.forEach(n => {
  n.traverse(child => { if (child.material) child.material.opacity = 0.95; });
@@ -9813,7 +9883,10 @@ createHyperrealisticHubble(satData) {
  if (this.constellations) {
  this.constellations.forEach(constellation => {
  constellation.traverse(child => {
- if (child.material) child.material.opacity = solarFadeOut;
+ if (child.material) {
+ const baseOpacity = child.material.userData?.originalOpacity ?? 1;
+ child.material.opacity = baseOpacity * solarFadeOut;
+ }
  });
  });
  }
@@ -10005,9 +10078,10 @@ createHyperrealisticHubble(satData) {
  });
  }
 
- // Dispose cached geometries when fully cleaning up
+ // Dispose cached geometries and shared material caches when fully cleaning up
  this.geometryCache.forEach(geo => geo.dispose());
  this.geometryCache.clear();
+ MaterialFactory.clearCaches();
 
  this.objects = [];
  this.planets = {};
