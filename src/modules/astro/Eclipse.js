@@ -84,12 +84,12 @@ export function solarEclipseAt(jd) {
     const axis = unit(sunToMoon);
     const sunMoonDistKm = len(sunToMoon);
 
-    // Perpendicular distance from Earth's centre to the axis. `gamma` is this
-    // distance in Earth radii, the standard eclipse parameter.
+    // Perpendicular distance from Earth's centre to the axis. Published gamma
+    // is positive north of Earth's centre and negative south of it.
     const tClosest = -dot(moon, axis);
     const closestPoint = add(moon, scale(axis, tClosest));
     const axisMissKm = len(closestPoint);
-    const gamma = axisMissKm / EARTH_RADIUS_KM;
+    const gamma = Math.sign(closestPoint.z) * axisMissKm / EARTH_RADIUS_KM;
 
     // Umbral and penumbral cone vertex distances measured from the Moon.
     const umbraVertexKm = (MOON_RADIUS_KM * sunMoonDistKm) / (SUN_RADIUS_KM - MOON_RADIUS_KM);

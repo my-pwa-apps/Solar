@@ -6,6 +6,196 @@ leave the entry in place so the history of the decision survives.
 
 ---
 
+## Review - 2026-09-07 (current worktree, v2.10.324)
+
+The review below records v2.10.324. Implementation follow-up is v2.10.325;
+existing uncommitted work and unresolved historical entries are preserved.
+`npm run verify`: 26 unit tests and 73 browser tests passed, 13 intentional skips;
+lint has 0 errors and 210 existing warnings. See
+`docs/ENGINEERING_REVIEW_2026-09-07.md` for scope and remaining limitations.
+
+- [x] **R1: Make vendored engine precaching mandatory**
+
+      **Resolution (v2.10.325):** Engine graph is mandatory in the atomic install.
+      Required/optional failure injection, failed real update and fresh offline
+      full-app startup with decoded textures pass.
+
+      **Priority:** High  
+      **Category:** Reliability  
+      **Confidence:** High  
+      **Area:** Service-worker installation / offline startup  
+      **Affected files:** `sw.js`, `tests/e2e/app.spec.js`  
+      **Evidence:** CONFIRMED: a Node VM execution of the real install handler with
+      `three.core.js` rejected still resolved installation and emitted `SW_INSTALLED`.
+      `Promise.allSettled(CDN_CACHE_FILES...)` discards the rejection results.  
+      **Problem:** A failed engine download does not fail installation, even though
+      the engine has no offline fallback.  
+      **Impact:** An apparently successful install can leave a blank/fatal startup
+      on the next offline launch.  
+      **Recommended solution:** Include the complete vendored module graph in the
+      mandatory shell transaction; keep only optional media best effort.  
+      **Regression considerations:** Optional texture failures must still permit
+      installation; a failed update must leave the previous worker usable.  
+      **Acceptance criteria:** Failure of any required engine request rejects the
+      install and reports failure; a successful install boots offline.  
+      **Validation:** Fault-inject one engine request and one optional texture
+      request; test fresh offline boot and failed-update recovery.  
+      **Estimated effort:** Small  
+      **Business value:** High  
+      **Technical debt reduction:** Medium
+
+- [x] **R2: Isolate cache cleanup and recovery to Space Voyage**
+
+      **Resolution (v2.10.325):** Cleanup filters owned cache names, exact worker
+      scope and the texture database. Sibling browser sentinels survive; unit tests
+      cover awaited success, denial, errors and bounded blocked deletion.
+
+      **Priority:** High  
+      **Category:** Data  
+      **Confidence:** High  
+      **Area:** Origin storage ownership  
+      **Affected files:** `sw.js`, `src/modules/FatalError.js`  
+      **Evidence:** CONFIRMED: fault-injected activation deleted `another-app-offline`;
+      executing `clearAllStorage()` against fake sibling stores requested unregister,
+      cache deletion and `OtherAppData` database deletion. Neither path filters owners.  
+      **Problem:** Service-worker scopes do not isolate origin-wide Cache Storage or
+      IndexedDB. Recovery also enumerates every service-worker registration.  
+      **Impact:** At the documented shared GitHub Pages origin, another app can lose
+      offline state or persisted user data. This is accidental destructive behavior,
+      not a demonstrated cross-origin exploit.  
+      **Recommended solution:** Filter caches by owned prefixes, unregister only the
+      matching application scope, and delete only `SolarSystemTextureCache`; close
+      its connection and await deletion success/error/blocked handling before reload.  
+      **Regression considerations:** Preserve other applications and user preferences;
+      failed storage cleanup must retain a usable reload action.  
+      **Acceptance criteria:** Sibling worker/cache/database sentinels survive both
+      activation and recovery; only owned state is cleared.  
+      **Validation:** Browser fixture with two application scopes, open IndexedDB
+      connections and sentinel data; mock denied/blocked deletion.  
+      **Estimated effort:** Small  
+      **Business value:** High  
+      **Technical debt reduction:** Medium
+
+- [x] **R3: Keep HTML and modules consistent across worker versions**
+
+      **Resolution (v2.10.325):** Controlled navigation uses the installed shell and
+      release-scoped modules. Real workers verify pending notification on reopen,
+      failed upgrade survival, approved activation with one reload and rollback.
+
+      **Priority:** High  
+      **Category:** Deployment  
+      **Confidence:** High  
+      **Area:** PWA release consistency  
+      **Affected files:** `sw.js`, `src/modules/ServiceWorkerManager.js`, `tests/e2e/app.spec.js`  
+      **Evidence:** CONFIRMED mechanism: navigation returns network HTML, script keys
+      discard `?v=`, and `caches.match()` searches all caches without a release name.
+      A VM probe returned an old module for a next-version request. Registration only
+      watches future `updatefound` events and does not inspect an existing `waiting`.  
+      **Problem:** New HTML can run old modules before activation; global cache lookup
+      can select old or partially installed release entries. A reopened tab can miss
+      the notification for an already-waiting worker.  
+      **Impact:** LIKELY release-only boot/API mismatches or users stranded on stale code;
+      an actual two-version deployed upgrade was not run in this review.  
+      **Recommended solution:** Choose an explicit release-consistent shell policy,
+      scope lookups to the controlling release, retain version identity where needed,
+      and announce an existing waiting worker. Use the reopened lifecycle test below.  
+      **Regression considerations:** Preserve user-controlled activation and exactly
+      one reload; failed installs must preserve the last working release.  
+      **Acceptance criteria:** Two deliberately incompatible fixture releases never
+      mix shell/modules; reopening a tab offers its pending update; rollback works.  
+      **Validation:** Real worker installs, interrupted install, waiting worker,
+      tab reopen, activation, offline reload and versioned module assertions.  
+      **Estimated effort:** Medium  
+      **Business value:** High  
+      **Technical debt reduction:** High
+
+- [x] **R4: Fall back to the cached shell on host errors and stalls**
+
+      **Resolution (v2.10.325):** Installed navigation returns its paired shell
+      immediately during 503/stalled hosting. Missing-shell network recovery has a
+      five-second deadline; deliberate 4xx responses remain distinct.
+
+      **Priority:** Medium  
+      **Category:** Reliability  
+      **Confidence:** High  
+      **Area:** Navigation recovery  
+      **Affected files:** `sw.js`, `tests/e2e/app.spec.js`  
+      **Evidence:** CONFIRMED: a VM fetch-handler probe returned HTTP 503 despite a
+      cached shell. The network-first branch falls back only when fetch rejects and
+      has no deadline or AbortController.  
+      **Problem:** An available HTTP error response or a stalled request bypasses or
+      indefinitely postpones offline recovery.  
+      **Impact:** Installed users cannot start the cached experience during an outage.  
+      **Recommended solution:** Use an explicit navigation deadline and fall back
+      on transient server errors; define intentional 4xx behavior separately.  
+      **Regression considerations:** Healthy HTML update checks must continue; do not
+      cache error documents as a successful shell. Coordinate the policy with R3.  
+      **Acceptance criteria:** 503 and stalled navigation return a valid cached shell
+      within the chosen deadline; cold-cache failure remains actionable.  
+      **Validation:** Real-worker offline, HTTP 503, stalled-response and healthy-network tests.  
+      **Estimated effort:** Small  
+      **Business value:** High  
+      **Technical debt reduction:** Medium
+
+- [ ] **R5: Self-host XR input profiles and controller model assets**
+
+      **Implementation complete; hardware validation pending (v2.10.325):** Pinned
+      MIT-licensed profiles/models are local, mandatory-cached and attached to the
+      controller grips. Both hands for seven profiles plus generic fallback decode
+      online/offline without external requests. Assets add 13,364,513 bytes.
+      Physical Quest controller interaction remains a release-checklist gate.
+
+      **Priority:** Medium  
+      **Category:** Compatibility  
+      **Confidence:** High  
+      **Area:** WebXR controller models  
+      **Affected files:** `src/modules/SceneManager.js`, `vendor/three@0.183.2/examples/jsm/webxr/XRControllerModelFactory.js`, `sw.js`  
+      **Evidence:** CONFIRMED: the live factory path is jsDelivr's input-profile URL;
+      `SceneManager` never calls `setPath()`. The vendor connected handler calls
+      `fetchProfile()` there, while the document has `connect-src 'self'`.  
+      **Problem:** Vendoring Three.js did not vendor the runtime profile/model data.  
+      **Impact:** Controller model loading conflicts with CSP and offline support.
+      Headset impact was not hardware-tested; this does not establish broken locomotion.  
+      **Recommended solution:** Vendor the supported profile index, JSON and model
+      assets with attribution; configure a local path and cache that graph.  
+      **Regression considerations:** Keep same-origin CSP, controller rays, handedness
+      and generic input fallback; do not fix this by allowing a public CDN.  
+      **Acceptance criteria:** Supported controller models decode online and offline
+      without external requests or CSP violations.  
+      **Validation:** Bounded synthetic connected-event fetch test plus the documented
+      physical Quest release checklist.  
+      **Estimated effort:** Medium  
+      **Business value:** Medium  
+      **Technical debt reduction:** Medium
+
+- [x] **R6: Refresh the vulnerable development-server dependency**
+
+      **Resolution (v2.10.325):** Compatible transitive update applied; clean
+      `npm ci` and browser server tests pass, with zero reported vulnerabilities.
+
+      **Priority:** Low  
+      **Category:** Dependency  
+      **Confidence:** High  
+      **Area:** Local development supply chain  
+      **Affected files:** `package-lock.json`, `package.json`  
+      **Evidence:** CONFIRMED: `npm audit --audit-level=high` reports one moderate
+      vulnerable dependency, `qs`; `npm explain qs` resolves `http-server > union >
+      qs@6.15.3`. Advisories: GHSA-x5fp-wj9c-mxmx and GHSA-4mjr-xmp4-gh2g.  
+      **Problem:** The lockfile retains an affected development-only parser.  
+      **Impact:** Tooling exposure, not a shipped browser vulnerability. Both configured
+      servers bind loopback; deployment contains no Node request handler.  
+      **Recommended solution:** Apply the compatible audited transitive update and
+      verify the lockfile and local server. Do not perform a forced major upgrade.  
+      **Regression considerations:** Keep reproducible installs and browser fixtures.  
+      **Acceptance criteria:** Audit reports no known qs advisory; clean install and
+      local-server smoke test pass.  
+      **Validation:** `npm ci`, `npm audit`, focused browser boot/static checks.  
+      **Estimated effort:** Small  
+      **Business value:** Low  
+      **Technical debt reduction:** Low
+
+---
+
 ## Review — 2026-08-18 (branch `opus5realtime`, v2.10.305)
 
 Feature work: real-ephemeris date control and solar eclipse shadow.
@@ -72,7 +262,7 @@ Feature work: real-ephemeris date control and solar eclipse shadow.
 
 ### New
 
-- [ ] Remove the dead `userData.name === 'Earth'` rotation branch
+- [x] Remove the dead `userData.name === 'Earth'` rotation branch — **done 2026-08-18**
 
 Priority: Medium
 Category: Cleanup
@@ -118,7 +308,7 @@ Estimated effort: Medium
 Business value: High
 Technical debt reduction: High
 
-- [ ] Move the eclipse search off the main thread
+- [x] Move the eclipse search off the main thread — **done 2026-08-19**
 
 Priority: Low
 Category: Performance
@@ -139,7 +329,7 @@ Estimated effort: Medium
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Test the astronomy without booting the whole 3D app
+- [x] Test the astronomy without booting the whole 3D app — **done 2026-08-18**
 
 Priority: Medium
 Category: Testing
@@ -160,7 +350,7 @@ Estimated effort: Small
 Business value: High
 Technical debt reduction: Medium
 
-- [ ] Keep Earth's rotation axis fixed in inertial space
+- [x] Keep Earth's rotation axis fixed in inertial space — **done 2026-08-19**
 
 Priority: High
 Category: Bug
@@ -189,7 +379,7 @@ Estimated effort: Medium
 Business value: High
 Technical debt reduction: Medium
 
-- [ ] Make eclipse `gamma` signed
+- [x] Make eclipse `gamma` signed — **done 2026-08-19**
 
 Priority: Medium
 Category: Bug
@@ -210,7 +400,7 @@ Estimated effort: Small
 Business value: Medium
 Technical debt reduction: Low
 
-- [ ] Reposition the Moon mesh inside `seekToDate`
+- [x] Reposition the Moon mesh inside `seekToDate` — **done 2026-08-19**
 
 Priority: Low
 Category: Bug
@@ -230,7 +420,7 @@ Estimated effort: Small
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Reconcile planet radii and moon orbital distances onto one scale
+- [x] Reconcile planet radii and moon orbital distances onto one scale — **done 2026-08-19**
 
 Priority: High
 Category: Business Logic
@@ -278,7 +468,7 @@ Estimated effort: Medium
 Business value: Medium
 Technical debt reduction: Low
 
-- [ ] Re-base the scene's orbital frame onto the true ecliptic
+- [x] Re-base the scene's orbital frame onto the true ecliptic — **done 2026-08-19**
 
 Priority: High
 Category: Correctness
@@ -300,7 +490,7 @@ Estimated effort: Large
 Business value: High
 Technical debt reduction: High
 
-- [ ] Make the umbra discoverable without extreme zoom
+- [x] Make the umbra discoverable without extreme zoom — **done 2026-08-19**
 
 Priority: Medium
 Category: UX
@@ -320,7 +510,7 @@ Estimated effort: Medium
 Business value: High
 Technical debt reduction: Low
 
-- [ ] Draw partial (non-central) eclipses
+- [x] Draw partial (non-central) eclipses — **done 2026-08-19**
 
 Priority: Low
 Category: Feature
@@ -376,7 +566,7 @@ Three findings from the previous review were re-verified and turned out to be
 
 ### Critical
 
-- [ ] Self-host Three.js instead of loading the 3D engine from a public CDN
+- [x] Self-host Three.js instead of loading the 3D engine from a public CDN — **done 2026-08-18**
 
 Priority: Critical
 Category: Security
@@ -412,6 +602,12 @@ Technical debt reduction: High
 
 - [ ] Bound the IndexedDB texture cache and store binary instead of data URLs
 
+2026-09-07 revalidation: CONFIRMED by inspection. The 200-entry memory limit is
+also bypassed by `get()` promotions and direct warmup canvas insertions. Route
+every insertion through one bounded owner and test more than 200 persistent hits.
+Worker quota diagnostics do not cover IndexedDB `set()` failures. Retain this
+entry rather than adding a duplicate cache-budget finding.
+
 Priority: High
 Category: Performance
 Area: `TextureCache`
@@ -438,54 +634,66 @@ Technical debt reduction: Medium
 
 - [ ] Route production diagnostics through a logger and enforce a clean lint baseline
 
-Priority: High
+Priority: Medium
 Category: Technical Debt
 Area: Lint / observability
 Affected files: `src/**/*.js`, `sw.js`, `eslint.config.js`, `package.json`
-Problem: 209 ESLint warnings persist, overwhelmingly `no-console`. (Carried forward
-and **re-prioritised from Medium to High**: a warning baseline that survives two
-consecutive reviews is a baseline nobody will ever clear, and it now hides genuinely
-ungated calls — one unguarded `console.warn` on the *expected* texture-fallback path
-was found and fixed in this pass precisely because it was buried in the noise.)
-Impact: Lint output is ignored, so it no longer catches anything. Real production
-console spam ships undetected.
+Problem: 2026-09-07 lint reports 0 errors and 210 warnings. Existing bug-catching
+rules remain useful, but warning volume makes new warnings hard to distinguish.
+Impact: Reduced diagnostic signal and avoidable review noise, not evidence that
+the linter catches nothing or that every warning is a production defect.
 Recommended solution: Add `src/modules/logger.js` exposing `debug/info/warn/error`
-that no-op unless the matching `DEBUG` flag is set, mechanically replace the call
-sites, then set `no-console` and `prefer-const` to `error` and add `--max-warnings=0`
-to the `lint` script so CI enforces it.
+with debug/info gated and unexpected failures always visible; migrate incrementally
+and enforce a ratcheting warning budget before moving to `--max-warnings=0`.
 Acceptance criteria: `npm run lint -- --max-warnings=0` exits 0; a production load
-with no debug URL parameter produces zero console output.
+with no debug URL parameter has no routine debug output; injected failures remain
+observable without enabling debug flags.
 Estimated effort: Medium
 Business value: Medium
 Technical debt reduction: High
 
-- [ ] Trap focus and restore it for every modal, and stop delaying the onboarding trap
+- [x] **Trap only visible enabled controls and cover every modal**
 
-Priority: High
-Category: Accessibility
-Area: Modal dialogs
-Affected files: `src/modules/AppFeatures.js`, `src/modules/UIManager.js`, `index.html`
-Problem: `setupOnboarding()` reveals the overlay and installs the focus trap inside the
-same `setTimeout(…, 1000)`, but the overlay is a real, focusable subtree the whole time
-— during that window a keyboard user can tab behind the modal. There is also no
-documented restore-focus-on-close behaviour, so dismissing a dialog drops focus to
-`<body>`.
-Impact: Fails WCAG 2.4.3 (Focus Order) and 2.1.2 (No Keyboard Trap escape contract).
-Keyboard and screen-reader users lose their place after every dialog.
-Recommended solution: Make the overlay genuinely inert until shown (`inert` attribute
-or `display:none`), install the trap in the same tick as the reveal, and have
-`_trapFocus`/`_releaseFocusTrap` record and restore the previously focused element.
-Acceptance criteria: A spec tabs 20 times with each dialog open and asserts focus never
-leaves the dialog; closing any dialog returns focus to the control that opened it.
-Estimated effort: Small
-Business value: Medium
-Technical debt reduction: Low
+      **Resolution (v2.10.325):** Shared stacked focus ownership filters current
+      visible/enabled controls. Real keyboard tests cover all onboarding steps,
+      fatal recovery, zero/one controls and restoration; Help/Settings pointer
+      closure and the full controls sweep pass without forced close clicks.
+
+      **Priority:** High  
+      **Category:** Accessibility  
+      **Confidence:** High  
+      **Area:** Modal dialogs  
+      **Affected files:** `src/modules/AppFeatures.js`, `src/modules/UIManager.js`, `src/modules/FatalError.js`, `tests/e2e/accessibility.spec.js`  
+      **Evidence:** CONFIRMED on 2026-09-07 in Chromium: Tab from onboarding's visible
+      `onboarding-next` left the modal; Shift+Tab from `onboarding-skip` did not wrap.
+      `_trapFocus()` includes hidden `onboarding-start` as its last element.  
+      **Problem:** Hidden/disabled elements are treated as tab stops. FatalError also
+      declares a modal but installs no containment. The earlier claims that onboarding
+      is visible before reveal and that focus restoration is absent are superseded.  
+      **Impact:** Keyboard users leave the active dialog and operate obscured controls.  
+      **Recommended solution:** Recompute genuinely tabbable elements per key event,
+      handle zero/one control and focus outside the dialog, and share modal ownership
+      with fatal recovery. Preserve the existing restore-focus behavior.  
+      **Regression considerations:** Dynamic onboarding steps, nested overlays,
+      notification focus, Escape behavior and normal page shortcuts.  
+      **Acceptance criteria:** Forward/backward tab cycles stay within every visible
+      modal at every onboarding step; closing restores the opener.  
+      **Validation:** Real keyboard input without force clicks; hidden/disabled
+      boundary controls; fatal and stacked dialogs.  
+      **Estimated effort:** Small  
+      **Business value:** Medium  
+      **Technical debt reduction:** Medium
 
 ---
 
 ### Medium
 
 - [ ] Stop long-timeout Playwright tests from masking hard failures as slowness
+
+2026-09-07 revalidation: all 63 executed browser tests passed, but the serial
+four-project run took 29.4 minutes and this sweep took 7.2 minutes. CI uses
+isolated runners, so these figures do not prove a CI timeout. Keep bounded actions
+and independently diagnosable workflows as the target, not parallel GPU contention.
 
 Priority: Medium
 Category: Testing
@@ -509,7 +717,7 @@ Estimated effort: Medium
 Business value: Medium
 Technical debt reduction: Medium
 
-- [ ] Handle storage-quota failures in the service worker instead of reporting "offline"
+- [x] Handle storage-quota failures in the service worker instead of reporting "offline" — **done 2026-08-19**
 
 Priority: Medium
 Category: Reliability
@@ -645,7 +853,7 @@ Estimated effort: Small
 Business value: Medium
 Technical debt reduction: Low
 
-- [ ] Enable automated dependency and action updates
+- [x] Enable automated dependency and action updates — **done 2026-08-18**
 
 Priority: Medium
 Category: Security
@@ -667,7 +875,7 @@ Technical debt reduction: Low
 
 ### Low
 
-- [ ] Add `type="button"` to every non-submit button
+- [x] Add `type="button"` to every non-submit button — **done 2026-08-19**
 
 Priority: Low
 Category: Bug
@@ -684,7 +892,7 @@ Estimated effort: Small
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Remove the redundant nested `aria-live` on the loading percentage
+- [x] Remove the redundant nested `aria-live` on the loading percentage — **done 2026-08-19**
 
 Priority: Low
 Category: Accessibility
@@ -718,7 +926,7 @@ Estimated effort: Medium
 Business value: Low
 Technical debt reduction: Medium
 
-- [ ] Name the star-twinkle batch size
+- [x] Name the star-twinkle batch size — **done 2026-08-19**
 
 Priority: Low
 Category: Cleanup
@@ -733,7 +941,7 @@ Estimated effort: Small
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Correct the throttle comment on the VR laser update
+- [x] Correct the throttle comment on the VR laser update — **done 2026-08-19**
 
 Priority: Low
 Category: Documentation
@@ -748,7 +956,7 @@ Estimated effort: Small
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Remove dead VR state left over from earlier iterations
+- [x] Remove dead VR state left over from earlier iterations — **done 2026-08-19**
 
 Priority: Low
 Category: Cleanup
@@ -781,7 +989,7 @@ Estimated effort: Small
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Retain CI artefacts long enough to investigate flakes
+- [x] Retain CI artefacts long enough to investigate flakes — **done 2026-08-19**
 
 Priority: Low
 Category: Developer Experience
@@ -872,22 +1080,21 @@ were fixed during the review itself are listed at the bottom under
 
 ---
 
-### Critical
+### Architecture and Startup (Reprioritized 2026-09-07)
 
-- [ ] Split `SolarSystemModule.js` (11,000+ lines / ~470 KB) into cohesive modules
+- [ ] Split `SolarSystemModule.js` into cohesive modules - partially implemented
 
-Priority: Critical
+Priority: Medium
 Category: Architecture
 Area: Solar system domain layer
 Affected files: `src/modules/SolarSystemModule.js`, `sw.js`, `index.html`
-Problem: A single class file holds astronomical data tables, ~40 procedural texture
-generators, mesh construction for planets/moons/rings/comets/spacecraft/deep-sky
-objects, the per-frame orbital integration loop, camera focus logic, and info-panel
-data assembly. It is impossible to reason about in isolation, impossible to test in
-units, and every change forces the whole 470 KB file back over the wire.
-Impact: Highest change-risk file in the repository. Merge conflicts are near-certain
-on any parallel work. New contributors cannot locate behaviour. First-load transfer
-is dominated by this one file.
+Problem: The original 11,000-line monolith has been split into five prototype
+mixins. As of 2026-09-07, the facade is 2,104 lines and deep-space is 2,713 lines;
+SceneManager is 3,305 lines and main is 2,046. Astronomy now has pure unit tests.
+The old unsplit-file description no longer applies, but implicit shared `this`
+contracts and the original size acceptance criterion remain unresolved.
+Impact: Changes still require reasoning across large owners and implicit mixin
+dependencies. This is maintainability work, not a demonstrated release blocker.
 Recommended solution: Extract in dependency order, one module per commit, keeping the
 public `SolarSystemModule` facade intact: (1) `data/celestial-data.js` — pure data
 tables, no Three.js import; (2) `textures/procedural/*.js` — one file per generator
@@ -903,15 +1110,17 @@ Technical debt reduction: High
 
 - [ ] Stop shipping all six languages as a render-blocking 400 KB classic script
 
-Priority: Critical
+Priority: High
 Category: Performance
 Area: Internationalisation / first paint
 Affected files: `src/i18n.js`, `index.html`, `src/modules/LanguageManager.js`, `sw.js`
 Problem: `src/i18n.js` inlines every string for en/nl/fr/de/es/pt and is loaded as a
 synchronous, render-blocking `<script>` in `<head>`. A user only ever needs one
 language, so ~83% of the payload is dead weight, and it blocks first paint.
-Impact: Directly delays First Contentful Paint on every visit, worst on the mobile
-and low-power devices this app explicitly targets. Dominates the critical path.
+Impact: Adds blocking download/parse work on constrained devices. On 2026-09-07
+the file measures 426,567 bytes. The isolated time saved has not been measured;
+do not describe it as the dominant startup cost without a trace. The existing
+app-start performance mark excludes this phase.
 Recommended solution: Split into `src/i18n/{en,nl,fr,de,es,pt}.js` (the directory
 already exists) each exporting a default object. Ship `en` as the inline default and
 `import()` the selected locale from `LanguageManager`. Keep a synchronous fallback so
@@ -1219,7 +1428,7 @@ Estimated effort: Small
 Business value: Low
 Technical debt reduction: Low
 
-- [ ] Mark `ENGINEERING_REVIEW.md` as superseded
+- [x] Mark `ENGINEERING_REVIEW.md` as superseded — **done 2026-08-19**
 
 Priority: Low
 Category: Documentation
@@ -1334,3 +1543,178 @@ These were found and fixed in this pass; listed for traceability.
 - [x] Twelve redundant per-crawler `noindex` meta tags.
 - [x] `package-lock.json` was git-ignored, making `npm ci` and reproducible installs impossible.
 - [x] No lint, no formatting convention, no CI, and no automated version-sync despite the version being repeated in five files.
+
+---
+
+## Review — 2026-08-18 (production-readiness pass, v2.10.314)
+
+Scope: product, architecture, correctness, security, reliability, performance,
+accessibility, test strategy, operations and developer experience. Existing open
+items were revalidated and not duplicated. In particular, the current priorities
+remain the locale split, stable celestial identities and true ecliptic coordinates,
+bounded binary texture caching, removal of `window.app`, lifecycle teardown,
+WebXR coverage, automated accessibility scans, and a clean lint baseline.
+
+### New
+
+- [ ] **Measure successful first rendering from navigation start**
+
+      **Measurement fixed; calibration pending (v2.10.325):** Marks now follow a
+      successful render, include blocking imports and delimit long tasks at that
+      frame. Render-failure injection, delayed-i18n and nonblank desktop/mobile
+      checks pass. Transfer totals explicitly exclude worker precache/incomplete
+      resources. Repeated warm/cold variance and budget tightening remain open.
+
+      **Priority:** Medium  
+      **Category:** Performance  
+      **Confidence:** High  
+      **Area:** Startup measurement  
+      **Affected files:** `src/main.js`, `src/modules/SceneManager.js`, `tests/e2e/performance.spec.js`, `README.md`  
+      **Evidence:** CONFIRMED by code and artifacts, reopened 2026-09-07. Marks,
+      budgets and CI artifacts were added on 2026-08-19, but `app-start` occurs after
+      blocking imports; `first-frame` is emitted even after render throws. Long tasks
+      are collected until evaluation, not filtered at the frame boundary.  
+      **Problem:** Passing budgets do not prove successful navigation-to-usable-render
+      timing. Current limits are 60/90 seconds versus measured 6.21/6.95 seconds from
+      app initialization, and transfer totals omit worker-owned download accounting.  
+      **Impact:** Blank rendering and costly pre-initialization work can escape the
+      intended gate; incompatible measurement windows make comparisons misleading.  
+      **Recommended solution:** Retain the artifacts; add navigation-to-successful-frame
+      timing, nonblank pixel/error assertions and fixed-window task/network accounting.
+      Report app payload separately from offline precache, then calibrate CI budgets.  
+      **Regression considerations:** Preserve desktop/mobile comparison without treating
+      emulated mobile as physical-device or Core Web Vitals evidence.  
+      **Acceptance criteria:** Forced render failure fails the gate; a delayed blocking
+      script increases the measured startup time; all metrics state their boundaries.  
+      **Validation:** Render-error and delayed-i18n injection, desktop/mobile cold and
+      warm samples, and repeated-run variance before tightening thresholds.  
+      **Estimated effort:** Medium  
+      **Business value:** High  
+      **Technical debt reduction:** Medium
+
+- [x] **Test the complete service-worker update lifecycle with real workers**
+
+      **Resolution (v2.10.325):** Actual HTTP fixture and workers cover required
+      install failure, two releases, reopen/waiting notification, one approved
+      reload, rollback, offline documents, 503/stalls and sibling storage.
+
+      **Priority:** High  
+      **Category:** Testing  
+      **Confidence:** High  
+      **Area:** PWA updates; regression protection for R1-R4  
+      **Affected files:** `tests/e2e/app.spec.js`, `src/modules/ServiceWorkerManager.js`, `sw.js`  
+      **Evidence:** CONFIRMED, reopened 2026-09-07: the passing lifecycle test creates
+      `EventTarget` registrations and workers, invokes `_reloadOnce()` directly and
+      injects `SW_ACTIVATED`; no changed worker bytes are ever installed.  
+      **Problem:** The 2026-08-19 implementation validates manager wiring but does not
+      satisfy the existing two-release fixture acceptance criteria.  
+      **Impact:** Cache consistency, real activation ordering, offline boot and waiting
+      updates can regress while the named lifecycle test remains green.  
+      **Recommended solution:** Keep the manager-level test and add a fixture serving
+      two actual worker versions with distinguishable HTML/modules.  
+      **Regression considerations:** Exactly one reload, user approval, previous-release
+      survival after failed install, no clearing unrelated origin data.  
+      **Acceptance criteria:** Observe actual waiting/active version changes, one
+      activation message and one navigation; reopened tabs offer pending updates;
+      verify a fresh offline document renders after activation.  
+      **Validation:** Run the fixture in Chromium desktop/mobile with service workers
+      enabled; include failed required assets and offline reloads.  
+      **Estimated effort:** Medium  
+      **Business value:** High  
+      **Technical debt reduction:** High
+
+- [x] Align public scientific-accuracy claims with verified behavior — **done 2026-08-19**
+
+Priority: High
+Category: Documentation
+Area: Product positioning
+Affected files: `README.md`, `index.html`, `SCIENTIFIC_QA_AUDIT.md`
+Problem: The product describes its orbits as scientifically accurate while the open
+scientific backlog documents decorative planetary azimuths, compressed moon-distance
+scales, a non-inertial Earth axis and approximate eclipse timing. The Earth-Moon-Sun
+eclipse subsystem is substantially more accurate than the wider scene.
+Impact: Educators and learners can reasonably infer accuracy the implementation does
+not currently provide, reducing trust in otherwise strong educational work.
+Recommended solution: Until the coordinate and scale work is complete, distinguish
+"ephemeris-based Earth-Moon-Sun eclipse geometry" from "educationally scaled planetary
+visualization" in user-facing copy. Publish tested tolerances and the active scale mode.
+Acceptance criteria: No unqualified scientific-accuracy claim remains; documented
+tolerances match automated tests; scientific mode clearly identifies every deliberate
+visual exaggeration.
+Estimated effort: Small
+Business value: High
+Technical debt reduction: Low
+
+- [x] Surface persistent-cache availability and storage pressure in diagnostics — **done 2026-08-19**
+
+Priority: Medium
+Category: Reliability
+Area: Offline storage
+Affected files: `src/modules/TextureCache.js`, `src/modules/UIManager.js`, `sw.js`
+Problem: `TextureCache.unavailableReason` records IndexedDB failure but no user-visible
+diagnostic consumes it. Service-worker quota failures can still be misreported as
+offline, covered by the existing quota-handling item.
+Impact: A user can repeatedly download textures or lose offline persistence with no
+way to distinguish browser policy, private mode, quota exhaustion or a network issue.
+Recommended solution: Add a diagnostics row showing persistent-cache availability and
+estimated usage/quota from `navigator.storage.estimate()`. Connect quota errors to the
+existing recoverable notification surface without exposing sensitive details.
+Acceptance criteria: Simulated IndexedDB denial and quota exhaustion produce distinct,
+actionable diagnostics while the app continues with memory/runtime caching.
+Estimated effort: Small
+Business value: Medium
+Technical debt reduction: Medium
+
+- [x] Define and test the supported browser and device matrix — **done 2026-08-19**
+
+Priority: Medium
+Category: Developer Experience
+Area: Compatibility and release readiness
+Affected files: `README.md`, `playwright.config.js`, `.github/workflows/ci.yml`
+Problem: The README claims support across desktop, mobile and multiple XR headsets,
+while automated browser coverage is Chromium-only and XR hardware behavior is not part
+of a recorded release check.
+Impact: Compatibility regressions in Safari/iOS, Firefox or headset browsers may ship
+undetected, and maintainers cannot tell whether a failure is unsupported or a defect.
+Recommended solution: Publish a minimum supported matrix, add Firefox and WebKit smoke
+projects where APIs permit, and maintain a short manual Quest release checklist for
+WebXR interactions that browser emulation cannot validate.
+Acceptance criteria: Supported versions are documented; each non-XR browser has a CI
+boot/accessibility smoke test; every release records the Quest checklist result.
+Estimated effort: Medium
+Business value: High
+Technical debt reduction: Medium
+
+### Resolved During This Pass
+
+- [x] Added app-owned startup marks and enforced desktop/mobile cold-load budgets for
+      first frame, encoded transfer bytes and cumulative Long Task time. CI uploads
+      machine-readable JSON artifacts, and the README records measured baselines.
+- [x] Added deterministic coverage for update discovery, the waiting-worker activation
+      request, active-version reporting and the one-reload guard across both completion
+      signals.
+- [x] Qualified public scientific claims with tested eclipse tolerances and explicit
+      educational-scale limits; the scale control now discloses remaining size and
+      moon-distance adjustments in every locale.
+- [x] Added localized persistent-cache availability/usage diagnostics. Runtime cache
+      writes now trim and retry once under quota pressure, preserve successful network
+      responses, and broadcast a distinct warning. A Chromium quota-override test
+      exercises the real worker failure path.
+- [x] Added Firefox and WebKit boot/keyboard smoke projects, documented support tiers,
+      and added a release checklist for Meta Quest behavior that automation cannot
+      emulate.
+
+- [x] Service-worker installation failures now produce a localized, recoverable status
+      banner instead of being discarded by the client. The banner synchronizes
+      `aria-hidden`, moves focus to the action, restores prior focus on dismissal, and
+      aborts stale listeners before redisplay. Covered by a focused browser test.
+- [x] The service-worker status banner is now above the fixed mobile footer. Its
+      dismiss button was visible but untouchable because the footer intercepted
+      pointer events; the mobile browser regression now passes.
+- [x] Removed the superseded `_sunRA` Earth-rotation path. Initial date setup now uses
+      `_applyEarthOrientation()`, the same authority as the render loop and date seeks.
+      All five eclipse rendering/date-control tests pass.
+- [x] Remediated two high-severity and one moderate transitive dependency advisory;
+      `npm audit` reports zero vulnerabilities. CI now fails on high-severity findings.
+- [x] Added grouped weekly Dependabot updates for npm and GitHub Actions.
+- [x] Added the 14-test pure astronomy suite to CI before browser installation.

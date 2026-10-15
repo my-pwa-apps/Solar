@@ -205,6 +205,7 @@ class App {
  }
 
  async init() {
+ performance.mark('app-start');
  const appStartTime = performance.now();
  
  try {
@@ -264,6 +265,7 @@ class App {
  
  startExperience() {
  if (this._experienceStarted) return; // Prevent double-start from timeout + normal flow
+ performance.mark('experience-start');
  this._experienceStarted = true;
  if (this._loadingTimeout) { clearTimeout(this._loadingTimeout); this._loadingTimeout = null; }
  // Called by SolarSystemModule after all assets are loaded
@@ -285,6 +287,7 @@ class App {
  
  // Hide loading screen
  this.uiManager.hideLoading();
+ performance.mark('loading-hidden');
  
  // Setup new UX features
  setupOnboarding(this.uiManager);
@@ -1511,12 +1514,14 @@ class App {
  const eclipseStatus = document.getElementById('eclipse-status');
  const renderEclipseStatus = (eclipse) => {
  if (!eclipseStatus) return;
- if (!eclipse || !eclipse.umbraRadiusKm) {
+ if (!eclipse || !eclipse.shadowPoint) {
  eclipseStatus.classList.add('hidden');
  eclipseStatus.textContent = '';
  return;
  }
- const type = eclipse.type === 'annular' ? t('eclipseAnnular') : t('eclipseTotal');
+ const type = eclipse.type === 'partial'
+ ? t('eclipsePartial')
+ : eclipse.type === 'annular' ? t('eclipseAnnular') : t('eclipseTotal');
  const ns = eclipse.latDeg >= 0 ? 'N' : 'S';
  const ew = eclipse.lonDeg >= 0 ? 'E' : 'W';
  eclipseStatus.textContent =
@@ -1530,12 +1535,12 @@ class App {
  window.addEventListener('eclipseStateChanged', this._onEclipseStateChanged);
  renderEclipseStatus(ssm.currentEclipse);
 
- // Clicking the readout flies to the shadow. The umbra is only ~110 km across
- // on a 12,742 km globe, so it is effectively unfindable by hand.
+ // Clicking the readout flies to the shadow. A central umbra is only ~110 km
+ // across, and a grazing partial footprint is similarly hard to find by hand.
  if (eclipseStatus) {
  eclipseStatus.addEventListener('click', () => {
  const e = ssm.currentEclipse;
- if (!e || !e.umbraRadiusKm) return;
+ if (!e || !e.shadowPoint) return;
  const earth = ssm.planets?.earth;
  const sm = this.sceneManager;
  if (!earth || !sm) return;
@@ -1563,13 +1568,28 @@ class App {
  // ── Jump to the next central eclipse ──────────────────────────────────
  const eclipseBtn = document.getElementById('jump-next-eclipse');
  if (eclipseBtn) {
+ const setEclipseSearchBusy = (busy) => {
+ eclipseBtn.disabled = busy;
+ if (busy) eclipseBtn.setAttribute('aria-busy', 'true');
+ else eclipseBtn.removeAttribute('aria-busy');
+ };
  eclipseBtn.addEventListener('click', async () => {
- eclipseBtn.disabled = true;
+ setEclipseSearchBusy(true);
+ let worker;
  try {
- const { findNextSolarEclipse } = await import('./modules/astro/Eclipse.js');
  // Start a day ahead so repeated presses advance instead of
  // re-finding the eclipse already on screen.
- const found = findNextSolarEclipse(ssm.simulatedJD + 1, 400);
+ worker = new Worker(new URL('./modules/astro/EclipseWorker.js', import.meta.url), { type: 'module' });
+ const found = await new Promise((resolve, reject) => {
+ worker.addEventListener('message', (event) => {
+ if (event.data?.error) reject(new Error(event.data.error));
+ else resolve(event.data?.result || null);
+ }, { once: true });
+ worker.addEventListener('error', (event) => {
+ reject(event.error || new Error(event.message || 'Eclipse worker failed'));
+ }, { once: true });
+ worker.postMessage({ startJd: ssm.simulatedJD + 1, searchDays: 400 });
+ });
  if (found) {
  ssm.seekToDate(jdToDate(found.jd));
  if (dateInput) dateInput.value = toInputValue(jdToDate(found.jd));
@@ -1580,7 +1600,8 @@ class App {
  } catch (err) {
  console.error('[Eclipse] lookup failed', err);
  } finally {
- eclipseBtn.disabled = false;
+ worker?.terminate();
+ setEclipseSearchBusy(false);
  }
  });
  }

@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.311
+// Version 2.10.325
 
-const CACHE_VERSION = '2.10.311';
+const CACHE_VERSION = '2.10.325';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -21,6 +21,31 @@ const CORE_CACHE_FILES = [
   './src/modules/storage.js',
   './src/modules/AppFeatures.js',
   './src/modules/FatalError.js',
+  './src/modules/StorageRecovery.js',
+  './src/modules/FocusTrap.js',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/profilesList.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/generic-trigger/profile.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/generic-trigger/left.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/generic-trigger/right.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/generic-trigger/none.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch/profile.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch/left.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch/right.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch-v2/profile.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch-v2/left.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch-v2/right.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch-v3/profile.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch-v3/left.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/oculus-touch-v3/right.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-pro/profile.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-pro/left.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-pro/right.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-plus/profile.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-plus/left.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-plus/right.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-plus-v2/profile.json',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-plus-v2/left.glb',
+  './vendor/xr-input-profiles@1.0.20/dist/profiles/meta-quest-touch-plus-v2/right.glb',
   './src/i18n.js',
   './src/bootstrap/installPromptCapture.js',
   './src/bootstrap/initManagers.js',
@@ -32,7 +57,9 @@ const CORE_CACHE_FILES = [
   './src/modules/solar-system/deep-space.js',
   './src/modules/solar-system/orbital-mechanics.js',
   './src/modules/astro/Ephemeris.js',
+  './src/modules/astro/PlanetEphemeris.js',
   './src/modules/astro/Eclipse.js',
+  './src/modules/astro/EclipseWorker.js',
   './src/modules/astro/EclipseRenderer.js',
   './src/modules/TextureCache.js',
   './src/modules/UIManager.js',
@@ -74,7 +101,6 @@ const ASSET_CACHE_FILES = [
   './textures/planets/mercury.webp',
   './textures/planets/venus.webp',
   './textures/planets/earth_2k.webp',
-  './textures/planets/earth_1k.webp',
   './textures/planets/mars_1k.webp',
   './textures/planets/jupiter.webp',
   './textures/planets/saturn.webp',
@@ -175,15 +201,12 @@ self.addEventListener('install', (event) => {
         const cache = await caches.open(CACHE_NAME);
 
         // App shell must be complete for the PWA to boot offline.
-        await cache.addAll(CORE_CACHE_FILES);
+        await cache.addAll([...CORE_CACHE_FILES, ...CDN_CACHE_FILES]);
 
         // Media is best-effort: addAll() is atomic, so a single 404 would
         // otherwise discard every successfully fetched asset.
         await Promise.allSettled(ASSET_CACHE_FILES.map((url) => cache.add(url)));
 
-        // Try to cache CDN files in parallel (don't fail if they're not available)
-        await Promise.allSettled(CDN_CACHE_FILES.map(url => cache.add(url)));
-        
         // Notify clients that a new SW is installed and waiting
         broadcastMessage({ type: 'SW_INSTALLED', version: CACHE_VERSION });
         // Do NOT call self.skipWaiting() here — let the client show the
@@ -215,13 +238,14 @@ self.addEventListener('activate', (event) => {
       
       await Promise.all(
         cacheNames
-          .filter(name => !validCaches.includes(name))
+          .filter(name => /^space-voyage-(?:v|runtime-v|images-v)/.test(name) && !validCaches.includes(name))
           .map(name => caches.delete(name))
       );
       
       // Take control of all clients immediately
       await self.clients.claim();
       broadcastMessage({ type: 'SW_ACTIVATED', version: CACHE_VERSION });
+      broadcastMessage({ type: 'SW_STORAGE_STATUS', storage: await getStorageStatus() });
     })()
   );
 });
@@ -262,7 +286,7 @@ function getCacheStrategy(request, url) {
     return { cache: CACHE_NAME, strategy: 'cache-first' };
   }
   
-  // HTML - network first (for updates)
+  // HTML remains paired with the controlling release; network is a recovery path.
   if (isNavigationRequest(request) || url.pathname.match(/\.html?$/i) || url.pathname === '/' || url.pathname.endsWith('/')) {
     return { cache: CACHE_NAME, strategy: 'network-first' };
   }
@@ -271,13 +295,66 @@ function getCacheStrategy(request, url) {
   return { cache: RUNTIME_CACHE, strategy: 'cache-first', limit: CACHE_LIMITS.runtime };
 }
 
+function isQuotaError(error) {
+  return error?.name === 'QuotaExceededError' || /quota/i.test(String(error?.message || error));
+}
+
+async function getStorageStatus() {
+  try {
+    const estimate = await self.navigator.storage?.estimate?.();
+    const persisted = await self.navigator.storage?.persisted?.();
+    return {
+      usage: Number.isFinite(estimate?.usage) ? estimate.usage : null,
+      quota: Number.isFinite(estimate?.quota) ? estimate.quota : null,
+      persisted: persisted === true
+    };
+  } catch {
+    return { usage: null, quota: null, persisted: false };
+  }
+}
+
+async function relieveStoragePressure() {
+  await Promise.all([
+    trimCache(RUNTIME_CACHE, Math.floor(CACHE_LIMITS.runtime / 2)),
+    trimCache(IMAGE_CACHE, Math.floor(CACHE_LIMITS.images / 2))
+  ]);
+}
+
+async function safeCachePut(cacheName, cacheKey, response) {
+  const retryResponse = response.clone();
+  try {
+    const cache = await caches.open(cacheName);
+    await cache.put(cacheKey, response);
+    return true;
+  } catch (error) {
+    if (!isQuotaError(error)) {
+      console.warn('[SW] Cache write failed; serving network response:', error);
+      return false;
+    }
+  }
+
+  await relieveStoragePressure();
+  try {
+    const cache = await caches.open(cacheName);
+    await cache.put(cacheKey, retryResponse);
+    return true;
+  } catch (error) {
+    if (!isQuotaError(error)) {
+      console.warn('[SW] Cache retry failed; serving network response:', error);
+      return false;
+    }
+    broadcastMessage({ type: 'SW_QUOTA_EXCEEDED', storage: await getStorageStatus() });
+    return false;
+  }
+}
+
 // Fetch event - intelligent caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
   // Everything is same-origin now that Three.js is vendored.
-  if (url.origin !== location.origin) {
+  if (url.origin !== location.origin || !url.pathname.startsWith(new URL('./', self.location).pathname)) {
     return;
   }
   
@@ -298,26 +375,25 @@ self.addEventListener('fetch', (event) => {
         const cacheKey = getCacheKey(request, url);
         
         if (strategy === 'network-first') {
-          // Try network first, fallback to cache
+          const releaseCache = await caches.open(CACHE_NAME);
+          const shell = await releaseCache.match(new URL('./index.html', self.location).href);
+          if (shell) return shell;
+          const controller = new AbortController();
+          const deadline = setTimeout(() => controller.abort(), 5000);
           try {
-            const networkResponse = await fetch(request);
-            if (networkResponse && networkResponse.status === 200) {
-              const cacheStorage = await caches.open(cache);
-              await cacheStorage.put(cacheKey, networkResponse.clone());
-            }
+            const networkResponse = await fetch(request, { signal: controller.signal });
+            if (networkResponse.status >= 500) throw new Error('Navigation unavailable');
             return networkResponse;
-          } catch (error) {
-            const cachedResponse = await caches.match(cacheKey);
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            throw error;
+          } finally {
+            clearTimeout(deadline);
           }
         } else {
           // Cache first strategy (default)
           // ignoreSearch: true allows versioned URLs (e.g. ?v=2.10.6) to match
           // plain paths stored in the SW install cache, ensuring offline reliability
-          const cachedResponse = await caches.match(cacheKey);
+          const releaseCache = await caches.open(CACHE_NAME);
+          const destinationCache = cache === CACHE_NAME ? releaseCache : await caches.open(cache);
+          const cachedResponse = await releaseCache.match(cacheKey) || await destinationCache.match(cacheKey);
           if (cachedResponse) {
             // Precached assets are immutable for the lifetime of this CACHE_VERSION.
             // Revalidating them would re-download the whole app shell plus every
@@ -329,13 +405,16 @@ self.addEventListener('fetch', (event) => {
             return cachedResponse;
           }
           
+          if (PRECACHED_PATHS.has(url.pathname) && /\.(?:js|mjs|css)$/.test(url.pathname)) {
+            return Response.error();
+          }
+
           // If not in cache, fetch from network
           const networkResponse = await fetch(request);
           
           // Cache successful responses
           if (networkResponse && networkResponse.status === 200) {
-            const cacheStorage = await caches.open(cache);
-            await cacheStorage.put(cacheKey, networkResponse.clone());
+            await safeCachePut(cache, cacheKey, networkResponse.clone());
             
             // Enforce cache limits if specified
             if (limit) {
@@ -430,8 +509,7 @@ async function updateCache(request, cacheName = CACHE_NAME, cacheKey = request) 
   try {
     const response = await fetch(request);
     if (response && response.status === 200) {
-      const cache = await caches.open(cacheName);
-      await cache.put(cacheKey, response);
+      await safeCachePut(cacheName, cacheKey, response);
     }
   } catch {
     // Silently fail - we're already serving from cache
@@ -464,9 +542,10 @@ self.addEventListener('message', (event) => {
   
   if (event.data && event.data.type === 'CACHE_URLS') {
     event.waitUntil(
-      caches.open(RUNTIME_CACHE).then((cache) => {
-        return cache.addAll(event.data.urls);
-      })
+      Promise.allSettled(event.data.urls.map(async (url) => {
+        const response = await fetch(url);
+        if (response.ok) await safeCachePut(RUNTIME_CACHE, url, response);
+      }))
     );
   }
 });

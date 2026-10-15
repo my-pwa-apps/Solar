@@ -33,18 +33,37 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Haptic feedback
 - Intuitive movement controls
 - Interactive VR menu
-- Works with Meta Quest, HTC Vive, and more
+- Tested on current Meta Quest Browser; other WebXR runtimes are best effort
 
 ### Educational Features
 - Detailed information panels for each object
-- Scientifically accurate orbital mechanics
+- Ephemeris-based Earth-Moon-Sun eclipse geometry
+- Keplerian planetary motion with educational visualization scales
 - Realistic day/night cycles
 - Adjustable time speed (1 year/minute max)
 - Real astronomical data
 - Educational scale mode
 
+### Scientific scope and tolerances
+
+Space Voyage is an educational visualization, not an observation-planning tool.
+Planet and moon physical data use published NASA/JPL values, and the eclipse engine
+is validated against published circumstances. For central eclipses in the current
+test set, gamma and magnitude agree to about `5e-4`; the ground track is typically
+within about 20 km and can differ by roughly 60 km near grazing incidence. Contact
+timing may differ by 40-80 seconds.
+
+The wider scene deliberately adjusts scale for usability. All eight planets use JPL
+approximate elements in the J2000 ecliptic frame and follow the selected UTC instant;
+tests compare their directions with JPL Horizons at three dates. Educational mode
+keeps compact circular spacing, while scientific mode preserves eccentric radial
+variation and each moon's real orbital-radius ratio to its parent body. Body sizes,
+interplanetary distances and deep-space distances still use separate display scales.
+The application should not be used for navigation, eclipse safety decisions or
+precise observing plans.
+
 ### Progressive Web App
-- ✅ **Works 100% offline** with intelligent caching
+- ✅ **Offline app shell** after one successful online load; optional media is cached best effort
 - ✅ **Installable** on desktop and mobile devices
 - ✅ **Native app experience** with standalone mode
 - ✅ **Smart install prompt** with beautiful UI
@@ -99,6 +118,13 @@ npm run verify
 npm run test:headed
 ```
 
+`npm run verify` is intentionally serial on a developer workstation so multiple
+WebGL browsers do not compete for one GPU, server port and service-worker profile.
+CI runs the same repository gate on five isolated runners in parallel: one
+quality/security agent and four browser agents (desktop Chromium, mobile Chromium,
+Firefox and WebKit). The `Repository gate` job aggregates those results and is the
+single check to require in branch protection.
+
 ### Versioning is enforced
 
 The service worker only invalidates its caches when `CACHE_VERSION` changes, and
@@ -150,6 +176,62 @@ an interrupted update.
 1. Visit the deployed app (requires HTTPS)
 2. Click the "Install" button in your browser
 3. App installs like a native application
+
+## Supported Platforms
+
+| Platform | Support level | Automated release coverage |
+|---|---|---|
+| Chromium 120+ on Windows, macOS, Linux | Supported | Full desktop suite |
+| Chrome 120+ on Android | Supported | Pixel 7 mobile emulation |
+| Firefox 120+ desktop | Supported for non-XR exploration | Boot and keyboard-access smoke test |
+| Safari 17+ / current iOS Safari | Supported for non-XR exploration | WebKit boot and keyboard-access smoke test |
+| Meta Quest Browser (current stable) | Supported for immersive VR | Manual headset release checklist |
+| Other OpenXR/WebXR headsets | Best effort | No hardware release gate |
+
+WebXR availability depends on browser, headset, secure-origin and runtime support.
+HTC Vive and other PC-connected headsets are best effort unless their current browser
+runtime passes the checklist in [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md).
+
+## Performance Baseline
+
+The Playwright cold-load budget records time to the first rendered frame, encoded
+network bytes through that point, and cumulative Long Task time. Baselines recorded
+on the development machine on 2026-08-19 were 10.6 s / 4.15 MB / 13.5 s on desktop
+and 3.6 s / 4.60 MB / 4.3 s under mobile emulation. CI budgets allow 60 s / 25 MiB /
+30 s on desktop and 90 s / 25 MiB / 45 s under mobile emulation to accommodate
+shared-runner variance while still catching stalled boots or runaway precaching.
+Results are uploaded as `performance-budgets` artifacts.
+
+As of v2.10.325, the enforced duration is **navigation start to the first successful
+render**, including blocking script loading and parsing. The app-only duration is
+retained separately. Render exceptions fail the gate; a canvas color/pixel check
+rejects blank output. Long tasks are clipped to the first-frame boundary. Transfer
+bytes use Resource Timing for page requests completed by that boundary, including
+navigation; they exclude worker-owned precaching and unfinished requests. The older
+numbers above used different measurement windows and are not comparable baselines.
+One focused 2026-09-07 run measured 10.75 s desktop and 8.79 s emulated mobile with
+zero render errors. Keep the broad CI limits until repeated-run variance supports
+tighter limits; mobile emulation is not physical-device performance evidence.
+
+## Offline Release Policy
+
+An installed worker serves HTML and required modules from its own release cache.
+New HTML is adopted with the replacement worker, after the user accepts the update;
+the page does not combine fresh HTML with old modules. An update already waiting
+when a tab opens is announced. First-time worker activation does not reload the page;
+replacement activation reloads once, on `controllerchange`.
+
+Shell, Three.js and supported XR profile/model assets are cached in one mandatory
+installation transaction. Optional images remain best effort. A failed install leaves
+the previous worker usable. Controlled navigation uses the installed shell even when
+the host stalls or returns 503; without that shell the network attempt has a five-second
+deadline. Recovery clears only Space Voyage cache names, its worker scope and its
+texture database, preserving sibling applications on the same origin and preferences.
+
+Quest controller profiles and a generic fallback are pinned to
+`@webxr-input-profiles/assets` 1.0.20 and self-hosted (about 13.36 MB including models).
+Both hands decode in online/offline browser tests; physical Quest interaction remains
+a required [release checklist](docs/RELEASE_CHECKLIST.md) step.
 
 ## Controls
 
@@ -258,17 +340,22 @@ Eclipses are computed from a real ephemeris in `src/modules/astro/`:
 
 Two things are worth knowing before changing this code:
 
-- **The shadow is not a shadow map.** The scene draws the Moon at ~4 Earth radii
-  instead of the true ~60, and a 1024px shadow map spanning the solar system
+- **The shadow is not a shadow map.** Educational mode draws the Moon at ~4 Earth
+  radii instead of the true ~60 used by scientific mode, and a 1024px shadow map
+  spanning the solar system
   cannot resolve a ~110 km umbra on a 12,742 km globe. The shadow is computed
   analytically in real kilometres and projected onto Earth's surface. The shader
   measures each fragment's perpendicular distance to the true 3D shadow axis,
   which produces the correct *elliptical* footprint at oblique incidence for free.
 - **Earth's orientation is driven by the ephemeris.** `_applyEarthOrientation()`
-  rotates Earth so the true sub-solar point faces the scene's Sun. Without it the
-  scene's sub-solar point is out by more than 100° and the shadow lands on the
-  night side. Note this fixes the Earth-Moon-Sun subsystem only — the scene's
-  planetary orbital phases are still not on the true ecliptic (see `BACKLOG.md`).
+  combines sidereal rotation with the fixed J2000 celestial pole, so the true
+  sub-solar point faces the scene's Sun while Earth's axis remains inertially fixed.
+  All eight planet positions share the same right-handed J2000 ecliptic frame.
+
+Central eclipses render their true-size umbra and penumbra; partial eclipses use a
+clearly labelled, shallow penumbral treatment. Clicking the eclipse readout flies to
+the footprint without enlarging it. The next-eclipse scan runs in a module Worker so
+the render loop remains responsive.
 
 **Accuracy.** Validated against published NASA/EclipseWise circumstances for the
 2024-04-08, 2026-08-12 and 2027-08-02 total eclipses: gamma and magnitude match to

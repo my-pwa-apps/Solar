@@ -4,6 +4,24 @@ import { CONFIG, DEBUG, MaterialFactory, GeometryFactory } from '../utils.js';
 
 const t = (key) => (window.t || ((k) => k))(key);
 
+const EARTH_RADIUS_KM = 6371;
+const MOON_SEMIMAJOR_AXES_KM = Object.freeze({
+ moon: 384400,
+ phobos: 9376,
+ deimos: 23463,
+ io: 421700,
+ europa: 671100,
+ ganymede: 1070400,
+ callisto: 1882700,
+ enceladus: 238020,
+ rhea: 527108,
+ titan: 1221870,
+ titania: 435910,
+ miranda: 129900,
+ triton: 354759,
+ charon: 19596
+});
+
 export const celestialFactory = {
 createSun(scene) {
  // HYPERREALISTIC Sun with realistic size
@@ -511,21 +529,14 @@ createPlanetMaterial(config) {
  this.createEarthTextureRealFixed(earthTexSize),
  { colorSpace: THREE.SRGBColorSpace }
  );
- const earthBump = this._configureSphericalSurfaceTexture(this.createEarthBumpMap(earthTexSize));
  if (DEBUG.enabled) console.timeEnd('Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
  const earthMaterial = new THREE.MeshStandardMaterial({
  map: earthTexture,
  
- // Bump map for elevation (normalMap removed — procedural version had bad gradients)
- bumpMap: earthBump,
- bumpScale: 0.08,
- 
- // Roughness: continents are matte, oceans get a sharp specular highlight.
- // The actual ocean/land roughness map is generated from the loaded color
- // texture in _onPlanetTextureSuccess (oceans → ~0.35, land → 0.95). Until
- // that map arrives we render fully matte so land never looks plastic.
+ // Keep Earth uniformly matte. Generated roughness masks create a compact
+ // point-light response that can resemble a second moving eclipse shadow.
  roughness: 0.95,
  
  // Metalness (Earth's surface is not metallic)
@@ -1086,6 +1097,8 @@ createMoon(planet, config) {
  name: config.id || config.name, // English name for internal lookups; UI translates via t(name.toLowerCase())
  type: 'moon',
  distance: config.distance,
+ educationalDistance: config.distance,
+ scientificDistance: MOON_SEMIMAJOR_AXES_KM[astroDataKey] / EARTH_RADIUS_KM,
  radius: config.radius,
  angle: 0,
  speed: config.speed,

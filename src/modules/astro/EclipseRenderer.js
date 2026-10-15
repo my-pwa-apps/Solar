@@ -67,6 +67,7 @@ export class EclipseRenderer {
             uSunDirObj: { value: new this.THREE.Vector3(1, 0, 0) },
             uUmbraKm: { value: 0 },
             uPenumbraKm: { value: 1 },
+            uPenumbraOnly: { value: 0 },
             uEarthRadiusKm: { value: EARTH_RADIUS_KM }
         };
 
@@ -94,6 +95,7 @@ uniform vec3 uAxisDir;
 uniform vec3 uSunDirObj;
 uniform float uUmbraKm;
 uniform float uPenumbraKm;
+uniform float uPenumbraOnly;
 uniform float uEarthRadiusKm;`
                 )
                 .replace(
@@ -114,10 +116,10 @@ if (uEclipseIntensity > 0.0) {
         // elliptical at oblique incidence.
         float perp = length(v - t * uAxisDir);
         float f = 1.0 - smoothstep(uUmbraKm, uPenumbraKm, perp);
-        // Daylight falls off very little until the Sun is nearly covered, so a
-        // steep curve is both closer to the physics and stops the wide
-        // penumbra reading as a grey smear across half the globe.
-        float shade = pow(f, 4.0) * day * uEclipseIntensity;
+        // A partial eclipse has no umbra on Earth. Cap its penumbral dimming so
+        // the event is visible without resembling a black central shadow.
+        float shadowStrength = uPenumbraOnly > 0.5 ? 0.18 * pow(f, 2.0) : pow(f, 4.0);
+        float shade = shadowStrength * day * uEclipseIntensity;
         gl_FragColor.rgb *= mix(1.0, 0.03, shade);
     }
 }`
@@ -151,10 +153,7 @@ if (uEclipseIntensity > 0.0) {
 
         const eclipse = solarEclipseAt(jd);
 
-        // Only a central eclipse puts a real umbra on the globe. Partial-only
-        // events are left undrawn: their penumbra covers a whole hemisphere and
-        // dimming it would look like a rendering fault rather than an eclipse.
-        if (!eclipse.isEclipse || eclipse.umbraRadiusKm <= 0 || !eclipse.shadowPoint) {
+        if (!eclipse.isEclipse || !eclipse.shadowPoint) {
             this.uniforms.uEclipseIntensity.value = 0;
             this.lastState = eclipse;
             return eclipse;
@@ -170,6 +169,7 @@ if (uEclipseIntensity > 0.0) {
         this.uniforms.uSunDirObj.value.set(sunDir.x, sunDir.y, sunDir.z).normalize();
         this.uniforms.uUmbraKm.value = eclipse.umbraRadiusKm;
         this.uniforms.uPenumbraKm.value = eclipse.penumbraRadiusKm;
+        this.uniforms.uPenumbraOnly.value = eclipse.type === 'partial' ? 1 : 0;
         this.uniforms.uEclipseIntensity.value = 1;
 
         this.lastState = eclipse;

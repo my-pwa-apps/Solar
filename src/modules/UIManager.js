@@ -3,6 +3,10 @@
 // ===========================
 import { DEBUG, APP_VERSION } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
+import { TEXTURE_CACHE } from './TextureCache.js';
+import { trapFocus } from './FocusTrap.js';
+
+const translate = (key) => (window.t || ((value) => value))(key);
 
 export class UIManager {
  constructor() {
@@ -122,7 +126,41 @@ export class UIManager {
  this._trapFocus(this.elements.settingsModal);
  const verEl = document.getElementById('app-version-display');
  if (verEl) verEl.textContent = `v${APP_VERSION}`;
+ void this.updateStorageDiagnostics();
  }
+ }
+
+ async updateStorageDiagnostics() {
+ const status = document.getElementById('storage-status');
+ if (!status) return;
+ status.textContent = translate('storageChecking');
+
+ const diagnostics = await TEXTURE_CACHE.getDiagnostics();
+ if (!diagnostics.available) {
+ status.textContent = translate('storageUnavailable');
+ status.dataset.state = 'unavailable';
+ return;
+ }
+
+ const usage = this._formatBytes(diagnostics.usage);
+ const quota = this._formatBytes(diagnostics.quota);
+ const persistence = diagnostics.persisted
+ ? translate('storagePersisted')
+ : translate('storageBestEffort');
+ status.textContent = `${translate('storageAvailable')}: ${usage} / ${quota} · ${persistence}`;
+ status.dataset.state = 'available';
+ }
+
+ _formatBytes(value) {
+ if (!Number.isFinite(value)) return translate('storageUnknown');
+ const units = ['B', 'KB', 'MB', 'GB'];
+ let amount = Math.max(0, value);
+ let unit = 0;
+ while (amount >= 1024 && unit < units.length - 1) {
+ amount /= 1024;
+ unit++;
+ }
+ return `${amount.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
  }
 
  _buildSafeHelpNodes(content) {
@@ -171,7 +209,7 @@ export class UIManager {
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.add('hidden');
  this.elements.helpModal.setAttribute('aria-hidden', 'true');
- this._releaseFocusTrap();
+ this._releaseFocusTrap(this.elements.helpModal);
  }
  }
 
@@ -179,7 +217,7 @@ export class UIManager {
  if (this.elements.settingsModal) {
  this.elements.settingsModal.classList.add('hidden');
  this.elements.settingsModal.setAttribute('aria-hidden', 'true');
- this._releaseFocusTrap();
+ this._releaseFocusTrap(this.elements.settingsModal);
  }
  }
 
@@ -188,36 +226,16 @@ export class UIManager {
  * Stores the previously focused element and restores it on release.
  */
  _trapFocus(container) {
- this._releaseFocusTrap();
- this._focusTrapPrev = document.activeElement;
+ this._focusTraps ??= [];
+ this._releaseFocusTrap(container);
+ this._focusTraps.push({ container, release: trapFocus(container) });
  this._focusTrapContainer = container;
- const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
- if (focusable.length) focusable[0].focus();
- this._focusTrapHandler = (e) => {
- if (e.key !== 'Tab') return;
- const focusableEls = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
- if (!focusableEls.length) return;
- const first = focusableEls[0];
- const last = focusableEls[focusableEls.length - 1];
- if (e.shiftKey) {
- if (document.activeElement === first) { e.preventDefault(); last.focus(); }
- } else {
- if (document.activeElement === last) { e.preventDefault(); first.focus(); }
- }
- };
- document.addEventListener('keydown', this._focusTrapHandler);
  }
 
- _releaseFocusTrap() {
- if (this._focusTrapHandler) {
- document.removeEventListener('keydown', this._focusTrapHandler);
- this._focusTrapHandler = null;
- }
- if (this._focusTrapPrev && typeof this._focusTrapPrev.focus === 'function') {
- this._focusTrapPrev.focus();
- this._focusTrapPrev = null;
- }
- this._focusTrapContainer = null;
+ _releaseFocusTrap(container = this._focusTrapContainer) {
+ const index = this._focusTraps?.findIndex(trap => trap.container === container) ?? -1;
+ if (index >= 0) this._focusTraps.splice(index, 1)[0].release();
+ this._focusTrapContainer = this._focusTraps?.at(-1)?.container || null;
  }
  
  setupSolarSystemUI() {

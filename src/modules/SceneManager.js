@@ -47,7 +47,6 @@ export class SceneManager {
  active: false,
  controllerIndex: -1,
  startPosition: new THREE.Vector3(),
- startDollyRotation: new THREE.Euler(),
  lastPosition: new THREE.Vector3()
  };
  
@@ -74,9 +73,7 @@ export class SceneManager {
  this._vrWarpEffect = null; // Warp streak LineSegments — created lazily on first warp activate
  this._vrWarpPositions = null; // Pre-allocated Float32Array for warp streaks
  this._vrWarpTravel = new THREE.Vector3(); // Net dolly translation this frame (world-space)
- this._vrWarpLocalDir = new THREE.Vector3(); // Travel direction converted into dolly-local space
  this._vrWarpQuat = new THREE.Quaternion(); // Reused orientation for warp effect alignment
- this._vrWarpInverseQuat = new THREE.Quaternion(); // Reused inverse dolly rotation for warp alignment
  this._vrBothTriggerFrames = 0; // Count consecutive frames both triggers are held (debounce warp)
  // Radial quick-nav wheel
  this._vrRadialCanvas = null; // 512×512 canvas for the wheel
@@ -348,7 +345,8 @@ export class SceneManager {
  this.renderer.xr.setReferenceSpaceType('local');
 
  // Controller models
- this.controllerModelFactory = new XRControllerModelFactory();
+ this.controllerModelFactory = new XRControllerModelFactory()
+ .setPath(new URL('../../vendor/xr-input-profiles@1.0.20/dist/profiles', import.meta.url).href);
  
  // Initialize XR controllers
  this.controllers = [];
@@ -393,6 +391,7 @@ export class SceneManager {
 
  // Controller grip for models
  const controllerGrip = this.renderer.xr.getControllerGrip(i);
+ controllerGrip.add(this.controllerModelFactory.createControllerModel(controllerGrip));
 
  // Laser beam
  const laser = new THREE.Mesh(laserGeo, laserMat.clone()); // clone so each ctrl has own colour state
@@ -1878,7 +1877,6 @@ this.camera.near = 10.0;
  
  // Store starting position and rotation
  controller.getWorldPosition(this.grabRotateState.startPosition);
- this.grabRotateState.startDollyRotation.copy(this.dolly.rotation);
  this.grabRotateState.lastPosition.copy(this.grabRotateState.startPosition);
  
  this.triggerVRHaptic(index, 0.5, 80); // Confirm grab start
@@ -2910,7 +2908,7 @@ this.camera.near = 10.0;
 
  // ── Dynamic VR near-plane: prevent clipping when flying close to objects ──
  // Check distance to nearest planet/moon and lower near plane accordingly.
- // Throttled to every 10th frame to keep hot-path cheap.
+ // Throttled to every 16th frame to keep hot-path cheap.
  if ((this._vrLaserFrame & 0xF) === 0) { // every 16 frames
  const solarSystem = window.app?.solarSystemModule;
  if (solarSystem?.planets) {
@@ -3063,6 +3061,7 @@ this.camera.near = 10.0;
 
  animate(callback) {
  let frameCount = 0;
+ let firstFrameRecorded = false;
  let vrErrorCount = 0;
  const VR_ERROR_LOG_LIMIT = 10; // Don't spam console after N errors
  this.renderer.setAnimationLoop(() => {
@@ -3154,7 +3153,14 @@ this.camera.near = 10.0;
  } else {
  this.renderer.render(this.scene, this.camera);
  }
+ if (!firstFrameRecorded) {
+ performance.mark('first-frame');
+ performance.measure('app-to-first-frame', 'app-start', 'first-frame');
+ performance.measure('navigation-to-first-frame', { start: 0, end: 'first-frame' });
+ firstFrameRecorded = true;
+ }
  } catch (e) {
+ performance.mark('render-error');
  console.error('[Scene] render() FAILED:', e);
  // One-shot diagnostic: find the material causing the crash
  if (!this._renderDiagRan) {

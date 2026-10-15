@@ -77,7 +77,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'script',
-      globals: globals.serviceworker
+      globals: { ...globals.serviceworker, AbortController: 'readonly' }
     },
     rules: {
       'no-undef': 'error',

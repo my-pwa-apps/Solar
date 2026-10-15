@@ -9,6 +9,42 @@ async function readText(relativePath) {
   return fs.readFile(path.join(repoRoot, relativePath), 'utf8');
 }
 
+test('Earth uses the artifact-free 2K surface texture', async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
+
+  const textureGenerator = await readText('src/modules/solar-system/texture-generator.js');
+  expect(textureGenerator).toContain("'./textures/planets/earth_2k.webp'");
+  expect(textureGenerator).not.toContain("'./textures/planets/earth_1k.webp'");
+});
+
+test('Lake Victoria is rendered as blue water, not a black shadow-like spot', async ({ browser }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
+
+  const context = await browser.newContext({
+    baseURL: testInfo.project.use.baseURL,
+    serviceWorkers: 'block'
+  });
+  const page = await context.newPage();
+  await page.goto('/');
+  const pixel = await page.evaluate(async () => {
+    const image = new Image();
+    image.src = './textures/planets/earth_2k.webp';
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    return [...context.getImageData(1210, 518, 1, 1).data];
+  });
+
+  const [red, green, blue] = pixel;
+  expect(blue).toBeGreaterThan(green);
+  expect(green).toBeGreaterThan(red);
+  expect(red + green + blue).toBeGreaterThan(100);
+  await context.close();
+});
+
 test('app version and service worker cache manifest stay in sync', async ({}, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
 
@@ -142,4 +178,18 @@ test('all localized manifests expose the same capabilities', async ({}, testInfo
   for (const { name, json } of manifests) {
     expect(json.share_target, `${name} must not declare an unimplemented share target`).toBeUndefined();
   }
+});
+
+test('HTML buttons are non-submit controls and loading progress has one live region', async ({}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
+
+  const indexHtml = await readText('index.html');
+  const buttons = [...indexHtml.matchAll(/<button\b[^>]*>/gi)].map((match) => match[0]);
+
+  expect(buttons.length).toBeGreaterThan(0);
+  expect(buttons.filter((button) => !/\btype=["']button["']/i.test(button))).toEqual([]);
+
+  const loadingPercentage = indexHtml.match(/<p\b[^>]*id=["']loading-percentage["'][^>]*>/i)?.[0];
+  expect(loadingPercentage).toBeTruthy();
+  expect(loadingPercentage).not.toMatch(/\baria-live=/i);
 });

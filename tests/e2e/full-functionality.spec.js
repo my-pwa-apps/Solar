@@ -71,7 +71,7 @@ async function setSlider(page, value) {
 async function openAndCloseModal(page, buttonSelector, modalSelector, closeSelector) {
   await page.locator(buttonSelector).click({ force: true });
   await expect(page.locator(modalSelector)).not.toHaveClass(/hidden/);
-  await page.locator(closeSelector).click({ force: true });
+  await page.locator(closeSelector).click();
   await expect(page.locator(modalSelector)).toHaveClass(/hidden/);
 }
 

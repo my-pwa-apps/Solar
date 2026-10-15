@@ -7,6 +7,8 @@ yarn.lock
 
 # Build outputs
 dist/
+!vendor/xr-input-profiles@1.0.20/dist/
+!vendor/xr-input-profiles@1.0.20/dist/**
 build/
 .cache/
 

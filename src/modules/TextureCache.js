@@ -46,6 +46,7 @@ export class TextureCache {
  request.onblocked = () => fail(new Error('IndexedDB blocked by another tab'));
  request.onsuccess = () => {
  this.db = request.result;
+ this.db.onversionchange = () => { this.db?.close(); this.db = null; };
  this._checkVersion().then(() => resolve(this.db)).catch(() => resolve(this.db));
  };
 
@@ -175,6 +176,29 @@ export class TextureCache {
  if (DEBUG && DEBUG.enabled) console.log('[Cache] Texture cache cleared');
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.warn('[Cache] Cache clear error:', error);
+ }
+ }
+
+ async getDiagnostics() {
+ try {
+ await this.initPromise;
+ const estimate = await navigator.storage?.estimate?.();
+ const persisted = await navigator.storage?.persisted?.();
+ return {
+ available: !!this.db,
+ reason: this.unavailableReason?.name || null,
+ usage: Number.isFinite(estimate?.usage) ? estimate.usage : null,
+ quota: Number.isFinite(estimate?.quota) ? estimate.quota : null,
+ persisted: persisted === true
+ };
+ } catch (error) {
+ return {
+ available: !!this.db,
+ reason: this.unavailableReason?.name || error?.name || 'Unavailable',
+ usage: null,
+ quota: null,
+ persisted: false
+ };
  }
  }
 }

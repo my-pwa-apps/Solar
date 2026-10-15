@@ -12,6 +12,9 @@
  * contain arbitrary strings from a thrown value — can never be parsed as markup.
  */
 import { APP_VERSION } from './utils.js';
+import { clearAppStorage } from './StorageRecovery.js';
+import { TEXTURE_CACHE } from './TextureCache.js';
+import { trapFocus } from './FocusTrap.js';
 
 const OVERLAY_ID = 'fatal-error';
 
@@ -21,36 +24,6 @@ const t = (key, fallback) => {
 };
 
 let shown = false;
-
-async function clearAllStorage() {
-    const jobs = [];
-
-    if ('serviceWorker' in navigator) {
-        jobs.push(
-            navigator.serviceWorker
-                .getRegistrations()
-                .then((registrations) => Promise.all(registrations.map((r) => r.unregister())))
-        );
-    }
-
-    if ('caches' in window) {
-        jobs.push(caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))));
-    }
-
-    if (window.indexedDB?.databases) {
-        jobs.push(
-            indexedDB
-                .databases()
-                .then((dbs) =>
-                    Promise.all(dbs.map((db) => db.name && indexedDB.deleteDatabase(db.name)))
-                )
-        );
-    }
-
-    // A failure to clear one store must not block the reload — the user is
-    // already in a broken state and a reload is the only way forward.
-    await Promise.allSettled(jobs);
-}
 
 function button(label, onClick, variant) {
     const el = document.createElement('button');
@@ -99,7 +72,7 @@ export function showFatalError(message, cause) {
             t('errorClearCache', 'Clear cache and reload'),
             async (event) => {
                 event.currentTarget.disabled = true;
-                await clearAllStorage();
+                await clearAppStorage({ closeTextureCache: () => TEXTURE_CACHE.db?.close() });
                 window.location.reload();
             },
             'btn-secondary'
@@ -120,5 +93,5 @@ export function showFatalError(message, cause) {
 
     // The overlay is the only thing the user can act on, so put focus on it
     // rather than leaving it on whatever the failed boot last touched.
-    overlay.querySelector('button')?.focus();
+    trapFocus(overlay);
 }

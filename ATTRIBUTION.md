@@ -179,6 +179,16 @@ These procedural textures serve as fallbacks when network textures fail to load 
 
 ## Other Assets
 
+### WebXR Input Profiles and Controller Models
+- Source: https://github.com/immersive-web/webxr-input-profiles
+- Package: `@webxr-input-profiles/assets` version `1.0.20`
+- Included profiles: generic-trigger, oculus-touch, oculus-touch-v2, oculus-touch-v3,
+  meta-quest-touch-pro, meta-quest-touch-plus, meta-quest-touch-plus-v2.
+- Upstream profile JSON and embedded GLB files are unmodified; profilesList.json is
+  restricted to the included subset. Unknown devices use the generic-trigger model.
+- Copyright (c) 2019 Amazon; MIT license retained in
+  [vendor/xr-input-profiles@1.0.20/LICENSE.md](vendor/xr-input-profiles@1.0.20/LICENSE.md).
+
 ### Three.js Library
 - **License:** MIT License
 - **Repository:** https://github.com/mrdoob/three.js

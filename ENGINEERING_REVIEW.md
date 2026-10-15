@@ -1,5 +1,9 @@
 # Space Voyage — Principal Engineering Review
 
+> **Historical snapshot:** This review describes version 2.10.250 as of June 12,
+> 2026. Many findings have since been resolved or materially changed. Use
+> [BACKLOG.md](BACKLOG.md) for the current, dated engineering backlog.
+
 **Reviewer:** AI Principal Engineer  
 **Date:** 2026-06-12  
 **Codebase snapshot:** sw.js CACHE_VERSION v2.10.250 · Three.js 0.183.0  

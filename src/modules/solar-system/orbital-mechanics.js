@@ -1,7 +1,11 @@
 // Extracted from SolarSystemModule.js — methods are mixed into its prototype.
 import * as THREE from 'three';
 import { DEBUG } from '../utils.js';
-import { sunMoonVectors, gmst as astroGmst, subPoint as astroSubPoint } from '../astro/Ephemeris.js';
+import { sunMoonVectors, gmst as astroGmst } from '../astro/Ephemeris.js';
+import {
+ planetEclipticOrbitPosition,
+ planetEclipticPosition
+} from '../astro/PlanetEphemeris.js';
 
 export const orbitalMechanics = {
 setScientificMode(enabled) {
@@ -41,6 +45,13 @@ applyScientificModeSpeeds() {
  if (!moon?.userData) return;
  const ud = moon.userData;
  if (ud.visualBaseSpeed === undefined) ud.visualBaseSpeed = ud.speed;
+
+ const targetDistance = this.scientificMode ? ud.scientificDistance : ud.educationalDistance;
+ if (Number.isFinite(targetDistance) && targetDistance > 0 && targetDistance !== ud.distance) {
+ ud.distance = targetDistance;
+ if (moon.position.lengthSq() > 0) moon.position.setLength(targetDistance);
+ else moon.position.x = targetDistance;
+ }
 
  if (!this.scientificMode) {
  ud.speed = ud.visualBaseSpeed;
@@ -100,19 +111,6 @@ toJulianDate(date) {
  return Math.floor(365.25 * (A + 4716)) + Math.floor(30.6001 * (B + 1)) + d + C - 1524.5;
  },
 
-_sunRA(daysSinceJ2000) {
- const T = daysSinceJ2000 / 36525;
- const L0 = ((280.46646 + 36000.76983 * T) % 360 + 360) % 360;
- const M = ((357.52911 + 35999.05029 * T) % 360 + 360) % 360;
- const M_rad = M * Math.PI / 180;
- const C = (1.9146 - 0.004817 * T) * Math.sin(M_rad) + 0.019993 * Math.sin(2 * M_rad);
- const sunLon = (L0 + C) * Math.PI / 180;
- const eps = (23.439 - 0.00000036 * daysSinceJ2000) * Math.PI / 180;
- let ra = Math.atan2(Math.cos(eps) * Math.sin(sunLon), Math.cos(sunLon));
- if (ra < 0) ra += Math.PI * 2;
- return ra;
- },
-
 _solveKepler(M_rad, e) {
  let E = M_rad + e * Math.sin(M_rad);
  for (let i = 0; i < 12; i++) {
@@ -132,6 +130,22 @@ _meanToTrueAnomaly(M_rad, e, sqrtPlus, sqrtMinus) {
  sp * Math.sin(E / 2),
  sm * Math.cos(E / 2)
  );
+ },
+
+_positionPlanetFromEphemeris(planet, planetId, jd) {
+ const state = planetEclipticPosition(planetId, jd);
+ if (!state || !planet?.userData) return false;
+
+ // Scientific mode preserves the real eccentric radial variation. Educational
+ // mode keeps its compact circular spacing but uses the same truthful direction.
+ const radius = this.scientificMode
+ ? planet.userData.distance * state.radiusAu / state.semiMajorAxisAu
+ : planet.userData.distance;
+ const scale = radius / state.radiusAu;
+ planet.position.set(state.x * scale, state.y * scale, state.z * scale);
+ planet.userData.meanAnomaly = state.meanAnomaly;
+ planet.userData.angle = state.trueAnomaly;
+ return true;
  },
 
 _probePositionAtJD(traj, jd) {
@@ -178,6 +192,7 @@ initPositionsToDate(date) {
 
  Object.entries(this.planets).forEach(([key, planet]) => {
  if (!planet?.userData) return;
+ if (this._positionPlanetFromEphemeris(planet, key, jd)) return;
  const el = this.PLANET_ELEMENTS_J2000[key];
  if (!el) return;
 
@@ -217,16 +232,6 @@ initPositionsToDate(date) {
  planet.position.z = planet.userData.distance * Math.sin(theta);
  }
  });
-
- // Set Earth's self-rotation immediately so the correct face is visible
- // before the next animation frame (same formula as update loop).
- const earthPlanet = this.planets['earth'];
- if (earthPlanet) {
- const gmst = ((280.46061837 + 360.98564736629 * daysSinceJ2000) % 360 + 360) % 360 * Math.PI / 180;
- const sunRA = this._sunRA(daysSinceJ2000);
- const orbAngle = Math.atan2(earthPlanet.position.z, earthPlanet.position.x);
- earthPlanet.rotation.y = orbAngle + Math.PI + sunRA - gmst;
- }
 
  // Date-seed moon orbital phases (deterministic by JD, not random startup state)
  Object.values(this.moons).forEach((moon) => {
@@ -293,6 +298,7 @@ initPositionsToDate(date) {
 
  // Update trajectory-based spacecraft positions (Voyagers, Pioneers, New Horizons)
  this._initSpacecraftToDate(jd);
+ this._applyEarthOrientation(jd);
 
  if (DEBUG.enabled) console.log(`[TimeMachine] Seeked to ${date.toUTCString().slice(0, 16)} (JD ${jd.toFixed(1)})`);
  },
@@ -305,8 +311,9 @@ seekToDate(input) {
  }
  this.initPositionsToDate(date);
  // Recompute immediately so a seek that lands on an eclipse shows the
- // shadow before the next animation frame.
+ // Moon and shadow in the same state before the next animation frame.
  this._applyEarthOrientation(this.simulatedJD);
+ this._positionEarthMoonFromEphemeris(this.moons?.moon, this.simulatedJD);
  this._updateEclipse(true);
  },
 
@@ -326,6 +333,15 @@ _moonDirectionObjectSpace(jd) {
  if (DEBUG.enabled) console.warn('[Eclipse] moon direction failed', err);
  return null;
  }
+ },
+
+_positionEarthMoonFromEphemeris(moon, jd) {
+ if (!moon || moon.userData?.id !== 'moon') return false;
+ const dir = this._moonDirectionObjectSpace(jd);
+ if (!dir) return false;
+ const distance = moon.userData.distance;
+ moon.position.set(dir.x * distance, dir.y * distance, dir.z * distance);
+ return true;
  },
 
 _updateEclipse(force = false) {
@@ -349,8 +365,8 @@ _updateEclipse(force = false) {
 
  try {
  const eclipse = this.eclipseRenderer.update(jd);
- const wasActive = !!(this.currentEclipse && this.currentEclipse.umbraRadiusKm > 0);
- const isActive = !!(eclipse && eclipse.umbraRadiusKm > 0);
+ const wasActive = !!this.currentEclipse?.isEclipse;
+ const isActive = !!eclipse?.isEclipse;
  this.currentEclipse = eclipse;
 
  // Fire on entry, on exit, and while active so the readout's coordinates
@@ -369,52 +385,29 @@ _applyEarthOrientation(jd) {
  if (!earth) return;
 
  try {
- const { sun } = sunMoonVectors(jd);
- const sub = astroSubPoint(sun, jd);
-
- const lat = sub.latDeg * Math.PI / 180;
- const lon = sub.lonDeg * Math.PI / 180;
- const cosLat = Math.cos(lat);
- // Object-space direction of the sub-solar point, matching the
- // equirectangular convention used by the eclipse shader.
- const sObj = this._earthOrientScratchA.set(
- cosLat * Math.cos(lon),
- Math.sin(lat),
- -cosLat * Math.sin(lon)
+ // Fixed celestial north pole in the scene's J2000 ecliptic frame.
+ const obliquityJ2000 = 23.439291111 * Math.PI / 180;
+ const pole = this._earthOrientScratchA.set(
+ 0,
+ Math.cos(obliquityJ2000),
+ -Math.sin(obliquityJ2000)
  );
 
- // Scene-space direction from Earth to the Sun (the Sun sits at the origin).
- const sWorld = this._earthOrientScratchB.copy(earth.position).negate();
- if (sWorld.lengthSq() < 1e-9) return;
- sWorld.normalize();
+ // Greenwich's equatorial direction at this UT instant, converted to the
+ // scene frame (ecliptic X/Z plane, +Y ecliptic north).
+ const siderealAngle = astroGmst(jd);
+ const primeMeridian = this._earthOrientScratchB.set(
+ Math.cos(siderealAngle),
+ -Math.sin(siderealAngle) * Math.sin(obliquityJ2000),
+ -Math.sin(siderealAngle) * Math.cos(obliquityJ2000)
+ );
 
- const q1 = this._earthOrientQuatA.setFromUnitVectors(sObj, sWorld);
-
- // Where the pole ends up after that shortest-arc rotation.
- const pole = this._earthOrientScratchC.set(0, 1, 0).applyQuaternion(q1);
-
- // Remove the component along the Sun axis from both the actual and the
- // desired pole, then rotate about the Sun axis to line them up. This
- // preserves the solar declination while fixing which way Earth leans.
- const along = pole.dot(sWorld);
- const polePerp = this._earthOrientScratchD
- .copy(pole).addScaledVector(sWorld, -along);
- const wantPerp = this._earthOrientScratchE
- .set(0, 1, 0).addScaledVector(sWorld, -sWorld.y);
-
- if (polePerp.lengthSq() > 1e-8 && wantPerp.lengthSq() > 1e-8) {
- polePerp.normalize();
- wantPerp.normalize();
- let angle = Math.acos(Math.min(1, Math.max(-1, polePerp.dot(wantPerp))));
- // Signed rotation about the Sun axis.
- if (this._earthOrientScratchF.crossVectors(polePerp, wantPerp).dot(sWorld) < 0) {
- angle = -angle;
- }
- const q2 = this._earthOrientQuatB.setFromAxisAngle(sWorld, angle);
- earth.quaternion.copy(q2.multiply(q1));
- } else {
- earth.quaternion.copy(q1);
- }
+ // Local geographic coordinates use +X at 0° longitude, +Y at the north
+ // pole and +Z toward west longitude. The cross product supplies that third
+ // orthonormal basis vector without introducing an annual Sun-dependent tilt.
+ const west = this._earthOrientScratchC.crossVectors(primeMeridian, pole).normalize();
+ this._earthOrientMatrix.makeBasis(primeMeridian, pole, west);
+ earth.quaternion.setFromRotationMatrix(this._earthOrientMatrix);
  } catch (err) {
  if (DEBUG.enabled) console.warn('[Eclipse] Earth orientation failed', err);
  }
@@ -535,6 +528,10 @@ update(deltaTime, timeSpeed, camera, controls) {
  }
  this._planetArray.forEach(planet => {
  if (planet && planet.userData) {
+ const planetId = planet.userData.id;
+ const ephemerisPositioned = this._positionPlanetFromEphemeris(
+ planet, planetId, this.simulatedJD
+ );
  // Calculate angle increment based on speed
  const angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
  
@@ -544,13 +541,14 @@ update(deltaTime, timeSpeed, camera, controls) {
  return;
  }
  
- // Solar orbit (affected by orbital pause)
- if (this.scientificMode) {
+ // Unsupported objects retain the legacy phase integrator. The eight planets
+ // above are positioned directly from simulatedJD and cannot accumulate drift.
+ if (!ephemerisPositioned && this.scientificMode) {
  // Kepler’s 2nd law: mean anomaly advances linearly, true anomaly derived via solver
  const e = planet.userData.orbitalEccentricity || 0;
  planet.userData.meanAnomaly = (planet.userData.meanAnomaly || 0) + angleIncrement;
  planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e, planet.userData._keplerSqrtPlus, planet.userData._keplerSqrtMinus) : planet.userData.meanAnomaly;
- } else {
+ } else if (!ephemerisPositioned) {
  planet.userData.angle += angleIncrement;
  }
  
@@ -560,7 +558,9 @@ update(deltaTime, timeSpeed, camera, controls) {
  planet.userData.angle = 0;
  }
  
- if (this.scientificMode) {
+ if (ephemerisPositioned) {
+ // Position already set from the JPL elements above.
+ } else if (this.scientificMode) {
  const e = planet.userData.orbitalEccentricity || 0;
  const w = planet.userData.orbitalPeriapsis || 0;
  const a = planet.userData.distance;
@@ -659,10 +659,7 @@ update(deltaTime, timeSpeed, camera, controls) {
  // shadow. The orbital *radius* stays exaggerated for legibility.
  // Compared by identity: userData.name is a localised display string.
  if (planet === this.planets.earth && moon.userData.id === 'moon') {
- const dir = this._moonDirectionObjectSpace(this.simulatedJD);
- if (dir) {
- const d = moon.userData.distance;
- moon.position.set(dir.x * d, dir.y * d, dir.z * d);
+ if (this._positionEarthMoonFromEphemeris(moon, this.simulatedJD)) {
  moonOrbitalAngle = Math.atan2(moon.position.z, moon.position.x);
  }
  }
@@ -763,12 +760,13 @@ update(deltaTime, timeSpeed, camera, controls) {
  const tbl = this._starTwinkleRatios;
  const szTbl = this._starTwinkleSizes;
  const tblLen = tbl ? tbl.length : 0;
- for (let i = 0; i < 30 && tblLen > 0; i++) {
+ const batchSize = this._starTwinkleBatchSize;
+ for (let i = 0; i < batchSize && tblLen > 0; i++) {
  const ptr = (this._starTwinklePtr + i) % tblLen;
  const idx = Math.floor(tbl[ptr] * sizes.length);
  sizes[idx] = szTbl[ptr];
  }
- if (tblLen > 0) this._starTwinklePtr = (this._starTwinklePtr + 30) % tblLen;
+ if (tblLen > 0) this._starTwinklePtr = (this._starTwinklePtr + batchSize) % tblLen;
  this.starfield.geometry.attributes.size.needsUpdate = true;
  }
 
@@ -1399,8 +1397,23 @@ updateOrbitalPaths() {
  // Helper: generate orbit trace points.
  // In scientific mode, traces the actual Keplerian ellipse (Sun at focus) or the tilted ellipse.
  // In educational mode, generates a simple circle of radius `distance` on the XZ plane.
- const makeOrbitPoints = (distance, e, inc, w, segments) => {
+ const makeOrbitPoints = (planetId, distance, e, inc, w, segments) => {
  const pts = [];
+ const sampleJd = this.simulatedJD;
+ const ephemerisOrbit = planetEclipticOrbitPosition(planetId, sampleJd, 0);
+ if (ephemerisOrbit) {
+ for (let j = 0; j <= segments; j++) {
+ const state = planetEclipticOrbitPosition(
+ planetId, sampleJd, (j / segments) * Math.PI * 2
+ );
+ const radius = this.scientificMode
+ ? distance * state.radiusAu / state.semiMajorAxisAu
+ : distance;
+ const scale = radius / state.radiusAu;
+ pts.push(new THREE.Vector3(state.x * scale, state.y * scale, state.z * scale));
+ }
+ return pts;
+ }
  if (this.scientificMode) {
  const a = distance;
  for (let j = 0; j <= segments; j++) {
@@ -1432,7 +1445,7 @@ updateOrbitalPaths() {
  // Scale segment count so arc-chord deviation stays below ~0.1× planet radius
  // (20 units per segment arc gives ~0.025 units deviation at Pluto's scale)
  const segments = Math.min(1024, Math.max(128, Math.round(2 * Math.PI * distance / 20)));
- const points = makeOrbitPoints(distance, e, inc, w, segments);
+ const points = makeOrbitPoints(planetName, distance, e, inc, w, segments);
  
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const material = new THREE.LineBasicMaterial({

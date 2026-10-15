@@ -447,19 +447,6 @@ _onPlanetTextureSuccess(planetName, tex, url, sourceType) {
         planet.userData.remoteTextureLoaded = true;
         planet.userData.remoteTextureURL = url;
 
- // Earth: derive an ocean/land roughness map from the loaded color image so
- // oceans get a sharp specular highlight while continents stay matte.
- if (lowerName === 'earth' && planet.material.isMeshStandardMaterial) {
- this._buildEarthOceanLandRoughnessMap(tex).then((roughnessMap) => {
- if (!planet.material) return;
- planet.material.roughnessMap = roughnessMap;
- // With a roughness map, the scalar `roughness` is multiplied per-pixel,
- // so reset it to 1.0 to use the map values directly.
- planet.material.roughness = 1.0;
- planet.material.needsUpdate = true;
- }).catch(() => { /* keep matte fallback */ });
- }
-
         const meta = this._pendingTextureMeta?.[lowerName];
         if (meta) {
             meta.success = true;
@@ -537,7 +524,10 @@ _buildEarthOceanLandRoughnessMap(colorTexture) {
                  ctx.drawImage(img, 0, 0, W, H);
                  const imgData = ctx.getImageData(0, 0, W, H);
                  const data = imgData.data;
-                 const OCEAN = 0x59; // ~0.35 * 255
+                 // A low roughness creates a compact point-light glint that
+                 // resembles an eclipse shadow at overview scale. The real
+                 // Sun has a finite angular diameter, so use a broader sheen.
+                 const OCEAN = 0xB3; // ~0.70 * 255
                  const LAND = 0xF2;  // ~0.95 * 255
                  for (let i = 0; i < data.length; i += 4) {
                      const r = data[i], g = data[i + 1], b = data[i + 2];
@@ -578,7 +568,7 @@ createEarthTextureRealFixed(size) {
  // as a color-map fallback; it would make Earth appear as an all-white cloud
  // ball. If the surface texture fails, fall through to the procedural generator.
  const primary = [
- './textures/planets/earth_1k.webp'
+ './textures/planets/earth_2k.webp'
  ];
  // No external fallbacks - use procedural if local fails
  const pluginFallbacks = [];

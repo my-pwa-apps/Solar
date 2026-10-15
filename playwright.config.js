@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: '**/*.spec.js',
   timeout: 180_000,
   expect: {
     timeout: 10_000
@@ -37,6 +38,24 @@ export default defineConfig({
       name: 'mobile-chromium',
       use: {
         ...devices['Pixel 7']
+      }
+    },
+    {
+      name: 'firefox-smoke',
+      testMatch: '**/compatibility.spec.js',
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: { width: 1440, height: 900 },
+        serviceWorkers: 'block'
+      }
+    },
+    {
+      name: 'webkit-smoke',
+      testMatch: '**/compatibility.spec.js',
+      use: {
+        ...devices['Desktop Safari'],
+        viewport: { width: 1440, height: 900 },
+        serviceWorkers: 'block'
       }
     }
   ]

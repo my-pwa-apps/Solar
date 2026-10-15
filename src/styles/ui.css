@@ -1837,7 +1837,7 @@ select {
     position: fixed;
     top: 70px;
     right: 20px;
-    z-index: 95;
+    z-index: 200;
     background: rgba(52, 199, 89, 0.95);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);

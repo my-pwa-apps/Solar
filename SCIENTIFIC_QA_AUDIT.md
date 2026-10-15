@@ -1,5 +1,11 @@
 # Space Voyage — Scientific QA Audit Report
 
+> **Historical snapshot:** This audit covers version 2.10.249. Current automated
+> eclipse tests support approximately `5e-4` gamma/magnitude agreement, roughly
+> 20 km typical ground-track error (up to about 60 km near grazing incidence), and
+> 40-80 seconds of timing drift. The wider planetary scene remains an educationally
+> scaled visualization; see `README.md` and the current `BACKLOG.md` for open limits.
+
 **Auditor role:** Principal Scientific QA Engineer  
 **Audit date:** 2026-06-05  
 **Codebase version:** SW v2.10.249  
@@ -10,7 +16,13 @@
 
 ## 1. Executive Summary
 
-Space Voyage demonstrates **strong scientific fundamentals**. Physical sizes for all 8 planets, Pluto, and all 14 named moons are accurate to within 0.1% of NASA/JPL published values. Orbital elements (eccentricity, inclination, mean motion) match the Standish et al. 1992 / JPL approximate ephemerides closely. The Keplerian solver (Newton-Raphson on Kepler's equation) is mathematically correct.
+Space Voyage demonstrates **strong scientific fundamentals within an educationally
+scaled model**. Physical data values for all 8 planets, Pluto, and all 14 named moons
+are accurate to within 0.1% of NASA/JPL published values, although rendered body and
+moon-distance scales are deliberately adjusted. Orbital elements (eccentricity,
+inclination, mean motion) match the Standish et al. 1992 / JPL approximate ephemerides
+closely. The Keplerian solver (Newton-Raphson on Kepler's equation) is mathematically
+correct; this does not make every rendered world-space position an ephemeris result.
 
 However, several issues ranging from critical model errors to stale description strings require attention before this project is considered scientifically authoritative:
 

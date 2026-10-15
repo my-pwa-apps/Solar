@@ -4,11 +4,15 @@
  */
 import { DEBUG } from './utils.js';
 
+const t = (key) => (window.t || ((value) => value))(key);
+
 export class ServiceWorkerManager {
-    constructor() {
+    constructor({ reloadPage = () => window.location.reload() } = {}) {
         this.registration = null;
         this._listenersBound = false;
         this._reloadTriggered = false;
+        this._reloadPage = reloadPage;
+        this.activeVersion = null;
     }
 
     /**
@@ -22,7 +26,7 @@ export class ServiceWorkerManager {
     _reloadOnce() {
         if (this._reloadTriggered) return;
         this._reloadTriggered = true;
-        window.location.reload();
+        this._reloadPage();
     }
 
     /**
@@ -74,6 +78,9 @@ export class ServiceWorkerManager {
      */
     setupUpdateListener() {
         if (!this.registration) return;
+        if (this.registration.waiting && navigator.serviceWorker.controller) {
+            this.showUpdateNotification();
+        }
         // register() resolves to the same registration object for a given scope,
         // so a retry would otherwise stack a second 'updatefound' handler.
         if (this._updateListenerTarget === this.registration) return;
@@ -81,6 +88,7 @@ export class ServiceWorkerManager {
 
         this.registration.addEventListener('updatefound', () => {
             const newWorker = this.registration.installing;
+            if (!newWorker) return;
             if (DEBUG && DEBUG.enabled) console.log('Service Worker update found');
             
             newWorker.addEventListener('statechange', () => {
@@ -96,8 +104,13 @@ export class ServiceWorkerManager {
      * Setup controller change listener
      */
     setupControllerChangeListener() {
+        let hadController = !!navigator.serviceWorker.controller;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (DEBUG && DEBUG.enabled) console.log('New Service Worker activated');
+            if (!hadController) {
+                hadController = true;
+                return;
+            }
             this._reloadOnce();
         });
     }
@@ -107,52 +120,114 @@ export class ServiceWorkerManager {
      */
     setupMessageListener() {
         navigator.serviceWorker.addEventListener('message', (event) => {
-            const msg = event.data;
-            if (!msg || !msg.type) return;
-            
-            switch (msg.type) {
-                case 'SW_INSTALLED':
-                    if (DEBUG && DEBUG.enabled) console.log('[SW] Installed version', msg.version);
-                    break;
-                case 'SW_ACTIVATED':
-                    if (DEBUG && DEBUG.enabled) console.log('[SW] Activated version', msg.version);
-                    break;
-                case 'SW_SKIP_WAITING_COMPLETE':
-                    if (DEBUG && DEBUG.enabled) console.log('[SW] Skip waiting complete; reloading');
-                    this._reloadOnce();
-                    break;
-            }
+            this.handleMessage(event.data);
         });
+    }
+
+    handleMessage(msg) {
+        if (!msg || !msg.type) return;
+
+        switch (msg.type) {
+            case 'SW_INSTALLED':
+                if (DEBUG && DEBUG.enabled) console.log('[SW] Installed version', msg.version);
+                break;
+            case 'SW_ACTIVATED':
+                this.activeVersion = msg.version || null;
+                if (DEBUG && DEBUG.enabled) console.log('[SW] Activated version', msg.version);
+                break;
+            case 'SW_SKIP_WAITING_COMPLETE':
+                if (DEBUG && DEBUG.enabled) console.log('[SW] Activation requested; waiting for controllerchange');
+                break;
+            case 'SW_INSTALL_FAILED':
+                console.error('[SW] Offline setup failed:', msg.message || 'Unknown error');
+                this.showInstallFailure();
+                break;
+            case 'SW_STORAGE_STATUS':
+                this.storageStatus = msg.storage || null;
+                break;
+            case 'SW_QUOTA_EXCEEDED':
+                this.storageStatus = msg.storage || null;
+                console.warn('[SW] Storage quota exhausted; continuing without caching');
+                this.showStoragePressure();
+                break;
+        }
     }
 
     /**
      * Show update notification UI
      */
     showUpdateNotification() {
+        this._showNotification({
+            message: t('updateAvailable'),
+            icon: '🔄',
+            actionLabel: t('update'),
+            onAction: () => {
+                const waiting = this.registration?.waiting;
+                if (waiting) {
+                    waiting.postMessage({ type: 'SKIP_WAITING' });
+                } else {
+                    window.location.reload();
+                }
+            }
+        });
+    }
+
+    showInstallFailure() {
+        this._showNotification({
+            message: t('offlineSetupFailed'),
+            icon: '⚠',
+            actionLabel: t('errorReload'),
+            onAction: () => window.location.reload()
+        });
+    }
+
+    showStoragePressure() {
+        this._showNotification({
+            message: t('storagePressure'),
+            icon: '⚠',
+            actionLabel: t('errorReload'),
+            onAction: () => this._reloadPage()
+        });
+    }
+
+    _showNotification({ message, icon, actionLabel, onAction }) {
         const notification = document.getElementById('update-notification');
         if (!notification) return;
-        
+
         // Guard against stacking listeners from repeated calls
         if (this._updateNotificationShown) return;
         this._updateNotificationShown = true;
-        
+        this._notificationListeners?.abort();
+        this._notificationListeners = new AbortController();
+        const { signal } = this._notificationListeners;
+
+        this._notificationPreviousFocus = document.activeElement;
+        const messageElement = notification.querySelector('.update-text');
+        const iconElement = notification.querySelector('.update-icon');
+        const actionButton = document.getElementById('update-reload');
+        if (messageElement) messageElement.textContent = message;
+        if (iconElement) iconElement.textContent = icon;
+        if (actionButton) actionButton.textContent = actionLabel;
+
         notification.classList.remove('hidden');
-        
-        // Update button - request the waiting worker to activate
-        document.getElementById('update-reload')?.addEventListener('click', () => {
-            const waiting = this.registration?.waiting;
-            if (waiting) {
-                waiting.postMessage({ type: 'SKIP_WAITING' });
-            } else {
-                window.location.reload();
-            }
-        }, { once: true });
-        
+        notification.setAttribute('aria-hidden', 'false');
+        actionButton?.focus();
+
+        actionButton?.addEventListener('click', () => {
+            this._notificationListeners.abort();
+            onAction();
+        }, { once: true, signal });
+
         // Dismiss button
         document.getElementById('update-dismiss')?.addEventListener('click', () => {
+            this._notificationListeners.abort();
             notification.classList.add('hidden');
+            notification.setAttribute('aria-hidden', 'true');
             this._updateNotificationShown = false; // Allow showing again for future updates
-        }, { once: true });
+            if (this._notificationPreviousFocus instanceof HTMLElement) {
+                this._notificationPreviousFocus.focus();
+            }
+        }, { once: true, signal });
     }
 }
 

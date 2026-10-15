@@ -149,7 +149,8 @@ createStarfield(scene) {
 
  // Pre-compute twinkle jitter table so the hot path makes zero Math.random() calls.
  // 30 entries: 16-bit index (proportional 0–1) and float size (1–3).
- const twinkleCount = 30;
+ this._starTwinkleBatchSize = 30;
+ const twinkleCount = this._starTwinkleBatchSize;
  this._starTwinkleRatios = new Float32Array(twinkleCount); // 0..1 ratios into sizes array
  this._starTwinkleSizes = new Float32Array(twinkleCount); // new size values
  for (let i = 0; i < twinkleCount; i++) {

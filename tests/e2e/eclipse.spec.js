@@ -118,6 +118,58 @@ test.describe('eclipse rendering and date controls', () => {
     expect(r.maxDrop).toBeGreaterThan(120);
   });
 
+  test('Earth has no synthetic material maps that can resemble a second moving shadow', async ({ page }) => {
+    await bootApp(page);
+
+    const maps = await page.evaluate(() => {
+      const material = window.app.solarSystemModule.planets.earth.material;
+      return {
+        bumpMap: material.bumpMap,
+        normalMap: material.normalMap,
+        roughnessMap: material.roughnessMap,
+        roughness: material.roughness
+      };
+    });
+
+    expect(maps.bumpMap).toBeNull();
+    expect(maps.normalMap).toBeNull();
+    expect(maps.roughnessMap).toBeNull();
+    expect(maps.roughness).toBeCloseTo(0.95);
+  });
+
+  test('a known partial eclipse draws shallow penumbra and exposes its location', async ({ page }) => {
+    await bootApp(page);
+    const before = await page.evaluate(() => {
+      const solarSystem = window.app.solarSystemModule;
+      window.app.timeSpeed = 0;
+      solarSystem.seekToDate(new Date('2025-03-29T10:47:00Z'));
+      const uniforms = solarSystem.eclipseRenderer.uniforms;
+      return {
+        type: solarSystem.currentEclipse?.type,
+        intensity: uniforms.uEclipseIntensity.value,
+        penumbraOnly: uniforms.uPenumbraOnly.value,
+        umbraKm: uniforms.uUmbraKm.value,
+        penumbraKm: uniforms.uPenumbraKm.value,
+        camera: window.app.sceneManager.camera.position.toArray()
+      };
+    });
+
+    expect(before.type).toBe('partial');
+    expect(before.intensity).toBe(1);
+    expect(before.penumbraOnly).toBe(1);
+    expect(before.umbraKm).toBe(0);
+    expect(before.penumbraKm).toBeGreaterThan(3000);
+    await expect(page.locator('#eclipse-status')).not.toHaveClass(/hidden/);
+    await expect(page.locator('#eclipse-status')).toContainText(/partial/i);
+
+    await page.evaluate(() => document.getElementById('eclipse-status').click());
+    const cameraMoved = await page.evaluate((camera) => {
+      const current = window.app.sceneManager.camera.position;
+      return current.distanceTo({ x: camera[0], y: camera[1], z: camera[2] });
+    }, before.camera);
+    expect(cameraMoved).toBeGreaterThan(1);
+  });
+
   test('the Moon is placed between Earth and the Sun during totality', async ({ page }) => {
     await bootApp(page);
 
@@ -126,28 +178,22 @@ test.describe('eclipse rendering and date controls', () => {
       window.app.timeSpeed = 0;
       ssm.seekToDate(new Date(t));
 
-      // The mesh is repositioned by the render loop, not by seekToDate, so
-      // wait for a couple of frames before measuring.
-      return new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          const earth = ssm.planets.earth;
-          const V = earth.position.constructor;
-          const moon = (earth.userData.moons || []).find((m) => m.userData?.id === 'moon');
-          if (!moon) { resolve({ moonFound: false }); return; }
+      const earth = ssm.planets.earth;
+      const V = earth.position.constructor;
+      const moon = (earth.userData.moons || []).find((m) => m.userData?.id === 'moon');
+      if (!moon) return { moonFound: false };
 
-          const earthW = new V(); earth.getWorldPosition(earthW);
-          const moonW = new V(); moon.getWorldPosition(moonW);
-          const toSun = earthW.clone().negate().normalize();   // Sun is at the origin
-          const toMoon = moonW.clone().sub(earthW).normalize();
+      const earthW = new V(); earth.getWorldPosition(earthW);
+      const moonW = new V(); moon.getWorldPosition(moonW);
+      const toSun = earthW.clone().negate().normalize();   // Sun is at the origin
+      const toMoon = moonW.clone().sub(earthW).normalize();
 
-          resolve({
-            moonFound: true,
-            angleDeg: Math.acos(Math.max(-1, Math.min(1, toSun.dot(toMoon)))) * 180 / Math.PI,
-            moonIsSunward: moonW.length() < earthW.length(),
-            localY: moon.position.y
-          });
-        }));
-      });
+      return {
+        moonFound: true,
+        angleDeg: Math.acos(Math.max(-1, Math.min(1, toSun.dot(toMoon)))) * 180 / Math.PI,
+        moonIsSunward: moonW.length() < earthW.length(),
+        localY: moon.position.y
+      };
     }, AUG_2026);
 
     expect(r.moonFound).toBe(true);
@@ -188,6 +234,46 @@ test.describe('eclipse rendering and date controls', () => {
     expect(driftDays).toBeLessThan(1);
   });
 
+  test('Next eclipse searches off the main thread', async ({ page }) => {
+    await bootApp(page);
+    const workerCreated = page.waitForEvent('worker');
+    const result = await page.evaluate(async () => {
+      const solarSystem = window.app.solarSystemModule;
+      window.app.timeSpeed = 0;
+      solarSystem.seekToDate(new Date(Date.UTC(2026, 8, 1)));
+      const startJd = solarSystem.simulatedJD;
+      const button = document.getElementById('jump-next-eclipse');
+      let frames = 0;
+      let running = true;
+      const countFrame = () => {
+        frames++;
+        if (running) requestAnimationFrame(countFrame);
+      };
+      requestAnimationFrame(countFrame);
+      button.click();
+
+      const deadline = performance.now() + 15000;
+      while (button.disabled && performance.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 16));
+      }
+      running = false;
+      return {
+        frames,
+        completed: !button.disabled,
+        startJd,
+        endJd: solarSystem.simulatedJD,
+        type: solarSystem.currentEclipse?.type
+      };
+    });
+    const worker = await workerCreated;
+
+    expect(result.completed).toBe(true);
+    expect(worker.url()).toContain('/src/modules/astro/EclipseWorker.js');
+    expect(result.frames).toBeGreaterThan(0);
+    expect(result.endJd).toBeGreaterThan(result.startJd);
+    expect(['total', 'annular']).toContain(result.type);
+  });
+
   test('the app opens at today\'s date', async ({ page }) => {
     await bootApp(page);
     const drift = await page.evaluate(() => {
@@ -196,5 +282,47 @@ test.describe('eclipse rendering and date controls', () => {
     });
     // Time runs accelerated once loaded, so allow for the boot sequence.
     expect(drift).toBeLessThan(3);
+  });
+
+  test('Earth focus does not resemble a lingering eclipse after totality', async ({ browser }, testInfo) => {
+    const context = await browser.newContext({
+      baseURL: testInfo.project.use.baseURL,
+      serviceWorkers: 'block'
+    });
+    const page = await context.newPage();
+    await bootApp(page);
+    const result = await page.evaluate(async () => {
+      const app = window.app;
+      const solarSystem = app.solarSystemModule;
+      app.timeSpeed = 0;
+      solarSystem.seekToDate(new Date('2026-08-12T20:58:13Z'));
+      solarSystem.focusOnObject(
+        solarSystem.planets.earth,
+        app.sceneManager.camera,
+        app.sceneManager.controls
+      );
+
+      const deadline = performance.now() + 5000;
+      while (solarSystem._focusTransitionActive && performance.now() < deadline) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+
+      const earth = solarSystem.planets.earth;
+      const Vector = earth.position.constructor;
+      const earthWorld = new Vector();
+      earth.getWorldPosition(earthWorld);
+      const toCamera = app.sceneManager.camera.position.clone().sub(earthWorld).normalize();
+      const toSun = new Vector().sub(earthWorld).normalize();
+      return {
+        illuminationDot: toCamera.dot(toSun),
+        eclipseIntensity: solarSystem.eclipseRenderer.uniforms.uEclipseIntensity.value,
+        isEclipse: solarSystem.currentEclipse?.isEclipse
+      };
+    });
+
+    expect(result.isEclipse).toBe(false);
+    expect(result.eclipseIntensity).toBe(0);
+    expect(result.illuminationDot).toBeGreaterThan(0.5);
+    await context.close();
   });
 });

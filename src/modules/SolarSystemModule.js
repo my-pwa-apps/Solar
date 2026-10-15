@@ -283,6 +283,7 @@ export class SolarSystemModule {
  this._earthOrientScratchF = new THREE.Vector3();
  this._earthOrientQuatA = new THREE.Quaternion();
  this._earthOrientQuatB = new THREE.Quaternion();
+ this._earthOrientMatrix = new THREE.Matrix4();
 
  // Pre-allocated scratch vectors for update() hot path — avoids per-frame GC pressure
  this._trackTargetPos = new THREE.Vector3();
@@ -1497,11 +1498,29 @@ let actualRadius;
      }
      
      const adjustedDistance = distance * distanceMultiplier;
-     endPos = new THREE.Vector3(
-         targetPosition.x + Math.cos(angleOffset) * adjustedDistance,
-         targetPosition.y + adjustedDistance * elevationFactor,
-         targetPosition.z + Math.sin(angleOffset) * adjustedDistance
-     );
+     if (planetName === 'earth') {
+         const towardSun = focusScratch.sunPosition
+             .copy(this.sun?.position || { x: 0, y: 0, z: 0 })
+             .sub(targetPosition)
+             .normalize();
+         const lateral = focusScratch.rightVector
+             .set(-towardSun.z, 0, towardSun.x)
+             .normalize();
+         const viewDirection = focusScratch.directionFromOrigin
+             .copy(towardSun)
+             .multiplyScalar(0.75)
+             .addScaledVector(lateral, 0.5);
+         viewDirection.y += 0.35;
+         viewDirection.normalize();
+         endPos = new THREE.Vector3().copy(targetPosition)
+             .addScaledVector(viewDirection, adjustedDistance);
+     } else {
+         endPos = new THREE.Vector3(
+             targetPosition.x + Math.cos(angleOffset) * adjustedDistance,
+             targetPosition.y + adjustedDistance * elevationFactor,
+             targetPosition.z + Math.sin(angleOffset) * adjustedDistance
+         );
+     }
      controls.target.copy(targetPosition);
  } else if (userData.isComet) {
      // Comets: Chase camera positioned to see nucleus, coma, and spectacular tails

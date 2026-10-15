@@ -129,6 +129,13 @@ test('reproduces the 8 Apr 2024 total eclipse, where geometry is less sensitive'
     assert.ok(Math.abs(e.lonDeg + 104.1) < 0.5, `lon ${e.lonDeg}`);
 });
 
+test('gives southern-node eclipses a negative gamma', () => {
+    const e = solarEclipseAt(julianDay(new Date(Date.UTC(2020, 11, 14, 16, 13, 0))));
+    assert.equal(e.type, 'total');
+    // Published gamma -0.2939 for the 14 Dec 2020 eclipse over South America.
+    assert.ok(Math.abs(e.gamma - (-0.2939)) < 0.005, `gamma ${e.gamma}`);
+});
+
 test('reproduces the 2 Aug 2027 total eclipse', () => {
     const e = solarEclipseAt(julianDay(new Date(Date.UTC(2027, 7, 2, 10, 7, 50))));
     assert.equal(e.type, 'total');
