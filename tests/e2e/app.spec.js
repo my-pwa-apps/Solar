@@ -132,8 +132,48 @@ test('keeps core navigation and controls working', async ({ page }) => {
 
   const scale = page.locator('#toggle-scale');
   await expect(scale).toHaveAttribute('aria-pressed', 'false');
+  // Select 'planets' orbit mode and verify toggling scale preserves planet-only orbits
+  await page.evaluate(() => window.app.applyOrbitMode('planets'));
   await scale.click();
   await expect(scale).toHaveAttribute('aria-pressed', 'true');
+  const orbitVisibilityAfterScale = await page.evaluate(() => {
+    const orbits = window.app.solarSystemModule.orbits;
+    const planetOrbit = orbits.find((o) => o.userData.type === 'orbit' && !o.userData.isDwarf);
+    const dwarfOrbit = orbits.find((o) => o.userData.type === 'orbit' && o.userData.isDwarf);
+    const moonOrbit = orbits.find((o) => o.userData.type === 'moonOrbit');
+    return {
+      mode: window.app.solarSystemModule.orbitMode,
+      planetVisible: planetOrbit?.visible ?? null,
+      dwarfVisible: dwarfOrbit?.visible ?? null,
+      moonVisible: moonOrbit?.visible ?? null
+    };
+  });
+  expect(orbitVisibilityAfterScale).toEqual({
+    mode: 'planets',
+    planetVisible: true,
+    dwarfVisible: false,
+    moonVisible: false
+  });
+
+  // Verify VR controller trigger selection resolves objects via userData.name
+  const vrSelectedName = await page.evaluate(() => {
+    const sm = window.app.sceneManager;
+    const ssm = window.app.solarSystemModule;
+    const mars = ssm.planets.mars;
+    if (!mars) return { error: 'missing mars' };
+    // Create a mock controller at a known world position just in front of Mars along +Z,
+    // aiming its local -Z axis directly at Mars's center.
+    mars.updateMatrixWorld(true);
+    const mockCtrl = mars.clone(false);
+    mockCtrl.userData = {};
+    mockCtrl.position.set(mars.position.x, mars.position.y, mars.position.z + 5);
+    mockCtrl.quaternion.identity();
+    mockCtrl.scale.set(1, 1, 1);
+    mockCtrl.updateMatrixWorld(true);
+    sm.onSelectStart(mockCtrl, 0);
+    return ssm.focusedObject?.userData?.name || null;
+  });
+  expect(vrSelectedName).toBe('mars');
 
   const speed = page.locator('#time-speed');
   await speed.evaluate((input) => {
@@ -157,6 +197,19 @@ test('keeps core navigation and controls working', async ({ page }) => {
   await expect(page.locator('#settings-modal')).toContainText(`v${APP_VERSION}`);
   await page.locator('button[aria-label="Close settings dialog"]').click({ force: true });
   await expect(page.locator('#settings-modal')).toHaveClass(/hidden/);
+
+  // Verify #speed-control stays at its CSS top (~72px) on window resize (does not jump to 100px)
+  const speedTopAfterResize = await page.evaluate(async () => {
+    window.dispatchEvent(new Event('resize'));
+    await new Promise((r) => setTimeout(r, 200));
+    return Math.round(document.getElementById('speed-control').getBoundingClientRect().top);
+  });
+  expect(speedTopAfterResize).toBeLessThan(90);
+
+  // Verify PWA URL shortcut (?planet=mars) focuses Mars on startup
+  await page.goto('/?planet=mars');
+  await page.waitForFunction(() => Boolean(window.app?._experienceStarted && document.querySelector('#loading')?.classList.contains('hidden')), { timeout: 60_000 });
+  await expect(page.locator('#object-name')).toHaveText('Mars');
 
   expect(diagnostics).toEqual([]);
 });

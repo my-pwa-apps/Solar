@@ -239,11 +239,9 @@ export class SolarSystemModule {
  varuna: { M0: 97.0, n: 0.00352 }
  };
 
- // Current simulated Julian Date — drives the date display and seekToDate().
+ // Current simulated Julian Date — drives seekToDate() and orbital phase seeding.
  // Initialised to J2000 epoch; updated to today inside initPositionsToDate().
  this.simulatedJD = 2451545.0;
- // Wall-clock timestamp of last simulatedDateChanged event dispatch (throttle)
- this._lastDateEventWall = 0;
 
  // Time acceleration factor (1 = real-time, higher = faster)
  this.timeAcceleration = 360; // 360x faster = 1 Earth day in 4 minutes
@@ -271,11 +269,6 @@ export class SolarSystemModule {
  this._focusTransitionToken = 0;
  this._focusTransitionActive = false;
  this._focusTransitionCancelRequested = false;
-
- // Pre-allocated CustomEvent for date-changed dispatch — avoids creating
- // 3 new objects every 200 ms in the update hot path.
- this._dateEventDetail = { jd: 0 };
- this._dateEvent = new CustomEvent('simulatedDateChanged', { detail: this._dateEventDetail });
 
  // Frame counters for throttled animations (initialised here, not lazily in update)
  this._sunFlareFrame    = 0;
@@ -3499,12 +3492,14 @@ export class SolarSystemModule {
  if (DEBUG.enabled) console.log(`[Moon] Created "${config.name}" for ${planet.userData.name} at distance ${config.distance}, initial position (${moon.position.x.toFixed(2)}, ${moon.position.y.toFixed(2)}, ${moon.position.z.toFixed(2)})`);
  }
 
- setScientificMode(enabled) {
+ setScientificMode(enabled, { rebuildOrbits = true } = {}) {
  this.scientificMode = !!enabled;
  this.applyScientificModeSpeeds();
  // Redraw orbit lines to match the new motion model
  // (circles for educational mode, Keplerian ellipses for scientific mode)
+ if (rebuildOrbits) {
  this.updateOrbitalPaths();
+ }
  }
 
  applyScientificModeSpeeds() {
@@ -3801,9 +3796,6 @@ export class SolarSystemModule {
  comet.position.z = r * Math.sin(userData.angle) * Math.cos(inclRad);
  });
  }
-
- // Notify UI immediately
- window.dispatchEvent(new CustomEvent('simulatedDateChanged', { detail: { jd } }));
 
  // Update trajectory-based spacecraft positions (Voyagers, Pioneers, New Horizons)
  this._initSpacecraftToDate(jd);
@@ -9164,15 +9156,8 @@ createHyperrealisticHubble(satData) {
  // Advance simulated time. Allow negative speeds so rewinding works correctly.
  this.simulatedHours += (deltaTime / 3600) * this.timeAcceleration * rotationSpeed;
 
- // Advance Julian Date for date display and seekToDate()
+ // Advance Julian Date for seekToDate() and orbital phase calculations
  this.simulatedJD += (deltaTime * this.timeAcceleration * orbitalSpeed) / 86400;
- // Throttled date-changed event (max once per 200 ms wall-clock)
- const _wallNow = Date.now();
- if (_wallNow - this._lastDateEventWall >= 200) {
- this._lastDateEventWall = _wallNow;
- this._dateEventDetail.jd = this.simulatedJD;
- window.dispatchEvent(this._dateEvent);
- }
  const now = performance.now();
  const elapsedHours = this.simulatedHours;
  
@@ -10315,6 +10300,10 @@ createHyperrealisticHubble(satData) {
  });
  }
  });
+ 
+ // Re-apply the active orbit filter ('all', 'planets', 'dwarfs', 'moons', 'comets', 'none')
+ // so rebuilding orbital paths on a scale toggle does not reset visibility to 'all'-only.
+ this.setOrbitMode(this.orbitMode || 'all');
  
  if (DEBUG.enabled) console.log(` Orbits updated: ${this.orbits.length} (including moon orbits)`);
  }

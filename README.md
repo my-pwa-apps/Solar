@@ -3,7 +3,7 @@
 An immersive, educational Progressive Web App for exploring our Solar System in stunning 3D with VR/AR support.
 
 ![Space Voyage](https://img.shields.io/badge/PWA-Ready-success)
-![Three.js](https://img.shields.io/badge/Three.js-v0.183.0-blue)
+![Three.js](https://img.shields.io/badge/Three.js-v0.186.1-blue)
 ![WebXR](https://img.shields.io/badge/WebXR-Supported-purple)
 ![License](https://img.shields.io/badge/license-MIT-green)
 

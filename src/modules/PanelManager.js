@@ -12,7 +12,7 @@ export class PanelManager {
         this.resizeTimeout = null;
         this.constraints = {
             edgePadding: 10,
-            minTop: 100 // Below header
+            minTop: 64 // Below header (#speed-control starts at top: 70-72px)
         };
     }
 
@@ -201,6 +201,11 @@ export class PanelManager {
      */
     applyCSSDefaults(panelElement) {
         const rect = panelElement.getBoundingClientRect();
+        // If the panel has not been laid out yet or is right-anchored by CSS,
+        // leave CSS positioning untouched until the user actually drags it.
+        if (rect.width === 0 && rect.height === 0) {
+            return { x: 0, y: 0 };
+        }
         let x = rect.left;
         let y = rect.top;
         

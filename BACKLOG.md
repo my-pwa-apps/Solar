@@ -6,6 +6,170 @@ leave the entry in place so the history of the decision survives.
 
 ---
 
+## Review — 2026-10-15 (branch `main`, v2.10.304)
+
+Scope: third full-repository review across all 23 engineering review phases.
+Unresolved items from 2026-08-18 and 2026-07-27 remain valid and are preserved
+below without duplication; existing items whose root cause expanded (such as
+CDN transitive dependencies and dead Time Machine code) are noted here and
+cross-referenced.
+
+### High
+
+- [x] **Precache or self-host transitive Three.js addon modules so cold-install offline boot works**
+
+  **Priority:** High  
+  **Category:** Reliability  
+  **Confidence:** High  
+  **Area:** Service Worker / Offline module graph  
+  **Affected files:** `sw.js`, `index.html`, `tests/static-regression.spec.js`  
+  **Evidence:** `sw.js` lines 134–143 (`CDN_CACHE_FILES` lists 8 direct entrypoints; comment on line 131 states *"Transitive imports (Pass.js, shader chunks) are not listed here; they are picked up by the runtime cache-first handler"*); `UnrealBloomPass.js`, `SMAAPass.js`, `OutputPass.js`, `EffectComposer.js`, and `XRControllerModelFactory.js` import transitive modules (`Pass.js`, `MaskPass.js`, `CopyShader.js`, `LuminosityHighPassShader.js`, `SMAAShader.js`, `OutputShader.js`, `GLTFLoader.js`, `BufferGeometryUtils.js`, `motion-controllers.module.js`) that are never requested on mobile (`IS_MOBILE` returns early in `setupPostProcessing()`) or when WebXR is not entered during first session.  
+  **Problem:** `sw.js` only precaches direct `three/addons/*` imports, relying on the runtime fetch handler to populate transitive ES module dependencies. On mobile devices (where `setupPostProcessing()` is skipped) or if a user installs the PWA and goes offline before all transitive modules are fetched, the module graph is incomplete in Cache Storage. Worse, if `sw.js` is not yet controlling the page during the initial boot fetch, transitive CDN requests bypass the SW runtime cache altogether and only enter the browser HTTP cache.  
+  **Impact:** Offline launch on a fresh PWA install or after HTTP cache eviction can fail to resolve the ES module graph, triggering `FatalError` instead of booting offline.  
+  **Recommended solution:** Complete the vendor self-hosting item (already partially started in `vendor/three@0.183.2/build/`) by vendoring the full closure of `three/addons/*` modules and their transitive imports into `vendor/three@0.183.2/`, or enumerate the full transitive closure in `CDN_CACHE_FILES` and verify the import graph recursively in `tests/static-regression.spec.js`.  
+  **Regression considerations:** All desktop post-processing passes (`EffectComposer`, `UnrealBloomPass`, `SMAAPass`, `OutputPass`) and WebXR controller models must continue to resolve identically.  
+  **Acceptance criteria:** A fresh context that waits for SW `activated`, goes offline immediately, and reloads in both desktop and mobile profiles boots to `_experienceStarted === true` with zero failed module requests.  
+  **Validation:** Add an offline cold-reload Playwright test and extend `tests/static-regression.spec.js` to walk transitive `import` statements of all imported addons.  
+  **Estimated effort:** Medium  
+  **Business value:** High  
+  **Technical debt reduction:** High
+
+- [x] **Wire PWA manifest shortcut URL parameters (`?planet=`, `?vr=true`) into application startup**
+
+  **Priority:** High  
+  **Category:** Bug  
+  **Confidence:** High  
+  **Area:** PWA shortcuts / Startup navigation  
+  **Affected files:** `src/modules/PWAManager.js`, `src/main.js`, `manifest*.json`  
+  **Evidence:** `manifest.json` lines 318–357 define three OS app shortcuts (`./?planet=earth`, `./?planet=mars`, `./?vr=true`); `src/modules/PWAManager.js` lines 277–291 parse `?planet=` and `?vr=true` into `window.startupPlanet` and `window.startupVR = true`; grep across the entire repository shows zero reads of `window.startupPlanet` or `window.startupVR`. Meanwhile `src/main.js:preSelectEarth()` unconditionally focuses Earth on first visit or does nothing on repeat visits.  
+  **Problem:** The PWA manifest advertises OS jump-list / home-screen shortcuts ("View Earth", "View Mars", "Enter VR Mode"), and `PWAManager.handleURLShortcuts()` captures the query parameters onto `window`, but `App.startExperience()` never reads `window.startupPlanet` or `window.startupVR`. Launching the "View Mars" shortcut never navigates to Mars.  
+  **Impact:** Broken user-facing PWA feature advertised in all 6 localized manifests and `README.md`. Users clicking "View Mars" from the OS taskbar/home-screen shortcut land on the default view or Earth.  
+  **Recommended solution:** In `App.startExperience()` (in `src/main.js`), check `window.startupPlanet` before `preSelectEarth()`: if set, resolve via `this.findObjectByNavigationValue(window.startupPlanet)`, update the info panel, and call `focusOnObject()`. If `window.startupVR` is set, surface or highlight the VR entry affordance (note: WebXR `requestSession` requires a user gesture, so auto-entering without a click will reject unless triggered by gesture).  
+  **Regression considerations:** Normal first-visit `preSelectEarth()` behavior must remain unchanged when no `?planet=` query parameter is present.  
+  **Acceptance criteria:** Navigating to `/?planet=mars` focuses Mars and opens the Mars info panel on both first and repeat visits; covered by an E2E test.  
+  **Validation:** Playwright test opening `/?planet=mars` and asserting `window.app.solarSystemModule.focusedObject.userData.name` and `#object-name` equal `'Mars'`.  
+  **Estimated effort:** Small  
+  **Business value:** High  
+  **Technical debt reduction:** Low
+
+- [x] **Resolve 3 `npm audit` dependency vulnerabilities in `package-lock.json`**
+
+  **Priority:** High  
+  **Category:** Dependency  
+  **Confidence:** High  
+  **Area:** Build / Dev toolchain security  
+  **Affected files:** `package-lock.json`, `eslint.config.js`  
+  **Evidence:** `npm audit` reports 3 vulnerabilities (2 high, 1 moderate): `brace-expansion <=1.1.20` (GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895, GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p — High), `js-yaml 4.0.0 - 4.3.1` (GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh — High), and `qs 2.2.5 - 6.15.3` (GHSA-q8mj-m7cp-5q26, GHSA-x5fp-wj9c-mxmx, GHSA-4mjr-xmp4-gh2g — Moderate). Also `vendor/**` is not ignored in `eslint.config.js`, causing ESLint to scan 33,449 lines of `vendor/three@0.183.2/build/three.core.js` and emit a warning.  
+  **Problem:** Transitive devDependencies in `package-lock.json` have known DoS advisories with upstream fixes available via `npm audit fix`, and `eslint.config.js` lacks `'vendor/**'` in its `ignores` list.  
+  **Impact:** Known vulnerabilities in local dev server (`http-server` -> `qs`) and lint/test tooling (`eslint` -> `js-yaml`, `brace-expansion`); slow ESLint runs scanning vendored Three.js core.  
+  **Recommended solution:** Run `npm audit fix`, verify `npm test` and `npm run lint`, and add `'vendor/**'` to the `ignores` array in `eslint.config.js`.  
+  **Regression considerations:** `npm run lint` and `npm test` must continue to pass with identical behavior.  
+  **Acceptance criteria:** `npm audit` reports 0 vulnerabilities; `eslint` no longer scans `vendor/`.  
+  **Validation:** `npm audit`, `npm run lint`, `npm run test:basic`.  
+  **Estimated effort:** Small  
+  **Business value:** Medium  
+  **Technical debt reduction:** Medium
+
+---
+
+### Medium
+
+- [x] **Remove orphaned Time Machine dead code, dead event tables, and dead CSS after UI removal**
+
+  **Priority:** Medium  
+  **Category:** Cleanup  
+  **Confidence:** High  
+  **Area:** `main.js` / `SolarSystemModule.js` / `i18n.js` / `ui.css`  
+  **Affected files:** `src/main.js`, `src/modules/SolarSystemModule.js`, `src/modules/UIManager.js`, `src/i18n.js`, `src/styles/ui.css`  
+  **Evidence:** Commits `c15ecc6` and `29f6fd5` removed the Time Machine HTML controls (`#sim-date-display`, `#time-reverse`, `#time-now`, `#time-step-*`, `.tm-events-select`), but left behind: (1) `App.setupTimeMachine()`, `showEventToast()`, `_getEventDescriptions()`, `_showEventInfo()`, and `_handlePaleBlueDot()` (~260 lines in `src/main.js` lines 1392–1660) — none of the DOM IDs exist in `index.html`, and `_showEventInfo`, `showEventToast`, and `_handlePaleBlueDot` have zero callers in the repository; (2) `SolarSystemModule.update()` lines 9157–9162 dispatching `window.dispatchEvent(this._dateEvent)` every 200 ms to a listener whose `updateDateDisplay` immediately returns because `dateDisplay` is `null`; (3) ~30 `event*` translation keys × 6 languages in `src/i18n.js` plus `localeParityFallbackKeys`; (4) ~175 lines of `.time-machine`, `.tm-*`, and `.event-toast` rules in `src/styles/ui.css` (lines 930–1105, 2253–2315). Note: keyboard shortcuts `[` and `]` in `src/main.js` lines 1228–1246 still call `ssm.seekToDate(d)` directly, while `case 'n'` (line 1172) calls `document.getElementById('time-now')?.click()` which is now a silent no-op because `#time-now` was removed from `index.html`.  
+  **Problem:** When the Time Machine UI was removed from `index.html`, only the HTML markup was deleted. Hundreds of lines of JS methods, 200 ms timer-throttled CustomEvent dispatches, ~180 localized event strings, and CSS rules remain as dead weight, while the `N` ("jump to Now") keyboard shortcut silently broke because it relied on clicking `#time-now`.  
+  **Impact:** Dead payload across JS, CSS, and `i18n.js`; wasted per-200ms event dispatch in the animation loop; broken `N` keyboard shortcut; confusion for maintainers and test authors (e.g., an earlier backlog item asked to write E2E tests for Time Machine buttons that no longer exist in `index.html`).  
+  **Recommended solution:** Decide whether Time Machine UI is permanently removed or slated to return. If permanently removed: delete `_getEventDescriptions`, `_showEventInfo`, `_handlePaleBlueDot`, `showEventToast`, `setupTimeMachine`, the `simulatedDateChanged` event dispatch, the unused `.tm-*`/`.event-toast` CSS, and the `event*` i18n strings; make `case 'n'` call `this.solarSystemModule?.seekToDate(new Date())` directly instead of clicking the non-existent `#time-now` button.  
+  **Regression considerations:** `initPositionsToDate(new Date())` on boot and `[` / `]` / `N` keyboard shortcuts (if retained) must continue to position planets accurately for the target date.  
+  **Acceptance criteria:** Pressing `N` resets `simulatedJD` to today without needing `#time-now` in the DOM; zero unreferenced methods or dead DOM ID lookups remain in `src/main.js`.  
+  **Validation:** Unit/E2E test pressing `[` then `n` and verifying `window.app.solarSystemModule.simulatedJD` returns to current JD; `npm run verify`.  
+  **Estimated effort:** Small  
+  **Business value:** Medium  
+  **Technical debt reduction:** High
+
+- [x] **Fix dual conflicting drag handlers attached to `#speed-control`**
+
+  **Priority:** Medium  
+  **Category:** Bug  
+  **Confidence:** High  
+  **Area:** Draggable panels (`PanelManager` vs `UIManager`)  
+  **Affected files:** `src/modules/PanelManager.js`, `src/modules/UIManager.js`, `index.html`  
+  **Evidence:** `PanelManager.init()` (`src/modules/PanelManager.js:24-31`) calls `this.makeDraggable(speedControlElement)`, which looks for `.drag-handle` (absent on `#speed-control`, so `makeDraggable` returns early at line 50 — meaning `PanelManager` never saves or restores `#speed-control`'s position, even though `PanelManager.handleResize()` calls `resetPanelPosition(speedControlElement)` on every window resize!). Meanwhile, `UIManager.setupSpeedPanelToggle()` (`src/modules/UIManager.js:393-449`) attaches its own separate `_setupPanelDrag()` to `#speed-control .panel-header` with **no viewport boundary constraints** and **no localStorage persistence**, and registers global `mousemove`/`touchmove`/`mouseup`/`touchend` listeners permanently on `document`. Worse, on window resize, `PanelManager.resetPanelPosition(speedControlElement)` sees `#speed-control` is not in `this.manuallyDraggedPanels` and wipes out `style.left`/`style.top` that `UIManager._setupPanelDrag` set, snapping the user's dragged speed panel back to the top-right corner and applying `PanelManager.applyCSSDefaults()` which forces `minTop: 100` (moving `#speed-control` from its CSS `top: 72px` down to `100px`!).  
+  **Problem:** Two different classes (`PanelManager` and `UIManager`) half-manage `#speed-control`. `UIManager` implements an unconstrained, non-persistent drag handler, while `PanelManager` fails to attach its drag handler (missing `.drag-handle` class) yet still resets `#speed-control` on every window resize to `y >= 100px` (overriding CSS `top: 72px`).  
+  **Impact:** (1) Dragging the speed panel off-screen has no viewport clamping; (2) resizing the browser window resets any manual drag of `#speed-control` and shifts it 28px lower than its initial CSS position (`top: 72px` -> `100px`); (3) duplicate drag logic across two modules.  
+  **Recommended solution:** Remove `_setupPanelDrag` from `UIManager.js`, add `.drag-handle` to `#speed-control .panel-header` in `index.html` (with the click-suppression guard when `dragMoved` is true), and adjust `PanelManager.constraints.minTop` to `64` so `top: 72px` is respected as valid.  
+  **Regression considerations:** Clicking `#speed-toggle` without dragging must still collapse/expand the speed panel; dragging the header must not trigger collapse/expand on mouseup.  
+  **Acceptance criteria:** `#speed-control` can be dragged within viewport bounds, persists its position across reloads, does not jump from `72px` to `100px` on window resize, and only one drag implementation exists in the codebase.  
+  **Validation:** E2E test dragging `#speed-control`, resizing the viewport, and asserting its position stays constrained and does not jump.  
+  **Estimated effort:** Small  
+  **Business value:** Medium  
+  **Technical debt reduction:** Medium
+
+- [x] **Sync desktop UI state and info panel when actions or selections happen in VR**
+
+  **Priority:** Medium  
+  **Category:** Bug  
+  **Confidence:** High  
+  **Area:** WebXR / Desktop state synchronization  
+  **Affected files:** `src/modules/SceneManager.js`  
+  **Evidence:** (1) In `SceneManager.onSelectStart()` (`src/modules/SceneManager.js:1808-1816`), raycasting against `this.scene.children` checks `if (hitObject.name && module.focusOnObject)`, whereas `App._raycastNamedObject()` traverses up via `_findNamedParent()` looking for `userData.name`. Most planet/moon/spacecraft meshes store their identifier on `object.userData.name` (or a parent `THREE.Group`'s `userData.name`), NOT `hitObject.name` (which is `""` on standard meshes created in `SolarSystemModule.js`!). As a result, pointing and pulling the trigger on a 3D planet or spacecraft in VR fails the `if (hitObject.name)` check and does nothing! (2) In `SceneManager.handleVRAction()` (`src/modules/SceneManager.js:2356-2374`), `speed0`/`speed1`/`speed10`/`speed100` set `app.timeSpeed` directly without updating `#time-speed` slider or `#time-speed-label`, and `case 'sound'` toggles `audioManager.enabled` without updating `#sound-toggle` checkbox or label. (3) In `getVRMenuState()` (line 798), `orbitsVisible: module?.orbitsVisible ?? true` reads the legacy boolean (which is `false` for `'planets'`, `'dwarfs'`, `'moons'`, `'comets'`) instead of `module?.orbitMode !== 'none'`.  
+  **Problem:** VR trigger object selection checks `hitObject.name` (empty string on nearly all scene meshes except `'laser'`/`'pointer'`/`'cone'`/`'sunLight'`) instead of resolving the named ancestor via `userData.name` against `pickableObjects`. Additionally, VR menu speed/sound/orbit controls bypass UI state synchronization.  
+  **Impact:** Pointing at a planet, moon, or spacecraft in VR and pressing the trigger fails to select or teleport to it (`hitObject.name` is `""`), breaking one of the headline VR interactions ("Point + Trigger: Select objects").  
+  **Recommended solution:** In `SceneManager.onSelectStart()`, raycast against `module.pickableObjects` (consistent with `updateLaserPointers`) and walk up the parent chain to find the object with `obj.userData?.name` (reusing `app._findNamedParent(hitObject)`). Route VR speed and sound changes through `UIManager` / `App` helper methods so DOM controls and VR state stay in sync, and check `module.orbitMode !== 'none'` in `getVRMenuState()`.  
+  **Regression considerations:** VR UI panel clicks must still take priority over 3D scene object selection when the panel is visible and intersected.  
+  **Acceptance criteria:** Trigger-selecting a planet or multi-mesh spacecraft group in VR resolves the root named `Object3D`, updates `vrLastObjectInfo` and the info panel, and calls `teleportVRToObject(target)`.  
+  **Validation:** Automated test invoking `onSelectStart` with a controller aimed at Earth and at a multi-mesh spacecraft (e.g. ISS or Voyager 1) and verifying `focusedObject` and dolly position update.  
+  **Estimated effort:** Small  
+  **Business value:** High  
+  **Technical debt reduction:** Medium
+
+- [x] **Prevent `updateOrbitalPaths()` from resetting orbit visibility to `'all'` when switching scale or scientific mode**
+
+  **Priority:** Medium  
+  **Category:** Bug  
+  **Confidence:** High  
+  **Area:** `SolarSystemModule` orbit visibility state  
+  **Affected files:** `src/modules/SolarSystemModule.js`  
+  **Evidence:** `SolarSystemModule.updateOrbitalPaths()` (`src/modules/SolarSystemModule.js:10275, 10305`) creates new `THREE.Line` objects for planets, dwarf planets, and moons with `orbit.visible = this.orbitsVisible`. However, `this.orbitsVisible` is only `true` when `this.orbitMode === 'all'` (line 10064: `this.orbitsVisible = (mode === 'all')`). When the user has selected `'planets'`, `'dwarfs'`, or `'moons'` orbit mode (`this.orbitsVisible === false`) and then toggles Scale Mode (`S` key / `#toggle-scale`), `applyScaleMode()` calls `setScientificMode()` and `updateScale()`, both of which call `updateOrbitalPaths()`. This recreates all planet, dwarf, and moon orbit lines with `orbit.visible = false` (hiding the orbits the user had visible!) and furthermore calls `updateOrbitalPaths()` **twice** in a single scale toggle (once in `setScientificMode` at line 3507 and again in `updateScale` at line 10188), creating and immediately disposing ~35 `BufferGeometry` + `LineBasicMaterial` instances redundantly.  
+  **Problem:** Toggling Scale Mode while in `'planets'`, `'dwarfs'`, or `'moons'` orbit mode wipes out the visible orbit lines because `updateOrbitalPaths()` assigns `orbit.visible = this.orbitsVisible` instead of re-applying `this.setOrbitMode(this.orbitMode)`, and `applyScaleMode()` triggers `updateOrbitalPaths()` twice back-to-back.  
+  **Impact:** User-visible bug: selecting "Planets", "Dwarf Planets", or "Moons" orbits and then toggling Scale Mode causes all planet/dwarf/moon orbit lines to disappear while the Orbits button still claims that mode is active. Also doubles geometry allocation work on every scale toggle.  
+  **Recommended solution:** At the end of `updateOrbitalPaths()`, call `this.setOrbitMode(this.orbitMode)` so per-category visibility (`planets`, `dwarfs`, `moons`, `comets`, `none`, `all`) is preserved. In `applyScaleMode()`, avoid calling `updateOrbitalPaths()` twice by letting `updateScale()` perform the single rebuild after both `realisticScale` and `scientificMode` are updated.  
+  **Regression considerations:** Orbit geometry must still switch between circular (educational) and Keplerian elliptical (scientific) paths when scale mode changes.  
+  **Acceptance criteria:** Setting orbit mode to `'planets'`, `'dwarfs'`, or `'moons'` and toggling Scale Mode preserves the exact visibility of each orbit category and calls `updateOrbitalPaths()` only once per toggle.  
+  **Validation:** Playwright test cycling `#toggle-orbits` to `'planets'`, clicking `#toggle-scale`, and asserting planet orbit lines remain `visible === true` while dwarf/moon orbit lines remain `visible === false`.  
+  **Estimated effort:** Small  
+  **Business value:** High  
+  **Technical debt reduction:** Low
+
+---
+
+### Low
+
+- [ ] **Sync `README.md`, `ATTRIBUTION.md`, and `.github/copilot-instructions.md` with current repository state**
+
+  **Priority:** Low  
+  **Category:** Documentation  
+  **Confidence:** High  
+  **Area:** Documentation accuracy  
+  **Affected files:** `README.md`, `ATTRIBUTION.md`, `.github/copilot-instructions.md`  
+  **Evidence:** (1) `README.md` line 25 lists "Parker Solar Probe" under Space Missions, and line 7 states `Three.js-v0.183.0` (actual pinned version is `0.183.2`; Sputnik 1 and GPS NAVSTAR are implemented, not Parker Solar Probe). (2) `ATTRIBUTION.md` lines 22–38 list `.jpg` filenames (`sun.jpg`, `earth_1k.jpg`, etc.), whereas all textures in `./textures/` were converted to `.webp` and expanded to 51 files including dwarf planets, moons, nebulae, and galaxies. (3) `.github/copilot-instructions.md` cites SW version `v2.10.1` / `2.10.33`, `earth_1k.jpg`, `STATIC_CACHE_FILES` (now split into `CORE_CACHE_FILES` and `ASSET_CACHE_FILES`), and omits `npm run version:bump` / `scripts/sync-version.mjs`.  
+  **Problem:** Key contributor and user documentation describes outdated filenames (`.jpg` vs `.webp`), a spacecraft that does not exist in the codebase ("Parker Solar Probe"), an older Three.js patch version (`0.183.0` vs `0.183.2`), and manual SW cache-version editing instead of `npm run version:bump`.  
+  **Impact:** Misleads users about included spacecraft and misleads contributors or coding agents into editing version stamps by hand or referencing `.jpg` textures.  
+  **Recommended solution:** Update `README.md` (replace Parker Solar Probe with Sputnik 1 / JWST / GPS NAVSTAR; update Three.js badge to `0.183.2`), update `ATTRIBUTION.md` texture extensions to `.webp` and document the full set, and update `.github/copilot-instructions.md` to reference `npm run version:bump` and `CORE_CACHE_FILES` / `ASSET_CACHE_FILES`.  
+  **Regression considerations:** Documentation-only change.  
+  **Acceptance criteria:** All filenames, spacecraft lists, and workflow commands in `README.md`, `ATTRIBUTION.md`, and `.github/copilot-instructions.md` match the actual codebase.  
+  **Validation:** Manual review + `npm run version:check`.  
+  **Estimated effort:** Small  
+  **Business value:** Low  
+  **Technical debt reduction:** Low
+
+---
+
 ## Review — 2026-08-18 (branch `main`, v2.10.304)
 
 Scope: second full-repository review. Findings from the 2026-07-27 pass that are
@@ -23,7 +187,7 @@ Three findings from the previous review were re-verified and turned out to be
 
 ### Critical
 
-- [ ] Self-host Three.js instead of loading the 3D engine from a public CDN
+- [x] Self-host Three.js instead of loading the 3D engine from a public CDN
 
 Priority: Critical
 Category: Security

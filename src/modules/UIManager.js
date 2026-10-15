@@ -323,11 +323,6 @@ export class UIManager {
  // Reset reverse if speed becomes paused
  if (speed === 0 && window.app.isTimeReversed) {
  window.app.isTimeReversed = false;
- const revBtn = document.getElementById('time-reverse');
- if (revBtn) {
- revBtn.setAttribute('aria-pressed', 'false');
- revBtn.classList.remove('active');
- }
  }
  }
  
@@ -349,6 +344,19 @@ export class UIManager {
  // Initialize with slider at center (1x real-time)
  timeSpeedSlider.value = 50;
  updateSpeed(50);
+ }
+
+ /**
+  * Programmatically set simulation speed and keep the slider UI in sync.
+  */
+ setSpeed(speed) {
+ const timeSpeedSlider = document.getElementById('time-speed');
+ if (timeSpeedSlider) {
+ timeSpeedSlider.value = String(this.speedToSlider(speed));
+ timeSpeedSlider.dispatchEvent(new Event('input', { bubbles: true }));
+ } else if (window.app) {
+ window.app.timeSpeed = speed;
+ }
  }
  
  setupSpeedPanelToggle() {
@@ -384,67 +392,5 @@ export class UIManager {
  }
  }
  });
-
- // Make the panel draggable by its header
- const panelHeader = speedControl?.querySelector('.panel-header');
- this._setupPanelDrag(speedControl, panelHeader, speedToggle);
- }
-
- _setupPanelDrag(panel, handle, toggleBtn) {
- if (!panel || !handle) return;
- let dragging = false;
- let dragMoved = false;
- let startX, startY, origLeft, origTop;
-
- const onStart = (e) => {
- // Only start from the header background, not from child buttons directly
- dragging = true;
- dragMoved = false;
- const point = e.touches ? e.touches[0] : e;
- startX = point.clientX;
- startY = point.clientY;
- const rect = panel.getBoundingClientRect();
- origLeft = rect.left;
- origTop = rect.top;
- // Switch from right-anchored to left-anchored positioning
- panel.style.left = origLeft + 'px';
- panel.style.top = origTop + 'px';
- panel.style.right = 'auto';
- panel.style.transition = 'none';
- };
-
- const onMove = (e) => {
- if (!dragging) return;
- const point = e.touches ? e.touches[0] : e;
- const dx = point.clientX - startX;
- const dy = point.clientY - startY;
- if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
- if (dragMoved) {
- panel.style.left = (origLeft + dx) + 'px';
- panel.style.top = (origTop + dy) + 'px';
- }
- };
-
- const onEnd = () => {
- dragging = false;
- panel.style.transition = '';
- };
-
- handle.addEventListener('mousedown', onStart);
- handle.addEventListener('touchstart', onStart, { passive: true });
- document.addEventListener('mousemove', onMove);
- document.addEventListener('touchmove', onMove, { passive: true });
- document.addEventListener('mouseup', onEnd);
- document.addEventListener('touchend', onEnd);
-
- // Suppress toggle click when we actually dragged
- if (toggleBtn) {
- toggleBtn.addEventListener('click', (e) => {
- if (dragMoved) {
- e.stopImmediatePropagation();
- dragMoved = false;
- }
- }, true); // Use capture phase to intercept before the toggle handler
- }
  }
 }

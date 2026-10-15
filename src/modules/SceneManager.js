@@ -791,7 +791,7 @@ this.camera.near = 10.0;
  const ns = this.vrNavState || {};
  return {
  timeSpeed: app.timeSpeed ?? 1,
- orbitsVisible: module?.orbitsVisible ?? true,
+ orbitsVisible: module ? module.orbitMode !== 'none' : true,
  labelsVisible: this.labelsVisible,
  realisticScale: module?.realisticScale ?? false,
  scientificMode: module?.scientificMode ?? false,
@@ -1759,6 +1759,7 @@ this.camera.near = 10.0;
  
  this._vrRaycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
  this._vrRaycaster.ray.direction.set(0, 0, -1).applyMatrix4(this._vrTempMatrix);
+ this._vrRaycaster.camera = this.camera;
  
  // Use local reference for readability
  const raycaster = this._vrRaycaster;
@@ -1800,28 +1801,55 @@ this.camera.near = 10.0;
  }
  }
  
- // If UI wasn't clicked, check for object selection (planets, moons, etc.)
- const intersects = raycaster.intersectObjects(this.scene.children, true);
- 
- if (intersects.length > 0) {
- const hitObject = intersects[0].object;
- if (DEBUG.VR) console.log('[VR] Selected:', hitObject.name || hitObject.type);
- 
- // Try to focus on the selected object
+ // If UI wasn't clicked, check for object selection (planets, moons, spacecraft, etc.)
  const app = window.app || this;
- if (app.solarSystemModule) {
  const module = app.solarSystemModule;
+ const pickPool = module?.pickableObjects?.length ? module.pickableObjects : this.scene.children;
+ const intersects = raycaster.intersectObjects(pickPool, true);
  
- // Check if it's a planet or celestial body
- if (hitObject.name && module.focusOnObject) {
+ if (intersects.length > 0 && module) {
+ // Walk up the parent chain to find the named root object (planets, moons, and
+ // multi-mesh spacecraft store their identifier on userData.name, not mesh.name).
+ let hitObject = null;
+ for (let i = 0; i < intersects.length; i++) {
+ // Skip invisible descendants (such as hidden THREE.Sprite labels)
+ let node = intersects[i].object;
+ let visible = true;
+ while (node && node !== this.scene) {
+ if (node.visible === false) {
+ visible = false;
+ break;
+ }
+ node = node.parent;
+ }
+ if (!visible) continue;
+
+ let candidate = intersects[i].object;
+ let found = null;
+ while (candidate && candidate !== this.scene) {
+ if (candidate.userData?.name) {
+ found = candidate;
+ break;
+ }
+ candidate = candidate.parent;
+ }
+ if (found && found.visible !== false) {
+ hitObject = found;
+ break;
+ }
+ }
+
+ if (hitObject && module.focusOnObject) {
+ const objName = hitObject.userData?.name || hitObject.name || 'Object';
+ if (DEBUG.VR) console.log('[VR] Selected:', objName);
+ 
  // Fetch object info for display
  const infoForPanel = typeof module.getObjectInfo === 'function' ? module.getObjectInfo(hitObject) : null;
- const objName = hitObject.userData?.name || hitObject.name || 'Object';
 
  // If grip+trigger held, zoom VERY close for inspection
  if (gripHeld) {
  this.zoomToObject(hitObject, 'close');
- if (DEBUG.VR) console.log('[VR] Zooming to:', hitObject.name);
+ if (DEBUG.VR) console.log('[VR] Zooming to:', objName);
  if (infoForPanel) {
  this.vrLastObjectInfo = infoForPanel;
  app.uiManager?.updateInfoPanel(infoForPanel);
@@ -1834,7 +1862,7 @@ this.camera.near = 10.0;
  // Normal focus – teleport dolly, show info overlay to the side
  module.focusOnObject(hitObject, this.camera, this.controls);
  if (this.renderer.xr.isPresenting) this.teleportVRToObject(hitObject);
- if (DEBUG.VR) console.log('[VR] Focused on:', hitObject.name);
+ if (DEBUG.VR) console.log('[VR] Focused on:', objName);
  if (infoForPanel) {
  this.vrLastObjectInfo = infoForPanel;
  app.uiManager?.updateInfoPanel(infoForPanel);
@@ -1843,7 +1871,6 @@ this.camera.near = 10.0;
  this.updateVRStatus('\u2714\uFE0F ' + objName);
  this.requestVRMenuRefresh();
  this.triggerVRHaptic(index, 0.6, 80); // Medium pulse for selection
- }
  }
  }
  }
@@ -2354,22 +2381,26 @@ this.camera.near = 10.0;
 
  switch (action) {
  case 'speed0':
- app.timeSpeed = 0;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(0);
+ else app.timeSpeed = 0;
  this.updateVRStatus('⏸ Paused');
  scheduleRefresh(); break;
 
  case 'speed1':
- app.timeSpeed = 1;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(1);
+ else app.timeSpeed = 1;
  this.updateVRStatus('▶ Real Time (1×)');
  scheduleRefresh(); break;
 
  case 'speed10':
- app.timeSpeed = 10;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(10);
+ else app.timeSpeed = 10;
  this.updateVRStatus('⏩ Fast (10×)');
  scheduleRefresh(); break;
 
  case 'speed100':
- app.timeSpeed = 100;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(100);
+ else app.timeSpeed = 100;
  this.updateVRStatus('⏩⏩ Max Speed (100×)');
  scheduleRefresh(); break;
 
@@ -2402,6 +2433,9 @@ this.camera.near = 10.0;
  if (am) {
  am.enabled = !am.enabled;
  safeSetItem('space_voyage_sound', am.enabled ? 'true' : 'false');
+ const soundToggle = document.getElementById('sound-toggle');
+ if (soundToggle) soundToggle.checked = am.enabled;
+ app.syncLocalizedControlStates?.();
  this.updateVRStatus(am.enabled ? '🔊 Sound ON' : '🔇 Sound OFF');
  } else {
  this.updateVRStatus('⚠️ Audio not available');
@@ -2572,6 +2606,7 @@ this.camera.near = 10.0;
  this._vrTempMatrix.identity().extractRotation(controller.matrixWorld);
  this._vrRaycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
  this._vrRaycaster.ray.direction.set(0, 0, -1).applyMatrix4(this._vrTempMatrix);
+ this._vrRaycaster.camera = this.camera;
 
  let hasHit = controller.userData._laserHasHit;
  let visualDist = controller.userData._laserVisualDist;

@@ -84,6 +84,16 @@ test.describe('keyboard shortcut scoping', () => {
 
     const after = await readToggleState(page);
     expect(after.realisticScale).not.toBe(before.realisticScale);
+
+    // Step back 1 month with '[' then press 'n' to jump back to Now
+    const jdBeforeStep = await page.evaluate(() => window.app.solarSystemModule.simulatedJD);
+    await page.keyboard.press('[');
+    const jdAfterStep = await page.evaluate(() => window.app.solarSystemModule.simulatedJD);
+    expect(Math.abs(jdAfterStep - jdBeforeStep)).toBeGreaterThan(20);
+
+    await page.keyboard.press('n');
+    const jdAfterNow = await page.evaluate(() => window.app.solarSystemModule.simulatedJD);
+    expect(Math.abs(jdAfterNow - jdBeforeStep)).toBeLessThan(1);
   });
 
   test('Escape closes only the frontmost overlay', async ({ page }) => {

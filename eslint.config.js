@@ -14,6 +14,7 @@ export default [
       'playwright-report/**',
       'test-results/**',
       '.venv/**',
+      'vendor/**',
       'src/i18n.js' // generated-style translation bundle; 400 KB of data literals
     ]
   },

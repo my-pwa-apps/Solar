@@ -59,50 +59,71 @@ test('app version and service worker cache manifest stay in sync', async ({}, te
   expect(missingFiles).toEqual([]);
 });
 
-test('every three.js addon the app imports is pinned and precached at one version', async ({}, testInfo) => {
+test('every three.js addon and transitive module the app imports is self-hosted and precached', async ({}, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
 
   const [indexHtml, serviceWorker] = await Promise.all([readText('index.html'), readText('sw.js')]);
 
-  // The importmap is covered by a CSP hash, so a version bump there must be a
-  // deliberate, reviewed change — and sw.js must be bumped in the same commit.
+  // CSP script-src must be self + importmap hashes only (no external CDN).
+  const cspMatch = indexHtml.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/);
+  expect(cspMatch, 'CSP meta tag must exist').not.toBeNull();
+  expect(cspMatch[1]).not.toContain('cdn.jsdelivr.net');
+
+  // The importmap must point to self-hosted vendor/three@<version>/ paths.
   const importmapVersions = new Set(
-    [...indexHtml.matchAll(/cdn\.jsdelivr\.net\/npm\/three@([\d.]+)\//g)].map((m) => m[1])
+    [...indexHtml.matchAll(/\.\/vendor\/three@([\d.]+)\//g)].map((m) => m[1])
   );
-  expect(importmapVersions.size, 'index.html must pin exactly one three.js version').toBe(1);
+  expect(importmapVersions.size, 'index.html must pin exactly one self-hosted three.js version').toBe(1);
   const [pinnedVersion] = [...importmapVersions];
 
-  const cdnMatch = serviceWorker.match(/const CDN_CACHE_FILES = \[([\s\S]*?)\];/);
-  expect(cdnMatch, 'CDN_CACHE_FILES should be parseable').not.toBeNull();
-  const cdnFiles = [...cdnMatch[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const coreMatch = serviceWorker.match(/const CORE_CACHE_FILES = \[([\s\S]*?)\];/);
+  expect(coreMatch, 'CORE_CACHE_FILES should be parseable').not.toBeNull();
+  const coreFiles = [...coreMatch[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const vendorFiles = coreFiles.filter((f) => f.startsWith('./vendor/three@'));
 
-  for (const url of cdnFiles) {
-    expect(url, `${url} must use the pinned three.js version`).toContain(`three@${pinnedVersion}/`);
+  for (const file of vendorFiles) {
+    expect(file, `${file} must use the pinned three.js version`).toContain(`three@${pinnedVersion}/`);
   }
 
-  // Collect the addon specifiers actually imported by application code. An addon
-  // that is imported but not precached silently breaks the first offline launch;
-  // one that is precached but not imported wastes install bandwidth forever.
+  // Collect the addon specifiers actually imported by application code, then
+  // recursively walk their relative imports inside vendor/three@<version>/examples/jsm/
+  // so that missing transitive modules (Pass.js, shaders, GLTFLoader, etc.) fail the build.
   const sourceFiles = ['src/main.js', 'src/modules/SceneManager.js', 'src/modules/SolarSystemModule.js', 'src/modules/utils.js'];
-  const importedAddons = new Set();
+  const addonClosure = new Set();
+  const queue = [];
+
   for (const file of sourceFiles) {
     const source = await readText(file);
     for (const match of source.matchAll(/from 'three\/addons\/([^']+)'/g)) {
-      importedAddons.add(match[1]);
+      queue.push(match[1]);
     }
   }
-  expect(importedAddons.size).toBeGreaterThan(0);
+  expect(queue.length).toBeGreaterThan(0);
+
+  while (queue.length > 0) {
+    const addonRel = queue.pop();
+    if (addonClosure.has(addonRel)) continue;
+    addonClosure.add(addonRel);
+
+    const addonSource = await readText(`vendor/three@${pinnedVersion}/examples/jsm/${addonRel}`);
+    // Match real ES module import statements (not JSDoc comments)
+    for (const match of addonSource.matchAll(/^\s*import\s+[\s\S]*?from\s+['"](\.[^'"]+)['"]/gm)) {
+      const childRel = path.posix.normalize(path.posix.join(path.posix.dirname(addonRel), match[1]));
+      queue.push(childRel);
+    }
+  }
 
   const precachedAddons = new Set(
-    cdnFiles
-      .map((url) => url.split('/examples/jsm/')[1])
+    vendorFiles
+      .map((f) => f.split('/examples/jsm/')[1])
       .filter(Boolean)
   );
 
-  expect([...importedAddons].sort(), 'every imported three.js addon must be precached in sw.js')
+  expect([...addonClosure].sort(), 'every imported three.js addon and its transitive imports must be precached in CORE_CACHE_FILES')
     .toEqual([...precachedAddons].sort());
 
-  expect(cdnFiles.some((url) => url.endsWith('/build/three.module.js')), 'the three.js core build must be precached').toBe(true);
+  expect(vendorFiles).toContain(`./vendor/three@${pinnedVersion}/build/three.module.js`);
+  expect(vendorFiles).toContain(`./vendor/three@${pinnedVersion}/build/three.core.js`);
 });
 
 test('all localized manifests expose the same capabilities', async ({}, testInfo) => {
