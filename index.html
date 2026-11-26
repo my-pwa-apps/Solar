@@ -27,11 +27,10 @@
     </script>
 
     <!-- Capture beforeinstallprompt early, before heavy module scripts load -->
-    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.311"></script>
+    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.318"></script>
 
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.311" crossorigin="use-credentials">
-    <script type="module" src="./src/modules/LanguageManager.js?v=2.10.311"></script>
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.318" crossorigin="use-credentials">
     
     <!-- Primary Meta Tags -->
     <title>Space Voyage - Interactive 3D Solar System & VR Experience</title>
@@ -96,16 +95,15 @@
     <link rel="icon" type="image/png" sizes="44x44" href="./icons/windows11/Square44x44Logo.altform-unplated_targetsize-44.png">
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="./src/i18n.js?v=2.10.311" as="script">
-    <link rel="preload" href="./src/styles/main.css?v=2.10.311" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.10.311" as="style">
+    <link rel="modulepreload" href="./src/i18n.js?v=2.10.318">
+    <link rel="preload" href="./src/styles/main.css?v=2.10.318" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.10.318" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.311">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.311">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.318">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.318">
     
     <!-- Load translations early -->
-    <script src="./src/i18n.js?v=2.10.311"></script>
 </head>
 <body>
     <a class="skip-link" href="#canvas-container" data-i18n="skipToContent">Skip to the 3D view</a>
@@ -151,13 +149,18 @@
                     <optgroup label="Saturn System" data-i18n="saturnSystem">
                         <option value="saturn" data-i18n="saturn">Saturn</option>
                         <option value="titan" data-i18n="titan">Titan</option>
+                        <option value="mimas" data-i18n="mimas">Mimas</option>
                         <option value="enceladus" data-i18n="enceladus">Enceladus</option>
                         <option value="rhea" data-i18n="rhea">Rhea</option>
+                        <option value="iapetus" data-i18n="iapetus">Iapetus</option>
                     </optgroup>
                     <optgroup label="Uranus System" data-i18n="uranusSystem">
                         <option value="uranus" data-i18n="uranus">Uranus</option>
                         <option value="titania" data-i18n="titania">Titania</option>
                         <option value="miranda" data-i18n="miranda">Miranda</option>
+                        <option value="ariel" data-i18n="ariel">Ariel</option>
+                        <option value="umbriel" data-i18n="umbriel">Umbriel</option>
+                        <option value="oberon" data-i18n="oberon">Oberon</option>
                     </optgroup>
                     <optgroup label="Neptune System" data-i18n="neptuneSystem">
                         <option value="neptune" data-i18n="neptune">Neptune</option>
@@ -195,6 +198,7 @@
                     </optgroup>
                     <optgroup label="Nearby Stars" data-i18n="nearbyStars">
                         <option value="alpha-centauri" data-i18n="alphaCentauri">Alpha Centauri</option>
+                        <option value="alpha-centauri-b" data-i18n="alphaCentauriB">Alpha Centauri B</option>
                         <option value="proxima-centauri" data-i18n="proximaCentauri">Proxima Centauri</option>
                     </optgroup>
                     <optgroup label="Exoplanets" data-i18n="exoplanets">
@@ -458,9 +462,9 @@
         </div>
     </div>
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/main.js?v=2.10.311"></script>
+    <script type="module" src="./src/main.js?v=2.10.318"></script>
     
     <!-- Initialize Modules -->
-    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.311"></script>
+    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.318"></script>
 </body>
 </html>

@@ -6,10 +6,14 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // CSS2DObject removed — labels use THREE.Sprite (CanvasTexture) so they render in VR
 import { TEXTURE_CACHE } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, prefersReducedMotion, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
+import { SEMI_MAJOR_AXIS_AU, ASTRONOMICAL_DATA, SCIENTIFIC_ORBITAL_PERIODS, SCIENTIFIC_MOON_ORBITAL_PERIODS, SCIENTIFIC_ORBITAL_ELEMENTS, SCIENTIFIC_MOON_ORBITAL_ELEMENTS, PLANET_ELEMENTS_J2000 } from './solarSystemData.js';
+import { toJulianDate as convertToJulianDate, sunRightAscension, solveKepler, meanToTrueAnomaly } from './ephemeris.js';
 
-// i18n.js is loaded globally in index.html, access via window.t
+// i18n.js initializes before app startup and exposes translations through window.t
 // Late-binding: always delegate to window.t at call time (not captured at import time)
 const t = (key) => (window.t || ((k) => k))(key);
+
+
 
 export class SolarSystemModule {
  constructor(uiManager) {
@@ -31,8 +35,10 @@ export class SolarSystemModule {
  this.galaxies = [];
  this.comets = [];
  this.cometOrbits = [];
+ this.exoplanetOrbits = [];
  this.satellites = [];
  this.spacecraft = [];
+ this.jwst = null;
  this.constellations = [];
  this._focusScratch = {
  directionFromOrigin: new THREE.Vector3(),
@@ -42,7 +48,8 @@ export class SolarSystemModule {
  moonDirection: new THREE.Vector3(),
  sunPosition: new THREE.Vector3(),
  cometToSunDir: new THREE.Vector3(),
- rightVector: new THREE.Vector3()
+ rightVector: new THREE.Vector3(),
+ jwstRadial: new THREE.Vector3()
  };
  
  // Scale mode: false = educational (compressed), true = realistic (vast)
@@ -73,172 +80,13 @@ export class SolarSystemModule {
  // Geometry cache for reuse
  this.geometryCache = new Map();
  
- // Real astronomical data for day/night cycles
- this.ASTRONOMICAL_DATA = {
- mercury: {
- rotationPeriod: 1407.6, // hours (58.6 Earth days)
- axialTilt: 0.034, // degrees
- retrograde: false,
- orbitalPeriod: 88 // Earth days
- },
- venus: {
- rotationPeriod: 5832.5, // hours (243 Earth days)
- axialTilt: 177.4, // degrees (almost upside down)
- retrograde: true, // rotates backwards!
- orbitalPeriod: 224.7 // Earth days
- },
- earth: {
- rotationPeriod: 23.93, // hours
- axialTilt: 23.44, // degrees
- retrograde: false,
- orbitalPeriod: 365.25 // Earth days (baseline)
- },
- mars: {
- rotationPeriod: 24.62, // hours
- axialTilt: 25.19, // degrees
- retrograde: false,
- orbitalPeriod: 687 // Earth days
- },
- jupiter: {
- rotationPeriod: 9.93, // hours (fastest rotation!)
- axialTilt: 3.13, // degrees
- retrograde: false,
- orbitalPeriod: 4333 // Earth days (~11.9 years)
- },
- saturn: {
- rotationPeriod: 10.66, // hours
- axialTilt: 26.73, // degrees
- retrograde: false,
- orbitalPeriod: 10759 // Earth days (~29.5 years)
- },
- uranus: {
- rotationPeriod: 17.24, // hours
- axialTilt: 97.77, // degrees (rotates on its side!)
- retrograde: true,
- orbitalPeriod: 30687 // Earth days (~84 years)
- },
- neptune: {
- rotationPeriod: 16.11, // hours
- axialTilt: 28.32, // degrees
- retrograde: false,
- orbitalPeriod: 60182 // Earth days (~164.8 years)
- },
- pluto: {
- rotationPeriod: 153.293, // hours (6.387 Earth days - retrograde)
- axialTilt: 122.53, // degrees
- retrograde: true,
- orbitalPeriod: 90520 // Earth days (~248 years)
- },
- moon: {
- rotationPeriod: 655.7, // hours (27.3 Earth days - tidally locked)
- axialTilt: 6.68, // degrees
- retrograde: false,
- orbitalPeriod: 27.3 // Earth days
- }
- };
-
- // Additional orbital periods (days) for objects not covered in ASTRONOMICAL_DATA
- // or where we want explicit moon period data for scientific-mode speed derivation.
- this.SCIENTIFIC_ORBITAL_PERIODS = {
- ceres: 1680.0,
- haumea: 103813.0,
- makemake: 113201.0,
- eris: 203830.0,
- orcus: 90441.0,
- quaoar: 104137.0,
- gonggong: 202780.0,
- sedna: 4134991.0,
- salacia: 100684.0,
- varda: 114305.0,
- varuna: 103018.0
- };
-
- this.SCIENTIFIC_MOON_ORBITAL_PERIODS = {
- moon: 27.321661,
- phobos: 0.31891,
- deimos: 1.26244,
- io: 1.769137786,
- europa: 3.551181,
- ganymede: 7.154553,
- callisto: 16.689018,
- enceladus: 1.370218,
- rhea: 4.518212,
- titan: 15.945421,
- titania: 8.706234,
- miranda: 1.413479,
- triton: 5.876854,
- charon: 6.38723
- };
-
- // Orbital elements used in scientific mode for non-circular / inclined orbits.
- // Angles are in degrees. We use a lightweight Keplerian approximation:
- // - true anomaly ≈ simulated angle
- // - static elements (no secular precession)
- this.SCIENTIFIC_ORBITAL_ELEMENTS = {
- mercury: { eccentricity: 0.20563, inclinationDeg: 7.00, periapsisDeg: 29.1 },
- venus: { eccentricity: 0.00677, inclinationDeg: 3.39, periapsisDeg: 54.9 },
- earth: { eccentricity: 0.01671, inclinationDeg: 0.00, periapsisDeg: 102.9 },
- mars: { eccentricity: 0.09339, inclinationDeg: 1.85, periapsisDeg: 286.5 },
- jupiter: { eccentricity: 0.04839, inclinationDeg: 1.30, periapsisDeg: 273.9 },
- saturn: { eccentricity: 0.05415, inclinationDeg: 2.49, periapsisDeg: 339.4 },
- uranus: { eccentricity: 0.04717, inclinationDeg: 0.77, periapsisDeg: 96.7 },
- neptune: { eccentricity: 0.00859, inclinationDeg: 1.77, periapsisDeg: 273.2 },
- pluto: { eccentricity: 0.24881, inclinationDeg: 17.16, periapsisDeg: 113.8 },
- ceres: { eccentricity: 0.07582, inclinationDeg: 10.59, periapsisDeg: 73.6 },
- haumea: { eccentricity: 0.18874, inclinationDeg: 28.19, periapsisDeg: 240.6 },
- makemake: { eccentricity: 0.15900, inclinationDeg: 29.00, periapsisDeg: 296.3 },
- eris: { eccentricity: 0.44068, inclinationDeg: 44.04, periapsisDeg: 151.6 },
- orcus: { eccentricity: 0.22700, inclinationDeg: 20.57, periapsisDeg: 73.1 },
- quaoar: { eccentricity: 0.03900, inclinationDeg: 8.00, periapsisDeg: 147.5 },
- gonggong: { eccentricity: 0.49900, inclinationDeg: 30.70, periapsisDeg: 207.7 },
- sedna: { eccentricity: 0.85491, inclinationDeg: 11.93, periapsisDeg: 311.3 },
- salacia: { eccentricity: 0.10600, inclinationDeg: 23.92, periapsisDeg: 278.3 },
- varda: { eccentricity: 0.14000, inclinationDeg: 21.50, periapsisDeg: 104.7 },
- varuna: { eccentricity: 0.05100, inclinationDeg: 17.20, periapsisDeg: 97.4 }
- };
-
- this.SCIENTIFIC_MOON_ORBITAL_ELEMENTS = {
- moon: { eccentricity: 0.05490, inclinationDeg: 5.15, periapsisDeg: 0.0 },
- phobos: { eccentricity: 0.01510, inclinationDeg: 1.09, periapsisDeg: 0.0 },
- deimos: { eccentricity: 0.00020, inclinationDeg: 1.79, periapsisDeg: 0.0 },
- io: { eccentricity: 0.00410, inclinationDeg: 0.04, periapsisDeg: 0.0 },
- europa: { eccentricity: 0.00940, inclinationDeg: 0.47, periapsisDeg: 0.0 },
- ganymede: { eccentricity: 0.00130, inclinationDeg: 0.20, periapsisDeg: 0.0 },
- callisto: { eccentricity: 0.00740, inclinationDeg: 0.28, periapsisDeg: 0.0 },
- enceladus: { eccentricity: 0.00470, inclinationDeg: 0.00, periapsisDeg: 0.0 },
- rhea: { eccentricity: 0.00100, inclinationDeg: 0.35, periapsisDeg: 0.0 },
- titan: { eccentricity: 0.02880, inclinationDeg: 0.35, periapsisDeg: 0.0 },
- titania: { eccentricity: 0.00110, inclinationDeg: 0.08, periapsisDeg: 0.0 },
- miranda: { eccentricity: 0.00130, inclinationDeg: 4.34, periapsisDeg: 0.0 },
- triton: { eccentricity: 0.00002, inclinationDeg: 156.90, periapsisDeg: 0.0 },
- charon: { eccentricity: 0.00020, inclinationDeg: 0.00, periapsisDeg: 0.0 }
- };
-
- // J2000.0 mean elements for accurate initial orbital positioning.
- // M0: mean anomaly at J2000 epoch (degrees); n: mean motion (degrees/day).
- // Source: Standish et al. 1992 / JPL approximate solar system ephemeris.
- this.PLANET_ELEMENTS_J2000 = {
- mercury: { M0: 174.7943, n: 4.09233445 },
- venus: { M0: 50.4161, n: 1.60213034 },
- earth: { M0: 357.5291, n: 0.98560028 },
- mars: { M0: 19.3451, n: 0.52402068 },
- jupiter: { M0: 19.5976, n: 0.08308530 },
- saturn: { M0: 317.6459, n: 0.03344428 },
- uranus: { M0: 141.6220, n: 0.01172584 },
- neptune: { M0: 257.6634, n: 0.00598103 },
- pluto: { M0: 14.8740, n: 0.003975 },
- ceres: { M0: 95.9891, n: 0.21408 },
- haumea: { M0: 198.0, n: 0.00347 },
- makemake: { M0: 37.0, n: 0.00318 },
- eris: { M0: 208.0, n: 0.00176 },
- orcus: { M0: 112.0, n: 0.00398 },
- quaoar: { M0: 147.0, n: 0.00346 },
- gonggong: { M0: 207.0, n: 0.00177 },
- sedna: { M0: 358.0, n: 0.0000861 },
- salacia: { M0: 280.0, n: 0.00357 },
- varda: { M0: 104.0, n: 0.00352 },
- varuna: { M0: 97.0, n: 0.00352 }
- };
+ // Shared physical and orbital data; consumers treat these tables as read-only.
+ this.ASTRONOMICAL_DATA = ASTRONOMICAL_DATA;
+ this.SCIENTIFIC_ORBITAL_PERIODS = SCIENTIFIC_ORBITAL_PERIODS;
+ this.SCIENTIFIC_MOON_ORBITAL_PERIODS = SCIENTIFIC_MOON_ORBITAL_PERIODS;
+ this.SCIENTIFIC_ORBITAL_ELEMENTS = SCIENTIFIC_ORBITAL_ELEMENTS;
+ this.SCIENTIFIC_MOON_ORBITAL_ELEMENTS = SCIENTIFIC_MOON_ORBITAL_ELEMENTS;
+ this.PLANET_ELEMENTS_J2000 = PLANET_ELEMENTS_J2000;
 
  // Current simulated Julian Date — drives seekToDate() and orbital phase seeding.
  // Initialised to J2000 epoch; updated to today inside initPositionsToDate().
@@ -664,7 +512,7 @@ export class SolarSystemModule {
             description: t('descSaturn'),
             funFact: t('funFactSaturn'),
             realSize: '116,460 km diameter',
-            moons: 3,
+            moons: 5,
             rings: true,
             prominentRings: true
         });
@@ -674,11 +522,20 @@ export class SolarSystemModule {
         // Real orbit: 238,020 km = 3.95x Saturn's radius (60,268 km) = 36.1 scene units
         // Rings end at outerR = radius * 2.2 = 20.11 scene units — Enceladus orbits OUTSIDE rings
         this.createMoon(this.planets.saturn, {
+            id: 'mimas',
+            name: t('mimas'),
+            radius: 0.031,
+            color: 0xB8B8B8,
+            distance: 28.2,
+            speed: 2.5,
+            description: t('descMimas')
+        });
+        this.createMoon(this.planets.saturn, {
             id: 'enceladus',
             name: t('enceladus'),
             radius: 0.040,
             color: 0xFFFFFF,
-            distance: 22, // Just outside rings (rings end at 20.11); real ratio: 3.95x Saturn radius
+            distance: 36.1,
             speed: 1.5, // Reduced from 7.07 for smoother visual orbit
             description: t('descEnceladus')
         });
@@ -690,7 +547,7 @@ export class SolarSystemModule {
             name: t('rhea'),
             radius: 0.120,
             color: 0xCCCCCC,
-            distance: 28, // Outside rings with clear separation from Enceladus
+            distance: 79.9,
             speed: 2.144, // 2382x Saturn's speed (0.0009 * 2382)
             description: t('descRhea')
         });
@@ -702,9 +559,18 @@ export class SolarSystemModule {
             name: t('titan'),
             radius: 0.404,
             color: 0xFFAA33,
-            distance: 38, // Well outside rings; scaled for visual clarity
+            distance: 185.5,
             speed: 0.608, // 675x Saturn's speed (0.0009 * 675)
             description: t('descTitan')
+        });
+        this.createMoon(this.planets.saturn, {
+            id: 'iapetus',
+            name: t('iapetus'),
+            radius: 0.115,
+            color: 0x887766,
+            distance: 540,
+            speed: 0.12,
+            description: t('descIapetus')
         }); // Uranus: 50,724 km / 12,742 km = 3.98
  if (this.uiManager) this.uiManager.updateLoadingProgress(54, t('creatingUranus'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -721,18 +587,46 @@ export class SolarSystemModule {
             description: t('descUranus'),
             funFact: t('funFactUranus'),
             realSize: '50,724 km diameter',
-            moons: 2,
+            moons: 5,
             rings: true
-        });        // Titania: 1,578 km / 12,742 km = 0.124
+        });
+        // Distances are scaled from each moon's semimajor axis in Uranus radii.
         // Orbital period: 8.706 days vs Uranus's 30687 days = 3526x faster
         this.createMoon(this.planets.uranus, {
             id: 'titania',
             name: t('titania'),
             radius: 0.124,
             color: 0xAAAAAA,
-            distance: 8, // Increased from 5: Uranus radius is 3.98, need clear visual separation
+            distance: 68.1,
             speed: 1.410, // 3526x Uranus's speed (0.0004 * 3526)
             description: t('descTitania')
+        });
+        this.createMoon(this.planets.uranus, {
+            id: 'ariel',
+            name: t('ariel'),
+            radius: 0.091,
+            color: 0xA8A8A8,
+            distance: 29.7,
+            speed: 1.1,
+            description: t('descAriel')
+        });
+        this.createMoon(this.planets.uranus, {
+            id: 'umbriel',
+            name: t('umbriel'),
+            radius: 0.092,
+            color: 0x777777,
+            distance: 41.4,
+            speed: 0.7,
+            description: t('descUmbriel')
+        });
+        this.createMoon(this.planets.uranus, {
+            id: 'oberon',
+            name: t('oberon'),
+            radius: 0.119,
+            color: 0x999999,
+            distance: 90.7,
+            speed: 0.4,
+            description: t('descOberon')
         });
         // Miranda: 472 km / 12,742 km = 0.037
         // Orbital period: 1.413 days vs Uranus's 30687 days = 21722x faster
@@ -741,7 +635,7 @@ export class SolarSystemModule {
             name: t('miranda'),
             radius: 0.037,
             color: 0x999999,
-            distance: 6, // Fixed from 3.5: was INSIDE Uranus (radius 3.98)! Now clearly outside.
+            distance: 20.2,
             speed: 2.0, // Reduced from 8.689 for visual stability
             description: t('descMiranda')
         }); // Neptune: 49,244 km / 12,742 km = 3.86
@@ -807,11 +701,11 @@ export class SolarSystemModule {
         // Radii calculated as: diameter_km / 12742 (Earth's diameter in km)
         const catalog = [
             { name: 'Ceres', radius: 0.074, color: 0xC8C8B4, distance: 140, speed: 0.02, rotationSpeed: 0.02, tilt: 4, description: t('descCeres'), funFact: 'May host subsurface brines.', realSize: '939 km diameter', hasRemote: true },
-            { name: 'Haumea', radius: 0.125, color: 0xE0D6C8, distance: 2139, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, description: t('descHaumea'), funFact: 'Rotation period ~4 hours gives its triaxial ellipsoid shape.', realSize: '2322 × 1704 × 1026 km (triaxial diameters)' },
+            { name: 'Haumea', radius: 0.125, color: 0xE0D6C8, distance: 2139, speed: 0.00005, rotationSpeed: 0.08, tilt: 28, shapeScale: [1.46, 1.07, 0.64], minorRings: [{ inner: 2.82, outer: 2.91, opacity: 0.65 }], description: t('descHaumea'), funFact: 'Rotation period ~4 hours gives its triaxial ellipsoid shape.', realSize: '2322 × 1704 × 1026 km (triaxial diameters)' },
             { name: 'Makemake', radius: 0.112, color: 0xD4B48C, distance: 2279, speed: 0.000047, rotationSpeed: 0.01, tilt: 29, description: t('descMakemake'), funFact: 'Discovered near Easter, named after Rapa Nui deity.', realSize: '1430 km diameter' },
             { name: 'Eris', radius: 0.183, color: 0xD8D8D8, distance: 2483, speed: 0.00004, rotationSpeed: 0.01, tilt: 78, description: t('descEris'), funFact: 'Helped prompt Pluto reclassification.', realSize: '2326 km diameter' },
             { name: 'Orcus', radius: 0.071, color: 0xB0B0C0, distance: 2024, speed: 0.000052, rotationSpeed: 0.01, tilt: 20, description: t('descOrcus'), funFact: t('funFactOrcus'), realSize: '~910 km est.' },
-            { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2189, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, description: t('descQuaoar'), funFact: t('funFactQuaoar'), realSize: '1110 km diameter' },
+            { name: 'Quaoar', radius: 0.087, color: 0xC8A088, distance: 2189, speed: 0.000051, rotationSpeed: 0.012, tilt: 15, minorRings: [{ inner: 4.55, outer: 4.72, opacity: 0.18 }, { inner: 7.35, outer: 7.60, opacity: 0.55 }], description: t('descQuaoar'), funFact: t('funFactQuaoar'), realSize: '1,086 km diameter' },
             { name: 'Gonggong', radius: 0.097, color: 0xBB7766, distance: 3457, speed: 0.000039, rotationSpeed: 0.008, tilt: 30, description: t('descGonggong'), funFact: t('funFactGonggong'), realSize: '~1230 km est.' },
             { name: 'Sedna', radius: 0.078, color: 0xCC6644, distance: 4500, speed: 0.000003, rotationSpeed: 0.006, tilt: 12, description: t('descSedna'), funFact: 'Takes ~11,400 years to orbit! Its reddish color rivals Mars.', realSize: '~995 km diameter' },
             { name: 'Salacia', radius: 0.067, color: 0x996655, distance: 2234, speed: 0.000048, rotationSpeed: 0.01, tilt: 18, description: t('descSalacia'), funFact: t('funFactSalacia'), realSize: '~850 km est.' },
@@ -833,6 +727,8 @@ export class SolarSystemModule {
                 speed: cfg.speed,
                 rotationSpeed: cfg.rotationSpeed,
                 tilt: cfg.tilt,
+                shapeScale: cfg.shapeScale,
+                minorRings: cfg.minorRings,
                 description: cfg.description,
                 funFact: cfg.funFact,
                 realSize: cfg.realSize,
@@ -3027,7 +2923,11 @@ export class SolarSystemModule {
  createPlanet(scene, config) {
  // Use cached geometry or create new
  const segments = CONFIG.QUALITY.sphereSegments;
- const geometry = this.getGeometry('sphere', config.radius, segments, segments);
+ let geometry = this.getGeometry('sphere', config.radius, segments, segments);
+ if (config.shapeScale) {
+ geometry = geometry.clone();
+ geometry.scale(...config.shapeScale);
+ }
  
  // Create hyperrealistic material based on planet type
  const material = this.createPlanetMaterial(config);
@@ -3055,8 +2955,10 @@ export class SolarSystemModule {
  description: config.description,
  funFact: config.funFact,
  realSize: config.realSize,
+ semiMajorAxisAU: SEMI_MAJOR_AXIS_AU[planetKey],
  moonCount: config.moons || 0,
  moons: [],
+ rings: [],
  
  // Real astronomical data for day/night cycle
  realRotationPeriod: astroData.rotationPeriod || 24, // hours
@@ -3193,6 +3095,26 @@ export class SolarSystemModule {
  rings.castShadow = false; // Rings don't cast meaningful shadows at solar system scale
  rings.receiveShadow = true; // But can receive shadows from moons
  planet.add(rings);
+ planet.userData.rings.push(rings);
+ }
+
+ if (config.minorRings) {
+ config.minorRings.forEach(({ inner, outer, opacity }) => {
+ const ring = new THREE.Mesh(
+ new THREE.RingGeometry(config.radius * inner, config.radius * outer, 96),
+ new THREE.MeshBasicMaterial({
+ color: 0xB9AA98,
+ side: THREE.DoubleSide,
+ transparent: true,
+ opacity,
+ depthWrite: false
+ })
+ );
+ ring.rotation.x = Math.PI / 2;
+ ring.renderOrder = 1;
+ planet.add(ring);
+ planet.userData.rings.push(ring);
+ });
  }
 
  scene.add(planet);
@@ -3572,55 +3494,24 @@ export class SolarSystemModule {
 
  /** Convert a JavaScript Date to a Julian Date number. */
  toJulianDate(date) {
- const y = date.getUTCFullYear();
- const m = date.getUTCMonth() + 1;
- const d = date.getUTCDate()
- + (date.getUTCHours() * 3600 + date.getUTCMinutes() * 60 + date.getUTCSeconds()) / 86400;
- const A = Math.floor(m <= 2 ? y - 1 : y);
- const B = m <= 2 ? m + 12 : m;
- // Gregorian calendar correction (Meeus algorithm)
- // Without this, JD is off by ~13 days for modern dates
- const C = 2 - Math.floor(A / 100) + Math.floor(Math.floor(A / 100) / 4);
- return Math.floor(365.25 * (A + 4716)) + Math.floor(30.6001 * (B + 1)) + d + C - 1524.5;
+ return convertToJulianDate(date);
  }
 
  /** Sun's right ascension in radians for a given days-since-J2000 value.
  * Uses low-precision solar coordinates (good to ~1°). */
  _sunRA(daysSinceJ2000) {
- const T = daysSinceJ2000 / 36525;
- const L0 = ((280.46646 + 36000.76983 * T) % 360 + 360) % 360;
- const M = ((357.52911 + 35999.05029 * T) % 360 + 360) % 360;
- const M_rad = M * Math.PI / 180;
- const C = (1.9146 - 0.004817 * T) * Math.sin(M_rad) + 0.019993 * Math.sin(2 * M_rad);
- const sunLon = (L0 + C) * Math.PI / 180;
- const eps = (23.439 - 0.00000036 * daysSinceJ2000) * Math.PI / 180;
- let ra = Math.atan2(Math.cos(eps) * Math.sin(sunLon), Math.cos(sunLon));
- if (ra < 0) ra += Math.PI * 2;
- return ra;
+ return sunRightAscension(daysSinceJ2000);
  }
 
  /** Solve Kepler's equation M = E - e·sin(E) via Newton-Raphson iteration. */
  _solveKepler(M_rad, e) {
- let E = M_rad + e * Math.sin(M_rad);
- for (let i = 0; i < 12; i++) {
- const dE = (M_rad - E + e * Math.sin(E)) / (1 - e * Math.cos(E));
- E += dE;
- if (Math.abs(dE) < 1e-10) break;
- }
- return E;
+ return solveKepler(M_rad, e);
  }
 
  /** Mean anomaly (radians) → true anomaly (radians).
  * Pass pre-cached sqrtPlus = sqrt(1+e) and sqrtMinus = sqrt(1-e) to skip recomputing them. */
  _meanToTrueAnomaly(M_rad, e, sqrtPlus, sqrtMinus) {
- if (e < 1e-6) return M_rad; // circular — skip Kepler solver
- const E = this._solveKepler(M_rad, e);
- const sp = sqrtPlus || Math.sqrt(1 + e);
- const sm = sqrtMinus || Math.sqrt(1 - e);
- return 2 * Math.atan2(
- sp * Math.sin(E / 2),
- sm * Math.cos(E / 2)
- );
+ return meanToTrueAnomaly(M_rad, e, sqrtPlus, sqrtMinus);
  }
 
  /**
@@ -4452,17 +4343,17 @@ export class SolarSystemModule {
  const colors = new Float32Array(starCount * 3);
  const sizes = new Float32Array(starCount);
 
- // Astronomical stellar distribution based on HR diagram
- // O-type: 0.00003%, B-type: 0.13%, A-type: 0.6%, F-type: 3%, G-type: 7.6%, K-type: 12.1%, M-type: 76.45%
+ // Approximate magnitude-limited sky sample; this is not the volume-limited
+ // population of all stars, which is dominated by faint red dwarfs.
  const stellarPopulation = [
- // [probability, baseTemp, tempVariance, baseLuminosity, name]
- { prob: 0.0000003, temp: 40000, variance: 10000, lum: 3.5, name: 'O-type (Blue Supergiants)' }, // Rare
- { prob: 0.0013, temp: 18000, variance: 8000, lum: 2.8, name: 'B-type (Blue Giants)' },
- { prob: 0.006, temp: 9000, variance: 1500, lum: 2.2, name: 'A-type (White)' },
- { prob: 0.03, temp: 7000, variance: 500, lum: 1.8, name: 'F-type (Yellow-White)' },
- { prob: 0.076, temp: 5800, variance: 300, lum: 1.4, name: 'G-type (Yellow, Sun-like)' },
- { prob: 0.121, temp: 4800, variance: 500, lum: 1.2, name: 'K-type (Orange Dwarfs)' },
- { prob: 0.7645, temp: 3200, variance: 700, lum: 0.9, name: 'M-type (Red Dwarfs)' }
+ // [probability, baseTemp, tempVariance, baseLuminosity]
+ { prob: 0.00002, temp: 40000, variance: 10000, lum: 3.5 }, // O-type
+ { prob: 0.17, temp: 18000, variance: 8000, lum: 2.8 }, // B-type
+ { prob: 0.22, temp: 9000, variance: 1500, lum: 2.2 }, // A-type
+ { prob: 0.20, temp: 7000, variance: 500, lum: 1.8 }, // F-type
+ { prob: 0.16, temp: 5800, variance: 300, lum: 1.4 }, // G-type
+ { prob: 0.21, temp: 4800, variance: 500, lum: 1.2 }, // K-type
+ { prob: 0.03998, temp: 3600, variance: 400, lum: 0.9 } // M-type giants
  ];
 
  // Convert Kelvin temperature to RGB using Planck's law approximation
@@ -4612,12 +4503,12 @@ export class SolarSystemModule {
  const positions = new Float32Array(particleCount * 3);
  const colors = new Float32Array(particleCount * 3);
 
- // Equatorial → Three.js Cartesian: x=cos(dec)cos(ra), y=sin(dec), z=−cos(dec)sin(ra)
+ // Match CoordinateUtils: x=−cos(dec)cos(ra), y=sin(dec), z=−cos(dec)sin(ra)
  const toCart = (raDeg, decDeg) => {
  const ra = raDeg * Math.PI / 180;
  const dec = decDeg * Math.PI / 180;
  return new THREE.Vector3(
- Math.cos(dec) * Math.cos(ra),
+ -Math.cos(dec) * Math.cos(ra),
  Math.sin(dec),
  -Math.cos(dec) * Math.sin(ra)
  ).normalize();
@@ -5071,7 +4962,7 @@ export class SolarSystemModule {
  density: 0.3,           // Lower density, expanding shell
  turbulence: 0.8,        // High turbulence from explosion
  filaments: true,        // Distinct filamentary structure
- pulsar: true,           // Central pulsar (animated)
+ pulsar: true,           // Central pulsar
  expansionRate: 0.002,   // Expanding at 1,500 km/s
  description: t('descCrabNebula')
  },
@@ -5332,10 +5223,8 @@ export class SolarSystemModule {
  
  // === Add Pulsar (for Crab Nebula) ===
  if (nebData.pulsar) {
- const pulsar = this.createPulsar(nebData);
+ const pulsar = this.createPulsar();
  group.add(pulsar);
- // Store for animation
- group.userData.pulsar = pulsar;
  }
  
  // === Add Central White Dwarf (for Ring Nebula) ===
@@ -5571,11 +5460,10 @@ export class SolarSystemModule {
  return starGroup;
  }
  
- createPulsar(nebData) {
- // Create animated pulsar for Crab Nebula
+ createPulsar() {
+ // A static illustrative core avoids implying a visible, slowed-down pulse rate.
  const pulsarGroup = new THREE.Group();
  
- // Pulsar core (will pulse)
  const coreGeo = new THREE.SphereGeometry(3, 16, 16);
  const coreMat = new THREE.MeshBasicMaterial({
  color: 0xFFFFFF,
@@ -5585,11 +5473,6 @@ export class SolarSystemModule {
  });
  const core = new THREE.Mesh(coreGeo, coreMat);
  pulsarGroup.add(core);
- 
- // Store for animation
- pulsarGroup.userData.pulsarCore = core;
- pulsarGroup.userData.pulsarMaterial = coreMat;
- pulsarGroup.userData.pulsePhase = Math.random() * Math.PI * 2;
  
  return pulsarGroup;
  }
@@ -6022,13 +5905,19 @@ export class SolarSystemModule {
  const starMesh = ConstellationFactory.createStar(star, position, this.geometryCache);
  // Full userData so the star is independently clickable and hoverable
  const constShortName = constData.name.split(/\s*\(/)[0].trim();
+ const constellationTranslation = t(constData.id);
  starMesh.userData = {
  hoverLabel: star.name, // legacy, kept for line-hover fallback
  name: star.name,
  type: 'star',
  isConstellationStar: true,
  parentConstellation: constShortName,
- description: `A star in the ${constShortName} constellation.`,
+ description: t('descConstellationStar').replace(
+ '{constellation}',
+ constellationTranslation === constData.id ? constShortName : constellationTranslation
+ ),
+ funFact: t('funFactDefaultStar').replace('{magnitude}', star.mag.toFixed(1)),
+ apparentMagnitude: star.mag,
  distance: 'Hundreds to thousands of light-years',
  };
  group.add(starMesh);
@@ -6843,6 +6732,23 @@ export class SolarSystemModule {
  
  alphaCentauriGroup.add(alphaA);
  
+ // Alpha Centauri B, the other member of the close binary pair.
+ const alphaB = new THREE.Mesh(
+ new THREE.SphereGeometry(10.3, 48, 48),
+ new THREE.MeshBasicMaterial({ color: 0xFFD8A0, toneMapped: false })
+ );
+ alphaB.position.set(8025, 1000, -6000);
+ alphaB.userData = {
+ name: 'alphaCentauriB',
+ type: 'star',
+ description: t('descAlphaCentauriB'),
+ distance: '4.37 light-years',
+ realSize: '0.86 times the Sun\'s diameter',
+ funFact: t('funFactAlphaCentauriB'),
+ basePosition: { x: 8025, y: 1000, z: -6000 }
+ };
+ alphaCentauriGroup.add(alphaB);
+
  // Proxima Centauri (red dwarf, technically closest star) - 4.24 light-years
  const proximaGeo = new THREE.SphereGeometry(6, 32, 32);
  const proximaMat = new THREE.MeshBasicMaterial({
@@ -6877,8 +6783,10 @@ export class SolarSystemModule {
  
  scene.add(alphaCentauriGroup);
  this.objects.push(alphaA);
+ this.objects.push(alphaB);
  this.objects.push(proxima);
  this.nearbyStars.push(alphaA);
+ this.nearbyStars.push(alphaB);
  this.nearbyStars.push(proxima);
  
  // Kepler-452 (Sun-like star for Kepler-452b) - 1,400 light-years away
@@ -7070,6 +6978,7 @@ export class SolarSystemModule {
  orbitRing.position.set(sx, sy, sz);
  orbitRing.rotation.x = Math.PI / 2 + exoData.orbitTilt;
  scene.add(orbitRing);
+ this.exoplanetOrbits.push({ mesh: orbitRing, basePosition: new THREE.Vector3(sx, sy, sz) });
 
  // --- Planet mesh ---
  const geometry = new THREE.SphereGeometry(exoData.radius, 32, 32);
@@ -7138,8 +7047,10 @@ export class SolarSystemModule {
  angle: initialAngle,
  orbitSpeed,
  orbitRadius: exoData.orbitRadius,
+ baseOrbitRadius: exoData.orbitRadius,
  orbitTilt: exoData.orbitTilt,
- hostStarPos: new THREE.Vector3(sx, sy, sz)
+ hostStarPos: new THREE.Vector3(sx, sy, sz),
+ baseHostStarPos: new THREE.Vector3(sx, sy, sz)
  };
 
  scene.add(planet);
@@ -7415,9 +7326,8 @@ export class SolarSystemModule {
  ionJitter[i] = Math.random() - 0.5;
  }
  
- // Clamp eccentricity so perihelion stays outside the sun (radius 15 + 30 safety margin = 45 units).
- // Sungrazers like Hyakutake (e=0.999) and Lovejoy (e=0.998) would otherwise dive deep inside the sun mesh.
- const MIN_PERIHELION = 45;
+ // The rendered Sun and corona are enlarged, so preserve a visible minimum clearance.
+ const MIN_PERIHELION = this.realisticScale ? 31 : 18.5;
  const safeEccentricity = Math.min(cometData.eccentricity, 1 - MIN_PERIHELION / cometData.distance);
 
  cometGroup.userData = {
@@ -9173,6 +9083,7 @@ createHyperrealisticHubble(satData) {
  this.objects.push(spacecraftGroup);
  this.spacecraft.push(spacecraftGroup);
  this.pickableObjects.push(spacecraftGroup);
+ if (craft.name === 'James Webb Space Telescope') this.jwst = spacecraftGroup;
  });
 
  if (DEBUG.enabled) console.log(` Created ${this.spacecraft.length} spacecraft and probes!`);
@@ -9293,6 +9204,9 @@ createHyperrealisticHubble(satData) {
  }
  planet.rotation.y = rotationAngle;
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
+ planet.userData.rings?.forEach(ring => {
+ ring.rotation.y = -rotationAngle;
+ });
  }
 
  // Rotate clouds slightly faster than planet for Earth
@@ -9382,6 +9296,8 @@ createHyperrealisticHubble(satData) {
  }
  });
  
+ this.updateJWSTPosition();
+
  // Camera tracking is handled by updateCameraTracking() called after all position updates.
  // Do NOT duplicate tracking logic here — it would overwrite the co-rotation chase-cam
  // and smooth tracking modes configured in focusOnObject().
@@ -9702,7 +9618,7 @@ createHyperrealisticHubble(satData) {
  }
 
  // Legacy angle-based probes (non-trajectory, e.g. JWST): keep simple orbit
- if (!userData.orbitPlanet && !userData.trajectory && userData.speed) {
+ if (!userData.orbitPlanet && !userData.trajectory && userData.speed && craft !== this.jwst) {
  const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.001;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
@@ -9733,31 +9649,6 @@ createHyperrealisticHubble(satData) {
  });
  }
  
- // Rotate nebulae slowly (optimized - pre-calculate time)
- if (this.nebulae) {
- const time = now * 0.0005;
- const scale = 1 + Math.sin(time) * 0.05;
- 
- this.nebulae.forEach(nebula => {
- const rotationIncrement = 0.0001 * rotationSpeed;
- if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
- nebula.rotation.y += rotationIncrement;
- }
- // Pulsing effect (shared calculation)
- nebula.scale.setScalar(scale);
- });
- }
- 
- // Rotate galaxies
- if (this.galaxies) {
- this.galaxies.forEach(galaxy => {
- const rotationIncrement = 0.0002 * rotationSpeed;
- if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
- galaxy.rotation.y += rotationIncrement;
- }
- });
- }
-
  // Orbit exoplanets around their host stars
  if (this.exoplanets) {
  this.exoplanets.forEach(planet => {
@@ -10520,27 +10411,23 @@ createHyperrealisticHubble(satData) {
  ud.distance = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
  });
 
- // JWST and other non-trajectory spacecraft: use legacy scale table for display distances
- const spacecraftScaleFactors = this.realisticScale ? {
- 'James Webb Space Telescope': 155
- } : {
- 'James Webb Space Telescope': 55
- };
-
- this.spacecraft.forEach(spacecraft => {
- const userData = spacecraft.userData;
- if (!userData || userData.orbitPlanet || userData.trajectory) return; // skip trajectory probes & orbiters
-
- const newDistance = spacecraftScaleFactors[userData.name];
- if (newDistance && userData.angle !== undefined) {
- userData.distance = newDistance;
- spacecraft.position.x = newDistance * Math.cos(userData.angle);
- spacecraft.position.z = newDistance * Math.sin(userData.angle);
- if (DEBUG.enabled) console.log(` ${userData.name}: ${newDistance} units`);
- }
- });
+ this.updateJWSTPosition();
 
  if (DEBUG.enabled) console.log(` Spacecraft positions updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);
+ }
+
+ updateJWSTPosition() {
+ const earth = this.planets.earth;
+ if (!earth || !this.jwst) return;
+
+ const radial = this._focusScratch.jwstRadial
+ .copy(earth.position)
+ .normalize();
+ const unitsPerAU = this.realisticScale ? 150 : 51;
+ const l2Offset = unitsPerAU * 0.01;
+ this.jwst.position.copy(earth.position).addScaledVector(radial, l2Offset);
+ this.jwst.userData.distanceAU = earth.position.length() / unitsPerAU + 0.01;
+ this.jwst.userData.distance = this.jwst.position.length();
  }
  
  updateCometPositions() {
@@ -10575,7 +10462,7 @@ createHyperrealisticHubble(satData) {
  // Update stored distance (semi-major axis)
  userData.distance = newDistance;
  // Reclamp eccentricity for the new distance so perihelion stays outside the sun
- const MIN_PERIHELION = 45;
+ const MIN_PERIHELION = this.realisticScale ? 31 : 18.5;
  userData.eccentricity = Math.min(
  userData.originalEccentricity || userData.eccentricity,
  1 - MIN_PERIHELION / newDistance
@@ -10691,6 +10578,23 @@ createHyperrealisticHubble(satData) {
  });
  }
 
+ // Exoplanet systems track their host stars and orbit rings when the deep-space
+ // scene is rescaled; their local planet orbits must scale by the same factor.
+ if (this.exoplanets?.length) {
+ this.exoplanets.forEach(planet => {
+ const ud = planet.userData;
+ if (!ud?.baseHostStarPos) return;
+ ud.hostStarPos.copy(ud.baseHostStarPos).multiplyScalar(deepSpaceScale);
+ ud.orbitRadius = ud.baseOrbitRadius * deepSpaceScale;
+ });
+ }
+ this.exoplanetOrbits?.forEach(({ mesh, basePosition }, index) => {
+ mesh.position.copy(basePosition).multiplyScalar(deepSpaceScale);
+ mesh.scale.setScalar(deepSpaceScale);
+ const orbitTilt = this.exoplanets[index]?.userData.orbitTilt || 0;
+ mesh.rotation.x = Math.PI / 2 + orbitTilt;
+ });
+
  // Update constellation positions for scale mode.
  // Each constellation is a THREE.Group at scene origin; its children (star meshes
  // and line meshes) are positioned at CONFIG.CONSTELLATION.DISTANCE (10,000 units).
@@ -10742,11 +10646,16 @@ createHyperrealisticHubble(satData) {
  let distanceText;
  if (userData.distance === 0) {
  distanceText = t('centerSolarSystem');
- } else if (userData.parentPlanet) {
+ } else if (userData.parentPlanet || userData.orbitPlanet) {
  // Translate parent planet name too
- const parentKey = userData.parentPlanet?.toLowerCase().replace(/\s+/g, '');
- const translatedParent = (parentKey && window.t && window.t(parentKey) !== parentKey) ? t(parentKey) : userData.parentPlanet;
+ const parentName = userData.parentPlanet || userData.orbitPlanet;
+ const parentKey = parentName.toLowerCase().replace(/\s+/g, '');
+ const translatedParent = (window.t && window.t(parentKey) !== parentKey) ? t(parentKey) : parentName;
  distanceText = `${t('orbitsParent')} ${translatedParent}`;
+ } else if (typeof userData.distanceAU === 'number') {
+ distanceText = `${userData.distanceAU.toFixed(2)} AU ${t('fromSun')}`;
+ } else if (typeof userData.semiMajorAxisAU === 'number') {
+ distanceText = `${userData.semiMajorAxisAU.toFixed(2)} AU ${t('averageOrbitalDistance')}`;
  } else if (typeof userData.distance === 'number') {
  distanceText = `${userData.distance.toFixed(1)} ${t('scaledUnitsFromSun')}`;
  } else if (typeof userData.distance === 'string') {

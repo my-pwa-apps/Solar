@@ -42,6 +42,8 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Adjustable time speed (1 year/minute max)
 - Real astronomical data
 - Educational scale mode with a compact solar corona that keeps Mercury clear of the glow
+- Object info reports known mean orbital distances in AU, independent of the visualization scale
+- Major moons, Haumea's triaxial shape and ring, and Quaoar's two rings are represented
 
 ### Progressive Web App
 - ✅ **Works 100% offline** with intelligent caching
@@ -102,8 +104,8 @@ npm run test:headed
 ### Versioning is enforced
 
 The service worker only invalidates its caches when `CACHE_VERSION` changes, and
-that version is repeated in five places (`package.json`, `sw.js`,
-`src/modules/utils.js`, `src/i18n.js` and the `?v=` stamps in `index.html`).
+that version is repeated in `package.json`, `sw.js`, `src/modules/utils.js`,
+the i18n entry import in `src/main.js`, and the `?v=` stamps in `index.html`.
 Never edit them by hand:
 
 ```bash
@@ -119,7 +121,7 @@ The suite verifies version/cache consistency, service-worker cached file referen
 broken offline experience — when any of these drift:
 
 - **Version stamps** in `package.json`, `sw.js`, `src/modules/utils.js`,
-  `src/i18n.js` and `index.html` disagree.
+  `src/main.js` and `index.html` disagree.
 - **Precache manifest** entries in `sw.js` point at files that do not exist, or
   contain duplicates.
 - **Three.js module graph:** every `three/addons/*` module imported anywhere in
@@ -221,11 +223,13 @@ Solar/
 │   └── sync-version.mjs        # Single-source-of-truth version stamping
 ├── src/
 │   ├── main.js                 # App entry point, controls, shortcuts, navigation
-│   ├── i18n.js                 # Translations (6 languages)
+│   ├── i18n.js                 # Locale loader and DOM translation helpers
+│   ├── locales/                # One ES module per supported language
 │   ├── bootstrap/              # Pre-module-load setup (language, install prompt)
 │   ├── modules/
 │   │   ├── SceneManager.js     # Three.js scene, camera, renderer, all WebXR
-│   │   ├── SolarSystemModule.js# Celestial objects, orbits, textures
+│   │   ├── SolarSystemModule.js# Celestial object construction and simulation
+│   │   ├── solarSystemData.js  # Physical constants and orbital element tables
 │   │   ├── UIManager.js        # Panels, modals, loading, speed controls
 │   │   ├── TextureCache.js     # IndexedDB + in-memory texture cache
 │   │   ├── utils.js            # DEBUG/CONFIG flags, material & geometry factories

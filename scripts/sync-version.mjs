@@ -3,8 +3,8 @@
  * Single-source-of-truth version stamping.
  *
  * `package.json` -> version is authoritative. This script propagates it to every
- * place the app repeats it (service-worker cache key, runtime constant, i18n
- * fallback, and the ~11 cache-busting `?v=` query strings in index.html).
+ * place the app repeats it (service-worker cache key, runtime constant, the
+ * i18n entry import, and cache-busting `?v=` query strings in index.html).
  *
  * Usage:
  *   node scripts/sync-version.mjs           # stamp files from package.json
@@ -47,15 +47,15 @@ const targets = [
     replace: (v) => `export const APP_VERSION = '${v}';`
   },
   {
-    file: 'src/i18n.js',
-    pattern: /\.get\('v'\) \|\| '\d+\.\d+\.\d+'/,
-    replace: (v) => `.get('v') || '${v}'`
+    file: 'src/main.js',
+    pattern: /import '\.\/i18n\.js\?v=\d+\.\d+\.\d+';/,
+    replace: (v) => `import './i18n.js?v=${v}';`
   },
   {
     file: 'index.html',
     pattern: /\?v=\d+\.\d+\.\d+/g,
     replace: (v) => `?v=${v}`,
-    minMatches: 10
+    minMatches: 9
   }
 ];
 

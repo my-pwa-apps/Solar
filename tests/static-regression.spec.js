@@ -12,10 +12,10 @@ async function readText(relativePath) {
 test('app version and service worker cache manifest stay in sync', async ({}, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
 
-  const [indexHtml, serviceWorker, i18n, utils, packageJsonText] = await Promise.all([
+  const [indexHtml, serviceWorker, main, utils, packageJsonText] = await Promise.all([
     readText('index.html'),
     readText('sw.js'),
-    readText('src/i18n.js'),
+    readText('src/main.js'),
     readText('src/modules/utils.js'),
     readText('package.json')
   ]);
@@ -25,8 +25,8 @@ test('app version and service worker cache manifest stay in sync', async ({}, te
 
   expect(serviceWorker).toContain(`const CACHE_VERSION = '${version}'`);
   expect(utils).toContain(`export const APP_VERSION = '${version}'`);
-  expect(i18n).toContain(`|| '${version}'`);
-  expect(indexHtml.match(new RegExp(`v=${version.replaceAll('.', '\\.')}`, 'g'))?.length).toBeGreaterThanOrEqual(10);
+  expect(main).toContain(`import './i18n.js?v=${version}';`);
+  expect(indexHtml.match(new RegExp(`v=${version.replaceAll('.', '\\.')}`, 'g'))?.length).toBeGreaterThanOrEqual(9);
 
   const readManifest = (name) => {
     const match = serviceWorker.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
@@ -39,6 +39,9 @@ test('app version and service worker cache manifest stay in sync', async ({}, te
   const coreFiles = readManifest('CORE_CACHE_FILES');
   const assetFiles = readManifest('ASSET_CACHE_FILES');
   const cachedFiles = [...coreFiles, ...assetFiles];
+  for (const language of ['en', 'nl', 'fr', 'de', 'es', 'pt']) {
+    expect(coreFiles).toContain(`./src/locales/${language}.js`);
+  }
 
   // Guard against the manifest silently emptying out (e.g. a refactor that
   // replaces the literals with spreads would otherwise make this test vacuous).

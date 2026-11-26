@@ -3,6 +3,7 @@
 // Main Application Entry Point
 // ===========================
 import * as THREE from 'three';
+import './i18n.js?v=2.10.318';
 
 // Import all modules
 import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';
@@ -19,8 +20,7 @@ import { showFatalError } from './modules/FatalError.js';
 window.audioManager = audioManager;
 window.APP_VERSION = APP_VERSION;
 
-// i18n.js is loaded globally in index.html. Use a late-binding wrapper so calls always use
-// the fully-initialised translation function rather than capturing window.t at import time.
+// i18n.js initializes before app boot; resolve window.t at call time for late-bound translations.
 const t = (key) => (window.t || ((k) => k))(key);
 
 // ===========================
@@ -126,6 +126,7 @@ const _NAV_SEARCH_PATTERNS = [
  }},
  { prefix: '', array: 'nearbyStars', exactMatch: 'exact', patterns: {
  'alpha-centauri':   ['alphaCentauriA'],
+ 'alpha-centauri-b': ['alphaCentauriB'],
  'proxima-centauri': ['proximaCentauri'],
  'kepler-452-star':  ['kepler452Star'],
  'trappist-1-star':  ['trappist1Star'],
@@ -839,9 +840,14 @@ class App {
  'ganymede': () => ssm.moons.ganymede,
  'callisto': () => ssm.moons.callisto,
  'titan': () => ssm.moons.titan,
+ 'mimas': () => ssm.moons.mimas,
  'enceladus': () => ssm.moons.enceladus,
  'rhea': () => ssm.moons.rhea,
+ 'iapetus': () => ssm.moons.iapetus,
  'titania': () => ssm.moons.titania,
+ 'ariel': () => ssm.moons.ariel,
+ 'umbriel': () => ssm.moons.umbriel,
+ 'oberon': () => ssm.moons.oberon,
  'miranda': () => ssm.moons.miranda,
  'triton': () => ssm.moons.triton,
  'charon': () => ssm.moons.charon,
@@ -1383,7 +1389,10 @@ class App {
  const discoveryObjects = [
  'sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn',
  'uranus', 'neptune', 'pluto', 'io', 'europa', 'titan', 'enceladus',
- 'triton', 'ganymede', 'callisto', 'ceres', 'eris', 'haumea'
+ 'mimas', 'rhea', 'iapetus', 'triton', 'titania', 'miranda', 'ariel',
+ 'umbriel', 'oberon', 'ganymede', 'callisto', 'ceres', 'eris', 'haumea',
+ 'halley', 'orion-nebula', 'andromeda-galaxy', 'proxima-b', 'jwst', 'iss',
+ 'constellation-orion'
  ];
  
  randomBtn.addEventListener('click', () => {

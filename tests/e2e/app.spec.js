@@ -91,6 +91,13 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
     hasEarth: Boolean(window.app.solarSystemModule.planets.earth),
     hasMarsNormalMap: Boolean(window.app.solarSystemModule.planets.mars.material.normalMap),
     starTwinkleFrame: window.app.solarSystemModule._starTwinkleFrame,
+    j2000JulianDate: window.app.solarSystemModule.toJulianDate(new Date('2000-01-01T12:00:00Z')),
+    keplerEquationResidual: (() => {
+      const meanAnomaly = 1;
+      const eccentricity = 0.2;
+      const eccentricAnomaly = window.app.solarSystemModule._solveKepler(meanAnomaly, eccentricity);
+      return Math.abs(eccentricAnomaly - eccentricity * Math.sin(eccentricAnomaly) - meanAnomaly);
+    })(),
     exoplanetOrbitPositionError: Math.max(...window.app.solarSystemModule.exoplanets.map((planet) => {
       const { angle, hostStarPos, orbitRadius, orbitTilt } = planet.userData;
       return Math.max(
@@ -112,10 +119,34 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
   });
   expect(appState.hasMarsNormalMap).toBe(false);
   expect(appState.starTwinkleFrame).toBeGreaterThan(0);
+  expect(appState.j2000JulianDate).toBeCloseTo(2451545, 6);
+  expect(appState.keplerEquationResidual).toBeLessThan(1e-10);
   expect(appState.exoplanetOrbitPositionError).toBeLessThan(1e-6);
   expect(appState.moonCount).toBeGreaterThan(10);
   expect(appState.dropdownOptions).toBeGreaterThan(70);
   expect(diagnostics).toEqual([]);
+});
+
+test('loads a saved locale before app initialization', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('appLanguage', 'fr');
+  });
+  await openApp(page);
+
+  const localization = await page.evaluate(() => ({
+    language: document.documentElement.lang,
+    translatedTitle: document.querySelector('[data-i18n="appTitle"]').textContent,
+    titleFromI18n: window.t('appTitle')
+  }));
+
+  expect(localization.language).toBe('fr');
+  expect(localization.translatedTitle).toBe(localization.titleFromI18n);
+  expect(localization.translatedTitle).not.toBe('Space Voyage');
+
+  await openModalFromButton(page, '#settings-button', '#settings-modal');
+  await page.locator('#language-selector').selectOption('en');
+  await expect.poll(() => page.evaluate(() => window.getCurrentLanguage())).toBe('en');
+  await expect(page.locator('[data-i18n="appTitle"]')).toHaveText('Space Voyage');
 });
 
 test('keeps Mercury outside the corona in education mode across scale switches', async ({ page }) => {
@@ -148,6 +179,138 @@ test('keeps Mercury outside the corona in education mode across scale switches',
   await scale.click();
   await expect(scale).toHaveAttribute('aria-pressed', 'false');
   expect(await measureCorona()).toEqual(initial);
+});
+
+test('keeps hosted systems, JWST and physical facts consistent across visual scales', async ({ page }) => {
+  await openApp(page);
+
+  const scale = page.locator('#toggle-scale');
+  const readModel = () => page.evaluate(() => {
+    const ssm = window.app.solarSystemModule;
+    const exoplanet = ssm.exoplanets[0];
+    const exoplanetData = exoplanet.userData;
+    const orbit = ssm.exoplanetOrbits[0];
+    const earth = ssm.planets.earth;
+    const jwst = ssm.jwst;
+    const offset = [
+      jwst.position.x - earth.position.x,
+      jwst.position.y - earth.position.y,
+      jwst.position.z - earth.position.z
+    ];
+    const offsetLength = Math.hypot(...offset);
+    const earthLength = Math.hypot(earth.position.x, earth.position.y, earth.position.z);
+    const haumea = ssm.planets.haumea;
+    const quaoar = ssm.planets.quaoar;
+
+    return {
+      orbitPositionError: Math.abs(
+        exoplanet.position.distanceTo(exoplanetData.hostStarPos) - exoplanetData.orbitRadius
+      ),
+      orbitScale: orbit.mesh.scale.x,
+      hostScale: exoplanetData.hostStarPos.x / exoplanetData.baseHostStarPos.x,
+      ringPositionScale: orbit.mesh.position.x / orbit.basePosition.x,
+      jwstOffset: offsetLength,
+      jwstRadialAlignment: (
+        offset[0] * earth.position.x +
+        offset[1] * earth.position.y +
+        offset[2] * earth.position.z
+      ) / (offsetLength * earthLength),
+      jupiterDistance: ssm.getObjectInfo(ssm.planets.jupiter).distance,
+      missingMoons: ['mimas', 'iapetus', 'ariel', 'umbriel', 'oberon']
+        .filter(id => !ssm.moons[id]),
+      haumeaShape: (() => {
+        haumea.geometry.computeBoundingBox();
+        const { min, max } = haumea.geometry.boundingBox;
+        const sizeX = max.x - min.x;
+        const sizeY = max.y - min.y;
+        const sizeZ = max.z - min.z;
+        return [sizeX / sizeY, sizeZ / sizeY];
+      })(),
+      haumeaRingCount: haumea.userData.rings.length,
+      quaoarRingCount: quaoar.userData.rings.length,
+      alphaCentauriB: ssm.nearbyStars.some(star => star.userData.name === 'alphaCentauriB')
+    };
+  });
+
+  const educational = await readModel();
+  expect(educational.jupiterDistance).toContain('5.20 AU');
+  expect(educational.missingMoons).toEqual([]);
+  expect(educational.haumeaShape[0]).toBeCloseTo(1.46 / 1.07, 1);
+  expect(educational.haumeaShape[1]).toBeCloseTo(0.64 / 1.07, 1);
+  expect(educational.haumeaRingCount).toBe(1);
+  expect(educational.quaoarRingCount).toBe(2);
+  expect(educational.alphaCentauriB).toBe(true);
+
+  const missingLocalizedFacts = await page.evaluate(async () => {
+    const requiredKeys = [
+      'descMimas', 'descIapetus', 'descAriel', 'descUmbriel', 'descOberon',
+      'descAlphaCentauriB', 'averageOrbitalDistance', 'fromSun'
+    ];
+    const missing = [];
+    await window.setLanguage('en');
+    const english = Object.fromEntries(requiredKeys.map(key => [key, window.t(key)]));
+    for (const language of ['en', 'nl', 'fr', 'de', 'es', 'pt']) {
+      await window.setLanguage(language);
+      for (const key of requiredKeys) {
+        if (window.t(key) === key || (language !== 'en' && window.t(key) === english[key])) {
+          missing.push(`${language}:${key}`);
+        }
+      }
+    }
+    await window.setLanguage('en');
+    return missing;
+  });
+  expect(missingLocalizedFacts).toEqual([]);
+
+  await page.locator('#object-dropdown').selectOption('mimas');
+  await expect(page.locator('#object-name')).toHaveText('Mimas');
+  await page.locator('#object-dropdown').selectOption('alpha-centauri-b');
+  await expect(page.locator('#object-name')).toHaveText('Alpha Centauri B');
+
+  await scale.click();
+  await expect(scale).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(async () => (await readModel()).orbitPositionError).toBeLessThan(1e-6);
+  const scientific = await readModel();
+  expect(scientific.orbitScale).toBeCloseTo(2.5);
+  expect(scientific.hostScale).toBeCloseTo(2.5);
+  expect(scientific.ringPositionScale).toBeCloseTo(2.5);
+  expect(scientific.jwstOffset).toBeCloseTo(1.5, 2);
+  expect(scientific.jwstRadialAlignment).toBeCloseTo(1, 5);
+  expect(scientific.jupiterDistance).toContain('5.20 AU');
+});
+
+test('makes constellation stars informative and includes other object classes in discovery', async ({ page }) => {
+  await openApp(page);
+
+  const astronomyInfo = await page.evaluate(() => {
+    const app = window.app;
+    const ssm = app.solarSystemModule;
+    const sirius = ssm.constellations
+      .flatMap((constellation) => constellation.children)
+      .find((object) => object.userData.name === 'Sirius');
+    const siriusInfo = ssm.getObjectInfo(sirius);
+    const extraDiscoveryValues = [
+      'halley',
+      'orion-nebula',
+      'andromeda-galaxy',
+      'proxima-b',
+      'jwst',
+      'iss',
+      'constellation-orion'
+    ];
+
+    return {
+      siriusDescription: siriusInfo.description,
+      siriusFact: siriusInfo.funFact,
+      discoveryTargetsResolve: extraDiscoveryValues.map(
+        (value) => Boolean(app.findObjectByNavigationValue(value))
+      )
+    };
+  });
+
+  expect(astronomyInfo.siriusDescription).toContain('brightest star');
+  expect(astronomyInfo.siriusFact).not.toContain('visible to the naked eye');
+  expect(astronomyInfo.discoveryTargetsResolve).toEqual(Array(7).fill(true));
 });
 
 test('keeps core navigation and controls working', async ({ page }) => {
