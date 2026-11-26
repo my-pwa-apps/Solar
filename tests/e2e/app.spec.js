@@ -57,6 +57,7 @@ async function openApp(page) {
       app?._experienceStarted &&
       app?.sceneManager?.renderer?.domElement instanceof HTMLCanvasElement &&
       app?.solarSystemModule?.planets?.earth &&
+      app?.solarSystemModule?.labels?.length > 0 &&
       loading?.classList.contains('hidden')
     );
   }, { timeout: 60_000 });
@@ -187,6 +188,186 @@ test('loads a saved locale before app initialization', async ({ page }) => {
   await page.locator('#language-selector').selectOption('en');
   await expect.poll(() => page.evaluate(() => window.getCurrentLanguage())).toBe('en');
   await expect(page.locator('[data-i18n="appTitle"]')).toHaveText('Space Voyage');
+});
+
+test('preserves the selected information and speed when changing language', async ({ page }) => {
+  await openApp(page);
+  await page.locator('#object-dropdown').selectOption('saturn');
+  await page.locator('#reset-view').click();
+  await page.locator('#time-speed').evaluate((input) => {
+    input.value = '0';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await openModalFromButton(page, '#settings-button', '#settings-modal');
+
+  for (const language of ['nl', 'fr', 'de', 'es', 'pt', 'en']) {
+    await page.locator('#language-selector').selectOption(language);
+    await expect.poll(() => page.evaluate(() => window.getCurrentLanguage())).toBe(language);
+    const expected = await page.evaluate(() => {
+      const { solarSystemModule, uiManager } = window.app;
+      return {
+        info: solarSystemModule.getObjectInfo(uiManager.infoObject),
+        paused: window.t('paused')
+      };
+    });
+    await expect(page.locator('#object-name')).toHaveText(expected.info.name);
+    await expect(page.locator('#object-description')).toHaveText(expected.info.description);
+    await expect(page.locator('#object-fun-fact')).toContainText(expected.info.funFact);
+    await expect(page.locator('#time-speed-label')).toHaveText(expected.paused);
+  }
+});
+
+test('uses one real-time clock for orbital motion and keeps the selected speed', async ({ page }) => {
+  await openApp(page);
+  const measurements = await page.evaluate(() => {
+    const app = window.app;
+    const ssm = app.solarSystemModule;
+    const moon = ssm.moons.moon.userData;
+    const comet = ssm.comets[0].userData;
+    const exoplanet = ssm.exoplanets[0].userData;
+    const satellite = ssm.satellites[0].userData;
+    const read = () => ({
+      jd: ssm.simulatedJD,
+      earth: ssm.planets.earth.userData.meanAnomaly,
+      moon: moon.meanAnomaly,
+      comet: comet.meanAnomaly,
+      exoplanet: exoplanet.angle,
+      satellite: satellite.angle
+    });
+    const step = (speed) => {
+      const before = read();
+      ssm.update(5, speed, app.sceneManager.camera, app.sceneManager.controls);
+      const after = read();
+      return Object.fromEntries(Object.keys(before).map(key => [key, after[key] - before[key]]));
+    };
+    const educational = step(1);
+    ssm.setScientificMode(true, { rebuildOrbits: false });
+    const scientific = step(1);
+    const paused = step(0);
+    const reverse = step(-1);
+    ssm.seekToDate('2030-01-01T00:00:00Z');
+    const expectedExoplanetAngle = (((ssm.simulatedJD - 2451545) / 11.2 * 2 * Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const exoplanetAngle = exoplanet.angle;
+    const seekErrors = [];
+    for (const scientificMode of [false, true]) {
+      ssm.setScientificMode(scientificMode, { rebuildOrbits: false });
+      ssm.seekToDate('2030-01-01T00:00:00Z');
+      ssm.update(1, 86400, app.sceneManager.camera, app.sceneManager.controls);
+      const objects = [ssm.planets.mercury, ssm.moons.moon, ssm.moons.triton, ssm.comets[0], ssm.exoplanets[0]];
+      const steppedAngles = objects.map(object => object.userData.angle);
+      ssm.seekToDate('2030-01-02T00:00:00Z');
+      seekErrors.push(...objects.map((object, index) => {
+        const difference = object.userData.angle - steppedAngles[index];
+        return Math.abs(Math.atan2(Math.sin(difference), Math.cos(difference)));
+      }));
+    }
+    return { educational, scientific, paused, reverse, cometPeriod: comet.orbitalPeriod, exoplanetAngle, expectedExoplanetAngle, seekErrors };
+  });
+  for (const mode of ['educational', 'scientific']) {
+    const m = measurements[mode];
+    expect(m.jd).toBeCloseTo(5 / 86400, 9);
+    expect(m.earth).toBeCloseTo(0.98560028 * Math.PI * 5 / (180 * 86400), 12);
+    expect(m.moon).toBeCloseTo(2 * Math.PI * 5 / (27.321661 * 86400), 12);
+    expect(m.comet).toBeCloseTo(2 * Math.PI * 5 / (measurements.cometPeriod * 86400), 12);
+    expect(m.exoplanet).toBeCloseTo(2 * Math.PI * 5 / (11.2 * 86400), 12);
+    expect(m.satellite).toBeCloseTo(15.5 * 2 * Math.PI * 5 / 86400, 12);
+  }
+  for (const value of Object.values(measurements.paused)) expect(value).toBe(0);
+  expect(measurements.reverse.earth).toBeCloseTo(-measurements.scientific.earth, 12);
+  expect(measurements.reverse.jd).toBeCloseTo(-measurements.scientific.jd, 9);
+  expect(measurements.exoplanetAngle).toBeCloseTo(measurements.expectedExoplanetAngle, 10);
+  for (const error of measurements.seekErrors) expect(error).toBeLessThan(1e-8);
+
+  await page.locator('#time-speed').evaluate((input) => {
+    input.value = '100';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page.locator('#time-speed-label')).toHaveText('525960x');
+  await expect(page.locator('#time-speed')).toHaveAttribute('aria-valuenow', '100');
+  await page.locator('#object-dropdown').selectOption('iss');
+  await expect.poll(() => page.evaluate(() => window.app.timeSpeed)).toBeCloseTo(525960, 2);
+  await page.locator('#object-dropdown').selectOption('earth');
+  await expect.poll(() => page.evaluate(() => window.app.timeSpeed)).toBeCloseTo(525960, 2);
+  await page.evaluate(() => window.app.uiManager.setSpeed(10));
+  await expect.poll(() => page.evaluate(() => window.app.timeSpeed)).toBeCloseTo(10, 6);
+});
+
+test('preserves the simulation clock when loading starts the experience early', async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalSetTimeout = window.setTimeout;
+    window.setTimeout = (callback, delay, ...args) => {
+      if (delay === 30000 && typeof callback === 'function' && String(callback).includes('Loading timeout')) {
+        const startWhenEarthExists = () => {
+          if (!window.app.solarSystemModule.planets.earth) {
+            return originalSetTimeout(startWhenEarthExists, 25);
+          }
+          callback(...args);
+          window.__earlyStartJD = window.app.solarSystemModule.simulatedJD;
+          window.app.uiManager.setSpeed(100);
+        };
+        return originalSetTimeout(startWhenEarthExists, 25);
+      }
+      return originalSetTimeout(callback, delay, ...args);
+    };
+  });
+  await openApp(page);
+  const result = await page.evaluate(() => ({
+    startJD: window.__earlyStartJD,
+    currentJD: window.app.solarSystemModule.simulatedJD,
+    speed: window.app.timeSpeed
+  }));
+  expect(result.startJD).toBeGreaterThan(2460000);
+  expect(result.currentJD).toBeGreaterThan(result.startJD + 20 / 86400);
+  expect(result.speed).toBeCloseTo(100, 6);
+});
+
+test('shows meaningful sizes and accurate moon wording', async ({ page }) => {
+  await openApp(page);
+  for (const target of ['earth', 'mars']) {
+    await page.locator('#object-dropdown').selectOption(target);
+    await expect(page.locator('#object-description')).not.toContainText('many more small ones');
+  }
+  await page.locator('#object-dropdown').selectOption('moon');
+  await expect(page.locator('#object-size')).toHaveText('3,474 km diameter');
+  await page.locator('#object-dropdown').selectOption('orion-nebula');
+  await expect(page.locator('#object-size')).toHaveText('~25 light-years across');
+  await page.locator('#object-dropdown').selectOption('constellation-orion');
+  await expect(page.locator('#object-size')).toContainText('region of the sky');
+  await page.locator('#object-dropdown').selectOption('crab-nebula');
+  await expect(page.locator('#object-size')).toHaveText('Physical size unavailable');
+});
+
+test('keeps mobile footer controls visible and reachable', async ({ page }) => {
+  await openApp(page);
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.locator('#object-dropdown').selectOption('earth');
+    const bounds = await page.evaluate(() => {
+      const footer = document.querySelector('#main-footer').getBoundingClientRect();
+      const panel = document.querySelector('#info-panel').getBoundingClientRect();
+      return {
+        footerTop: footer.top,
+        panelBottom: panel.bottom,
+        buttons: Array.from(document.querySelectorAll('.footer-controls button'))
+          .filter(button => button.id !== 'toggle-bloom' || getComputedStyle(button).display !== 'none')
+          .map(button => {
+          const rect = button.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
+        })
+      };
+    });
+    for (const button of bounds.buttons) {
+      expect(button.left).toBeGreaterThanOrEqual(0);
+      expect(button.right).toBeLessThanOrEqual(width);
+      expect(button.bottom).toBeLessThanOrEqual(844);
+      expect(button.width).toBeGreaterThanOrEqual(44);
+      expect(button.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(bounds.panelBottom).toBeLessThanOrEqual(bounds.footerTop);
+    await page.locator('#settings-button').click();
+    await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
+    await page.locator('#settings-close-btn').click();
+  }
 });
 
 test('keeps Mercury outside the corona in education mode across scale switches', async ({ page }) => {

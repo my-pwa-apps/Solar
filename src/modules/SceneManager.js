@@ -9,7 +9,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
-import { CONFIG, DEBUG, IS_MOBILE } from './utils.js';
+import { CONFIG, DEBUG, IS_MOBILE, MAX_SIMULATION_SPEED } from './utils.js';
 import { safeSetItem } from './storage.js';
 
 // Properties that MeshBasicMaterial does NOT support as uniforms.
@@ -1341,8 +1341,8 @@ this.camera.near = 10.0;
  const timeActions = [
  { label: '⏸ Pause', action: 'speed0', active: state.timeSpeed === 0, meta: '0×' },
  { label: '▶ Live', action: 'speed1', active: state.timeSpeed === 1, meta: '1×' },
- { label: '⏩ Fast', action: 'speed10', active: state.timeSpeed === 10, meta: '10×' },
- { label: '⏩⏩ Max', action: 'speed100', active: state.timeSpeed >= 100, meta: '100×' }
+ { label: '⏩ Fast', action: 'speed10', active: Math.abs(state.timeSpeed - 10) < 1e-6, meta: '10×' },
+ { label: '⏩⏩ Max', action: 'speed100', active: state.timeSpeed >= MAX_SIMULATION_SPEED, meta: '525,960×' }
  ];
  timeActions.forEach((item, idx) => {
  tile(item.label, item.action, BODY_X + 22 + idx * (timeTileW + 12), timeTileY, timeTileW, 88, {
@@ -1698,7 +1698,7 @@ this.camera.near = 10.0;
  const info = typeof module.getObjectInfo === 'function' ? module.getObjectInfo(target) : null;
  if (info) {
  this.vrLastObjectInfo = info;
- window.app?.uiManager?.updateInfoPanel(info);
+ window.app?.uiManager?.updateInfoPanel(info, target);
  if (this.vrNavState) this.vrNavState.currentPage = 'info';
  }
  }
@@ -1738,7 +1738,7 @@ this.camera.near = 10.0;
  const info = typeof module?.getObjectInfo === 'function' ? module.getObjectInfo(target) : null;
  if (info) {
  this.vrLastObjectInfo = info;
- app.uiManager?.updateInfoPanel(info);
+ app.uiManager?.updateInfoPanel(info, target);
  }
  if (this.vrNavState) this.vrNavState.currentPage = 'info';
  const name = target.userData?.name || value;
@@ -1864,7 +1864,7 @@ this.camera.near = 10.0;
  if (DEBUG.VR) console.log('[VR] Zooming to:', objName);
  if (infoForPanel) {
  this.vrLastObjectInfo = infoForPanel;
- app.uiManager?.updateInfoPanel(infoForPanel);
+ app.uiManager?.updateInfoPanel(infoForPanel, hitObject);
  }
  this._showVRInfoOverlay();
  this.updateVRStatus('\uD83D\uDD0D Inspecting: ' + objName);
@@ -1877,7 +1877,7 @@ this.camera.near = 10.0;
  if (DEBUG.VR) console.log('[VR] Focused on:', objName);
  if (infoForPanel) {
  this.vrLastObjectInfo = infoForPanel;
- app.uiManager?.updateInfoPanel(infoForPanel);
+ app.uiManager?.updateInfoPanel(infoForPanel, hitObject);
  }
  this._showVRInfoOverlay();
  this.updateVRStatus('\u2714\uFE0F ' + objName);
@@ -2402,9 +2402,9 @@ this.camera.near = 10.0;
  scheduleRefresh(); break;
 
  case 'speed100':
- if (app.uiManager?.setSpeed) app.uiManager.setSpeed(100);
- else app.timeSpeed = 100;
- this.updateVRStatus('⏩⏩ Max Speed (100×)');
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(MAX_SIMULATION_SPEED);
+ else app.timeSpeed = MAX_SIMULATION_SPEED;
+ this.updateVRStatus('⏩⏩ Max Speed (525,960×)');
  scheduleRefresh(); break;
 
  case 'orbits':
@@ -2780,8 +2780,10 @@ this.camera.near = 10.0;
  } else if (!prevState) {
  // Right thumbstick tap = pause toggle
  const app = window.app || this;
- if (app.timeSpeed === 0) { app.timeSpeed = 1; this.updateVRStatus('\u25B6 Playing'); }
- else { app.timeSpeed = 0; this.updateVRStatus('\u23F8 Paused'); }
+ const speed = app.timeSpeed === 0 ? 1 : 0;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(speed);
+ else app.timeSpeed = speed;
+ this.updateVRStatus(speed ? '\u25B6 Playing' : '\u23F8 Paused');
  this.requestVRMenuRefresh();
  }
  this.previousButtonStates[i][3] = true;
@@ -2794,8 +2796,10 @@ this.camera.near = 10.0;
  } else if ((this._vrRadialPressFrames || 0) > 0 && (this._vrRadialPressFrames || 0) < 8) {
  // Short tap — pause toggle
  const app = window.app || this;
- if (app.timeSpeed === 0) { app.timeSpeed = 1; this.updateVRStatus('\u25B6 Playing'); }
- else { app.timeSpeed = 0; this.updateVRStatus('\u23F8 Paused'); }
+ const speed = app.timeSpeed === 0 ? 1 : 0;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(speed);
+ else app.timeSpeed = speed;
+ this.updateVRStatus(speed ? '\u25B6 Playing' : '\u23F8 Paused');
  this.requestVRMenuRefresh();
  }
  this._vrRadialPressFrames = 0;

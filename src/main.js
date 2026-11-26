@@ -3,7 +3,7 @@
 // Main Application Entry Point
 // ===========================
 import * as THREE from 'three';
-import './i18n.js?v=2.10.319';
+import './i18n.js?v=2.10.320';
 
 // Import all modules
 import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';
@@ -242,6 +242,7 @@ class App {
  this._loadingTimeout = setTimeout(() => {
  if (!this._experienceStarted) {
  if (DEBUG && DEBUG.enabled) console.warn('[App] Loading timeout — force-starting experience');
+ this.solarSystemModule.initPositionsToDate(new Date());
  this.startExperience();
  }
  }, 30000);
@@ -301,6 +302,15 @@ class App {
  if (this.solarSystemModule?.refreshLocalizedAssets) {
  this.solarSystemModule.refreshLocalizedAssets();
  }
+ const infoObject = this.uiManager?.infoObject;
+ if (infoObject && !this.uiManager.elements.infoPanel?.classList.contains('hidden')) {
+ const info = this.solarSystemModule.getObjectInfo(infoObject);
+ this.uiManager.updateInfoPanel(info, infoObject);
+ if (this.sceneManager?.vrLastObjectInfo) {
+ this.sceneManager.vrLastObjectInfo = info;
+ this.sceneManager.requestVRMenuRefresh();
+ }
+ }
  if (!this.uiManager?.elements?.helpModal?.classList.contains('hidden')) {
  this.uiManager.showHelp(t('helpContent'));
  }
@@ -318,7 +328,7 @@ class App {
  }
  
  const currentTime = performance.now();
- const deltaTime = Math.min((currentTime - this.lastTime) / 1000, CONFIG.PERFORMANCE.maxDeltaTime);
+ const deltaTime = (currentTime - this.lastTime) / 1000;
  this.lastTime = currentTime;
  
  // Update XR controller movement and laser pointers
@@ -805,7 +815,7 @@ class App {
  
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
- this.uiManager.updateInfoPanel(info);
+ this.uiManager.updateInfoPanel(info, targetObject);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
  }
  }
@@ -1078,7 +1088,7 @@ class App {
  audioManager.playSelect();
 
  const info = this.solarSystemModule.getObjectInfo(target);
- this.uiManager.updateInfoPanel(info);
+ this.uiManager.updateInfoPanel(info, target);
  this.solarSystemModule.focusOnObject(target, this.sceneManager.camera, this.sceneManager.controls);
  }
  }
@@ -1357,7 +1367,7 @@ class App {
  const targetObject = this.findObjectByNavigationValue(requestedTargetKey);
  if (targetObject) {
  const info = this.solarSystemModule.getObjectInfo(targetObject);
- this.uiManager.updateInfoPanel(info);
+ this.uiManager.updateInfoPanel(info, targetObject);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
  safeSetItem('space_voyage_visited', 'true');
  return;
@@ -1374,7 +1384,7 @@ class App {
  if (this.solarSystemModule.focusedObject) return;
  const earth = this.solarSystemModule.planets.earth;
  const info = this.solarSystemModule.getObjectInfo(earth);
- this.uiManager.updateInfoPanel(info);
+ this.uiManager.updateInfoPanel(info, earth);
  this.solarSystemModule.focusOnObject(earth, this.sceneManager.camera, this.sceneManager.controls);
  safeSetItem('space_voyage_visited', 'true');
  }, 500);
@@ -1409,7 +1419,7 @@ class App {
  setTimeout(() => randomBtn.classList.remove('spinning'), 500);
  
  const info = this.solarSystemModule.getObjectInfo(targetObject);
- this.uiManager.updateInfoPanel(info);
+ this.uiManager.updateInfoPanel(info, targetObject);
  this.solarSystemModule.focusOnObject(targetObject, this.sceneManager.camera, this.sceneManager.controls);
 
  // Play discovery fanfare after a slight delay
@@ -1612,6 +1622,13 @@ class App {
 
  syncLocalizedControlStates() {
  this._updateOrbitButton(this.solarSystemModule?.orbitMode || 'all');
+ const speedLabel = document.getElementById('time-speed-label');
+ const speedSlider = document.getElementById('time-speed');
+ if (speedLabel && this.uiManager) {
+ const label = this.uiManager.formatSpeed(this.timeSpeed);
+ speedLabel.textContent = label;
+ speedSlider?.setAttribute('aria-valuetext', label);
+ }
 
  const labelsButton = document.getElementById(UI_ELEMENTS.LABELS_BUTTON);
  if (labelsButton && this.sceneManager) {

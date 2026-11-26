@@ -177,7 +177,7 @@ test('full functionality: every navigation target and all main controls work', a
     await setSlider(page, 0);
     await expect(page.locator('#time-speed-label')).toHaveText('Paused');
     await setSlider(page, 100);
-    await expect(page.locator('#time-speed-label')).toHaveText('100x');
+    await expect(page.locator('#time-speed-label')).toHaveText('525960x');
 
     await page.locator('#speed-toggle').click();
     await expect(page.locator('#speed-control')).toHaveClass(/collapsed/);

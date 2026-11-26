@@ -89,15 +89,12 @@ export class SolarSystemModule {
  this.PLANET_ELEMENTS_J2000 = PLANET_ELEMENTS_J2000;
 
  // Current simulated Julian Date — drives seekToDate() and orbital phase seeding.
- // Initialised to J2000 epoch; updated to today inside initPositionsToDate().
- this.simulatedJD = 2451545.0;
+ this.simulatedJD = convertToJulianDate(new Date());
 
- // Time acceleration factor (1 = real-time, higher = faster)
- this.timeAcceleration = 360; // 360x faster = 1 Earth day in 4 minutes
- // Accumulated simulated hours — advanced each frame by deltaTime * timeAcceleration * rotationSpeed.
+ // Accumulated simulated hours — advanced each frame by deltaTime * rotationSpeed.
  // Using this instead of a wall-clock anchor keeps planet self-rotation in sync with the
  // speed slider so moons never appear to reverse when the slider is set very low.
- this.simulatedHours = 0;
+ this.simulatedHours = (this.simulatedJD - 2451545.0) * 24;
 
  // Pre-allocated scratch vectors for update() hot path — avoids per-frame GC pressure
  this._trackTargetPos = new THREE.Vector3();
@@ -185,7 +182,7 @@ export class SolarSystemModule {
  try {
  await step.task();
  } catch (error) {
- if (DEBUG && DEBUG.enabled) console.error(`[SolarSystem] Error in loading step "${step.message}":`, error);
+ console.error(`[SolarSystem] Error in loading step "${step.message}":`, error);
  }
  }
 
@@ -195,11 +192,11 @@ export class SolarSystemModule {
  console.log(`[SolarSystem] Initialized in ${totalTime.toFixed(0)}ms — Planets: ${Object.keys(this.planets).length}, Satellites: ${this.satellites.length}, Spacecraft: ${this.spacecraft.length}`);
  }
 
- // Ensure orbital speeds are aligned with the selected mode.
- this.applyScientificModeSpeeds();
-
- // Seed all planet positions from today's real astronomical positions.
- this.initPositionsToDate(new Date());
+ // Preserve simulation time if the loading timeout already started the experience.
+ const initialDate = window.app?._experienceStarted
+ ? new Date((this.simulatedJD - 2440587.5) * 86400000)
+ : new Date();
+ this.initPositionsToDate(initialDate);
 
  // Signal that loading is complete
  if (window.app && typeof window.app.startExperience === 'function') {
@@ -394,7 +391,8 @@ export class SolarSystemModule {
             speed: 0.1337, // 13.37x Earth's speed (0.01 * 13.37) - completes ~13 orbits per Earth year
             rotationSpeed: 0.004, // Moon rotates (tidally locked)
             description: t('descMoon'),
-            funFact: t('funFactMoon')
+            funFact: t('funFactMoon'),
+            realSize: '3,474 km diameter'
         }); // Mars: 6,779 km / 12,742 km = 0.532
  if (this.uiManager) this.uiManager.updateLoadingProgress(31, t('creatingMars'));
  await new Promise(resolve => requestAnimationFrame(resolve));
@@ -2941,6 +2939,10 @@ export class SolarSystemModule {
  // Get real astronomical data for this planet - USE ENGLISH KEY, NOT TRANSLATED NAME
  const planetKey = (config.id || config.name).toLowerCase();
  const astroData = this.ASTRONOMICAL_DATA[planetKey] || {};
+ const orbitalPeriodDays = this.SCIENTIFIC_ORBITAL_PERIODS[planetKey] || astroData.orbitalPeriod;
+ if (!(orbitalPeriodDays > 0)) throw new Error(`Missing orbital period for planet ${planetKey}`);
+ const meanMotion = this.PLANET_ELEMENTS_J2000[planetKey]?.n;
+ const initialAngle = Math.random() * Math.PI * 2;
  
  planet.userData = {
  id: config.id || config.name.toLowerCase(), // English key for lookups
@@ -2948,9 +2950,9 @@ export class SolarSystemModule {
  type: config.dwarf ? 'DwarfPlanet' : 'planet',
  distance: config.distance,
  radius: config.radius,
- angle: Math.random() * Math.PI * 2,
- speed: config.speed,
- visualBaseSpeed: config.speed,
+ angle: initialAngle,
+ meanAnomaly: initialAngle,
+ speed: meanMotion > 0 ? meanMotion * Math.PI / (180 * 86400) : 2 * Math.PI / (orbitalPeriodDays * 86400),
  rotationSpeed: config.rotationSpeed,
  description: config.description,
  funFact: config.funFact,
@@ -3346,7 +3348,9 @@ export class SolarSystemModule {
  
  // Real astronomical data for day/night cycle
  // Most moons are tidally locked — rotation period ≈ orbital period
- const moonOrbitalPeriodHours = (this.SCIENTIFIC_MOON_ORBITAL_PERIODS[astroDataKey] || 0) * 24;
+ const moonOrbitalPeriodDays = this.SCIENTIFIC_MOON_ORBITAL_PERIODS[astroDataKey] || astroData.orbitalPeriod;
+ if (!(moonOrbitalPeriodDays > 0)) throw new Error(`Missing orbital period for moon ${astroDataKey}`);
+ const moonOrbitalPeriodHours = moonOrbitalPeriodDays * 24;
 
  moon.userData = {
  id: config.id || config.name.toLowerCase(), // English key for lookups
@@ -3355,10 +3359,10 @@ export class SolarSystemModule {
  distance: config.distance,
  radius: config.radius,
  angle: 0,
- speed: config.speed,
- visualBaseSpeed: config.speed,
+ speed: (config.speed < 0 ? -1 : 1) * 2 * Math.PI / (moonOrbitalPeriodDays * 86400),
  rotationSpeed: config.rotationSpeed || 0.001, // Add rotation
  description: config.description,
+ realSize: config.realSize,
  
  // Tidally locked default: use orbital period; fallback to Earth Moon's 655.7h
  realRotationPeriod: astroData.rotationPeriod || moonOrbitalPeriodHours || 655.7, // hours
@@ -3405,86 +3409,10 @@ export class SolarSystemModule {
 
  setScientificMode(enabled, { rebuildOrbits = true } = {}) {
  this.scientificMode = !!enabled;
- this.applyScientificModeSpeeds();
  // Redraw orbit lines to match the new motion model
  // (circles for educational mode, Keplerian ellipses for scientific mode)
  if (rebuildOrbits) {
  this.updateOrbitalPaths();
- }
- }
-
- applyScientificModeSpeeds() {
- // Cache baseline visual speeds once, and restore them when scientific mode is off.
- const earthVisualBase = this.planets?.earth?.userData?.visualBaseSpeed || 0.01;
- const earthOrbitalPeriod = this.ASTRONOMICAL_DATA.earth?.orbitalPeriod || 365.25;
-
- Object.values(this.planets).forEach((planet) => {
- if (!planet?.userData) return;
- const ud = planet.userData;
- if (ud.visualBaseSpeed === undefined) ud.visualBaseSpeed = ud.speed;
-
- if (!this.scientificMode) {
- ud.speed = ud.visualBaseSpeed;
- return;
- }
-
- const key = (ud.id || ud.name || '').toLowerCase();
- const period = this.SCIENTIFIC_ORBITAL_PERIODS[key] || this.ASTRONOMICAL_DATA[key]?.orbitalPeriod;
- if (!period || period <= 0) {
- ud.speed = ud.visualBaseSpeed;
- return;
- }
-
- ud.speed = earthVisualBase * (earthOrbitalPeriod / period);
- });
-
- Object.values(this.moons).forEach((moon) => {
- if (!moon?.userData) return;
- const ud = moon.userData;
- if (ud.visualBaseSpeed === undefined) ud.visualBaseSpeed = ud.speed;
-
- if (!this.scientificMode) {
- ud.speed = ud.visualBaseSpeed;
- return;
- }
-
- const moonKey = (ud.id || ud.name || '').toLowerCase();
- const moonPeriod = this.SCIENTIFIC_MOON_ORBITAL_PERIODS[moonKey] || this.ASTRONOMICAL_DATA[moonKey]?.orbitalPeriod;
- const parent = moon.parent;
- const parentKey = parent?.userData?.id?.toLowerCase() || parent?.userData?.name?.toLowerCase();
- const parentPeriod = parentKey ? (this.SCIENTIFIC_ORBITAL_PERIODS[parentKey] || this.ASTRONOMICAL_DATA[parentKey]?.orbitalPeriod) : null;
- const parentSpeed = parent?.userData?.speed;
-
- if (!moonPeriod || !parentPeriod || !parentSpeed) {
- ud.speed = ud.visualBaseSpeed;
- return;
- }
-
- const direction = ud.visualBaseSpeed < 0 ? -1 : 1;
- ud.speed = direction * Math.abs(parentSpeed) * (parentPeriod / moonPeriod);
- });
-
- if (this.comets) {
- this.comets.forEach(comet => {
- if (!comet?.userData) return;
- const ud = comet.userData;
- if (ud.visualBaseSpeed === undefined) ud.visualBaseSpeed = ud.speed;
-
- if (!this.scientificMode) {
- ud.speed = ud.visualBaseSpeed;
- return;
- }
-
- if (ud.orbitalPeriod) {
- ud.speed = earthVisualBase * (earthOrbitalPeriod / ud.orbitalPeriod);
- } else {
- ud.speed = ud.visualBaseSpeed;
- }
- });
- }
-
- if (DEBUG && DEBUG.enabled) {
- console.log(`[Scientific Mode] ${this.scientificMode ? 'ON' : 'OFF'} — orbital speeds ${this.scientificMode ? 'derived from orbital periods' : 'restored to visual tuning'}`);
  }
  }
 
@@ -3625,9 +3553,10 @@ export class SolarSystemModule {
  const orbitalPeriodDays = this.SCIENTIFIC_MOON_ORBITAL_PERIODS[moonKey] || this.ASTRONOMICAL_DATA[moonKey]?.orbitalPeriod;
  if (!orbitalPeriodDays || orbitalPeriodDays <= 0) return;
 
- const meanAnomaly = normalizeAngle((daysSinceJ2000 / orbitalPeriodDays) * TWO_PI);
+ const direction = moon.userData.speed < 0 ? -1 : 1;
+ const meanAnomaly = normalizeAngle(direction * (daysSinceJ2000 / orbitalPeriodDays) * TWO_PI);
  moon.userData.meanAnomaly = meanAnomaly;
- moon.userData.angle = meanAnomaly;
+ moon.userData.angle = this._meanToTrueAnomaly(meanAnomaly, moon.userData.orbitalEccentricity || 0);
 
  // Counter-rotate by parent's rotation.y so the moon's world-space
  // orbit is not dragged by the planet's self-rotation.
@@ -3674,6 +3603,14 @@ export class SolarSystemModule {
  comet.position.x = r * Math.cos(userData.angle);
  comet.position.y = r * Math.sin(userData.angle) * Math.sin(inclRad);
  comet.position.z = r * Math.sin(userData.angle) * Math.cos(inclRad);
+ });
+ }
+
+ if (this.exoplanets) {
+ this.exoplanets.forEach(planet => {
+ const ud = planet.userData;
+ ud.angle = normalizeAngle((daysSinceJ2000 / ud.orbitPeriodDays) * TWO_PI);
+ this.updateExoplanetPosition(planet);
  });
  }
 
@@ -4932,6 +4869,7 @@ export class SolarSystemModule {
  ra: 83.8, // 5h 35m - Located in Orion's sword
  dec: -5.4, // -5° 23' - Below Orion's belt
  size: 400, 
+ realSize: '~25 light-years across',
  type: 'emission', // Star-forming region
  // Spectral emission colors (astronomically accurate)
  colors: {
@@ -5128,6 +5066,7 @@ export class SolarSystemModule {
  name: nebData.id || nebData.name,
  type: 'nebula',
  radius: nebData.size,
+ realSize: nebData.realSize,
  description: nebData.description,
  distance: 'Thousands of light-years',
  funFact: ({
@@ -6894,13 +6833,19 @@ export class SolarSystemModule {
  if (DEBUG.enabled) console.log(` Created ${this.nearbyStars.length} nearby stars and exoplanet host stars`);
  }
 
+ updateExoplanetPosition(planet) {
+ const ud = planet.userData;
+ const sinAngle = Math.sin(ud.angle);
+ planet.position.set(
+ ud.hostStarPos.x + ud.orbitRadius * Math.cos(ud.angle),
+ ud.hostStarPos.y - ud.orbitRadius * sinAngle * Math.sin(ud.orbitTilt || 0),
+ ud.hostStarPos.z + ud.orbitRadius * sinAngle * Math.cos(ud.orbitTilt || 0)
+ );
+ }
+
  createExoplanets(scene) {
  // Create famous discovered exoplanets with orbital motion around their host stars
  this.exoplanets = [];
-
- // Earth's orbital speed reference: ~0.0005 rad/s at timeSpeed=1
- // Speed = EARTH_SPEED * (365.25 / orbitalPeriodDays)
- const EARTH_SPEED = 0.0005;
 
  const exoplanetsData = [
  {
@@ -6958,7 +6903,7 @@ export class SolarSystemModule {
  ];
 
  exoplanetsData.forEach(exoData => {
- const orbitSpeed = EARTH_SPEED * (365.25 / exoData.orbitPeriodDays);
+ const orbitSpeed = 2 * Math.PI / (exoData.orbitPeriodDays * 86400);
  // Seed orbital phase from current JD so the position is deterministic and
  // consistent with the time machine. Mean anomaly = (daysSinceJ2000 / period) * 2π.
  const _exoDaysSinceJ2000 = this.simulatedJD - 2451545.0;
@@ -7046,6 +6991,7 @@ export class SolarSystemModule {
  // Orbit data
  angle: initialAngle,
  orbitSpeed,
+ orbitPeriodDays: exoData.orbitPeriodDays,
  orbitRadius: exoData.orbitRadius,
  baseOrbitRadius: exoData.orbitRadius,
  orbitTilt: exoData.orbitTilt,
@@ -7339,7 +7285,7 @@ export class SolarSystemModule {
  distance: cometData.distance,
  angle: 0, // true anomaly (derived from meanAnomaly via Kepler solver)
  meanAnomaly: 0, // mean anomaly (advanced linearly with time)
- speed: cometData.speed,
+ speed: 2 * Math.PI / (cometData.orbitalPeriod * 86400),
  eccentricity: safeEccentricity, // Clamped to keep perihelion outside sun
  originalEccentricity: cometData.eccentricity, // Stored for reclamping after scale changes
  inclination: cometData.inclination || 0, // Orbital inclination to ecliptic in degrees (JPL Small-Body DB)
@@ -8501,8 +8447,6 @@ createHyperrealisticHubble(satData) {
  name: 'ISS (International Space Station)', 
  distance: 1.05, // Orbital altitude: 408-410 km above Earth's surface (scaled)
  speed: 15.5, // REAL SPEED: 7.66 km/s (27,576 km/h), 15.5 orbits/day, 92.68 min/orbit
- // Animation: speed * timeSpeed * 0.01 = angle increment
- // At timeSpeed=1: 15.5 * 1 * 0.01 = 0.155 rad/frame = realistic orbital motion
  size: 0.03,
  color: 0xCCCCCC,
  description: t('descISS'),
@@ -8811,6 +8755,7 @@ createHyperrealisticHubble(satData) {
  distance: 11.5, // Highly elliptical polar orbit: 4,200 km to 8.1 million km from Jupiter's cloud tops
  angle: 0,
  speed: 3.0, // Orbital period: 53.5 days
+ orbitalPeriodDays: 53.5,
  size: 0.05,
  color: 0xFFD700,
  type: 'orbiter',
@@ -9052,6 +8997,7 @@ createHyperrealisticHubble(satData) {
  distance: craft.distance,
  angle: craft.angle,
  speed: craft.speed,
+ orbitalPeriodDays: craft.orbitalPeriodDays,
  orbitPlanet: craft.orbitPlanet,
  isMoon: craft.isMoon || false,
  isSpacecraft: true,
@@ -9091,7 +9037,7 @@ createHyperrealisticHubble(satData) {
 
  update(deltaTime, timeSpeed, camera, controls) {
  // Safety check for deltaTime
- if (!deltaTime || isNaN(deltaTime) || deltaTime <= 0 || deltaTime > 1) {
+ if (!Number.isFinite(deltaTime) || deltaTime <= 0) {
  if (DEBUG.enabled) console.warn(' Invalid deltaTime:', deltaTime, '- skipping frame');
  return;
  }
@@ -9121,10 +9067,10 @@ createHyperrealisticHubble(satData) {
  // else 'none' - everything moves normally
  
  // Advance simulated time. Allow negative speeds so rewinding works correctly.
- this.simulatedHours += (deltaTime / 3600) * this.timeAcceleration * rotationSpeed;
+ this.simulatedHours += (deltaTime / 3600) * rotationSpeed;
 
  // Advance Julian Date for seekToDate() and orbital phase calculations
- this.simulatedJD += (deltaTime * this.timeAcceleration * orbitalSpeed) / 86400;
+ this.simulatedJD += (deltaTime * orbitalSpeed) / 86400;
  const now = performance.now();
  const elapsedHours = this.simulatedHours;
  
@@ -9145,14 +9091,9 @@ createHyperrealisticHubble(satData) {
  }
  
  // Solar orbit (affected by orbital pause)
- if (this.scientificMode) {
- // Kepler’s 2nd law: mean anomaly advances linearly, true anomaly derived via solver
- const e = planet.userData.orbitalEccentricity || 0;
  planet.userData.meanAnomaly = (planet.userData.meanAnomaly || 0) + angleIncrement;
+ const e = planet.userData.orbitalEccentricity || 0;
  planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e, planet.userData._keplerSqrtPlus, planet.userData._keplerSqrtMinus) : planet.userData.meanAnomaly;
- } else {
- planet.userData.angle += angleIncrement;
- }
  
  // Safety check for angle
  if (isNaN(planet.userData.angle) || !isFinite(planet.userData.angle)) {
@@ -9188,7 +9129,7 @@ createHyperrealisticHubble(satData) {
  // Compute Earth's rotation so the correct subsolar longitude faces the Sun.
  // Formula: rotation.y = orbital_angle + PI + SunRA - GMST
  // where orbital_angle = atan2(earth.z, earth.x) in the scene.
- const d = this.simulatedJD - 2451545.0;
+ const d = pauseMode === 'orbital' ? elapsedHours / 24 : this.simulatedJD - 2451545.0;
  const gmst = ((280.46061837 + 360.98564736629 * d) % 360 + 360) % 360 * Math.PI / 180;
  const sunRA = this._sunRA(d);
  const orbAngle = Math.atan2(planet.position.z, planet.position.x);
@@ -9222,13 +9163,9 @@ createHyperrealisticHubble(satData) {
  const moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
  
  // Moons orbit their planet
- if (this.scientificMode) {
- const e = moon.userData.orbitalEccentricity || 0;
  moon.userData.meanAnomaly = (moon.userData.meanAnomaly || 0) + moonAngleIncrement;
+ const e = moon.userData.orbitalEccentricity || 0;
  moon.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(moon.userData.meanAnomaly, e, moon.userData._keplerSqrtPlus, moon.userData._keplerSqrtMinus) : moon.userData.meanAnomaly;
- } else {
- moon.userData.angle += moonAngleIncrement;
- }
  
  // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
  // these positions are RELATIVE to the planet's position, not world coordinates!
@@ -9306,15 +9243,15 @@ createHyperrealisticHubble(satData) {
  this.updateCameraTracking(camera, controls);
  if (camera) camera.getWorldPosition(this._cameraWorldPosition);
 
- // Rotate asteroid and Kuiper belts slowly
+ // Approximate rotation using representative belt orbital periods.
  if (this.asteroidBelt) {
- const rotationIncrement = 0.0001 * rotationSpeed;
+ const rotationIncrement = 2 * Math.PI / (4.6 * 365.25 * 86400) * rotationSpeed * deltaTime;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.asteroidBelt.rotation.y += rotationIncrement;
  }
  }
  if (this.kuiperBelt) {
- const rotationIncrement = 0.00005 * rotationSpeed;
+ const rotationIncrement = 2 * Math.PI / (300 * 365.25 * 86400) * rotationSpeed * deltaTime;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.kuiperBelt.rotation.y += rotationIncrement;
  }
@@ -9322,7 +9259,7 @@ createHyperrealisticHubble(satData) {
 
  // Rotate sun and animate surface activity
  if (this.sun) {
- const rotationIncrement = 0.001 * rotationSpeed;
+ const rotationIncrement = 2 * Math.PI / (25.38 * 86400) * rotationSpeed * deltaTime;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.sun.rotation.y += rotationIncrement;
  }
@@ -9391,18 +9328,7 @@ createHyperrealisticHubble(satData) {
  if (this.comets) {
  this.comets.forEach(comet => {
  const userData = comet.userData;
- // In scientific mode, comet speeds are derived from real orbital periods
- // (up to 70,000 years for Hyakutake), resulting in near-zero speeds.
- // Apply a large boost so they remain visible; scale with period length.
- let cometMotionMultiplier;
- if (this.scientificMode) {
- // Comets with longer periods need bigger boosts to remain visible
- const periodYears = (userData.orbitalPeriod || 365.25) / 365.25;
- cometMotionMultiplier = Math.max(5, Math.sqrt(periodYears) * 2);
- } else {
- cometMotionMultiplier = 1; // Educational mode uses visual base speeds
- }
- const meanAnomalyIncrement = userData.speed * orbitalSpeed * deltaTime * cometMotionMultiplier;
+ const meanAnomalyIncrement = userData.speed * orbitalSpeed * deltaTime;
  if (!isNaN(meanAnomalyIncrement) && isFinite(meanAnomalyIncrement)) {
  userData.meanAnomaly = (userData.meanAnomaly || 0) + meanAnomalyIncrement;
  }
@@ -9554,7 +9480,7 @@ createHyperrealisticHubble(satData) {
  this.satellites.forEach(satellite => {
  const userData = satellite.userData;
  if (userData.planet) {
- const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.01; // Scale down for realistic orbit times
+ const angleIncrement = userData.speed * 2 * Math.PI / 86400 * orbitalSpeed * deltaTime;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  }
@@ -9628,8 +9554,8 @@ createHyperrealisticHubble(satData) {
  }
 
  // Orbiters around planets (Juno, Cassini legacy, etc)
- if (userData.orbitPlanet && userData.speed && userData.type === 'orbiter') {
- const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.01;
+ if (userData.orbitPlanet && userData.orbitalPeriodDays && userData.type === 'orbiter') {
+ const angleIncrement = 2 * Math.PI / (userData.orbitalPeriodDays * 86400) * orbitalSpeed * deltaTime;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  const radius = userData.distance;
@@ -9639,13 +9565,6 @@ createHyperrealisticHubble(satData) {
  }
  }
 
- // Rotate spacecraft slowly
- if (userData.type === 'probe' || userData.type === 'orbiter') {
- const rotationIncrement = 0.002 * rotationSpeed;
- if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
- craft.rotation.y += rotationIncrement;
- }
- }
  });
  }
  
@@ -9655,11 +9574,7 @@ createHyperrealisticHubble(satData) {
  const ud = planet.userData;
  if (!ud.orbitSpeed || !ud.hostStarPos) return;
  ud.angle += ud.orbitSpeed * orbitalSpeed * deltaTime;
- const sinAngle = Math.sin(ud.angle);
- planet.position.x = ud.hostStarPos.x + ud.orbitRadius * Math.cos(ud.angle);
- planet.position.y = ud.hostStarPos.y - ud.orbitRadius * sinAngle * Math.sin(ud.orbitTilt || 0);
- planet.position.z = ud.hostStarPos.z + ud.orbitRadius * sinAngle * Math.cos(ud.orbitTilt || 0);
- planet.rotation.y += 0.005 * rotationSpeed * deltaTime; // slow self-rotation
+ this.updateExoplanetPosition(planet);
  });
  }
  
@@ -10678,7 +10593,7 @@ createHyperrealisticHubble(satData) {
  name: translatedName,
  type: translatedType,
  distance: distanceText,
- size: userData.realSize || (userData.radius ? `${userData.radius.toFixed(2)} units` : 'Unknown size'),
+ size: userData.realSize || (userData.type === 'constellation' ? t('constellationSize') : t('sizeUnavailable')),
  description: description,
  funFact: ''
  };
@@ -10887,27 +10802,6 @@ let actualRadius;
      this.cameraCoRotateMode = false;
  }
 
- // Adjust time speed based on object type
- // Fast-moving orbital objects (ISS, satellites) need slower time for observation
- if (userData.isSpacecraft && userData.orbitPlanet && !isPlanetOrbitingSun) {
-     // Orbital spacecraft (ISS, satellites): slow to 0.1x for detailed observation
-     if (window.app && window.app.timeSpeed !== 0) {
-         window.app.timeSpeed = 0.1;
-         // Sync speed slider UI
-         const sl = document.getElementById('time-speed');
-         if (sl && window.app.uiManager) { sl.value = window.app.uiManager.speedToSlider(0.1); sl.dispatchEvent(new Event('input')); }
-         if (DEBUG.enabled) console.log(` [Time Speed] Reduced to 0.1x for orbital spacecraft observation`);
-     }
- } else if (userData.type === 'planet' || userData.type === 'DwarfPlanet' || userData.isPlanet) {
-     if (window.app && window.app.timeSpeed !== 0 && window.app.timeSpeed !== 1) {
-         window.app.timeSpeed = 1;
-         // Sync speed slider UI
-         const sl = document.getElementById('time-speed');
-         if (sl && window.app.uiManager) { sl.value = window.app.uiManager.speedToSlider(1); sl.dispatchEvent(new Event('input')); }
-         if (DEBUG.enabled) console.log(` [Time Speed] Restored to 1x for planet observation`);
-     }
- }
- 
  // Configure controls for focused object inspection
  let minDist, maxDist;
  

@@ -1245,16 +1245,15 @@ select {
         padding: 6px 8px;
         flex-direction: row;
         gap: 4px;
-        flex-wrap: nowrap;
-        overflow-x: hidden; /* No horizontal scroll */
+        flex-wrap: wrap;
         align-items: center;
         justify-content: center;
     }
     
     .footer-controls {
         gap: 3px;
-        flex-wrap: nowrap;
-        justify-content: stretch;
+        flex-wrap: wrap;
+        justify-content: center;
         flex: 1 1 0;
         min-width: 0;
         width: 100%;
@@ -1263,7 +1262,7 @@ select {
     .footer-controls button {
         padding: 6px 8px;
         font-size: 11px;
-        flex: 1 1 auto;
+        flex: 0 0 44px;
         min-width: 40px;
         white-space: nowrap;
         overflow: hidden;
@@ -1772,7 +1771,14 @@ select {
     
     .footer-controls button {
         min-width: 44px;
+        min-height: 44px;
         padding: 8px 10px;
+    }
+}
+
+@media (max-width: 500px) {
+    #info-panel {
+        bottom: 120px;
     }
 }
 

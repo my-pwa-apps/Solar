@@ -1,7 +1,7 @@
 ﻿// ===========================
 // UI MANAGER MODULE
 // ===========================
-import { DEBUG, APP_VERSION } from './utils.js';
+import { DEBUG, APP_VERSION, MAX_SIMULATION_SPEED } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
 
 export class UIManager {
@@ -73,7 +73,8 @@ export class UIManager {
  }
  }
 
- updateInfoPanel(info) {
+ updateInfoPanel(info, object = null) {
+ this.infoObject = object;
  const updates = {
  objectName: info.name,
  objectType: info.type,
@@ -161,6 +162,7 @@ export class UIManager {
  }
 
  closeInfoPanel() {
+ this.infoObject = null;
  if (this.elements.infoPanel) {
  this.elements.infoPanel.classList.add('hidden');
  this.elements.infoPanel.setAttribute('aria-hidden', 'true');
@@ -239,7 +241,7 @@ export class UIManager {
   * - Slider 25-50 = 0.5x to 1x (approaching real-time - fine control)
   * - Slider 50 = 1x (real-time - center point)
   * - Slider 50-75 = 1x to 5x (moderate fast-forward)
-  * - Slider 75-100 = 5x to 100x (extreme fast-forward)
+  * - Slider 75-100 = 5x to one simulated year per minute
   */
  sliderToSpeed(sliderValue) {
  const pos = parseFloat(sliderValue);
@@ -260,9 +262,9 @@ export class UIManager {
  const t = (pos - 50) / 25; // 0 to 1
  return 1 + (4 * t);
  } else {
- // 75-100 maps to 5-100 (exponential for extreme speeds)
+ // 75-100 maps exponentially to one simulated year per minute.
  const t = (pos - 75) / 25; // 0 to 1
- return 5 + (95 * Math.pow(t, 2)); // Quadratic for fast ramp
+ return 5 * Math.pow(MAX_SIMULATION_SPEED / 5, t);
  }
  }
  
@@ -283,7 +285,7 @@ export class UIManager {
  const t = (speed - 1) / 4;
  return 50 + (t * 25);
  } else {
- const t = Math.sqrt((speed - 5) / 95);
+ const t = Math.log(speed / 5) / Math.log(MAX_SIMULATION_SPEED / 5);
  return 75 + (t * 25);
  }
  }
@@ -329,7 +331,7 @@ export class UIManager {
  // Update labels
  const label = this.formatSpeed(speed);
  timeSpeedLabel.textContent = label;
- timeSpeedSlider.setAttribute('aria-valuenow', speed.toFixed(2));
+ timeSpeedSlider.setAttribute('aria-valuenow', String(sliderValue));
  timeSpeedSlider.setAttribute('aria-valuetext', label);
  if (speedCompactLabel) {
  speedCompactLabel.textContent = label;
