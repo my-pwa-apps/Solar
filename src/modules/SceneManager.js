@@ -23,6 +23,17 @@ const _VR_TABS = [
  { id: 'info',     label: '\u2139\uFE0F  Info' }
 ];
 
+const VR_RADIAL_ITEMS = [
+ { id: 'sun',     label: '\u2600\uFE0F Sun',      color: '#FFD700' },
+ { id: 'mercury', label: '\u263F Mercury',        color: '#A8A8A8' },
+ { id: 'venus',   label: '\u2640 Venus',          color: '#E8C87A' },
+ { id: 'earth',   label: '\uD83C\uDF0D Earth',    color: '#4FC3F7' },
+ { id: 'mars',    label: '\u2642 Mars',           color: '#EF5350' },
+ { id: 'jupiter', label: '\u2643 Jupiter',        color: '#FFA726' },
+ { id: 'saturn',  label: '\u2644 Saturn',         color: '#FFCC80' },
+ { id: 'neptune', label: '\u2646 Neptune',        color: '#5C6BC0' },
+];
+
 export class SceneManager {
  constructor() {
  this.scene = new THREE.Scene();
@@ -71,6 +82,7 @@ export class SceneManager {
  this._vrLaserFrame = 0; // For throttling expensive laser raycasts
  this._vrIntersections = []; // Reused raycast results buffer (avoids per-frame array alloc)
  this._vrReticle = null; // Teleport aim reticle — created in setupVR, positioned in updateLaserPointers
+ this._vrReticleCameraPosition = new THREE.Vector3();
  this._vrWarpEffect = null; // Warp streak LineSegments — created lazily on first warp activate
  this._vrWarpPositions = null; // Pre-allocated Float32Array for warp streaks
  this._vrWarpTravel = new THREE.Vector3(); // Net dolly translation this frame (world-space)
@@ -2070,16 +2082,7 @@ this.camera.near = 10.0;
  // ═══════════════════════════════════════════════════════════
 
  _vrRadialItems() {
-    return [
-      { id: 'sun',     label: '\u2600\uFE0F Sun',      color: '#FFD700' },
-      { id: 'mercury', label: '\u263F Mercury',  color: '#A8A8A8' },
-      { id: 'venus',   label: '\u2640 Venus',    color: '#E8C87A' },
-      { id: 'earth',   label: '\uD83C\uDF0D Earth',    color: '#4FC3F7' },
-      { id: 'mars',    label: '\u2642 Mars',     color: '#EF5350' },
-      { id: 'jupiter', label: '\u2643 Jupiter',  color: '#FFA726' },
-      { id: 'saturn',  label: '\u2644 Saturn',   color: '#FFCC80' },
-      { id: 'neptune', label: '\u2646 Neptune',  color: '#5C6BC0' },
-    ];
+   return VR_RADIAL_ITEMS;
   }
 
   _ensureVRRadialPanel() {
@@ -2644,7 +2647,8 @@ this.camera.near = 10.0;
  const hit = this._vrIntersections[0];
  this._vrReticle.position.copy(hit.point);
  // Orient ring to face the camera (billboard yaw-only)
- this._vrReticle.lookAt(this.camera.position);
+ this.camera.getWorldPosition(this._vrReticleCameraPosition);
+ this._vrReticle.lookAt(this._vrReticleCameraPosition);
  this._vrReticle.visible = true;
  } else if (!hasHit) {
  this._vrReticle.visible = false;
@@ -3335,4 +3339,3 @@ this.camera.near = 10.0;
  }
  }
 }
-

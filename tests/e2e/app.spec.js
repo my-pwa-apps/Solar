@@ -89,6 +89,16 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
     hasScene: Boolean(window.app.sceneManager.scene),
     hasControls: Boolean(window.app.sceneManager.controls),
     hasEarth: Boolean(window.app.solarSystemModule.planets.earth),
+    hasMarsNormalMap: Boolean(window.app.solarSystemModule.planets.mars.material.normalMap),
+    starTwinkleFrame: window.app.solarSystemModule._starTwinkleFrame,
+    exoplanetOrbitPositionError: Math.max(...window.app.solarSystemModule.exoplanets.map((planet) => {
+      const { angle, hostStarPos, orbitRadius, orbitTilt } = planet.userData;
+      return Math.max(
+        Math.abs(planet.position.x - (hostStarPos.x + orbitRadius * Math.cos(angle))),
+        Math.abs(planet.position.y - (hostStarPos.y - orbitRadius * Math.sin(angle) * Math.sin(orbitTilt))),
+        Math.abs(planet.position.z - (hostStarPos.z + orbitRadius * Math.sin(angle) * Math.cos(orbitTilt)))
+      );
+    })),
     moonCount: Object.keys(window.app.solarSystemModule.moons || {}).length,
     dropdownOptions: document.querySelectorAll('#object-dropdown option[value]').length
   }));
@@ -100,6 +110,9 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
     hasControls: true,
     hasEarth: true
   });
+  expect(appState.hasMarsNormalMap).toBe(false);
+  expect(appState.starTwinkleFrame).toBeGreaterThan(0);
+  expect(appState.exoplanetOrbitPositionError).toBeLessThan(1e-6);
   expect(appState.moonCount).toBeGreaterThan(10);
   expect(appState.dropdownOptions).toBeGreaterThan(70);
   expect(diagnostics).toEqual([]);
@@ -234,6 +247,44 @@ test('keeps core navigation and controls working', async ({ page }) => {
   await expect(page.locator('#object-name')).toHaveText('Mars');
 
   expect(diagnostics).toEqual([]);
+});
+
+test('preserves astronomical info and uses consistent scientific AU scale', async ({ page }) => {
+  await openApp(page);
+
+  const result = await page.evaluate(() => {
+    const app = window.app;
+    const solarSystem = app.solarSystemModule;
+    const proximaB = solarSystem.exoplanets.find((planet) => planet.userData.name === 'Proxima Centauri b');
+    const proximaInfo = solarSystem.getObjectInfo(proximaB);
+    app.applyScaleMode('scientific', { persist: false });
+    const earth = solarSystem.planets.earth;
+    solarSystem.update(1 / 60, 1, app.sceneManager.camera, app.sceneManager.controls);
+    const daysSinceJ2000 = solarSystem.simulatedJD - 2451545;
+    const gmst = ((280.46061837 + 360.98564736629 * daysSinceJ2000) % 360 + 360) % 360 * Math.PI / 180;
+    const expectedEarthRotation = Math.atan2(earth.position.z, earth.position.x) + Math.PI +
+      solarSystem._sunRA(daysSinceJ2000) - gmst;
+
+    return {
+      proximaInfo,
+      earthRotationError: Math.abs(earth.rotation.y - expectedEarthRotation),
+      dwarfPlanetDistances: {
+        ceres: solarSystem.planets.ceres.userData.distance,
+        haumea: solarSystem.planets.haumea.userData.distance,
+        sedna: solarSystem.planets.sedna.userData.distance
+      }
+    };
+  });
+
+  expect(result.proximaInfo.distance).toBe('4.24 light-years');
+  expect(result.proximaInfo.funFact).toBeTruthy();
+  expect(result.proximaInfo.description).not.toContain(result.proximaInfo.funFact);
+  expect(result.earthRotationError).toBeLessThan(1e-10);
+  expect(result.dwarfPlanetDistances).toEqual({
+    ceres: 415.5,
+    haumea: 6450,
+    sedna: 75900
+  });
 });
 
 test('registers PWA assets and service worker', async ({ page, browserName }) => {

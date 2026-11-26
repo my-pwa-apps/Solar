@@ -270,6 +270,8 @@ export class SolarSystemModule {
  this._focusTransitionToken = 0;
  this._focusTransitionActive = false;
  this._focusTransitionCancelRequested = false;
+ this._cameraWorldPosition = new THREE.Vector3();
+ this._galaxyFadeActive = false;
 
  // Frame counters for throttled animations (initialised here, not lazily in update)
  this._sunFlareFrame    = 0;
@@ -415,10 +417,10 @@ export class SolarSystemModule {
  // Outer layers are kept warm (yellow-orange) at very low opacity to avoid hard red ring
  // artifacts, which occur because the sun sphere occludes each BackSide layer's centre.
  const coronaLayers = [
- { size: 11.5, color: 0xffdd88, opacity: 0.25 },
- { size: 13,   color: 0xffaa44, opacity: 0.18 },
- { size: 15,   color: 0xff8822, opacity: 0.12 },
- { size: 20,   color: 0xff9944, opacity: 0.018 } // very subtle warm outer halo
+ { size: 16, color: 0xffdd88, opacity: 0.25 },
+ { size: 18, color: 0xffaa44, opacity: 0.18 },
+ { size: 22, color: 0xff8822, opacity: 0.12 },
+ { size: 30, color: 0xff9944, opacity: 0.018 } // very subtle warm outer halo
  ];
  
  coronaLayers.forEach(layer => {
@@ -445,7 +447,7 @@ export class SolarSystemModule {
  for (let i = 0; i < flareCount; i++) {
  const theta = Math.random() * Math.PI * 2;
  const phi = Math.acos(2 * Math.random() - 1);
- const r = 10.5 + Math.random() * 2;
+ const r = sunRadius + 0.5 + Math.random() * 2;
  
  flarePositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
  flarePositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
@@ -2267,20 +2269,6 @@ export class SolarSystemModule {
  return texture;
  }
  
- createMarsNormalMap(size) {
- const canvas = document.createElement('canvas');
- canvas.width = size;
- canvas.height = size;
- const ctx = canvas.getContext('2d', { willReadFrequently: true });
- 
- ctx.fillStyle = '#8080FF';
- ctx.fillRect(0, 0, size, size);
- 
- const texture = new THREE.CanvasTexture(canvas);
- texture.needsUpdate = true;
- return texture;
- }
- 
  // ===== MOON TEXTURES =====
  
  createPhobosTexture(size) {
@@ -2866,12 +2854,9 @@ export class SolarSystemModule {
  // Mars: REAL NASA texture with rusty red surface with canyons, polar caps
  const marsTexture = this.createMarsTextureReal(CONFIG.QUALITY.textureSize);
  const marsBump = this.createMarsBumpMap(CONFIG.QUALITY.textureSize);
- const marsNormal = this.createMarsNormalMap(CONFIG.QUALITY.textureSize);
  
  return new THREE.MeshStandardMaterial({
  map: marsTexture,
- normalMap: marsNormal,
- normalScale: new THREE.Vector2(1.2, 1.2),
  bumpMap: marsBump,
  bumpScale: 0.08,
  roughness: 0.95,
@@ -7002,7 +6987,7 @@ export class SolarSystemModule {
  // Create famous discovered exoplanets with orbital motion around their host stars
  this.exoplanets = [];
 
- // Earth's orbital speed reference: ~0.0005 rad/frame at timeSpeed=1
+ // Earth's orbital speed reference: ~0.0005 rad/s at timeSpeed=1
  // Speed = EARTH_SPEED * (365.25 / orbitalPeriodDays)
  const EARTH_SPEED = 0.0005;
 
@@ -7125,8 +7110,8 @@ export class SolarSystemModule {
  // Set initial orbital position
  planet.position.set(
  sx + exoData.orbitRadius * Math.cos(initialAngle),
- sy,
- sz + exoData.orbitRadius * Math.sin(initialAngle)
+ sy - exoData.orbitRadius * Math.sin(initialAngle) * Math.sin(exoData.orbitTilt),
+ sz + exoData.orbitRadius * Math.sin(initialAngle) * Math.cos(exoData.orbitTilt)
  );
 
  // Glow
@@ -7150,6 +7135,7 @@ export class SolarSystemModule {
  angle: initialAngle,
  orbitSpeed,
  orbitRadius: exoData.orbitRadius,
+ orbitTilt: exoData.orbitTilt,
  hostStarPos: new THREE.Vector3(sx, sy, sz)
  };
 
@@ -9195,6 +9181,7 @@ createHyperrealisticHubble(satData) {
  if (DEBUG.enabled) console.warn(' Invalid deltaTime:', deltaTime, '- skipping frame');
  return;
  }
+ this._starTwinkleFrame += 1;
  
  // Get pause mode from sceneManager
  const app = window.app || {};
@@ -9283,7 +9270,7 @@ createHyperrealisticHubble(satData) {
  // REALISTIC PLANET ROTATION based on real astronomical data
  if (planet.userData.realRotationPeriod && rotationSpeed !== 0) {
  let rotationAngle;
- if (planet.userData.name === 'Earth') {
+ if (planet.userData.id === 'earth') {
  // Compute Earth's rotation so the correct subsolar longitude faces the Sun.
  // Formula: rotation.y = orbital_angle + PI + SunRA - GMST
  // where orbital_angle = atan2(earth.z, earth.x) in the scene.
@@ -9398,6 +9385,7 @@ createHyperrealisticHubble(satData) {
 
  // Update camera tracking AFTER all object positions have been updated this frame
  this.updateCameraTracking(camera, controls);
+ if (camera) camera.getWorldPosition(this._cameraWorldPosition);
 
  // Rotate asteroid and Kuiper belts slowly
  if (this.asteroidBelt) {
@@ -9438,10 +9426,10 @@ createHyperrealisticHubble(satData) {
  // Keep starfield and Milky Way band centred on the camera so their sphere
  // boundaries are never visible and they always appear around the observer.
  if (this.starfield && camera) {
- this.starfield.position.copy(camera.position);
+ this.starfield.position.copy(this._cameraWorldPosition);
  }
  if (this.milkyWay && camera) {
- this.milkyWay.position.copy(camera.position);
+ this.milkyWay.position.copy(this._cameraWorldPosition);
  }
 
  // Twinkle stars slightly (optimized - only every 5 frames)
@@ -9462,7 +9450,7 @@ createHyperrealisticHubble(satData) {
  // Cull label sprites by distance to camera — run every 3 frames to avoid per-frame overhead.
  // Planets visible up to 5000 units; moons/craft up to 600; everything else up to 1200.
  if (this.labelsVisible && this.labels && camera && this._starTwinkleFrame % 3 === 0) {
- const camX = camera.position.x, camY = camera.position.y, camZ = camera.position.z;
+ const camX = this._cameraWorldPosition.x, camY = this._cameraWorldPosition.y, camZ = this._cameraWorldPosition.z;
  for (let _li = 0; _li < this.labels.length; _li++) {
  const lbl = this.labels[_li];
  if (!lbl || !lbl.parent) continue;
@@ -9773,8 +9761,10 @@ createHyperrealisticHubble(satData) {
  const ud = planet.userData;
  if (!ud.orbitSpeed || !ud.hostStarPos) return;
  ud.angle += ud.orbitSpeed * orbitalSpeed * deltaTime;
+ const sinAngle = Math.sin(ud.angle);
  planet.position.x = ud.hostStarPos.x + ud.orbitRadius * Math.cos(ud.angle);
- planet.position.z = ud.hostStarPos.z + ud.orbitRadius * Math.sin(ud.angle);
+ planet.position.y = ud.hostStarPos.y - ud.orbitRadius * sinAngle * Math.sin(ud.orbitTilt || 0);
+ planet.position.z = ud.hostStarPos.z + ud.orbitRadius * sinAngle * Math.cos(ud.orbitTilt || 0);
  planet.rotation.y += 0.005 * rotationSpeed * deltaTime; // slow self-rotation
  });
  }
@@ -9784,7 +9774,7 @@ createHyperrealisticHubble(satData) {
  // INSIDE the galaxy (stars, constellations, nebulae, starfield) and
  // fade in the galaxy disc. Only other galaxies remain visible.
  if (this.milkyWayDisc && camera) {
- const camDist = camera.position.length();
+ const camDist = this._cameraWorldPosition.length();
  // Phase 1: Fade out all solar system/galactic objects — thresholds scale with mode.
  // Educational: heliopause=2700, Oort outer=9000 → fade starts at 14k (1.56× Oort)
  // Realistic: heliopause=18000, Oort outer=60000 → fade starts at 70k (1.17× Oort)
@@ -9828,7 +9818,9 @@ createHyperrealisticHubble(satData) {
  }
 
  if (camDist < solarFadeStart) {
- // Restore ALL solar system objects when inside the galaxy
+ if (this._galaxyFadeActive) {
+ this._galaxyFadeActive = false;
+ // Restore ALL solar system objects when returning from intergalactic view
  if (this.sun) this.sun.visible = true;
  this._planetArray.forEach(p => { if (p) p.visible = true; });
  if (this.comets) this.comets.forEach(c => { c.visible = true; });
@@ -9867,7 +9859,9 @@ createHyperrealisticHubble(satData) {
  if (this.heliopause) this.heliopause.traverse(child => {
  if (child.material) child.material.opacity = 0.03;
  });
+ }
  } else {
+ this._galaxyFadeActive = true;
  // Use solarFadeOut for all objects inside the galaxy (phase 1: 12k-20k)
  // The galaxy disc is handled separately above (phase 2: 20k-35k)
 
@@ -10177,7 +10171,7 @@ createHyperrealisticHubble(satData) {
  updateScale() {
  // Update all planetary positions based on scale mode
  const scaleFactors = this.realisticScale ? {
- // Realistic scale (AU converted to scene units, using 51.28 units per AU)
+ // Realistic scale: 150 scene units per AU (Earth = 1 AU).
  mercury: 57.9,    // 0.39 AU
  venus: 108.2,     // 0.72 AU
  earth: 150,       // 1.0 AU
@@ -10187,18 +10181,18 @@ createHyperrealisticHubble(satData) {
  uranus: 2872.5,   // 19.19 AU
  neptune: 4495.1,  // 30.07 AU
  pluto: 5906.4,    // 39.48 AU
- // Dwarf planets at realistic scale
- ceres: 142,       // 2.77 AU (asteroid belt)
- haumea: 2205,     // 43 AU (Kuiper belt)
- makemake: 2308,   // 45 AU (Kuiper belt)
- eris: 3436,       // 67 AU (scattered disk - perihelion, aphelion ~97.5 AU = 5000 units)
- orcus: 2010,      // 39.2 AU (Plutino)
- quaoar: 2226,     // 43.4 AU (Kuiper belt)
- gonggong: 3461,   // 67.5 AU (scattered disk)
- sedna: 25948,     // 506 AU (inner Oort cloud - semi-major axis, perihelion 76 AU, aphelion 937 AU)
- salacia: 2164,    // 42.2 AU (Kuiper belt)
- varda: 2195,      // 42.8 AU (Kuiper belt)
- varuna: 2169      // 42.3 AU (Kuiper belt)
+ // Dwarf planets use the same AU conversion as the major planets.
+ ceres: 415.5,     // 2.77 AU (asteroid belt)
+ haumea: 6450,     // 43 AU (Kuiper belt)
+ makemake: 6750,   // 45 AU (Kuiper belt)
+ eris: 10050,      // 67 AU (scattered disk)
+ orcus: 5880,      // 39.2 AU (Plutino)
+ quaoar: 6510,     // 43.4 AU (Kuiper belt)
+ gonggong: 10125,  // 67.5 AU (scattered disk)
+ sedna: 75900,     // 506 AU semi-major axis (inner Oort cloud)
+ salacia: 6330,    // 42.2 AU (Kuiper belt)
+ varda: 6420,      // 42.8 AU (Kuiper belt)
+ varuna: 6345      // 42.3 AU (Kuiper belt)
  } : {
  // Educational scale - proportionally compressed but maintaining relative distances
  // Real AU ratios (Mercury = 1x): Venus 1.85x, Earth 2.56x, Mars 3.90x, 
@@ -10746,6 +10740,8 @@ createHyperrealisticHubble(satData) {
  distanceText = `${t('orbitsParent')} ${translatedParent}`;
  } else if (typeof userData.distance === 'number') {
  distanceText = `${userData.distance.toFixed(1)} ${t('scaledUnitsFromSun')}`;
+ } else if (typeof userData.distance === 'string') {
+ distanceText = userData.distance;
  } else {
  distanceText = t('distanceVaries');
  }
@@ -10760,12 +10756,13 @@ createHyperrealisticHubble(satData) {
  description = t(descKey);
  }
  
- let info = {
+ const info = {
  name: translatedName,
  type: translatedType,
  distance: distanceText,
  size: userData.realSize || (userData.radius ? `${userData.radius.toFixed(2)} units` : 'Unknown size'),
- description: description
+ description: description,
+ funFact: ''
  };
 
  // Add fun facts for kids (translated)
@@ -10775,7 +10772,7 @@ createHyperrealisticHubble(satData) {
  if (window.t && window.t(funFactKey) !== funFactKey) {
  funFact = t(funFactKey);
  }
- info.description += `\n\n ${funFact}`;
+ info.funFact = funFact;
  }
 
  // Add moon count for planets (translated)
@@ -11792,5 +11789,3 @@ let actualRadius;
  return targets;
  }
 }
-
-
