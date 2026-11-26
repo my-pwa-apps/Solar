@@ -12,10 +12,11 @@ async function readText(relativePath) {
 test('app version and service worker cache manifest stay in sync', async ({}, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Static regression checks only need to run once.');
 
-  const [indexHtml, serviceWorker, main, utils, packageJsonText] = await Promise.all([
+  const [indexHtml, serviceWorker, main, bootstrap, utils, packageJsonText] = await Promise.all([
     readText('index.html'),
     readText('sw.js'),
     readText('src/main.js'),
+    readText('src/bootstrap/startApp.js'),
     readText('src/modules/utils.js'),
     readText('package.json')
   ]);
@@ -26,6 +27,9 @@ test('app version and service worker cache manifest stay in sync', async ({}, te
   expect(serviceWorker).toContain(`const CACHE_VERSION = '${version}'`);
   expect(utils).toContain(`export const APP_VERSION = '${version}'`);
   expect(main).toContain(`import './i18n.js?v=${version}';`);
+  expect(bootstrap).toContain(`import '../i18n.js?v=${version}';`);
+  expect(bootstrap).toContain(`import('../main.js?v=${version}')`);
+  expect(indexHtml).toContain(`src="./src/bootstrap/startApp.js?v=${version}"`);
   expect(indexHtml.match(new RegExp(`v=${version.replaceAll('.', '\\.')}`, 'g'))?.length).toBeGreaterThanOrEqual(9);
 
   const readManifest = (name) => {

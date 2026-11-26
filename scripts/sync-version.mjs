@@ -52,6 +52,16 @@ const targets = [
     replace: (v) => `import './i18n.js?v=${v}';`
   },
   {
+    file: 'src/bootstrap/startApp.js',
+    pattern: /import '\.\.\/i18n\.js\?v=\d+\.\d+\.\d+';/,
+    replace: (v) => `import '../i18n.js?v=${v}';`
+  },
+  {
+    file: 'src/bootstrap/startApp.js',
+    pattern: /import\('\.\.\/main\.js\?v=\d+\.\d+\.\d+'\)/,
+    replace: (v) => `import('../main.js?v=${v}')`
+  },
+  {
     file: 'index.html',
     pattern: /\?v=\d+\.\d+\.\d+/g,
     replace: (v) => `?v=${v}`,

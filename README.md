@@ -105,13 +105,17 @@ npm run test:headed
 
 The service worker only invalidates its caches when `CACHE_VERSION` changes, and
 that version is repeated in `package.json`, `sw.js`, `src/modules/utils.js`,
-the i18n entry import in `src/main.js`, and the `?v=` stamps in `index.html`.
+the entry imports in `src/main.js` and `src/bootstrap/startApp.js`, and the
+`?v=` stamps in `index.html`.
 Never edit them by hand:
 
 ```bash
 npm run version:bump    # bump the patch version and stamp every file
 npm run version:check   # fail if anything is out of sync (runs before npm test)
 ```
+
+The app bootstrap initializes translations before loading the app entry, including
+when an older service worker serves a cached version of the entry point.
 
 The suite verifies version/cache consistency, service-worker cached file references, app boot, WebGL canvas creation, navigation dropdown behavior, core controls, keyboard shortcut scoping, modals, manifest loading, and service worker registration.
 
@@ -121,7 +125,7 @@ The suite verifies version/cache consistency, service-worker cached file referen
 broken offline experience — when any of these drift:
 
 - **Version stamps** in `package.json`, `sw.js`, `src/modules/utils.js`,
-  `src/main.js` and `index.html` disagree.
+  `src/main.js`, `src/bootstrap/startApp.js` and `index.html` disagree.
 - **Precache manifest** entries in `sw.js` point at files that do not exist, or
   contain duplicates.
 - **Three.js module graph:** every `three/addons/*` module imported anywhere in

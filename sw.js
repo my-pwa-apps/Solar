@@ -1,7 +1,7 @@
 // Space Voyage - Service Worker
-// Version 2.10.318
+// Version 2.10.319
 
-const CACHE_VERSION = '2.10.318';
+const CACHE_VERSION = '2.10.319';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
@@ -29,6 +29,7 @@ const CORE_CACHE_FILES = [
   './src/locales/es.js',
   './src/locales/pt.js',
   './src/bootstrap/installPromptCapture.js',
+  './src/bootstrap/startApp.js',
   './src/bootstrap/initManagers.js',
   './src/modules/SceneManager.js',
   './src/modules/SolarSystemModule.js',

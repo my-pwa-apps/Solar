@@ -127,6 +127,46 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
   expect(diagnostics).toEqual([]);
 });
 
+test.describe('legacy cache compatibility', () => {
+test.use({ serviceWorkers: 'block' });
+
+test('initializes translations when an older cached app entry is served', async ({ page }) => {
+  let intercepted = false;
+  await page.route('**/src/main.js*', async (route) => {
+    intercepted = true;
+    const response = await route.fetch();
+    const source = await response.text();
+    const legacyEntry = source.replace(/^import '\.\/i18n\.js\?v=[^']+';\r?\n/m, '');
+    expect(legacyEntry).not.toBe(source);
+    await route.fulfill({ response, body: legacyEntry });
+  });
+
+  await openApp(page);
+  expect(intercepted).toBe(true);
+  await page.locator('#object-dropdown').selectOption('earth');
+  await expect(page.locator('#object-name')).toHaveText('Earth');
+  await expect(page.locator('#object-type')).toHaveText('Planet');
+  await expect(page.locator('#object-description')).toHaveText(/Earth/i);
+  await expect(page.locator('#object-fun-fact')).toContainText('Earth');
+  await expect(page.locator('#object-distance')).not.toContainText('scaledUnitsFromSun');
+});
+
+test('initializes a cached classic translation script before the app entry', async ({ page }) => {
+  await page.route('**/src/i18n.js*', (route) => route.fulfill({
+    contentType: 'application/javascript',
+    body: "const translations = { descEarth: 'Legacy Earth description' }; window.t = key => translations[key] || key;"
+  }));
+  await page.route('**/src/main.js*', (route) => route.fulfill({
+    contentType: 'application/javascript',
+    body: "window.translationAtAppStart = window.t('descEarth');"
+  }));
+
+  await page.goto('/');
+  await expect.poll(() => page.evaluate(() => window.translationAtAppStart))
+    .toBe('Legacy Earth description');
+});
+});
+
 test('loads a saved locale before app initialization', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('appLanguage', 'fr');

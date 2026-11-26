@@ -3,7 +3,7 @@
 // Main Application Entry Point
 // ===========================
 import * as THREE from 'three';
-import './i18n.js?v=2.10.318';
+import './i18n.js?v=2.10.319';
 
 // Import all modules
 import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';

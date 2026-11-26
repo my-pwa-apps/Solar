@@ -29,7 +29,7 @@ export function prefersReducedMotion() {
 }
 
 /** App version — single source of truth for SW and texture cache invalidation. */
-export const APP_VERSION = '2.10.318';
+export const APP_VERSION = '2.10.319';
 
 export const CONFIG = {
  RENDERER: {
