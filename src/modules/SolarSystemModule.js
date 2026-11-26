@@ -417,10 +417,10 @@ export class SolarSystemModule {
  // Outer layers are kept warm (yellow-orange) at very low opacity to avoid hard red ring
  // artifacts, which occur because the sun sphere occludes each BackSide layer's centre.
  const coronaLayers = [
- { size: 16, color: 0xffdd88, opacity: 0.25 },
- { size: 18, color: 0xffaa44, opacity: 0.18 },
- { size: 22, color: 0xff8822, opacity: 0.12 },
- { size: 30, color: 0xff9944, opacity: 0.018 } // very subtle warm outer halo
+ { size: 16, educationalSize: 15.2, color: 0xffdd88, opacity: 0.25 },
+ { size: 18, educationalSize: 15.6, color: 0xffaa44, opacity: 0.18 },
+ { size: 22, educationalSize: 16.4, color: 0xff8822, opacity: 0.12 },
+ { size: 30, educationalSize: 18, color: 0xff9944, opacity: 0.018 } // very subtle warm outer halo
  ];
  
  coronaLayers.forEach(layer => {
@@ -435,6 +435,9 @@ export class SolarSystemModule {
  depthTest: true // But still respect depth for proper rendering
  });
  const corona = new THREE.Mesh(coronaGeometry, coronaMaterial);
+ // Keep the entire halo inside Mercury's compressed orbit (20 units).
+ corona.userData.educationalScale = layer.educationalSize / layer.size;
+ corona.scale.setScalar(this.realisticScale ? 1 : corona.userData.educationalScale);
  this.sun.add(corona);
  });
  
@@ -10169,6 +10172,12 @@ createHyperrealisticHubble(satData) {
 
 
  updateScale() {
+ this.sun?.children.forEach(child => {
+ if (child.userData.educationalScale !== undefined) {
+ child.scale.setScalar(this.realisticScale ? 1 : child.userData.educationalScale);
+ }
+ });
+
  // Update all planetary positions based on scale mode
  const scaleFactors = this.realisticScale ? {
  // Realistic scale: 150 scene units per AU (Earth = 1 AU).

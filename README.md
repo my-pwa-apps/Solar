@@ -41,7 +41,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Realistic day/night cycles
 - Adjustable time speed (1 year/minute max)
 - Real astronomical data
-- Educational scale mode
+- Educational scale mode with a compact solar corona that keeps Mercury clear of the glow
 
 ### Progressive Web App
 - ✅ **Works 100% offline** with intelligent caching

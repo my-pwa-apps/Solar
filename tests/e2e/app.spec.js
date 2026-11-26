@@ -118,6 +118,38 @@ test('boots the full 3D app without critical browser errors', async ({ page }) =
   expect(diagnostics).toEqual([]);
 });
 
+test('keeps Mercury outside the corona in education mode across scale switches', async ({ page }) => {
+  await openApp(page);
+
+  const measureCorona = () => page.evaluate(() => {
+    const { sun, planets } = window.app.solarSystemModule;
+    const shells = sun.children.filter(child => child.isMesh && child.geometry.type === 'SphereGeometry');
+    return {
+      shellCount: shells.length,
+      innerRadius: Math.min(...shells.map(shell => shell.geometry.parameters.radius * shell.scale.x)),
+      outerRadius: Math.max(...shells.map(shell => shell.geometry.parameters.radius * shell.scale.x)),
+      sunRadius: sun.userData.radius,
+      mercuryInnerEdge: planets.mercury.userData.distance - planets.mercury.userData.radius
+    };
+  });
+
+  const initial = await measureCorona();
+  expect(initial.shellCount).toBe(4);
+  expect(initial.innerRadius).toBeGreaterThan(initial.sunRadius);
+  expect(initial.mercuryInnerEdge - initial.outerRadius).toBeGreaterThan(1);
+
+  const scale = page.locator('#toggle-scale');
+  await scale.click();
+  await expect(scale).toHaveAttribute('aria-pressed', 'true');
+  const scientific = await measureCorona();
+  expect(scientific.outerRadius).toBeGreaterThan(initial.outerRadius);
+  expect(scientific.outerRadius).toBeLessThan(scientific.mercuryInnerEdge);
+
+  await scale.click();
+  await expect(scale).toHaveAttribute('aria-pressed', 'false');
+  expect(await measureCorona()).toEqual(initial);
+});
+
 test('keeps core navigation and controls working', async ({ page }) => {
   const diagnostics = collectDiagnostics(page);
   await openApp(page);
