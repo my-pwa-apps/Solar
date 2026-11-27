@@ -3,7 +3,7 @@
 // Main Application Entry Point
 // ===========================
 import * as THREE from 'three';
-import './i18n.js?v=2.10.323';
+import './i18n.js?v=2.10.324';
 
 // Import all modules
 import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';
@@ -550,6 +550,7 @@ class App {
  }
 
  this.solarSystemModule.updateScale();
+ this.uiManager.setSpeedMode(normalizedMode);
 
  // Realistic mode milkyWay navigate target ≈ 366,667 units and the galaxy disc extends
  // to ~333k radius. With the camera at ~366k the far edge of the disc is >700k units from
@@ -1339,7 +1340,7 @@ class App {
  document.getElementById(UI_ELEMENTS.SETTINGS_BUTTON)?.click();
  break;
  case ' ': {
- // SPACE = Toggle between Paused and Normal speed (50 = 1x)
+ // SPACE = Toggle between paused and the current mode's midpoint speed.
  e.preventDefault();
  const spaceSpeedSlider = document.getElementById(UI_ELEMENTS.SPEED_SLIDER);
  if (spaceSpeedSlider) {

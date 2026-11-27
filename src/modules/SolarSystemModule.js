@@ -165,6 +165,7 @@ export class SolarSystemModule {
  this.satellites = [];
  this.spacecraft = [];
  this.jwst = null;
+ this._moonParentInverse = new THREE.Quaternion();
  this.constellations = [];
  this._focusScratch = {
  directionFromOrigin: new THREE.Vector3(),
@@ -181,8 +182,7 @@ export class SolarSystemModule {
  // Scale mode: false = educational (compressed), true = realistic (vast)
  this.realisticScale = false;
 
- // Scientific mode: use orbital speeds derived from real orbital periods
- // instead of hand-tuned visual speeds.
+ // Scientific mode uses inclined Keplerian ellipses; both modes use real periods.
  this.scientificMode = false;
  
  // Comet tails visibility: shown by default
@@ -3569,6 +3569,24 @@ export class SolarSystemModule {
  }
  }
 
+ _updateMoonPosition(moon) {
+ const data = moon.userData;
+ const e = this.scientificMode ? data.orbitalEccentricity || 0 : 0;
+ const inclination = this.scientificMode ? data.orbitalInclination || 0 : 0;
+ const theta = data.angle + (this.scientificMode ? data.orbitalPeriapsis || 0 : 0);
+ const radius = data.distance * (1 - e * e) / (1 + e * Math.cos(data.angle));
+ const z = radius * Math.sin(theta);
+ moon.position.set(radius * Math.cos(theta), z * Math.sin(inclination), z * Math.cos(inclination));
+ // Moon coordinates and orbit traces are inertial, not attached to the spinning surface.
+ this._moonParentInverse.copy(moon.parent.quaternion).invert();
+ moon.position.applyQuaternion(this._moonParentInverse);
+ if (data.orbitLine) data.orbitLine.quaternion.copy(this._moonParentInverse);
+ if (data.tidallyLocked) {
+ moon.rotation.set(-inclination, Math.PI / 2 - theta, 0, 'XYZ');
+ moon.quaternion.premultiply(this._moonParentInverse);
+ }
+ }
+
  // ─────────────────────────────────────────────────────────────────────────────
  // TIME MACHINE: date ↔ orbit position utilities
  // ─────────────────────────────────────────────────────────────────────────────
@@ -3711,27 +3729,7 @@ export class SolarSystemModule {
  moon.userData.meanAnomaly = meanAnomaly;
  moon.userData.angle = this._meanToTrueAnomaly(meanAnomaly, moon.userData.orbitalEccentricity || 0);
 
- // Counter-rotate by parent's rotation.y so the moon's world-space
- // orbit is not dragged by the planet's self-rotation.
- const parentRotY = moon.parent ? (moon.parent.rotation.y || 0) : 0;
- if (this.scientificMode) {
- const e = moon.userData.orbitalEccentricity || 0;
- const w = moon.userData.orbitalPeriapsis || 0;
- const a = moon.userData.distance;
- const nu = moon.userData.angle;
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
- const theta = nu + w + parentRotY;
- const xOrb = r * Math.cos(theta);
- const zOrb = r * Math.sin(theta);
- moon.position.x = xOrb;
- moon.position.y = zOrb * moon.userData._sinOrbInc;
- moon.position.z = zOrb * moon.userData._cosOrbInc;
- } else {
- const adj = moon.userData.angle + parentRotY;
- moon.position.x = moon.userData.distance * Math.cos(adj);
- moon.position.y = 0;
- moon.position.z = moon.userData.distance * Math.sin(adj);
- }
+ this._updateMoonPosition(moon);
  });
 
  // Date-seed comet orbital phases (deterministic by JD, not random startup state)
@@ -3938,6 +3936,7 @@ export class SolarSystemModule {
  asteroidBeltGroup.add(dust);
  
  asteroidBeltGroup.userData = {
+ realisticScale: this.realisticScale,
  name: 'asteroidBelt',
  type: 'asteroidBelt',
  description: t('descAsteroidBelt'),
@@ -4144,6 +4143,7 @@ export class SolarSystemModule {
  kuiperBeltGroup.add(scatteredObjects);
  
  kuiperBeltGroup.userData = {
+ realisticScale: this.realisticScale,
  name: 'kuiperBelt',
  type: 'kuiperBelt',
  description: t('descKuiperBelt'),
@@ -4358,6 +4358,7 @@ export class SolarSystemModule {
  oortCloudGroup.add(cometaryNuclei);
  
  oortCloudGroup.userData = {
+ realisticScale: this.realisticScale,
  name: 'oortCloud',
  type: 'oortCloud',
  description: t('descOortCloud'),
@@ -9355,53 +9356,12 @@ createHyperrealisticHubble(satData) {
  const e = moon.userData.orbitalEccentricity || 0;
  moon.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(moon.userData.meanAnomaly, e, moon.userData._keplerSqrtPlus, moon.userData._keplerSqrtMinus) : moon.userData.meanAnomaly;
  
- // IMPORTANT: Since moon is a child of planet (planet.add(moon)),
- // these positions are RELATIVE to the planet's position, not world coordinates!
- // Counter-rotate by parent's rotation.y so the moon's world-space
- // orbit is not dragged by the planet's self-rotation.
- const parentRotY = planet.rotation.y || 0;
- let moonOrbitalAngle = 0; // used for tidal-lock rotation
- if (this.scientificMode) {
- const e = moon.userData.orbitalEccentricity || 0;
- const w = moon.userData.orbitalPeriapsis || 0;
- const a = moon.userData.distance;
- const nu = moon.userData.angle;
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
- const theta = nu + w + parentRotY;
- const cosTheta = Math.cos(theta);
- const sinTheta = Math.sin(theta);
- const xOrb = r * cosTheta;
- const zOrb = r * sinTheta;
- moon.position.x = xOrb;
- moon.position.y = zOrb * moon.userData._sinOrbInc;
- moon.position.z = zOrb * moon.userData._cosOrbInc;
- // Use the post-tilt world-XZ azimuth so tidal lock stays correct for
- // inclined orbits (Triton ~157°, Miranda ~4°, Moon ~5°). Pre-tilt theta
- // would drift the locked face off the planet for any non-zero inclination.
- moonOrbitalAngle = Math.atan2(moon.position.z, moon.position.x);
- } else {
- const adj = moon.userData.angle + parentRotY;
- moon.position.x = moon.userData.distance * Math.cos(adj);
- moon.position.z = moon.userData.distance * Math.sin(adj);
- moon.position.y = 0;
- moonOrbitalAngle = adj;
- }
+ this._updateMoonPosition(moon);
  
- // REALISTIC MOON ROTATION based on real astronomical data.
- // Tidally-locked moons are evaluated even when rotationSpeed === 0 (paused
- // sim) so the locked face stays oriented toward the parent planet.
- if (moon.userData.tidallyLocked || (moon.userData.realRotationPeriod && rotationSpeed !== 0)) {
- let rotationAngle;
- if (moon.userData.tidallyLocked) {
- // True tidal locking: enforce same face always toward parent planet.
- // With moon at position (dist*cos(α), 0, dist*sin(α)) in parent space,
- // rotation.y = π/2 - α makes the local -Z axis point at the planet origin.
- rotationAngle = Math.PI / 2 - moonOrbitalAngle;
- } else {
+ if (!moon.userData.tidallyLocked && moon.userData.realRotationPeriod && rotationSpeed !== 0) {
  // Non-tidally-locked: use real rotation period from astronomical data
  const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
- rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
- }
+ const rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
 
  // Apply rotation (retrograde is naturally handled by axial tilts > 90)
  moon.rotation.y = rotationAngle;
@@ -10312,6 +10272,8 @@ createHyperrealisticHubble(satData) {
  orbitLine.renderOrder = 1;
  orbitLine.userData = { type: 'moonOrbit', moon: moon.userData.name, planet: planet.userData.name };
  planet.add(orbitLine);
+ orbitLine.quaternion.copy(planet.quaternion).invert();
+ moon.userData.orbitLine = orbitLine;
  this.orbits.push(orbitLine);
  });
  }
@@ -10326,7 +10288,7 @@ createHyperrealisticHubble(satData) {
 
  updateBelts() {
  // Update asteroid belt positions based on scale
- if (this.asteroidBelt && this.asteroidBelt.children) {
+ if (this.asteroidBelt?.children && this.asteroidBelt.userData.realisticScale !== this.realisticScale) {
  // Define scale parameters for both modes
  const oldParams = this.realisticScale ? 
  { base: 125, spread: 25 } : // We're switching FROM educational TO realistic
@@ -10360,10 +10322,11 @@ createHyperrealisticHubble(satData) {
  particleSystem.userData.rebuildPickIndex?.();
  }
  });
+ this.asteroidBelt.userData.realisticScale = this.realisticScale;
  }
  
  // Update Kuiper belt positions based on scale
- if (this.kuiperBelt && this.kuiperBelt.children) {
+ if (this.kuiperBelt?.children && this.kuiperBelt.userData.realisticScale !== this.realisticScale) {
  // Define scale parameters for both modes
  const oldParams = this.realisticScale ? 
  { base: 2000, spread: 400 } : // We're switching FROM educational TO realistic
@@ -10396,12 +10359,13 @@ createHyperrealisticHubble(satData) {
  particleSystem.userData.rebuildPickIndex?.();
  }
  });
+ this.kuiperBelt.userData.realisticScale = this.realisticScale;
  }
 
  // Update Oort Cloud positions based on scale (spherical shell)
  // Educational: inner=3000, outer=9000
  // Realistic: inner=20000, outer=60000 (proportional to heliopause 18k, same ratio as educational)
- if (this.oortCloud && this.oortCloud.children) {
+ if (this.oortCloud?.children && this.oortCloud.userData.realisticScale !== this.realisticScale) {
  // this.realisticScale is already the NEW state when updateScale() runs.
  const oldParams = this.realisticScale
  ? { inner: 3000, outer: 9000 } // was educational, now switching TO realistic
@@ -10444,6 +10408,7 @@ createHyperrealisticHubble(satData) {
  particleSystem.userData.rebuildPickIndex?.();
  }
  });
+ this.oortCloud.userData.realisticScale = this.realisticScale;
  }
  
  if (DEBUG.enabled) console.log(`[SCALE] Belts updated for ${this.realisticScale ? 'realistic' : 'educational'} scale`);

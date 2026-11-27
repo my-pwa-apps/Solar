@@ -936,6 +936,148 @@ test('uses one real-time clock for orbital motion and keeps the selected speed',
   await expect.poll(() => page.evaluate(() => window.app.timeSpeed)).toBeCloseTo(10, 6);
 });
 
+test('keeps belts outside the inner planets when restoring and repeating scale modes', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(() => {
+    const app = window.app;
+    const solar = app.solarSystemModule;
+    app.sceneManager.renderer.setAnimationLoop(null);
+    const clouds = [solar.asteroidBelt, solar.kuiperBelt, solar.oortCloud];
+    const snapshot = () => clouds.map(group => group.children.map(cloud =>
+      Array.from(cloud.geometry.attributes.position.array)));
+    const original = snapshot().flat(2);
+    const innerRadius = () => Math.min(...solar.asteroidBelt.children.flatMap(cloud => {
+      const positions = cloud.geometry.attributes.position;
+      return Array.from({ length: positions.count }, (_, i) =>
+        Math.hypot(positions.getX(i), positions.getZ(i)));
+    }));
+    const educationalInner = innerRadius();
+    let repeatError = 0;
+    for (const mode of ['educational', 'educational', 'scientific', 'scientific', 'educational']) {
+      const before = snapshot().flat(2);
+      const sameMode = app.getCurrentScaleMode() === mode;
+      app.applyScaleMode(mode, { persist: false });
+      if (sameMode) {
+        repeatError = Math.max(repeatError, ...snapshot().flat(2).map((value, i) =>
+          Math.abs(value - before[i])));
+      }
+    }
+    const restored = snapshot().flat(2);
+    return {
+      educationalInner, repeatError,
+      roundTripError: Math.max(...restored.map((value, i) => Math.abs(value - original[i]))),
+      marsDistance: solar.planets.mars.userData.distance,
+      jupiterDistance: solar.planets.jupiter.userData.distance
+    };
+  });
+  expect(result.educationalInner).toBeGreaterThanOrEqual(119.99);
+  expect(result.educationalInner).toBeGreaterThan(result.marsDistance);
+  expect(result.educationalInner).toBeLessThan(result.jupiterDistance);
+  expect(result.repeatError).toBe(0);
+  expect(result.roundTripError).toBeLessThan(0.002);
+});
+
+test('keeps moon positions, tidal locking and orbit traces independent of planetary spin', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(async () => {
+    const THREE = await import('three');
+    const app = window.app;
+    const solar = app.solarSystemModule;
+    app.sceneManager.renderer.setAnimationLoop(null);
+    let positionError = 0;
+    let lockingError = 0;
+    let orbitError = 0;
+    let seekError = 0;
+    const azimuthSteps = [];
+    for (const mode of ['educational', 'scientific']) {
+      app.applyScaleMode(mode, { persist: false });
+      solar.seekToDate('2030-01-01T00:00:00Z');
+      const moon = solar.moons.moon;
+      const expectedPosition = body => {
+        const ud = body.userData;
+        const e = mode === 'scientific' ? ud.orbitalEccentricity : 0;
+        const inc = mode === 'scientific' ? ud.orbitalInclination : 0;
+        const theta = ud.angle + (mode === 'scientific' ? ud.orbitalPeriapsis : 0);
+        const r = ud.distance * (1 - e * e) / (1 + e * Math.cos(ud.angle));
+        return new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta) * Math.sin(inc), r * Math.sin(theta) * Math.cos(inc));
+      };
+      const relativePosition = body => body.position.clone().applyQuaternion(body.parent.quaternion);
+      seekError = Math.max(seekError, relativePosition(moon).distanceTo(expectedPosition(moon)));
+      let previousAzimuth = Math.atan2(relativePosition(moon).z, relativePosition(moon).x);
+      // Sample more than a lunar orbit while Earth spins through every orientation.
+      for (let frame = 0; frame < 240; frame++) {
+        solar.update(0.125, 86400, app.sceneManager.camera, app.sceneManager.controls);
+        for (const body of [moon, solar.moons.miranda, solar.moons.triton]) {
+          const actual = relativePosition(body);
+          positionError = Math.max(positionError, actual.distanceTo(expectedPosition(body)));
+          const worldRotation = body.parent.quaternion.clone().multiply(body.quaternion);
+          const facing = new THREE.Vector3(0, 0, -1).applyQuaternion(worldRotation);
+          lockingError = Math.max(lockingError, facing.distanceTo(actual.clone().normalize().negate()));
+          const orbitRotation = body.parent.quaternion.clone().multiply(body.userData.orbitLine.quaternion);
+          orbitError = Math.max(orbitError, orbitRotation.angleTo(new THREE.Quaternion()));
+        }
+        const relative = relativePosition(moon);
+        const azimuth = Math.atan2(relative.z, relative.x);
+        azimuthSteps.push(Math.atan2(Math.sin(azimuth - previousAzimuth), Math.cos(azimuth - previousAzimuth)));
+        previousAzimuth = azimuth;
+      }
+    }
+    return { positionError, lockingError, orbitError, seekError, azimuthSteps };
+  });
+  expect(result.positionError).toBeLessThan(1e-10);
+  expect(result.seekError).toBeLessThan(1e-10);
+  expect(result.lockingError).toBeLessThan(1e-10);
+  expect(result.orbitError).toBeLessThan(1e-7);
+  for (const increment of result.azimuthSteps) expect(increment).toBeGreaterThan(0);
+});
+
+test('links speed defaults to scale while preserving real periods and pause', async ({ page }) => {
+  await openApp(page);
+  await expect(page.locator('#time-speed-label')).toHaveText('86400x');
+  await expect(page.locator('#speed-mode-label')).toHaveText('Educational');
+  const result = await page.evaluate(() => {
+    const app = window.app;
+    app.sceneManager.renderer.setAnimationLoop(null);
+    const solar = app.solarSystemModule;
+    const measurements = [];
+    let inverseError = 0;
+    for (const mode of ['educational', 'scientific']) {
+      app.applyScaleMode(mode, { persist: false });
+      const jd = solar.simulatedJD;
+      const earth = solar.planets.earth.userData.meanAnomaly;
+      const moon = solar.moons.moon.userData.meanAnomaly;
+      const speed = app.timeSpeed;
+      solar.update(1, speed, app.sceneManager.camera, app.sceneManager.controls);
+      measurements.push({
+        speed, elapsedDays: solar.simulatedJD - jd,
+        ratio: (solar.moons.moon.userData.meanAnomaly - moon) /
+          (solar.planets.earth.userData.meanAnomaly - earth)
+      });
+      for (const value of [0, 0.1, 0.5, 1, 10, 86400, 525960]) {
+        const roundTrip = app.uiManager.sliderToSpeed(app.uiManager.speedToSlider(value));
+        inverseError = Math.max(inverseError, Math.abs(roundTrip - value));
+      }
+    }
+    app.uiManager.setSpeed(0);
+    app.applyScaleMode('educational', { persist: false });
+    const paused = app.timeSpeed;
+    app.applyScaleMode('scientific', { persist: false });
+    return { measurements, inverseError, paused, scientificPaused: app.timeSpeed };
+  });
+  expect(result.measurements[0].speed).toBe(86400);
+  expect(result.measurements[0].elapsedDays).toBeCloseTo(1, 8);
+  expect(result.measurements[1].speed).toBe(1);
+  expect(result.measurements[1].elapsedDays).toBeCloseTo(1 / 86400, 8);
+  for (const measurement of result.measurements) {
+    expect(measurement.ratio).toBeCloseTo(360 / 0.98560028 / 27.321661, 5);
+  }
+  expect(result.inverseError).toBeLessThan(1e-8);
+  expect(result.paused).toBe(0);
+  expect(result.scientificPaused).toBe(0);
+  await expect(page.locator('#speed-mode-label')).toHaveText('Scientific');
+  await expect(page.locator('#time-speed-label')).toHaveText('Paused');
+});
+
 test('preserves the simulation clock when loading starts the experience early', async ({ page }) => {
   await page.addInitScript(() => {
     const originalSetTimeout = window.setTimeout;

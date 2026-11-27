@@ -93,7 +93,8 @@ test.describe('keyboard shortcut scoping', () => {
 
     await page.keyboard.press('n');
     const jdAfterNow = await page.evaluate(() => window.app.solarSystemModule.simulatedJD);
-    expect(Math.abs(jdAfterNow - jdBeforeStep)).toBeLessThan(1);
+    const currentJD = Date.now() / 86400000 + 2440587.5;
+    expect(Math.abs(jdAfterNow - currentJD)).toBeLessThan(1);
   });
 
   test('Escape closes only the frontmost overlay', async ({ page }) => {

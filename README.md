@@ -39,7 +39,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Detailed information panels for each object
 - Scientifically accurate orbital mechanics
 - Realistic day/night cycles
-- Adjustable simulation speed: 1× is real time; the maximum is one year per minute
+- Scale-linked speed slider: the midpoint is one simulated day per second in Educational mode, and real time in Scientific mode. Switching modes selects that default unless paused. Labels always show the real-time multiplier; both modes preserve real orbital-period ratios and top out at one simulated year per minute.
 - Real astronomical data
 - Educational scale mode with a compact solar corona that keeps Mercury clear of the glow
 - Object info reports known mean orbital distances in AU, independent of the visualization scale

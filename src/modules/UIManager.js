@@ -7,6 +7,7 @@ import { panelManager } from './PanelManager.js';
 
 export class UIManager {
  constructor() {
+ this.speedMode = 'educational';
  // Cache DOM elements
  this.elements = {
  loading: document.getElementById('loading'),
@@ -236,8 +237,9 @@ export class UIManager {
  }
  
  /**
-  * Convert slider position (0-100) to actual speed using logarithmic scale
-  * This gives more control at slower speeds and less at faster speeds
+  * Convert slider position (0-100) to a real-time multiplier.
+  * Educational mode centers on one day/second; scientific centers on real time.
+  * Scientific mapping:
   * 
   * Scale breakdown:
   * - Slider 0 = 0x (paused)
@@ -251,6 +253,10 @@ export class UIManager {
  const pos = parseFloat(sliderValue);
  
  if (pos === 0) return 0; // Paused
+ if (this.speedMode === 'educational' && pos > 25) {
+ if (pos <= 50) return 0.5 * Math.pow(86400 / 0.5, (pos - 25) / 25);
+ return 86400 * Math.pow(MAX_SIMULATION_SPEED / 86400, (pos - 50) / 50);
+ }
  
  if (pos <= 25) {
  // 1-25 maps to 0.01-0.5 (logarithmic for fine control)
@@ -277,6 +283,10 @@ export class UIManager {
   */
  speedToSlider(speed) {
  if (speed === 0) return 0;
+ if (this.speedMode === 'educational' && speed > 0.5) {
+ if (speed <= 86400) return 25 + 25 * Math.log(speed / 0.5) / Math.log(86400 / 0.5);
+ return 50 + 50 * Math.log(speed / 86400) / Math.log(MAX_SIMULATION_SPEED / 86400);
+ }
  if (speed <= 0.01) return 1; // Clamp tiny speeds to minimum slider position
  if (speed <= 0.5) {
  // Inverse of quadratic: t = sqrt((speed - 0.01) / 0.49)
@@ -347,9 +357,21 @@ export class UIManager {
  updateSpeed(e.target.value);
  });
  
- // Initialize with slider at center (1x real-time)
+ // Initialize at the mode's default speed.
  timeSpeedSlider.value = 50;
  updateSpeed(50);
+ }
+
+ setSpeedMode(mode) {
+ if (this.speedMode === mode) return;
+ this.speedMode = mode;
+ const label = document.getElementById('speed-mode-label');
+ if (label) {
+ const key = mode === 'scientific' ? 'toggleScaleScientific' : 'toggleScale';
+ label.dataset.i18n = key;
+ label.textContent = window.t(key);
+ }
+ this.setSpeed(window.app.timeSpeed === 0 ? 0 : mode === 'scientific' ? 1 : 86400);
  }
 
  /**
