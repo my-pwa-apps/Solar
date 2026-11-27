@@ -27,10 +27,10 @@
     </script>
 
     <!-- Capture beforeinstallprompt early, before heavy module scripts load -->
-    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.324"></script>
+    <script src="./src/bootstrap/installPromptCapture.js?v=2.10.325"></script>
 
     <!-- Language Detection - Must load first -->
-    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.324" crossorigin="use-credentials">
+    <link id="pwa-manifest" rel="manifest" href="./manifest.json?v=2.10.325" crossorigin="use-credentials">
     
     <!-- Primary Meta Tags -->
     <title>Space Voyage - Interactive 3D Solar System & VR Experience</title>
@@ -95,13 +95,13 @@
     <link rel="icon" type="image/png" sizes="44x44" href="./icons/windows11/Square44x44Logo.altform-unplated_targetsize-44.png">
     
     <!-- Preload critical resources -->
-    <link rel="modulepreload" href="./src/i18n.js?v=2.10.324">
-    <link rel="preload" href="./src/styles/main.css?v=2.10.324" as="style">
-    <link rel="preload" href="./src/styles/ui.css?v=2.10.324" as="style">
+    <link rel="modulepreload" href="./src/i18n.js?v=2.10.325">
+    <link rel="preload" href="./src/styles/main.css?v=2.10.325" as="style">
+    <link rel="preload" href="./src/styles/ui.css?v=2.10.325" as="style">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.324">
-    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.324">
+    <link rel="stylesheet" href="./src/styles/main.css?v=2.10.325">
+    <link rel="stylesheet" href="./src/styles/ui.css?v=2.10.325">
     
 </head>
 <body>
@@ -319,11 +319,12 @@
                 <svg aria-hidden="true" class="collapse-chevron" viewBox="0 0 12 12" width="12" height="12"><path d="M2 4L6 8L10 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
         </div>
-        <div class="simulation-date"><span data-i18n="simulationDate">Simulated date (UTC)</span>: <time id="simulation-date"></time></div>
+        <div class="simulation-date" hidden><span data-i18n="simulationDate">Simulated date (UTC)</span>: <time id="simulation-date"></time></div>
         <div id="speed-panel-content" class="panel-content">
             <span id="speed-mode-label" data-i18n="toggleScale">Educational</span>
+            <small id="speed-timing-label" data-i18n="educationalMotion">Illustrative motion, not real-time</small>
             <input type="range" id="time-speed" min="0" max="100" value="50" step="any" aria-label="Animation speed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" />
-            <span id="time-speed-label" data-i18n="realTime" aria-live="polite">1x</span>
+            <span id="time-speed-label" aria-live="polite">1x</span>
         </div>
     </div>
     <!-- Bottom Bar -->
@@ -463,9 +464,9 @@
         </div>
     </div>
     <!-- Main Application Script with cache buster -->
-    <script type="module" src="./src/bootstrap/startApp.js?v=2.10.324"></script>
+    <script type="module" src="./src/bootstrap/startApp.js?v=2.10.325"></script>
     
     <!-- Initialize Modules -->
-    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.324"></script>
+    <script type="module" src="./src/bootstrap/initManagers.js?v=2.10.325"></script>
 </body>
 </html>

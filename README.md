@@ -39,7 +39,9 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Detailed information panels for each object
 - Scientifically accurate orbital mechanics
 - Realistic day/night cycles
-- Scale-linked speed slider: the midpoint is one simulated day per second in Educational mode, and real time in Scientific mode. Switching modes selects that default unless paused. Labels always show the real-time multiplier; both modes preserve real orbital-period ratios and top out at one simulated year per minute.
+- Educational speed slider: 1× is illustrative motion (Earth year ~120 seconds, Moon orbit ~20 seconds, Earth spin ~30 seconds). Period differences are compressed so other bodies also visibly move; the slider runs from paused to 10×. Dates are hidden because this mode is not an ephemeris.
+- Scientific speed slider: 1× is real time, with real orbital-period ratios and a maximum of one simulated year per minute. Switching to Scientific restores date-based orbital phases; switching modes selects 1× unless paused.
+- Earth retains sunlight, terrain shading and its night side without a glossy ocean glare spot.
 - Real astronomical data
 - Educational scale mode with a compact solar corona that keeps Mercury clear of the glow
 - Object info reports known mean orbital distances in AU, independent of the visualization scale

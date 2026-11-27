@@ -29,7 +29,7 @@ export function prefersReducedMotion() {
 }
 
 /** App version — single source of truth for SW and texture cache invalidation. */
-export const APP_VERSION = '2.10.324';
+export const APP_VERSION = '2.10.325';
 export const MAX_SIMULATION_SPEED = 525960;
 
 export const CONFIG = {

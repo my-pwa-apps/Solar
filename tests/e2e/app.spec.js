@@ -614,6 +614,7 @@ test('keeps time, spacecraft navigation, search and physical information consist
 
   await page.evaluate(() => {
     document.activeElement.blur();
+    window.app.applyScaleMode('scientific', { persist: false });
     window.app.solarSystemModule.seekToDate(new Date('2020-01-15T12:00:00Z'));
     window.app.updateSimulationDate(true);
   });
@@ -858,14 +859,17 @@ test('preserves the selected information and speed when changing language', asyn
     await expect(page.locator('#object-description')).toHaveText(expected.info.description);
     await expect(page.locator('#object-fun-fact')).toContainText(expected.info.funFact);
     await expect(page.locator('#time-speed-label')).toHaveText(expected.paused);
+    await expect(page.locator('#speed-timing-label')).toHaveText(await page.evaluate(() => window.t('educationalMotion')));
+    await expect(page.locator('#speed-timing-label')).not.toHaveText('educationalMotion');
   }
 });
 
-test('uses one real-time clock for orbital motion and keeps the selected speed', async ({ page }) => {
+test('uses one real-time clock in scientific mode and keeps the selected speed', async ({ page }) => {
   await openApp(page);
   const measurements = await page.evaluate(() => {
     const app = window.app;
     const ssm = app.solarSystemModule;
+    app.applyScaleMode('scientific', { persist: false });
     const moon = ssm.moons.moon.userData;
     const comet = ssm.comets[0].userData;
     const exoplanet = ssm.exoplanets[0].userData;
@@ -884,8 +888,6 @@ test('uses one real-time clock for orbital motion and keeps the selected speed',
       const after = read();
       return Object.fromEntries(Object.keys(before).map(key => [key, after[key] - before[key]]));
     };
-    const educational = step(1);
-    ssm.setScientificMode(true, { rebuildOrbits: false });
     const scientific = step(1);
     const paused = step(0);
     const reverse = step(-1);
@@ -893,8 +895,7 @@ test('uses one real-time clock for orbital motion and keeps the selected speed',
     const expectedExoplanetAngle = (((ssm.simulatedJD - 2451545) / 11.2 * 2 * Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
     const exoplanetAngle = exoplanet.angle;
     const seekErrors = [];
-    for (const scientificMode of [false, true]) {
-      ssm.setScientificMode(scientificMode, { rebuildOrbits: false });
+    {
       ssm.seekToDate('2030-01-01T00:00:00Z');
       ssm.update(1, 86400, app.sceneManager.camera, app.sceneManager.controls);
       const objects = [ssm.planets.mercury, ssm.moons.moon, ssm.moons.triton, ssm.comets[0], ssm.exoplanets[0]];
@@ -905,17 +906,15 @@ test('uses one real-time clock for orbital motion and keeps the selected speed',
         return Math.abs(Math.atan2(Math.sin(difference), Math.cos(difference)));
       }));
     }
-    return { educational, scientific, paused, reverse, cometPeriod: comet.orbitalPeriod, exoplanetAngle, expectedExoplanetAngle, seekErrors };
+    return { scientific, paused, reverse, cometPeriod: comet.orbitalPeriod, exoplanetAngle, expectedExoplanetAngle, seekErrors };
   });
-  for (const mode of ['educational', 'scientific']) {
-    const m = measurements[mode];
-    expect(m.jd).toBeCloseTo(5 / 86400, 9);
-    expect(m.earth).toBeCloseTo(0.98560028 * Math.PI * 5 / (180 * 86400), 12);
-    expect(m.moon).toBeCloseTo(2 * Math.PI * 5 / (27.321661 * 86400), 12);
-    expect(m.comet).toBeCloseTo(2 * Math.PI * 5 / (measurements.cometPeriod * 86400), 12);
-    expect(m.exoplanet).toBeCloseTo(2 * Math.PI * 5 / (11.2 * 86400), 12);
-    expect(m.satellite).toBeCloseTo(15.5 * 2 * Math.PI * 5 / 86400, 12);
-  }
+  const m = measurements.scientific;
+  expect(m.jd).toBeCloseTo(5 / 86400, 9);
+  expect(m.earth).toBeCloseTo(0.98560028 * Math.PI * 5 / (180 * 86400), 12);
+  expect(m.moon).toBeCloseTo(2 * Math.PI * 5 / (27.321661 * 86400), 12);
+  expect(m.comet).toBeCloseTo(2 * Math.PI * 5 / (measurements.cometPeriod * 86400), 12);
+  expect(m.exoplanet).toBeCloseTo(2 * Math.PI * 5 / (11.2 * 86400), 12);
+  expect(m.satellite).toBeCloseTo(15.5 * 2 * Math.PI * 5 / 86400, 12);
   for (const value of Object.values(measurements.paused)) expect(value).toBe(0);
   expect(measurements.reverse.earth).toBeCloseTo(-measurements.scientific.earth, 12);
   expect(measurements.reverse.jd).toBeCloseTo(-measurements.scientific.jd, 9);
@@ -1006,7 +1005,7 @@ test('keeps moon positions, tidal locking and orbit traces independent of planet
       let previousAzimuth = Math.atan2(relativePosition(moon).z, relativePosition(moon).x);
       // Sample more than a lunar orbit while Earth spins through every orientation.
       for (let frame = 0; frame < 240; frame++) {
-        solar.update(0.125, 86400, app.sceneManager.camera, app.sceneManager.controls);
+        solar.update(0.125, mode === 'scientific' ? 86400 : 1, app.sceneManager.camera, app.sceneManager.controls);
         for (const body of [moon, solar.moons.miranda, solar.moons.triton]) {
           const actual = relativePosition(body);
           positionError = Math.max(positionError, actual.distanceTo(expectedPosition(body)));
@@ -1031,10 +1030,12 @@ test('keeps moon positions, tidal locking and orbit traces independent of planet
   for (const increment of result.azimuthSteps) expect(increment).toBeGreaterThan(0);
 });
 
-test('links speed defaults to scale while preserving real periods and pause', async ({ page }) => {
+test('uses watchable educational pacing and real scientific periods while preserving pause', async ({ page }) => {
   await openApp(page);
-  await expect(page.locator('#time-speed-label')).toHaveText('86400x');
+  await expect(page.locator('#time-speed-label')).toHaveText('1x');
   await expect(page.locator('#speed-mode-label')).toHaveText('Educational');
+  await expect(page.locator('.simulation-date')).toBeHidden();
+  await expect(page.locator('#speed-timing-label')).toBeVisible();
   const result = await page.evaluate(() => {
     const app = window.app;
     app.sceneManager.renderer.setAnimationLoop(null);
@@ -1046,14 +1047,18 @@ test('links speed defaults to scale while preserving real periods and pause', as
       const jd = solar.simulatedJD;
       const earth = solar.planets.earth.userData.meanAnomaly;
       const moon = solar.moons.moon.userData.meanAnomaly;
+      const spin = solar.planets.earth.rotation.y;
       const speed = app.timeSpeed;
       solar.update(1, speed, app.sceneManager.camera, app.sceneManager.controls);
       measurements.push({
         speed, elapsedDays: solar.simulatedJD - jd,
+        earthStep: solar.planets.earth.userData.meanAnomaly - earth,
+        moonStep: solar.moons.moon.userData.meanAnomaly - moon,
+        spinStep: solar.planets.earth.rotation.y - spin,
         ratio: (solar.moons.moon.userData.meanAnomaly - moon) /
           (solar.planets.earth.userData.meanAnomaly - earth)
       });
-      for (const value of [0, 0.1, 0.5, 1, 10, 86400, 525960]) {
+      for (const value of mode === 'educational' ? [0, 0.001, 0.1, 0.5, 1, 5, 10] : [0, 0.1, 0.5, 1, 10, 86400, 525960]) {
         const roundTrip = app.uiManager.sliderToSpeed(app.uiManager.speedToSlider(value));
         inverseError = Math.max(inverseError, Math.abs(roundTrip - value));
       }
@@ -1064,18 +1069,128 @@ test('links speed defaults to scale while preserving real periods and pause', as
     app.applyScaleMode('scientific', { persist: false });
     return { measurements, inverseError, paused, scientificPaused: app.timeSpeed };
   });
-  expect(result.measurements[0].speed).toBe(86400);
-  expect(result.measurements[0].elapsedDays).toBeCloseTo(1, 8);
+  expect(result.measurements[0].speed).toBe(1);
+  expect(result.measurements[0].earthStep).toBeCloseTo(2 * Math.PI / 120, 10);
+  expect(result.measurements[0].moonStep).toBeCloseTo(2 * Math.PI / 20, 10);
+  expect(result.measurements[0].spinStep).toBeCloseTo(-2 * Math.PI / 30, 10);
   expect(result.measurements[1].speed).toBe(1);
   expect(result.measurements[1].elapsedDays).toBeCloseTo(1 / 86400, 8);
-  for (const measurement of result.measurements) {
-    expect(measurement.ratio).toBeCloseTo(360 / 0.98560028 / 27.321661, 5);
-  }
+  expect(result.measurements[1].ratio).toBeCloseTo(360 / 0.98560028 / 27.321661, 5);
   expect(result.inverseError).toBeLessThan(1e-8);
   expect(result.paused).toBe(0);
   expect(result.scientificPaused).toBe(0);
   await expect(page.locator('#speed-mode-label')).toHaveText('Scientific');
   await expect(page.locator('#time-speed-label')).toHaveText('Paused');
+  await expect(page.locator('.simulation-date')).toBeVisible();
+  await expect(page.locator('#speed-timing-label')).toBeHidden();
+});
+
+test('scales educational motion with the slider and supports pause and reverse', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(() => {
+    const app = window.app;
+    const solar = app.solarSystemModule;
+    app.sceneManager.renderer.setAnimationLoop(null);
+    const earth = solar.planets.earth;
+    const moon = solar.moons.moon;
+    const read = () => ({
+      earth: earth.userData.meanAnomaly,
+      moon: moon.userData.meanAnomaly,
+      spin: earth.rotation.y,
+      neptune: solar.planets.neptune.userData.meanAnomaly,
+      satellite: solar.satellites[0].userData.angle,
+      exoplanet: solar.exoplanets[0].userData.angle
+    });
+    const step = (seconds, speed) => {
+      const before = read();
+      solar.update(seconds, speed, app.sceneManager.camera, app.sceneManager.controls);
+      const after = read();
+      return Object.fromEntries(Object.keys(before).map(key => [key, after[key] - before[key]]));
+    };
+    const normal = step(1, app.timeSpeed);
+    const paused = step(1, 0);
+    const reverse = step(1, -1);
+    const fullMoonOrbit = step(20, 1).moon;
+    const fullEarthOrbit = step(120, 1).earth;
+    const slider = document.getElementById('time-speed');
+    slider.value = '100';
+    slider.dispatchEvent(new Event('input'));
+    const fast = step(1, app.timeSpeed);
+    const fastLabel = document.getElementById('time-speed-label').textContent;
+    slider.value = '25';
+    slider.dispatchEvent(new Event('input'));
+    const slow = step(1, app.timeSpeed);
+    const scientificDate = new Date((solar.simulatedJD - 2440587.5) * 86400000);
+    app.applyScaleMode('scientific', { persist: false });
+    const switchedPhases = [earth.userData.meanAnomaly, moon.userData.meanAnomaly];
+    solar.seekToDate(scientificDate);
+    return {
+      normal, paused, reverse, fast, slow, fastLabel, fullMoonOrbit, fullEarthOrbit,
+      scientificPhaseError: Math.max(...switchedPhases.map((value, i) =>
+        Math.abs(value - [earth.userData.meanAnomaly, moon.userData.meanAnomaly][i])))
+    };
+  });
+  expect(result.fullMoonOrbit).toBeCloseTo(2 * Math.PI, 10);
+  expect(result.fullEarthOrbit).toBeCloseTo(2 * Math.PI, 10);
+  expect(result.fastLabel).toBe('10x');
+  for (const [key, value] of Object.entries(result.normal)) {
+    expect(Math.abs(value)).toBeGreaterThan(0.01);
+    expect(result.paused[key]).toBe(0);
+    expect(result.reverse[key]).toBeCloseTo(-value, 10);
+    expect(result.fast[key]).toBeCloseTo(value * 10, 10);
+    expect(result.slow[key]).toBeCloseTo(value * 0.25, 10);
+  }
+  expect(result.scientificPhaseError).toBeLessThan(1e-8);
+});
+
+test('renders Earth without white specular glare while retaining sunlight shading', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(async () => {
+    const THREE = await import('three');
+    const app = window.app;
+    app.sceneManager.renderer.setAnimationLoop(null);
+    const earth = app.solarSystemModule.planets.earth;
+    const material = earth.material.clone();
+    const ocean = new THREE.DataTexture(new Uint8Array([0, 80, 160, 255]), 1, 1);
+    ocean.needsUpdate = true;
+    material.map = ocean;
+    material.bumpMap = null;
+    const scene = new THREE.Scene();
+    const globe = new THREE.Mesh(earth.geometry, material);
+    const light = new THREE.DirectionalLight(0xffffff, 3);
+    light.position.set(0, 0, 10);
+    scene.add(globe, light);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 0, earth.geometry.parameters.radius * 4);
+    const renderer = app.sceneManager.renderer;
+    const previousTarget = renderer.getRenderTarget();
+    const target = new THREE.WebGLRenderTarget(64, 64);
+    const pixels = new Uint8Array(64 * 64 * 4);
+    const render = () => {
+      renderer.setRenderTarget(target);
+      renderer.render(scene, camera);
+      renderer.readRenderTargetPixels(target, 0, 0, 64, 64, pixels);
+      let red = 0;
+      let blue = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        red = Math.max(red, pixels[i]);
+        blue = Math.max(blue, pixels[i + 2]);
+      }
+      return { red, blue };
+    };
+    const lit = render();
+    light.position.z = -10;
+    const night = render();
+    renderer.setRenderTarget(previousTarget);
+    target.dispose();
+    material.dispose();
+    ocean.dispose();
+    return { lit, night, hasTexture: earth.material.map?.isTexture, hasTerrain: earth.material.bumpMap?.isTexture };
+  });
+  expect(result.lit.red).toBeLessThanOrEqual(1);
+  expect(result.lit.blue).toBeGreaterThan(40);
+  expect(result.night.blue).toBeLessThan(result.lit.blue / 4);
+  expect(result.hasTexture && result.hasTerrain).toBe(true);
 });
 
 test('preserves the simulation clock when loading starts the experience early', async ({ page }) => {
@@ -1089,7 +1204,7 @@ test('preserves the simulation clock when loading starts the experience early', 
           }
           callback(...args);
           window.__earlyStartJD = window.app.solarSystemModule.simulatedJD;
-          window.app.uiManager.setSpeed(100);
+          window.app.uiManager.setSpeed(10);
         };
         return originalSetTimeout(startWhenEarthExists, 25);
       }
@@ -1103,8 +1218,8 @@ test('preserves the simulation clock when loading starts the experience early', 
     speed: window.app.timeSpeed
   }));
   expect(result.startJD).toBeGreaterThan(2460000);
-  expect(result.currentJD).toBeGreaterThan(result.startJD + 20 / 86400);
-  expect(result.speed).toBeCloseTo(100, 6);
+  expect(result.currentJD).toBeGreaterThan(result.startJD);
+  expect(result.speed).toBeCloseTo(10, 6);
 });
 
 test('shows meaningful sizes and accurate moon wording', async ({ page }) => {

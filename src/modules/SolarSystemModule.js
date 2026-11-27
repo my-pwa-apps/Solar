@@ -182,7 +182,7 @@ export class SolarSystemModule {
  // Scale mode: false = educational (compressed), true = realistic (vast)
  this.realisticScale = false;
 
- // Scientific mode uses inclined Keplerian ellipses; both modes use real periods.
+ // Scientific mode uses real periods and inclined Keplerian ellipses.
  this.scientificMode = false;
  
  // Comet tails visibility: shown by default
@@ -1329,21 +1329,6 @@ export class SolarSystemModule {
         planet.userData.remoteTextureLoaded = true;
         planet.userData.remoteTextureURL = url;
 
- // Earth: derive an ocean/land roughness map from the loaded color image so
- // oceans get a sharp specular highlight while continents stay matte.
- if (lowerName === 'earth' && planet.material.isMeshStandardMaterial) {
- const resourceGeneration = this._resourceGeneration;
- this._buildEarthOceanLandRoughnessMap(tex).then((roughnessMap) => {
- if (resourceGeneration !== this._resourceGeneration) { roughnessMap?.dispose(); return; }
- if (!planet.material) return;
- planet.material.roughnessMap = roughnessMap;
- // With a roughness map, the scalar `roughness` is multiplied per-pixel,
- // so reset it to 1.0 to use the map values directly.
- planet.material.roughness = 1.0;
- planet.material.needsUpdate = true;
- }).catch(() => { /* keep matte fallback */ });
- }
-
         const meta = this._pendingTextureMeta?.[lowerName];
         if (meta) {
             meta.success = true;
@@ -1414,62 +1399,6 @@ export class SolarSystemModule {
  return this.loadPlanetTextureReal('Venus', primary, this.createVenusTexture, size, []);
  }
 
- /**
-  * Build an ocean/land roughness map for Earth from its loaded color texture.
-  * Pixels where blue clearly dominates red+green are classified as ocean
-  * (roughness ~0.35 for a sharp specular highlight); everything else is treated
-  * as land (~0.95, fully matte). Resolves with a THREE.CanvasTexture ready to
-  * assign as material.roughnessMap. Rejects if the source image is unusable.
-  */
- _buildEarthOceanLandRoughnessMap(colorTexture) {
-     return new Promise((resolve, reject) => {
-         const img = colorTexture?.image;
-         if (!img) { reject(new Error('no image')); return; }
-
-         const build = () => {
-             try {
-                 const W = 512, H = 256; // downsampled — roughness map doesn't need full res
-                 const canvas = document.createElement('canvas');
-                 canvas.width = W; canvas.height = H;
-                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                 ctx.drawImage(img, 0, 0, W, H);
-                 const imgData = ctx.getImageData(0, 0, W, H);
-                 const data = imgData.data;
-                 const OCEAN = 0x59; // ~0.35 * 255
-                 const LAND = 0xF2;  // ~0.95 * 255
-                 for (let i = 0; i < data.length; i += 4) {
-                     const r = data[i], g = data[i + 1], b = data[i + 2];
-                     // Ocean heuristic: blue notably exceeds red and green, and the pixel
-                     // isn't near-white (clouds/ice). Cheap and robust on the NASA Blue Marble.
-                     const isOcean = (b > r + 12) && (b > g + 6) && (r + g + b < 600);
-                     const v = isOcean ? OCEAN : LAND;
-                     data[i] = data[i + 1] = data[i + 2] = v;
-                     data[i + 3] = 255;
-                 }
-                 ctx.putImageData(imgData, 0, 0);
-                 const tex = new THREE.CanvasTexture(canvas);
-                 tex.wrapS = THREE.RepeatWrapping;
-                 tex.wrapT = THREE.ClampToEdgeWrapping;
-                 tex.anisotropy = 8;
-                 tex.needsUpdate = true;
-                 resolve(tex);
-             } catch (err) {
-                 reject(err);
-             }
-         };
-
-         if (img.complete && img.naturalWidth > 0) {
-             build();
-         } else if (typeof img.addEventListener === 'function') {
-             img.addEventListener('load', build, { once: true });
-             img.addEventListener('error', () => reject(new Error('image load failed')), { once: true });
-         } else {
-             // ImageBitmap or already-decoded source
-             build();
-         }
-     });
- }
- 
  // Earth real texture loader - Optimized with reliable fallback chain
  createEarthTextureRealFixed(size) {
  // Use local self-hosted textures.
@@ -2868,19 +2797,16 @@ export class SolarSystemModule {
  const earthBump = this._configureSphericalSurfaceTexture(this.createEarthBumpMap(Math.min(earthTexSize, 1024)));
  if (DEBUG.enabled) console.timeEnd('Earth Material Creation');
  
- // ULTRA realistic material with PBR (Physically Based Rendering)
- const earthMaterial = new THREE.MeshStandardMaterial({
+ // Physical material allows disabling glare without removing diffuse sunlight or terrain shading.
+ const earthMaterial = new THREE.MeshPhysicalMaterial({
  map: earthTexture,
  
  // Bump map for elevation (normalMap removed — procedural version had bad gradients)
  bumpMap: earthBump,
  bumpScale: 0.08,
  
- // Roughness: continents are matte, oceans get a sharp specular highlight.
- // The actual ocean/land roughness map is generated from the loaded color
- // texture in _onPlanetTextureSuccess (oceans → ~0.35, land → 0.95). Until
- // that map arrives we render fully matte so land never looks plastic.
- roughness: 0.95,
+ roughness: 1,
+ specularIntensity: 0,
  
  // Metalness (Earth's surface is not metallic)
  metalness: 0.0,
@@ -9224,6 +9150,16 @@ createHyperrealisticHubble(satData) {
  if (DEBUG.enabled) console.log(` Created ${this.spacecraft.length} spacecraft and probes!`);
  }
 
+ _motionRate(realRate, kind = 'orbit') {
+ if (this.scientificMode || realRate === 0) return realRate;
+ const referenceRate = kind === 'moon' ? 2 * Math.PI / (27.321661 * 86400)
+ : kind === 'rotation' ? 2 * Math.PI / (23.93 * 3600)
+ : 0.98560028 * Math.PI / (180 * 86400);
+ const period = kind === 'moon' ? 20 : kind === 'rotation' ? 30 : 120;
+ // Compress period differences while retaining their ordering and direction.
+ return Math.sign(realRate) * 2 * Math.PI / (period * Math.pow(referenceRate / Math.abs(realRate), 0.15));
+ }
+
  update(deltaTime, timeSpeed, camera, controls) {
  // Safety check for deltaTime
  if (!Number.isFinite(deltaTime) || deltaTime <= 0) {
@@ -9271,7 +9207,7 @@ createHyperrealisticHubble(satData) {
  this._planetArray.forEach(planet => {
  if (planet && planet.userData) {
  // Calculate angle increment based on speed
- const angleIncrement = planet.userData.speed * orbitalSpeed * deltaTime;
+ const angleIncrement = this._motionRate(planet.userData.speed) * orbitalSpeed * deltaTime;
  
  // Safety check for angle increment
  if (isNaN(angleIncrement) || !isFinite(angleIncrement)) {
@@ -9314,7 +9250,11 @@ createHyperrealisticHubble(satData) {
  // REALISTIC PLANET ROTATION based on real astronomical data
  if (planet.userData.realRotationPeriod && rotationSpeed !== 0) {
  let rotationAngle;
- if (planet.userData.id === 'earth') {
+ if (!this.scientificMode) {
+ const direction = planet.userData.id === 'earth' ? -1 : 1;
+ const rate = this._motionRate(direction * 2 * Math.PI / (planet.userData.realRotationPeriod * 3600), 'rotation');
+ rotationAngle = planet.rotation.y + rate * rotationSpeed * deltaTime * (planet.userData.retrograde ? -1 : 1);
+ } else if (planet.userData.id === 'earth') {
  // Compute Earth's rotation so the correct subsolar longitude faces the Sun.
  // Formula: rotation.y = orbital_angle + PI + SunRA - GMST
  // where orbital_angle = atan2(earth.z, earth.x) in the scene.
@@ -9329,7 +9269,7 @@ createHyperrealisticHubble(satData) {
  }
 
  // Apply rotation — explicit retrograde handling for planets with tilt > 90°
- if (planet.userData.retrograde) {
+ if (this.scientificMode && planet.userData.retrograde) {
  rotationAngle = -rotationAngle;
  }
  planet.rotation.y = rotationAngle;
@@ -9349,7 +9289,7 @@ createHyperrealisticHubble(satData) {
  planet.userData.moons.forEach(moon => {
  if (moon.userData) {
  // Calculate moon angle increment
- const moonAngleIncrement = moon.userData.speed * moonSpeed * deltaTime;
+ const moonAngleIncrement = this._motionRate(moon.userData.speed, 'moon') * moonSpeed * deltaTime;
  
  // Moons orbit their planet
  moon.userData.meanAnomaly = (moon.userData.meanAnomaly || 0) + moonAngleIncrement;
@@ -9361,7 +9301,9 @@ createHyperrealisticHubble(satData) {
  if (!moon.userData.tidallyLocked && moon.userData.realRotationPeriod && rotationSpeed !== 0) {
  // Non-tidally-locked: use real rotation period from astronomical data
  const rotationsComplete = elapsedHours / moon.userData.realRotationPeriod;
- const rotationAngle = (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase;
+ const rotationAngle = this.scientificMode
+ ? (rotationsComplete * Math.PI * 2) + moon.userData.rotationPhase
+ : moon.rotation.y + this._motionRate(2 * Math.PI / (moon.userData.realRotationPeriod * 3600), 'rotation') * rotationSpeed * deltaTime;
 
  // Apply rotation (retrograde is naturally handled by axial tilts > 90)
  moon.rotation.y = rotationAngle;
@@ -9395,13 +9337,13 @@ createHyperrealisticHubble(satData) {
 
  // Approximate rotation using representative belt orbital periods.
  if (this.asteroidBelt) {
- const rotationIncrement = 2 * Math.PI / (4.6 * 365.25 * 86400) * rotationSpeed * deltaTime;
+ const rotationIncrement = this._motionRate(2 * Math.PI / (4.6 * 365.25 * 86400)) * rotationSpeed * deltaTime;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.asteroidBelt.rotation.y += rotationIncrement;
  }
  }
  if (this.kuiperBelt) {
- const rotationIncrement = 2 * Math.PI / (300 * 365.25 * 86400) * rotationSpeed * deltaTime;
+ const rotationIncrement = this._motionRate(2 * Math.PI / (300 * 365.25 * 86400)) * rotationSpeed * deltaTime;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.kuiperBelt.rotation.y += rotationIncrement;
  }
@@ -9409,7 +9351,7 @@ createHyperrealisticHubble(satData) {
 
  // Rotate sun and animate surface activity
  if (this.sun) {
- const rotationIncrement = 2 * Math.PI / (25.38 * 86400) * rotationSpeed * deltaTime;
+ const rotationIncrement = this._motionRate(2 * Math.PI / (25.38 * 86400), 'rotation') * rotationSpeed * deltaTime;
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.sun.rotation.y += rotationIncrement;
  }
@@ -9474,7 +9416,7 @@ createHyperrealisticHubble(satData) {
  if (this.comets) {
  this.comets.forEach(comet => {
  const userData = comet.userData;
- const meanAnomalyIncrement = userData.speed * orbitalSpeed * deltaTime;
+ const meanAnomalyIncrement = this._motionRate(userData.speed) * orbitalSpeed * deltaTime;
  if (!isNaN(meanAnomalyIncrement) && isFinite(meanAnomalyIncrement)) {
  userData.meanAnomaly = (userData.meanAnomaly || 0) + meanAnomalyIncrement;
  }
@@ -9625,7 +9567,7 @@ createHyperrealisticHubble(satData) {
  this.satellites.forEach(satellite => {
  const userData = satellite.userData;
  if (userData.planet) {
- const angleIncrement = userData.speed * 2 * Math.PI / 86400 * orbitalSpeed * deltaTime;
+ const angleIncrement = this._motionRate(userData.speed * 2 * Math.PI / 86400, 'moon') * orbitalSpeed * deltaTime;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  }
@@ -9690,7 +9632,7 @@ createHyperrealisticHubble(satData) {
 
  // Legacy angle-based probes (non-trajectory, e.g. JWST): keep simple orbit
  if (!userData.orbitPlanet && !userData.trajectory && userData.speed && craft !== this.jwst) {
- const angleIncrement = userData.speed * orbitalSpeed * deltaTime * 0.001;
+ const angleIncrement = this._motionRate(userData.speed * 0.001) * orbitalSpeed * deltaTime;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  craft.position.x = userData.distance * Math.cos(userData.angle);
@@ -9700,7 +9642,7 @@ createHyperrealisticHubble(satData) {
 
  // Orbiters around planets (Juno, Cassini legacy, etc)
  if (userData.orbitPlanet && userData.orbitalPeriodDays && userData.type === 'orbiter') {
- const angleIncrement = 2 * Math.PI / (userData.orbitalPeriodDays * 86400) * orbitalSpeed * deltaTime;
+ const angleIncrement = this._motionRate(2 * Math.PI / (userData.orbitalPeriodDays * 86400), 'moon') * orbitalSpeed * deltaTime;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
  const radius = userData.distance;
@@ -9718,7 +9660,7 @@ createHyperrealisticHubble(satData) {
  this.exoplanets.forEach(planet => {
  const ud = planet.userData;
  if (!ud.orbitSpeed || !ud.hostStarPos) return;
- ud.angle += ud.orbitSpeed * orbitalSpeed * deltaTime;
+ ud.angle += this._motionRate(ud.orbitSpeed) * orbitalSpeed * deltaTime;
  this.updateExoplanetPosition(planet);
  });
  }

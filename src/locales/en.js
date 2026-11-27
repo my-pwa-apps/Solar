@@ -192,6 +192,7 @@ const translations = {
   "speedLabel": "Speed:",
   "paused": "Paused",
   "realTime": "1x Real-time",
+  "educationalMotion": "Illustrative motion, not real-time",
   "name": "Name",
   "type": "Type",
   "distance": "Distance",

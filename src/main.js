@@ -3,7 +3,7 @@
 // Main Application Entry Point
 // ===========================
 import * as THREE from 'three';
-import './i18n.js?v=2.10.324';
+import './i18n.js?v=2.10.325';
 
 // Import all modules
 import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';
@@ -378,6 +378,7 @@ class App {
  updateSimulationDate(force = false) {
  const output = document.getElementById('simulation-date');
  if (!output || !this.solarSystemModule) return;
+ output.closest('.simulation-date').hidden = !this.solarSystemModule.scientificMode;
  const day = Math.floor(this.solarSystemModule.simulatedJD + 0.5);
  if (!force && day === this._displayedSimulationDay) return;
  const date = jdToDate(this.solarSystemModule.simulatedJD);
@@ -539,6 +540,7 @@ class App {
  const normalizedMode = mode === 'scientific' ? 'scientific' : 'educational';
  const realisticScale = normalizedMode === 'scientific';
  const scientificMode = normalizedMode === 'scientific';
+ const enteringScientific = scientificMode && !this.solarSystemModule.scientificMode;
 
  this.solarSystemModule.realisticScale = realisticScale;
  if (typeof this.solarSystemModule.setScientificMode === 'function') {
@@ -550,7 +552,11 @@ class App {
  }
 
  this.solarSystemModule.updateScale();
+ if (enteringScientific) {
+ this.solarSystemModule.seekToDate(jdToDate(this.solarSystemModule.simulatedJD));
+ }
  this.uiManager.setSpeedMode(normalizedMode);
+ this.updateSimulationDate(true);
 
  // Realistic mode milkyWay navigate target ≈ 366,667 units and the galaxy disc extends
  // to ~333k radius. With the camera at ~366k the far edge of the disc is >700k units from
