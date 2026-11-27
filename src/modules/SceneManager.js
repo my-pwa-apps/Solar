@@ -2483,7 +2483,7 @@ this.camera.near = 10.0;
  } else {
  this.resetCamera();
  }
- if (app.solarSystemModule) app.solarSystemModule.focusedObject = null;
+ if (app.solarSystemModule) app.solarSystemModule.resetCameraTracking();
  this.vrLastObjectInfo = null;
  this.updateVRStatus('🔄 View reset');
  scheduleRefresh(); break;

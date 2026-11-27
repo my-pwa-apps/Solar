@@ -228,10 +228,10 @@ export class SolarSystemModule {
  this._satEarthPos    = new THREE.Vector3();
  // Scratch vectors for updateCameraTracking() co-rotation mode
  this._camRadial      = new THREE.Vector3();
- this._camTangent     = new THREE.Vector3();
- this._camUp          = new THREE.Vector3();
- this._camPos         = new THREE.Vector3();
- this._camChaseDir    = new THREE.Vector3();
+ this._camPreviousRadial = new THREE.Vector3();
+ this._camParentPos   = new THREE.Vector3();
+ this._camRotation    = new THREE.Quaternion();
+ this._camRadialValid = false;
  this._camCurrentTgt  = new THREE.Vector3();
  // Track last focused-object world position for stable follow translation
  this._cameraFollowLastTargetPos = new THREE.Vector3();
@@ -3013,6 +3013,7 @@ export class SolarSystemModule {
  planet.position.set(config.distance, 0, 0);
  planet.castShadow = false;
  planet.receiveShadow = true; // But can receive shadows from moons
+ planet.rotation.order = 'ZYX';
  planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 
  // Get real astronomical data for this planet - USE ENGLISH KEY, NOT TRANSLATED NAME
@@ -3129,15 +3130,19 @@ export class SolarSystemModule {
  // dusty ring particles from behind — the iconic "dark side" ring brightening.
  // The sun is always at world origin (0,0,0) in this solar system simulation.
  const ringForwardScatterVert = /* glsl */`
+ #include <common>
+ #include <logdepthbuf_pars_vertex>
  varying vec2 vUv;
  varying vec3 vWorldPos;
  void main() {
  vUv = uv;
  vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+ #include <logdepthbuf_vertex>
  }
  `;
  const ringForwardScatterFrag = /* glsl */`
+ #include <logdepthbuf_pars_fragment>
  uniform sampler2D ringMap;
  uniform bool useTexture;
  uniform vec3 ringColor;
@@ -3145,6 +3150,7 @@ export class SolarSystemModule {
  varying vec2 vUv;
  varying vec3 vWorldPos;
  void main() {
+ #include <logdepthbuf_fragment>
  vec4 texSample = useTexture ? texture2D(ringMap, vUv) : vec4(ringColor, ringOpacity);
  if (texSample.a < 0.01) discard;
  // Forward-scatter: view looking toward the sun through the rings → brighten
@@ -9274,9 +9280,6 @@ createHyperrealisticHubble(satData) {
  }
  planet.rotation.y = rotationAngle;
  planet.rotation.z = (planet.userData.axialTilt || 0) * Math.PI / 180;
- planet.userData.rings?.forEach(ring => {
- ring.rotation.y = -rotationAngle;
- });
  }
 
  // Rotate clouds slightly faster than planet for Earth
@@ -9325,15 +9328,8 @@ createHyperrealisticHubble(satData) {
  
  this.updateJWSTPosition();
 
- // Camera tracking is handled by updateCameraTracking() called after all position updates.
- // Do NOT duplicate tracking logic here — it would overwrite the co-rotation chase-cam
- // and smooth tracking modes configured in focusOnObject().
-
- // Update camera tracking AFTER all object positions have been updated this frame
- this.updateCameraTracking(camera, controls);
  if (camera) camera.getWorldPosition(this._cameraWorldPosition);
  this._updateFocusedShadows();
- this._updateSpacecraftLOD(camera);
 
  // Approximate rotation using representative belt orbital periods.
  if (this.asteroidBelt) {
@@ -9365,15 +9361,6 @@ createHyperrealisticHubble(satData) {
  }
  this._sunFlareFrame++;
  
- }
-
- // Keep starfield and Milky Way band centred on the camera so their sphere
- // boundaries are never visible and they always appear around the observer.
- if (this.starfield && camera) {
- this.starfield.position.copy(this._cameraWorldPosition);
- }
- if (this.milkyWay && camera) {
- this.milkyWay.position.copy(this._cameraWorldPosition);
  }
 
  // Twinkle stars slightly (optimized - only every 5 frames)
@@ -9645,11 +9632,17 @@ createHyperrealisticHubble(satData) {
  const angleIncrement = this._motionRate(2 * Math.PI / (userData.orbitalPeriodDays * 86400), 'moon') * orbitalSpeed * deltaTime;
  if (!isNaN(angleIncrement) && isFinite(angleIncrement)) {
  userData.angle += angleIncrement;
- const radius = userData.distance;
- craft.position.x = radius * Math.cos(userData.angle);
- craft.position.z = radius * Math.sin(userData.angle);
- craft.position.y = Math.sin(userData.angle * 2) * radius * 0.1; // Inclined orbit
  }
+ }
+
+ if (userData.orbitPlanet && craft.parent) {
+ const radius = userData.distance;
+ craft.position.set(radius * Math.cos(userData.angle),
+ userData.type === 'orbiter' ? Math.sin(userData.angle * 2) * radius * 0.1 : 0,
+ radius * Math.sin(userData.angle));
+ this._moonParentInverse.copy(craft.parent.quaternion).invert();
+ craft.position.applyQuaternion(this._moonParentInverse);
+ craft.quaternion.copy(this._moonParentInverse);
  }
 
  });
@@ -9665,6 +9658,13 @@ createHyperrealisticHubble(satData) {
  });
  }
  
+ // Follow after every moving object's position has been updated.
+ this.updateCameraTracking(camera, controls);
+ if (camera) camera.getWorldPosition(this._cameraWorldPosition);
+ if (this.starfield && camera) this.starfield.position.copy(this._cameraWorldPosition);
+ if (this.milkyWay && camera) this.milkyWay.position.copy(this._cameraWorldPosition);
+ this._updateSpacecraftLOD(camera);
+
  // Milky Way galaxy disc fade: show when camera is far from origin
  // As we transition to intergalactic view, fade out everything that's
  // INSIDE the galaxy (stars, constellations, nebulae, starfield) and
@@ -10806,14 +10806,21 @@ let actualRadius;
  this.focusedObjectDistance = distance;
  this.focusedObjectStartTime = performance.now();
 
+ // XR owns the camera pose; VR navigation moves the dolly separately.
+ if (window.app?.sceneManager?.renderer?.xr?.isPresenting) {
+ this._focusTransitionActive = false;
+ this.cameraFollowMode = false;
+ this.cameraCoRotateMode = false;
+ this._cameraFollowObject = null;
+ return;
+ }
+
  if (DEBUG.enabled) console.log(` Focus: ${object.userData.name} (r:${actualRadius.toFixed(2)}, d:${distance.toFixed(2)})`);
 
  // Determine if this is a fast-moving object that needs special tracking
  const isOrbiter = userData.orbitPlanet || (userData.isSpacecraft && userData.speed);
  const isFastOrbiter = isOrbiter && userData.speed > 0.5;
 
- // Enable chase-cam co-rotation for ALL orbiting objects except planets
- // Camera will orbit WITH the object (spacecraft, moons, etc.)
  const isPlanetOrbitingSun = (userData.type === 'planet' || userData.isPlanet) && userData.orbitPlanet?.toLowerCase() === 'sun';
  
  if (userData.type === 'constellation') {
@@ -10821,16 +10828,11 @@ let actualRadius;
      this.cameraFollowMode = false;
      this.cameraCoRotateMode = false;
  } else if ((userData.orbitPlanet || userData.parentPlanet) && !isPlanetOrbitingSun) {
-     // All objects orbiting a planet (spacecraft, moons, etc.): traditional tracking.
-     // Only controls.target follows the object each frame; OrbitControls maintains
-     // camera radius/angle relative to it so the user can still tilt/zoom/pan freely.
-     // Co-rotation (camera.position overwritten each frame) blocked user interaction
-     // and caused a position snap when the fly-in ended, so it is not used here.
      this.cameraFollowMode = true;
-     this.cameraCoRotateMode = false;
+     this.cameraCoRotateMode = true;
      const objectType = userData.isSpacecraft ? 'spacecraft' : userData.type || 'orbiter';
-     if (DEBUG.enabled) console.log(` Traditional tracking enabled for ${object.userData.name} (${objectType})`);
- } else if (userData.type === 'planet' || userData.type === 'DwarfPlanet' || userData.isPlanet) {
+     if (DEBUG.enabled) console.log(` Orbital tracking enabled for ${object.userData.name} (${objectType})`);
+ } else if (userData.type === 'planet' || userData.type === 'DwarfPlanet' || userData.type === 'exoplanet' || userData.isPlanet || userData.trajectory) {
      // Planets and dwarf planets orbiting the sun: traditional follow
      // isOrbiter is false — handle explicitly so camera tracks the orbit)
      this.cameraFollowMode = true;
@@ -10920,19 +10922,7 @@ let actualRadius;
  const solarAnchorTarget = new THREE.Vector3(0, 0, 0);
  const solarAnchorCameraPos = new THREE.Vector3();
  
- // For fast orbiters (like ISS), do NOT use relative offset if isSpacecraft
- let useRelativeOffset = false;
  let parentPlanet = null;
- let relativeOffset = null;
-
- if (isFastOrbiter && userData.orbitPlanet && !userData.isSpacecraft) {
-     parentPlanet = this.planets[userData.orbitPlanet.toLowerCase()];
-     if (parentPlanet) {
-         useRelativeOffset = true;
-         relativeOffset = new THREE.Vector3().copy(targetPosition).sub(parentPlanet.position);
-         if (DEBUG.enabled) console.log(` Fast orbiter: using relative offset from ${userData.orbitPlanet}`);
-     }
- }
  
  // Calculate camera end position based on object type
  let endPos;
@@ -11010,18 +11000,20 @@ let actualRadius;
      );
      controls.target.copy(targetPosition);
  } else if (userData.type === 'moon' && userData.parentPlanet) {
-     // Moons: position camera at a simple consistent offset relative to moon world position.
-     // We avoid computing a moonDirection vector entirely — any normalize() on a zero-length
-     // vector (e.g. if world matrices are stale at call time) would produce NaN in endPos,
-     // breaking both the animation and OrbitControls zoom. A fixed angular offset is safe
-     // and centers the moon the same way planets are centered.
-     endPos = new THREE.Vector3(
-         targetPosition.x + distance * 0.6,
-         targetPosition.y + distance * 0.5,
-         targetPosition.z + distance * 0.8
-     );
+     const parent = this.planets[userData.parentPlanet.toLowerCase()];
+     const radial = focusScratch.moonDirection;
+     if (parent) {
+         parent.getWorldPosition(focusScratch.earthPos);
+         radial.copy(targetPosition).sub(focusScratch.earthPos);
+     } else {
+         radial.set(0, 0, 1);
+     }
+     if (radial.lengthSq() < 1e-9) radial.set(0, 0, 1);
+     radial.normalize();
+     endPos = new THREE.Vector3().copy(targetPosition).addScaledVector(radial, distance);
+     endPos.y += distance * 0.3;
      controls.target.copy(targetPosition); // Look at moon
-     if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Camera at fixed offset from ${userData.name}, distance=${distance.toFixed(3)}}`);
+     if (DEBUG.enabled) console.log(` [Moon Chase-Cam] Camera outside ${userData.name}'s orbit, distance=${distance.toFixed(3)}`);
  } else if (userData.type === 'planet' || userData.isPlanet) {
      // Planets: Cinematic angles that showcase their features
      const planetName = (userData.id || userData.name).toLowerCase();
@@ -11178,6 +11170,16 @@ let actualRadius;
  // frame as the object moves, preventing a stale landing position.
  const isStaticTarget = (userData.type === 'constellation' || userData.type === 'galaxy' || userData.type === 'nebula' || userData.type === 'milkyWay');
  const endOffset = isStaticTarget ? null : new THREE.Vector3().copy(endPos).sub(targetPosition);
+ const followParent = _desiredCoRotateMode
+ ? (userData.isComet ? this.sun : this.planets[(userData.orbitPlanet || userData.parentPlanet || '').toLowerCase()])
+ : null;
+ const initialRadial = followParent ? new THREE.Vector3() : null;
+ const currentRadial = followParent ? new THREE.Vector3() : null;
+ const followRotation = followParent ? new THREE.Quaternion() : null;
+ if (followParent) {
+ followParent.getWorldPosition(initialRadial);
+ initialRadial.subVectors(targetPosition, initialRadial).normalize();
+ }
 
  if (requiresSolarAnchorTransit) {
  const isLeaving = userData.type === 'milkyWay';
@@ -11212,6 +11214,7 @@ let actualRadius;
  this.cameraCoRotateMode = _desiredCoRotateMode;
  this._cameraFollowObject = object;
  object.getWorldPosition(this._cameraFollowLastTargetPos);
+ this._camRadialValid = false;
  if (DEBUG.enabled) console.log(` Camera follow mode RESTORED: follow=${_desiredFollowMode}, coRotate=${_desiredCoRotateMode} for ${object.userData.name}`);
 
  // Do NOT enable autoRotate — the camera must maintain its relative position
@@ -11256,14 +11259,6 @@ let actualRadius;
  if (isStaticTarget) {
  // Static targets keep their precomputed targetPosition for the full animation.
  // For Milky Way this must remain at the solar-system anchor (world origin).
- } else if (useRelativeOffset) {
- // For fast orbiters during transition: maintain relative offset from parent
- targetPosition.copy(parentPlanet.position).add(relativeOffset);
- endPos.set(
- targetPosition.x,
- targetPosition.y + distance * 0.3,
- targetPosition.z + distance
- );
  } else {
  // For all moving objects incl. final frame: use fresh world position.
  // CRITICAL: must also run at progress===1 (the last frame) so that the
@@ -11272,7 +11267,18 @@ let actualRadius;
  // = 0.53 units of error, larger than the total camera-offset of 0.48,
  // which points the camera 45° away from the moon after landing.
  object.getWorldPosition(targetPosition);
- if (endOffset) endPos.copy(targetPosition).add(endOffset);
+ if (endOffset) {
+ endPos.copy(endOffset);
+ if (followParent && initialRadial.lengthSq() > 1e-12) {
+ followParent.getWorldPosition(currentRadial);
+ currentRadial.subVectors(targetPosition, currentRadial);
+ if (currentRadial.lengthSq() > 1e-12) {
+ currentRadial.normalize();
+ endPos.applyQuaternion(followRotation.setFromUnitVectors(initialRadial, currentRadial));
+ }
+ }
+ endPos.add(targetPosition);
+ }
  }
  
  if (requiresSolarAnchorTransit) {
@@ -11342,20 +11348,23 @@ let actualRadius;
  }
  }
  
- updateCameraTracking(camera, controls) {
- // TRACKING INDICATOR REMOVED - it was distracting
-
- // Defensive: if a planet is focused, always keep follow enabled so zooming
- // and other controls interactions cannot accidentally detach tracking.
- if (this.focusedObject) {
- const focusedData = this.focusedObject.userData || {};
- const focusedIsPlanet = focusedData.type === 'planet' || focusedData.isPlanet;
- if (focusedIsPlanet && !this.cameraFollowMode) {
- this.cameraFollowMode = true;
+ resetCameraTracking() {
+ this._focusTransitionToken++;
+ this._focusTransitionActive = false;
+ this._focusTransitionCancelRequested = false;
+ this.focusedObject = null;
+ this.cameraFollowMode = false;
  this.cameraCoRotateMode = false;
+ this._cameraFollowObject = null;
+ this._camRadialValid = false;
+ if (this._activeControls) {
+ this._activeControls.enableDamping = true;
+ this._activeControls.autoRotate = false;
  }
  }
- 
+
+ updateCameraTracking(camera, controls) {
+ if (!camera || !controls || window.app?.sceneManager?.renderer?.xr?.isPresenting) return;
  // Exit if no focused object or tracking disabled
  if (!this.focusedObject || !this.cameraFollowMode) {
  this._cameraFollowObject = null;
@@ -11367,109 +11376,50 @@ let actualRadius;
  const targetPosition = this._trackTargetPos;
  object.getWorldPosition(targetPosition);
  
- if (this.cameraCoRotateMode && (userData.orbitPlanet || userData.parentPlanet)) {
- // CO-ROTATION MODE: Camera orbits WITH objects that orbit a parent planet
- // (spacecraft, satellites, moons) while preserving user zoom and pan input.
- 
+ if (this._cameraFollowObject !== object) {
+ this._cameraFollowLastTargetPos.copy(targetPosition);
+ this._camRadialValid = false;
+ }
+
  const parentKey = (userData.orbitPlanet || userData.parentPlanet || '').toLowerCase();
- const parentPlanet = this.planets[parentKey];
- if (parentPlanet) {
- // Keep user zoom changes while in co-rotation by sampling current camera radius.
- // This prevents snap-back to a stale chase-cam distance after wheel/touch zoom.
- const currentZoomDistance = camera.position.distanceTo(controls.target);
- if (isFinite(currentZoomDistance) && currentZoomDistance > 0.05) {
- this.focusedObjectDistance = currentZoomDistance;
- }
- const offsetDistance = this.focusedObjectDistance || 3;
-
- // Initialize last known target position if tracking just started
- if (this._cameraFollowObject !== object) {
- this._cameraFollowLastTargetPos.copy(targetPosition);
- }
-
- // Preserve user panning as an offset from the tracked object so pan input doesn't
- // get overwritten when controls.target is re-anchored each frame.
- // IMPORTANT: Calculate offset relative to the LAST KNOWN position to avoid absorbing movement!
- const panOffset = this._camCurrentTgt.copy(controls.target).sub(this._cameraFollowLastTargetPos);
- 
- // Get vector from parent body to tracked object (radial direction)
- const radialDirection = this._camRadial.copy(targetPosition).sub(parentPlanet.position);
- const radialLength = radialDirection.length();
- if (radialLength < 1e-6) {
- // Fallback if object is extremely close to parent center; avoid NaNs.
- radialDirection.set(0, 1, 0);
+ const parent = this.cameraCoRotateMode
+ ? (userData.isComet ? this.sun : this.planets[parentKey])
+ : null;
+ if (parent) {
+ parent.getWorldPosition(this._camParentPos);
+ const radial = this._camRadial.copy(targetPosition).sub(this._camParentPos);
+ if (radial.lengthSq() > 1e-12) {
+ radial.normalize();
+ if (this._camRadialValid) {
+ this._camRotation.setFromUnitVectors(this._camPreviousRadial, radial);
+ const pan = this._camCurrentTgt.copy(controls.target).sub(this._cameraFollowLastTargetPos);
+ const offset = this._trackOffset.copy(camera.position).sub(controls.target);
+ pan.applyQuaternion(this._camRotation);
+ offset.applyQuaternion(this._camRotation);
+ controls.target.copy(targetPosition).add(pan);
+ camera.position.copy(controls.target).add(offset);
  } else {
- radialDirection.multiplyScalar(1 / radialLength);
- }
- 
- // Calculate tangent direction (perpendicular to radial, in orbital plane)
- const up = this._camUp.set(0, 1, 0);
- const tangentDirection = this._camTangent.crossVectors(up, radialDirection).normalize();
- 
- // If orbit is inclined significantly, use actual orbital motion
- if (userData.orbitalVelocity) {
- tangentDirection.copy(userData.orbitalVelocity).normalize();
- }
- 
- // Build a stable chase direction and keep camera distance EXACTLY at offsetDistance
- // so wheel zoom remains responsive and predictable.
- const chaseDirection = this._camChaseDir
- .copy(tangentDirection)
- .multiplyScalar(-0.8)
- .addScaledVector(radialDirection, 0.3);
- chaseDirection.y += 0.5;
- if (chaseDirection.lengthSq() < 1e-9) {
- chaseDirection.set(0, 0.4, 1);
- }
- chaseDirection.normalize();
-
- // Stable chase-cam: keep exact distance from target object.
- const cameraPosition = this._camPos.copy(targetPosition);
- cameraPosition.addScaledVector(chaseDirection, offsetDistance);
-
- // Apply user pan offset in world space.
- cameraPosition.add(panOffset);
- 
- camera.position.copy(cameraPosition);
- 
- // Keep looking at the ISS plus user pan offset.
- controls.target.copy(targetPosition).add(panOffset);
- this._cameraFollowObject = object;
- this._cameraFollowLastTargetPos.copy(targetPosition);
- // No controls.update() here; SceneManager.animate() calls it once per frame.
- } else {
- // Fallback if parent lookup fails: keep standard target tracking instead of freezing.
- controls.target.copy(targetPosition);
- this._cameraFollowObject = object;
- this._cameraFollowLastTargetPos.copy(targetPosition);
- }
- } else {
- // TRADITIONAL TRACKING MODE: Move both camera.position and controls.target by
- // the same delta as the object moved since the previous frame.
- // This locks the camera's relative position to the tracked object — fixing the
- // drift bug where the camera stayed fixed in world space while the planet/moon
- // orbited away from it.
- // Moving BOTH by the same delta preserves OrbitControls' internal spherical
- // state (zoom distance, tilt, azimuth) AND any user pan offset unchanged.
-
- // Guard: initialize last-known position on the very first tracking frame
- // (also triggered when focus switches to a different object).
- if (this._cameraFollowObject !== object) {
- this._cameraFollowLastTargetPos.copy(targetPosition);
- }
-
- // How much did the object move since the last frame?
  const delta = this._trackOffset.copy(targetPosition).sub(this._cameraFollowLastTargetPos);
-
- // Apply the same translation to both camera and target so relative position
- // (zoom distance, viewing angle, pan offset) is fully preserved.
  camera.position.add(delta);
  controls.target.add(delta);
+ }
+ this._camPreviousRadial.copy(radial);
+ this._camRadialValid = true;
+ } else {
+ this._camRadialValid = false;
+ const delta = this._trackOffset.copy(targetPosition).sub(this._cameraFollowLastTargetPos);
+ camera.position.add(delta);
+ controls.target.add(delta);
+ }
+ } else {
+ this._camRadialValid = false;
+ const delta = this._trackOffset.copy(targetPosition).sub(this._cameraFollowLastTargetPos);
+ camera.position.add(delta);
+ controls.target.add(delta);
+ }
 
  this._cameraFollowObject = object;
  this._cameraFollowLastTargetPos.copy(targetPosition);
- // No controls.update() here; SceneManager.animate() calls it after this callback.
- }
  }
 
  createLabels() {

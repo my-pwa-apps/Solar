@@ -74,6 +74,217 @@ async function openModalFromButton(page, buttonSelector, modalSelector) {
   }
 }
 
+test('Saturn rings remain in the equatorial plane and render in front of the globe', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(async () => {
+    const THREE = await import('three');
+    const { solarSystemModule: solar, sceneManager } = window.app;
+    sceneManager.renderer.setAnimationLoop(null);
+    const saturn = solar.planets.saturn;
+    const ring = saturn.userData.rings[0];
+    const axis = new THREE.Vector3();
+    const normal = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const alignments = [];
+    for (const angle of [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2]) {
+      saturn.rotation.y = angle;
+      saturn.updateWorldMatrix(true, true);
+      saturn.getWorldQuaternion(quaternion);
+      axis.set(0, 1, 0).applyQuaternion(quaternion);
+      ring.getWorldQuaternion(quaternion);
+      normal.set(0, 0, 1).applyQuaternion(quaternion);
+      alignments.push(Math.abs(axis.dot(normal)));
+    }
+
+    const renderer = sceneManager.renderer;
+    const scene = new THREE.Scene();
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 32), new THREE.MeshBasicMaterial({ color: 0x0033ff }));
+    const material = ring.material.clone();
+    material.uniforms.useTexture.value = false;
+    material.uniforms.ringColor.value.set(0xffffff);
+    material.uniforms.ringOpacity.value = 1;
+    const testRing = new THREE.Mesh(new THREE.RingGeometry(1.15, 1.8, 128), material);
+    testRing.rotation.x = Math.PI / 2;
+    scene.add(sphere, testRing);
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+    camera.position.set(0, 3, 7);
+    camera.lookAt(0, 0, 0);
+    const target = new THREE.WebGLRenderTarget(128, 128);
+    const oldTarget = renderer.getRenderTarget();
+    const render = () => {
+      renderer.setRenderTarget(target);
+      renderer.clear();
+      renderer.render(scene, camera);
+      const pixels = new Uint8Array(128 * 128 * 4);
+      renderer.readRenderTargetPixels(target, 0, 0, 128, 128, pixels);
+      return pixels;
+    };
+    testRing.visible = false;
+    const globe = render();
+    testRing.visible = true;
+    const actual = render();
+    const referenceMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, depthWrite: false });
+    testRing.material = referenceMaterial;
+    const reference = render();
+    let frontPixels = 0;
+    let mismatchedPixels = 0;
+    for (let i = 0; i < globe.length; i += 4) {
+      if (globe[i + 2] < 100) continue;
+      const expectedFront = reference[i] > 100;
+      const actualFront = actual[i] > 100;
+      if (expectedFront) frontPixels++;
+      if (expectedFront !== actualFront) mismatchedPixels++;
+    }
+    renderer.setRenderTarget(oldTarget);
+    target.dispose();
+    sphere.geometry.dispose();
+    sphere.material.dispose();
+    testRing.geometry.dispose();
+    material.dispose();
+    referenceMaterial.dispose();
+    return { alignments, frontPixels, mismatchedPixels };
+  });
+  expect(result.alignments.every(value => value > 0.99999)).toBe(true);
+  expect(result.frontPixels).toBeGreaterThan(20);
+  expect(result.mismatchedPixels).toBeLessThan(5);
+});
+
+test('chase follows moving targets, preserves camera input, and reset cancels fly-in', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(async () => {
+    const THREE = await import('three');
+    const { solarSystemModule: solar, sceneManager: sm } = window.app;
+    sm.renderer.setAnimationLoop(null);
+    const camera = sm.camera;
+    const controls = sm.controls;
+    const parent = solar.planets.earth;
+    const moon = Object.values(solar.moons).find(item => item.userData.parentPlanet?.toLowerCase() === 'earth');
+    const world = new THREE.Vector3();
+    const parentPos = new THREE.Vector3();
+    const follow = (object, coRotate) => {
+      solar.focusedObject = object;
+      solar.cameraFollowMode = true;
+      solar.cameraCoRotateMode = coRotate;
+      solar._cameraFollowObject = null;
+      object.getWorldPosition(world);
+      controls.target.copy(world);
+      camera.position.copy(world).add(new THREE.Vector3(2, 1, 0));
+      solar.updateCameraTracking(camera, controls);
+    };
+    follow(moon, true);
+    parent.getWorldPosition(parentPos);
+    camera.position.copy(world).addScaledVector(world.clone().sub(parentPos).normalize(), 2);
+    camera.position.y += 1;
+    controls.target.add(new THREE.Vector3(0, 0.2, 0));
+    camera.position.add(new THREE.Vector3(0, 0.2, 0));
+    const distance = camera.position.distanceTo(controls.target);
+    const pan = controls.target.distanceTo(world);
+    moon.userData.angle += Math.PI / 2;
+    solar._updateMoonPosition(moon);
+    solar.updateCameraTracking(camera, controls);
+    moon.getWorldPosition(world);
+    parent.getWorldPosition(parentPos);
+    const radial = world.clone().sub(parentPos).normalize();
+    const offset = camera.position.clone().sub(controls.target);
+    const after = {
+      distance: camera.position.distanceTo(controls.target),
+      pan: controls.target.distanceTo(world),
+      radialDot: offset.normalize().dot(radial)
+    };
+    const moving = [
+      [solar.planets.mars, false],
+      [solar.satellites[0], true],
+      [solar.comets[0], true],
+      [solar.exoplanets[0], false],
+      [solar.spacecraft.find(item => item.userData.trajectory), false]
+    ];
+    const centered = moving.map(([object, coRotate]) => {
+      follow(object, coRotate);
+      solar.update(0.1, 100000, camera, controls);
+      object.getWorldPosition(world);
+      return controls.target.distanceTo(world);
+    });
+    const comet = solar.comets[0];
+    follow(comet, true);
+    comet.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.4);
+    solar.updateCameraTracking(camera, controls);
+    comet.getWorldPosition(world);
+    const cometError = controls.target.distanceTo(world);
+    solar.resetCameraTracking();
+    sm.pauseMode = 'orbital';
+    solar.update(1, 1, camera, controls);
+    const planetCraft = solar.spacecraft.filter(item => item.userData.orbitPlanet);
+    const relativePositions = planetCraft.map(item => item.getWorldPosition(new THREE.Vector3()).sub(item.parent.getWorldPosition(new THREE.Vector3())));
+    solar.update(1, 1, camera, controls);
+    const craftDrift = planetCraft.map((item, index) => item.getWorldPosition(new THREE.Vector3())
+      .sub(item.parent.getWorldPosition(new THREE.Vector3())).distanceTo(relativePositions[index]));
+    sm.pauseMode = 'none';
+    solar.focusOnObject(parent, camera, controls);
+    solar.updateCameraTracking(camera, controls);
+    const disabledDuringFlyIn = !solar.cameraFollowMode;
+    solar.resetCameraTracking();
+    sm.resetCamera();
+    const resetPosition = camera.position.clone();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return {
+      distance, pan, after, centered, cometError, craftDrift, disabledDuringFlyIn,
+      resetError: camera.position.distanceTo(resetPosition),
+      resetFocus: solar.focusedObject, damping: controls.enableDamping
+    };
+  });
+  expect(result.after.distance).toBeCloseTo(result.distance, 6);
+  expect(result.after.pan).toBeCloseTo(result.pan, 6);
+  expect(result.after.radialDot).toBeGreaterThan(0.7);
+  expect(result.centered.every(value => value < 1e-6)).toBe(true);
+  expect(result.cometError).toBeLessThan(1e-6);
+  expect(result.craftDrift.length).toBeGreaterThanOrEqual(2);
+  expect(result.craftDrift.every(value => value < 1e-6)).toBe(true);
+  expect(result.disabledDuringFlyIn).toBe(true);
+  expect(result.resetError).toBeLessThan(1e-6);
+  expect(result.resetFocus).toBeNull();
+  expect(result.damping).toBe(true);
+});
+
+test('focus selects the correct follow mode without moving the XR camera', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openApp(page);
+  const result = await page.evaluate(async () => {
+    const THREE = await import('three');
+    const { solarSystemModule: solar, sceneManager: sm } = window.app;
+    sm.renderer.setAnimationLoop(null);
+    const targets = [
+      Object.values(solar.moons).find(item => item.userData.parentPlanet?.toLowerCase() === 'earth'),
+      solar.comets[0],
+      solar.exoplanets[0],
+      solar.spacecraft.find(item => item.userData.trajectory)
+    ];
+    const modes = [];
+    for (const target of targets) {
+      solar.focusOnObject(target, sm.camera, sm.controls);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      modes.push([solar.cameraFollowMode, solar.cameraCoRotateMode]);
+    }
+    solar.focusOnObject(targets[0], sm.camera, sm.controls);
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const moonPos = targets[0].getWorldPosition(new THREE.Vector3());
+    const earthPos = solar.planets.earth.getWorldPosition(new THREE.Vector3());
+    const radial = moonPos.clone().sub(earthPos).normalize();
+    const moonOffset = sm.camera.position.clone().sub(moonPos).normalize();
+    const moonOutward = radial.dot(moonOffset);
+    const cameraBefore = sm.camera.position.clone();
+    sm.renderer.xr.isPresenting = true;
+    solar.focusOnObject(solar.planets.saturn, sm.camera, sm.controls);
+    solar.updateCameraTracking(sm.camera, sm.controls);
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const xrCameraError = sm.camera.position.distanceTo(cameraBefore);
+    sm.renderer.xr.isPresenting = false;
+    return { modes, moonOutward, xrCameraError };
+  });
+  expect(result.modes).toEqual([[true, true], [true, true], [true, false], [true, false]]);
+  expect(result.moonOutward).toBeGreaterThan(0.9);
+  expect(result.xrCameraError).toBeLessThan(1e-6);
+});
+
 test('preserves labels, belt distributions and rendering optimizations', async ({ page }) => {
   await openApp(page);
   const result = await page.evaluate(async () => {
