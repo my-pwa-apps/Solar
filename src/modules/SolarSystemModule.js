@@ -13,6 +13,132 @@ import { toJulianDate as convertToJulianDate, sunRightAscension, solveKepler, me
 // Late-binding: always delegate to window.t at call time (not captured at import time)
 const t = (key) => (window.t || ((k) => k))(key);
 
+// Approximate mean diameters in km; irregular moons are represented by a mean.
+// NASA: https://www.nasa.gov/wp-content/uploads/2009/12/solar_system_moons_lithograph_h.pdf
+const MOON_DIAMETERS_KM = {
+ moon: 3474, phobos: 22.5, deimos: 12.4, io: 3643, europa: 3122,
+ ganymede: 5268, callisto: 4821, mimas: 396, enceladus: 504, rhea: 1527,
+ titan: 5150, iapetus: 1469, titania: 1578, ariel: 1158, umbriel: 1169,
+ oberon: 1523, miranda: 472, triton: 2707, charon: 1212
+};
+
+// Approximate visible extents; diffuse outer regions may extend farther.
+const NEBULA_EXTENTS_LY = {
+ orionNebula: '25', crabNebula: '11', ringNebula: '1',
+ eagleNebula: '70 × 55', helixNebula: '3', lagoonNebula: '110 × 50',
+ butterflyNebula: '2'
+};
+
+const SIZE_PHRASES = [
+ ["light-years diameter", 'sizeLightYearsDiameter'], ["light-years across", 'sizeLightYearsAcross'],
+ ["including halo", 'sizeIncludingHalo'], ["billion km", 'sizeBillionKm'],
+ ["triaxial diameters", 'sizeTriaxial'], ["times the Sun's diameter", 'sizeSolarDiameter'],
+ ["barely larger than Jupiter!", 'sizeJupiterComparison'], ["Earth masses", 'sizeEarthMasses'],
+ ["times Earth's radius", 'sizeEarthRadius'], ['km diameter', 'sizeKmDiameter'],
+ ['km est.', 'sizeKmEstimated'], ['km nucleus', 'sizeKmNucleus'],
+ ['cm diameter sphere', 'sizeCmSphere'], ['m solar panel span', 'sizePanelSpan'],
+ ['m solar span', 'sizePanelSpan'], ['m antenna dish', 'sizeAntenna'],
+ ['m sunshield', 'sizeSunshield'], ['m mirror', 'sizeMirror'],
+ ['m long', 'sizeLong'], ['m diameter', 'sizeMDiameter'],
+ ['m tall', 'sizeTall'], ['m wide', 'sizeWide'], ['piano-sized', 'sizePiano']
+];
+
+function localizedSize(userData) {
+ const diameter = userData.type === 'moon' && MOON_DIAMETERS_KM[userData.id];
+ if (diameter) return t('sizeApproxDiameter').replace('{value}', new Intl.NumberFormat(document.documentElement.lang).format(diameter));
+ const extent = userData.type === 'nebula' && NEBULA_EXTENTS_LY[userData.name];
+ if (extent) return t('sizeNebulaExtent').replace('{value}', extent);
+ const regionKey = { asteroidBelt: 'sizeAsteroidBelt', kuiperBelt: 'sizeKuiperBelt', oortCloud: 'sizeOortCloud' }[userData.type];
+ if (regionKey) return t(regionKey);
+ if (!userData.realSize) return userData.type === 'constellation' ? t('constellationSize') : t('sizeUnavailable');
+ return SIZE_PHRASES.reduce((value, [phrase, key]) => value.replace(phrase, t(key)), userData.realSize);
+}
+
+function createSizedPoints(geometry, material) {
+ geometry.setAttribute('particleSize', geometry.getAttribute('size'));
+ material.size = 1;
+ material.onBeforeCompile = shader => {
+ shader.vertexShader = shader.vertexShader
+ .replace('uniform float size;', 'uniform float size;\nattribute float particleSize;')
+ .replace('gl_PointSize = size;', 'gl_PointSize = size * particleSize;');
+ };
+ material.customProgramCacheKey = () => 'per-particle-size';
+ return new THREE.Points(geometry, material);
+}
+
+function indexPointCloud(points) {
+ const inverse = new THREE.Matrix4();
+ const ray = new THREE.Ray();
+ const sphere = new THREE.Sphere();
+ const box = new THREE.Box3();
+ const point = new THREE.Vector3();
+ const hit = new THREE.Vector3();
+ const stack = [];
+ let tree;
+ const rebuild = () => {
+ const attribute = points.geometry.attributes.position;
+ const positions = attribute.array;
+ const build = indices => {
+ const bounds = new THREE.Box3();
+ for (const index of indices) {
+ point.fromArray(positions, index * 3);
+ bounds.expandByPoint(point);
+ }
+ if (indices.length <= 64) return { bounds, indices };
+ const size = bounds.getSize(new THREE.Vector3());
+ const axis = size.x >= size.y && size.x >= size.z ? 0 : size.y >= size.z ? 1 : 2;
+ indices.sort((a, b) => positions[a * 3 + axis] - positions[b * 3 + axis]);
+ const middle = Math.floor(indices.length / 2);
+ return { bounds, left: build(indices.slice(0, middle)), right: build(indices.slice(middle)) };
+ };
+ tree = build(Array.from({ length: attribute.count }, (_, index) => index));
+ };
+ points.userData.rebuildPickIndex = rebuild;
+ points.raycast = (raycaster, intersects) => {
+ const geometry = points.geometry;
+ if (geometry.index) {
+ THREE.Points.prototype.raycast.call(points, raycaster, intersects);
+ return;
+ }
+ if (!geometry.boundingSphere) geometry.computeBoundingSphere();
+ sphere.copy(geometry.boundingSphere).applyMatrix4(points.matrixWorld);
+ sphere.radius += raycaster.params.Points.threshold;
+ if (!raycaster.ray.intersectsSphere(sphere)) return;
+ inverse.copy(points.matrixWorld).invert();
+ ray.copy(raycaster.ray).applyMatrix4(inverse);
+ const threshold = raycaster.params.Points.threshold / ((points.scale.x + points.scale.y + points.scale.z) / 3);
+ const thresholdSq = threshold * threshold;
+ const attribute = geometry.attributes.position;
+ const start = geometry.drawRange.start;
+ const end = start + geometry.drawRange.count;
+ stack.length = 0;
+ stack.push(tree);
+ while (stack.length) {
+ const node = stack.pop();
+ box.copy(node.bounds).expandByScalar(threshold);
+ if (!ray.intersectsBox(box)) continue;
+ if (node.indices) {
+ for (const index of node.indices) {
+ if (index < start || index >= end) continue;
+ point.fromBufferAttribute(attribute, index);
+ const distanceSq = ray.distanceSqToPoint(point);
+ if (distanceSq >= thresholdSq) continue;
+ ray.closestPointToPoint(point, hit).applyMatrix4(points.matrixWorld);
+ const distance = raycaster.ray.origin.distanceTo(hit);
+ if (distance < raycaster.near || distance > raycaster.far) continue;
+ intersects.push({
+ distance, distanceToRay: Math.sqrt(distanceSq), point: hit.clone(), index,
+ face: null, faceIndex: null, barycoord: null, object: points
+ });
+ }
+ } else {
+ stack.push(node.left, node.right);
+ }
+ }
+ };
+ rebuild();
+}
+
 
 
 export class SolarSystemModule {
@@ -117,10 +243,15 @@ export class SolarSystemModule {
  this._focusTransitionCancelRequested = false;
  this._cameraWorldPosition = new THREE.Vector3();
  this._galaxyFadeActive = false;
+ this._shadowFocus = undefined;
+ this._shadowScale = null;
+ this._lodPosition = new THREE.Vector3();
+ this._lodCraft = [];
+ this._resourceGeneration = 0;
 
  // Frame counters for throttled animations (initialised here, not lazily in update)
- this._sunFlareFrame    = 0;
  this._starTwinkleFrame = 0;
+ this._sunFlareFrame = 0;
 
  // Scratch object for _probePositionAtJD — avoids per-call heap allocation
  this._probePosOut = { x: 0, y: 0, z: 0, distAU: 0 };
@@ -238,7 +369,7 @@ export class SolarSystemModule {
  const sunLight = new THREE.PointLight(0xFFFAE8, 9, 0, 0); // Warm white, reduced intensity (10→9)
  sunLight.name = 'sunLight';
  sunLight.position.set(0, 0, 0);
- sunLight.castShadow = CONFIG.QUALITY.shadows;
+ sunLight.castShadow = false;
  sunLight.shadow.mapSize.width = CONFIG.QUALITY.shadowMapSize;
  sunLight.shadow.mapSize.height = CONFIG.QUALITY.shadowMapSize;
  sunLight.shadow.camera.near = 1;
@@ -253,6 +384,7 @@ export class SolarSystemModule {
  const ambientLight = new THREE.AmbientLight(0x202030, 0.08); // Minimal starlight ambient
  ambientLight.name = 'ambientLight';
  scene.add(ambientLight);
+ this.sun.userData.ambientLight = ambientLight;
 
  if (DEBUG && DEBUG.enabled) {
  console.log(' Lighting: Sun 9 (warm white), Ambient 0.4, Tone mapping 1.2');
@@ -315,7 +447,7 @@ export class SolarSystemModule {
  sizeAttenuation: false
  });
  
- const flares = new THREE.Points(flareGeometry, flareMaterial);
+ const flares = createSizedPoints(flareGeometry, flareMaterial);
  this.sun.add(flares);
  this.sun.userData.flares = flares;
  
@@ -957,7 +1089,9 @@ export class SolarSystemModule {
     pctx.fillStyle = '#7f7f7f';
     pctx.fillRect(0,0,2,2);
     const placeholderTexture = new THREE.CanvasTexture(placeholderCanvas);
+    placeholderTexture.userData.planetPlaceholder = true;
     placeholderTexture.needsUpdate = true;
+    const resourceGeneration = this._resourceGeneration;
 
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin('anonymous');
@@ -971,6 +1105,7 @@ export class SolarSystemModule {
     const LOAD_TIMEOUT = IS_MOBILE ? 15000 : 10000;
     
     const tryNext = async () => {
+        if (resourceGeneration !== this._resourceGeneration) return;
         const meta = this._pendingTextureMeta[planetKey];
         
         // Clear any existing timeout
@@ -999,11 +1134,14 @@ export class SolarSystemModule {
                 loader.load(
                     url, 
                     (tex) => {
+                        if (resourceGeneration !== this._resourceGeneration) { tex.dispose(); return; }
                         if (!loadTimedOut) {
                             clearTimeout(currentTimeout);
                             currentTimeout = null;
                             if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName}: network load SUCCESS: ${url}`);
                             this._onPlanetTextureSuccess(planetName, tex, url, 'primary');
+                        } else {
+                            tex.dispose();
                         }
                     }, 
                     undefined, 
@@ -1042,10 +1180,13 @@ export class SolarSystemModule {
                 loader.load(
                     url, 
                     (tex) => {
+                        if (resourceGeneration !== this._resourceGeneration) { tex.dispose(); return; }
                         if (!loadTimedOut) {
                             clearTimeout(currentTimeout);
                             currentTimeout = null;
                             this._onPlanetTextureSuccess(planetName, tex, url, 'plugin');
+                        } else {
+                            tex.dispose();
                         }
                     }, 
                     undefined, 
@@ -1094,6 +1235,7 @@ export class SolarSystemModule {
                 const maybePromise = proceduralFunction.call(this, size);
                 if (maybePromise && typeof maybePromise.then === 'function') {
                     maybePromise.then((tex) => {
+                        if (resourceGeneration !== this._resourceGeneration) { tex?.dispose(); return; }
                         if (DEBUG && DEBUG.TEXTURES) console.log(`[TEX] ${planetName} procedural texture generated successfully`);
                         this._applyProceduralPlanetTexture(planetName, tex);
                     }).catch((err) => {
@@ -1168,14 +1310,17 @@ export class SolarSystemModule {
         
         if (!planet) {
             if (DEBUG && DEBUG.enabled) console.warn(`[TEX] ${planetName} object not found when applying texture`);
+            tex.dispose();
             return;
         }
         
         if (!planet.material) {
             if (DEBUG && DEBUG.enabled) console.warn(`[TEX] ${planetName} has no material to apply texture to`);
+            tex.dispose();
             return;
         }
         
+        if (planet.material.map?.userData?.planetPlaceholder) planet.material.map.dispose();
         planet.material.map = tex;
         // Note: Sun uses MeshBasicMaterial (inherently unlit/fullbright) — do NOT set
         // emissiveMap on it; MeshBasicMaterial has no emissiveMap uniform and Three.js
@@ -1187,7 +1332,9 @@ export class SolarSystemModule {
  // Earth: derive an ocean/land roughness map from the loaded color image so
  // oceans get a sharp specular highlight while continents stay matte.
  if (lowerName === 'earth' && planet.material.isMeshStandardMaterial) {
+ const resourceGeneration = this._resourceGeneration;
  this._buildEarthOceanLandRoughnessMap(tex).then((roughnessMap) => {
+ if (resourceGeneration !== this._resourceGeneration) { roughnessMap?.dispose(); return; }
  if (!planet.material) return;
  planet.material.roughnessMap = roughnessMap;
  // With a roughness map, the scalar `roughness` is multiplied per-pixel,
@@ -1215,18 +1362,22 @@ export class SolarSystemModule {
  _applyProceduralPlanetTexture(planetName, tex) {
     try {
         // Handle Sun specially (stored in this.sun, not this.planets)
-        const planet = planetName.toLowerCase() === 'sun' ? this.sun : this.planets[planetName.toLowerCase()];
+        const key = planetName.toLowerCase();
+        const planet = key === 'sun' ? this.sun : this.planets[key] || this.moons[key];
         
         if (!planet) {
             if (DEBUG && DEBUG.enabled) console.warn(`[TEX] ${planetName} object not found when applying procedural texture`);
+            tex?.dispose();
             return;
         }
         
         if (!planet.material) {
             if (DEBUG && DEBUG.enabled) console.warn(`⚠️ ${planetName} has no material to apply procedural texture to`);
+            tex?.dispose();
             return;
         }
         
+        if (planet.material.map?.userData?.planetPlaceholder) planet.material.map.dispose();
         planet.material.map = tex;
         // Note: Sun uses MeshBasicMaterial (inherently unlit/fullbright) — do NOT set
         // emissiveMap on it; MeshBasicMaterial has no emissiveMap uniform and Three.js
@@ -2714,7 +2865,7 @@ export class SolarSystemModule {
  this.createEarthTextureRealFixed(earthTexSize),
  { colorSpace: THREE.SRGBColorSpace }
  );
- const earthBump = this._configureSphericalSurfaceTexture(this.createEarthBumpMap(earthTexSize));
+ const earthBump = this._configureSphericalSurfaceTexture(this.createEarthBumpMap(Math.min(earthTexSize, 1024)));
  if (DEBUG.enabled) console.timeEnd('Earth Material Creation');
  
  // ULTRA realistic material with PBR (Physically Based Rendering)
@@ -2750,7 +2901,7 @@ export class SolarSystemModule {
  case 'mars':
  // Mars: REAL NASA texture with rusty red surface with canyons, polar caps
  const marsTexture = this.createMarsTextureReal(CONFIG.QUALITY.textureSize);
- const marsBump = this.createMarsBumpMap(CONFIG.QUALITY.textureSize);
+ const marsBump = this.createMarsBumpMap(Math.min(CONFIG.QUALITY.textureSize, 1024));
  
  return new THREE.MeshStandardMaterial({
  map: marsTexture,
@@ -2777,7 +2928,7 @@ export class SolarSystemModule {
  case 'mercury':
  // Mercury: REAL NASA texture heavily cratered surface
  const mercuryTexture = this.createMercuryTextureReal(CONFIG.QUALITY.textureSize);
- const mercuryBump = this.createMercuryBumpMap(CONFIG.QUALITY.textureSize);
+ const mercuryBump = this.createMercuryBumpMap(Math.min(CONFIG.QUALITY.textureSize, 1024));
  
  return new THREE.MeshStandardMaterial({
  map: mercuryTexture,
@@ -2920,7 +3071,9 @@ export class SolarSystemModule {
 
  createPlanet(scene, config) {
  // Use cached geometry or create new
- const segments = CONFIG.QUALITY.sphereSegments;
+ const segments = config.dwarf
+ ? Math.min(CONFIG.QUALITY.sphereSegments, 64)
+ : CONFIG.QUALITY.sphereSegments;
  let geometry = this.getGeometry('sphere', config.radius, segments, segments);
  if (config.shapeScale) {
  geometry = geometry.clone();
@@ -2932,7 +3085,7 @@ export class SolarSystemModule {
 
  const planet = new THREE.Mesh(geometry, material);
  planet.position.set(config.distance, 0, 0);
- planet.castShadow = CONFIG.QUALITY.shadows; // Enable eclipses on desktop; mobile stays off for performance
+ planet.castShadow = false;
  planet.receiveShadow = true; // But can receive shadows from moons
  planet.rotation.z = (config.tilt || 0) * Math.PI / 180;
 
@@ -3334,7 +3487,7 @@ export class SolarSystemModule {
  }
 
  const moon = new THREE.Mesh(geometry, moonMaterial);
- moon.castShadow = true;
+ moon.castShadow = false;
  moon.receiveShadow = true;
  
  // Verify texture is applied
@@ -3699,7 +3852,8 @@ export class SolarSystemModule {
  opacity: 0.9
  });
  
- const largeAsteroids = new THREE.Points(largeGeometry, largeMaterial);
+ const largeAsteroids = createSizedPoints(largeGeometry, largeMaterial);
+ indexPointCloud(largeAsteroids);
  asteroidBeltGroup.add(largeAsteroids);
  
  // Medium asteroids (more numerous, smaller)
@@ -3739,7 +3893,8 @@ export class SolarSystemModule {
  opacity: 0.75
  });
  
- const mediumAsteroids = new THREE.Points(mediumGeometry, mediumMaterial);
+ const mediumAsteroids = createSizedPoints(mediumGeometry, mediumMaterial);
+ indexPointCloud(mediumAsteroids);
  asteroidBeltGroup.add(mediumAsteroids);
  
  // Dust and small debris (very numerous, creates density)
@@ -3778,7 +3933,8 @@ export class SolarSystemModule {
  opacity: 0.5
  });
  
- const dust = new THREE.Points(dustGeometry, dustMaterial);
+ const dust = createSizedPoints(dustGeometry, dustMaterial);
+ indexPointCloud(dust);
  asteroidBeltGroup.add(dust);
  
  asteroidBeltGroup.userData = {
@@ -3862,7 +4018,8 @@ export class SolarSystemModule {
  opacity: 0.85
  });
  
- const largeKBOs = new THREE.Points(largeKBOGeometry, largeKBOMaterial);
+ const largeKBOs = createSizedPoints(largeKBOGeometry, largeKBOMaterial);
+ indexPointCloud(largeKBOs);
  kuiperBeltGroup.add(largeKBOs);
  
  // Medium icy bodies (cubewanos, classical KBOs)
@@ -3902,7 +4059,8 @@ export class SolarSystemModule {
  opacity: 0.7
  });
  
- const mediumKBOs = new THREE.Points(mediumKBOGeometry, mediumKBOMaterial);
+ const mediumKBOs = createSizedPoints(mediumKBOGeometry, mediumKBOMaterial);
+ indexPointCloud(mediumKBOs);
  kuiperBeltGroup.add(mediumKBOs);
  
  // Small icy debris and cometary nuclei
@@ -3941,7 +4099,8 @@ export class SolarSystemModule {
  opacity: 0.55
  });
  
- const smallKBOs = new THREE.Points(smallKBOGeometry, smallKBOMaterial);
+ const smallKBOs = createSizedPoints(smallKBOGeometry, smallKBOMaterial);
+ indexPointCloud(smallKBOs);
  kuiperBeltGroup.add(smallKBOs);
  
  // Scattered disk objects (highly eccentric, distant)
@@ -3980,7 +4139,8 @@ export class SolarSystemModule {
  opacity: 0.45
  });
  
- const scatteredObjects = new THREE.Points(scatteredGeometry, scatteredMaterial);
+ const scatteredObjects = createSizedPoints(scatteredGeometry, scatteredMaterial);
+ indexPointCloud(scatteredObjects);
  kuiperBeltGroup.add(scatteredObjects);
  
  kuiperBeltGroup.userData = {
@@ -4111,7 +4271,8 @@ export class SolarSystemModule {
  opacity: 0.7
  });
  
- const innerOort = new THREE.Points(innerOortGeometry, innerOortMaterial);
+ const innerOort = createSizedPoints(innerOortGeometry, innerOortMaterial);
+ indexPointCloud(innerOort);
  oortCloudGroup.add(innerOort);
  
  // Outer Oort Cloud - sparse, spherical shell
@@ -4151,7 +4312,8 @@ export class SolarSystemModule {
  opacity: 0.5
  });
  
- const outerOort = new THREE.Points(outerOortGeometry, outerOortMaterial);
+ const outerOort = createSizedPoints(outerOortGeometry, outerOortMaterial);
+ indexPointCloud(outerOort);
  oortCloudGroup.add(outerOort);
  
  // Sparse cometary nuclei - the source of long-period comets
@@ -4191,7 +4353,8 @@ export class SolarSystemModule {
  opacity: 0.7
  });
  
- const cometaryNuclei = new THREE.Points(cometaryGeometry, cometaryMaterial);
+ const cometaryNuclei = createSizedPoints(cometaryGeometry, cometaryMaterial);
+ indexPointCloud(cometaryNuclei);
  oortCloudGroup.add(cometaryNuclei);
  
  oortCloudGroup.userData = {
@@ -4210,64 +4373,9 @@ export class SolarSystemModule {
  if (DEBUG.enabled) console.log(`[OORT] ${innerOortCount + outerOortCount + cometaryCount} objects (${this.realisticScale ? 'Realistic (20k–60k units)' : 'Educational (3k–9k units)'} scale)`);
  }
 
- createOrbitalPaths(scene) {
+ createOrbitalPaths() {
  this.orbitsVisible = true; // Default
  this.cometOrbitsVisible = true; // Default
- this.orbits = [];
- 
- const planetsToOrbit = Object.keys(this.planets).filter(k => {
- // Only draw a heliocentric orbit for bodies that actually orbit the sun.
- // Guards against future entries (barycenters, system roots, etc.) that
- // happen to be stored in this.planets but have no real heliocentric path.
- const ud = this.planets[k]?.userData;
- return ud && typeof ud.distance === 'number' && ud.distance > 0;
- });
- 
- // Create empty line objects, we will update their geometry in updateOrbitalPaths()
- planetsToOrbit.forEach(planetName => {
- const planet = this.planets[planetName];
- if (planet && planet.userData) {
- const isDwarf = planet.userData.type === 'DwarfPlanet';
- const geometry = new THREE.BufferGeometry();
- const material = new THREE.LineBasicMaterial({
- color: isDwarf ? 0x9966CC : 0x4488CC,
- transparent: true,
- opacity: 0.5,
- depthWrite: false
- });
- 
- const orbitLine = new THREE.Line(geometry, material);
- orbitLine.visible = this.orbitsVisible;
- orbitLine.renderOrder = 1; // Prevent z-fighting with transparent rings/glows
- orbitLine.userData = { type: 'orbit', planet: planetName, isDwarf: isDwarf };
- scene.add(orbitLine);
- this.orbits.push(orbitLine);
- }
- });
- 
- // Moon orbital paths around their planets
- Object.values(this.planets).forEach(planet => {
- if (planet.userData.moons && planet.userData.moons.length > 0) {
- planet.userData.moons.forEach(moon => {
- const geometry = new THREE.BufferGeometry();
- const material = new THREE.LineBasicMaterial({
- color: 0xAADDFF,
- transparent: true,
- opacity: 0.5,
- depthWrite: false
- });
-
- const orbitLine = new THREE.Line(geometry, material);
- orbitLine.visible = this.orbitsVisible;
- orbitLine.renderOrder = 1;
- orbitLine.userData = { type: 'moonOrbit', moon: moon.userData.name, planet: planet.userData.name };
- planet.add(orbitLine);
- this.orbits.push(orbitLine);
- });
- }
- });
-
- // Fill the geometry using the unified tracing logic
  this.updateOrbitalPaths();
  }
 
@@ -5269,7 +5377,7 @@ export class SolarSystemModule {
  depthWrite: false
  });
  
- return new THREE.Points(geometry, material);
+ return createSizedPoints(geometry, material);
  }
  
  createDustLayer(nebData, particleCount) {
@@ -5313,7 +5421,7 @@ export class SolarSystemModule {
  depthWrite: false
  });
  
- return new THREE.Points(geometry, material);
+ return createSizedPoints(geometry, material);
  }
  
  createFilaments(nebData, particleCount) {
@@ -5364,7 +5472,7 @@ export class SolarSystemModule {
  depthWrite: false
  });
  
- return new THREE.Points(geometry, material);
+ return createSizedPoints(geometry, material);
  }
  
  createCentralStar(nebData, index) {
@@ -5448,6 +5556,10 @@ export class SolarSystemModule {
  createConstellations(scene) {
  // Create famous star constellations visible from Earth
  this.constellations = [];
+ const constellationMaterials = new Set();
+ let coreMaterial;
+ let glowMaterial;
+ this._polarisStar = null;
  
  // Constellation data: star positions (RA/Dec converted to 3D) and connections
  const constellationsData = [
@@ -5842,6 +5954,7 @@ export class SolarSystemModule {
  
  // Create star mesh using factory (with geometry caching)
  const starMesh = ConstellationFactory.createStar(star, position, this.geometryCache);
+ constellationMaterials.add(starMesh.material);
  // Full userData so the star is independently clickable and hoverable
  const constShortName = constData.name.split(/\s*\(/)[0].trim();
  const constellationTranslation = t(constData.id);
@@ -5866,12 +5979,51 @@ export class SolarSystemModule {
  const rawSize = CONFIG.CONSTELLATION.STAR_BASE_SIZE * Math.pow(1.5, -star.mag);
  const starSize = Math.min(rawSize, CONFIG.CONSTELLATION.STAR_MAX_SIZE);
  const glow = ConstellationFactory.createGlow(star, starSize, this.geometryCache);
+ constellationMaterials.add(glow.material);
  starMesh.add(glow);
+ // Keep the original meshes for individual star picking, but render instances.
+ starMesh.layers.set(1);
+ glow.layers.set(1);
+ if (star.name === 'Polaris' && constData.id === 'littleDipper') this._polarisStar = starMesh;
  });
+
+ if (starMeshes.length) {
+ if (!coreMaterial) {
+ coreMaterial = starMeshes[0].material.clone();
+ coreMaterial.color.setHex(0xffffff);
+ glowMaterial = starMeshes[0].children[0].material.clone();
+ glowMaterial.color.setHex(0xffffff);
+ constellationMaterials.add(coreMaterial);
+ constellationMaterials.add(glowMaterial);
+ }
+ const coreGeometry = this.getGeometry('sphere', 1, CONFIG.CONSTELLATION.STAR_SEGMENTS, CONFIG.CONSTELLATION.STAR_SEGMENTS);
+ const glowGeometry = this.getGeometry('sphere', 1, CONFIG.CONSTELLATION.GLOW_SEGMENTS, CONFIG.CONSTELLATION.GLOW_SEGMENTS);
+ const cores = new THREE.InstancedMesh(coreGeometry, coreMaterial, starMeshes.length);
+ const glows = new THREE.InstancedMesh(glowGeometry, glowMaterial, starMeshes.length);
+ const matrix = new THREE.Matrix4();
+ starMeshes.forEach((starMesh, index) => {
+ const glow = starMesh.children[0];
+ const coreRadius = starMesh.geometry.parameters.radius;
+ const glowRadius = glow.geometry.parameters.radius;
+ matrix.makeScale(coreRadius, coreRadius, coreRadius).setPosition(starMesh.position);
+ cores.setMatrixAt(index, matrix);
+ cores.setColorAt(index, starMesh.material.color);
+ matrix.makeScale(glowRadius, glowRadius, glowRadius).setPosition(starMesh.position);
+ glows.setMatrixAt(index, matrix);
+ glows.setColorAt(index, glow.material.color);
+ });
+ cores.computeBoundingSphere();
+ glows.computeBoundingSphere();
+ // The original meshes retain the named hits and parent hierarchy.
+ cores.raycast = () => {};
+ glows.raycast = () => {};
+ group.add(cores, glows);
+ }
  
  // Create all constellation lines as a single batched LineSegments draw call
  if (constData.lines && constData.lines.length > 0) {
  const lineSegments = ConstellationFactory.createLineSegments(constData.lines, starMeshes);
+ constellationMaterials.add(lineSegments.material);
  group.add(lineSegments);
  }
  
@@ -5894,6 +6046,7 @@ export class SolarSystemModule {
  this.objects.push(group);
  this.constellations.push(group);
  });
+ this._constellationMaterials = Array.from(constellationMaterials);
 
  // === POLARIS POINTER LINE ===
  // Astronomers find Polaris by extending a line from Merak → Dubhe (the "pointer stars"
@@ -5908,6 +6061,7 @@ export class SolarSystemModule {
  // Show only the focused constellation; completely hide all others
  if (!this.constellations) return;
  this.focusedConstellation = focusedConstellation;
+ if (this._polarisStar) this._polarisStar.traverse(child => child.layers.disable(0));
 
  const isBigDipper = focusedConstellation?.userData?.name === 'bigDipper';
  
@@ -5941,7 +6095,7 @@ export class SolarSystemModule {
  if (child.userData?.name === 'Polaris') {
  child.visible = true;
  // Also show its glow children
- child.traverse(c => { c.visible = true; });
+ child.traverse(c => { c.visible = true; c.layers.enable(0); });
  }
  });
  }
@@ -5958,6 +6112,7 @@ export class SolarSystemModule {
  // Restore all constellations to the user's chosen visibility state
  if (!this.constellations) return;
  this.focusedConstellation = null;
+ if (this._polarisStar) this._polarisStar.traverse(child => child.layers.disable(0));
  
  this.constellations.forEach(constellation => {
  constellation.visible = this.constellationsVisible;
@@ -6330,7 +6485,6 @@ export class SolarSystemModule {
  mesh.lookAt(0, 0, 0); // Face toward origin
  // Random rotation around face normal for variety
  mesh.rotation.z = Math.random() * Math.PI * 2;
- mesh.frustumCulled = false;
  mesh.userData = { type: 'backgroundGalaxy', basePosition: { x, y, z } };
  
  scene.add(mesh);
@@ -7123,7 +7277,6 @@ export class SolarSystemModule {
  }
  
  // Active gas jets (bright spots showing outgassing)
- for (let i = 0; i < 5; i++) {
  const jetGeometry = new THREE.SphereGeometry(cometData.size * 0.08, 8, 8);
  const jetMaterial = new THREE.MeshBasicMaterial({
  color: 0xffffff,
@@ -7131,17 +7284,22 @@ export class SolarSystemModule {
  opacity: 0.8,
  blending: THREE.AdditiveBlending
  });
- const jet = new THREE.Mesh(jetGeometry, jetMaterial);
+ const jets = new THREE.InstancedMesh(jetGeometry, jetMaterial, 5);
+ const jetTransform = new THREE.Object3D();
+ for (let i = 0; i < 5; i++) {
  const theta = Math.random() * Math.PI * 2;
  const phi = Math.random() * Math.PI;
  const r = cometData.size * 1.1;
- jet.position.set(
+ jetTransform.position.set(
  r * Math.sin(phi) * Math.cos(theta),
  r * Math.sin(phi) * Math.sin(theta),
  r * Math.cos(phi)
  );
- cometGroup.add(jet);
+ jetTransform.updateMatrix();
+ jets.setMatrixAt(i, jetTransform.matrix);
  }
+ jets.computeBoundingSphere();
+ cometGroup.add(jets);
  
  // Visual radius: visible in solar-system overview but not planet-sized (real coma ~100,000 km)
  const visualRadius = Math.max(cometData.size * 400, 1.0);
@@ -7210,7 +7368,7 @@ export class SolarSystemModule {
  depthWrite: false
  });
  
- const dustTail = new THREE.Points(dustTailGeometry, dustTailMaterial);
+ const dustTail = createSizedPoints(dustTailGeometry, dustTailMaterial);
  cometGroup.add(dustTail);
 
  // Precomputed jitter seeds (hot-path optimization: avoid per-frame Math.random in animate loop)
@@ -7263,7 +7421,7 @@ export class SolarSystemModule {
  depthWrite: false
  });
  
- const ionTail = new THREE.Points(ionTailGeometry, ionTailMaterial);
+ const ionTail = createSizedPoints(ionTailGeometry, ionTailMaterial);
  cometGroup.add(ionTail);
 
  // Precomputed ion jitter seeds (hot-path optimization)
@@ -7312,36 +7470,6 @@ export class SolarSystemModule {
  _keplerSqrtMinus: safeEccentricity < 1 ? Math.sqrt(1 - safeEccentricity) : 0
  };
  
- // ===== ELLIPTICAL ORBIT PATH =====
- const orbitSegments = 256;
- const orbitPoints = [];
- const orbitA = cometData.distance;
- const orbitE = safeEccentricity; // use same clamped value stored in userData
- const orbitInclRad = (cometData.inclination || 0) * Math.PI / 180;
- for (let j = 0; j <= orbitSegments; j++) {
- const f = (j / orbitSegments) * Math.PI * 2;
- const orbitR = orbitA * (1 - orbitE * orbitE) / (1 + orbitE * Math.cos(f));
- orbitPoints.push(new THREE.Vector3(orbitR * Math.cos(f), orbitR * Math.sin(f) * Math.sin(orbitInclRad), orbitR * Math.sin(f) * Math.cos(orbitInclRad)));
- }
- const cometOrbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPoints);
- const cometOrbitMat = new THREE.LineBasicMaterial({
- color: 0xCC9955,
- transparent: true,
- opacity: 0.6,
- depthWrite: false
- });
- const cometOrbitLine = new THREE.Line(cometOrbitGeo, cometOrbitMat);
- cometOrbitLine.visible = this.cometOrbitsVisible;
- cometOrbitLine.renderOrder = 1;
- // Disable frustum culling: highly eccentric orbits have a bounding sphere
- // centered far from the origin (focus), so Three.js incorrectly culls the
- // near-perihelion arc even when it is inside the camera frustum.
- cometOrbitLine.frustumCulled = false;
- cometOrbitLine.userData = { type: 'orbit', comet: cometData.name };
- scene.add(cometOrbitLine);
- this.cometOrbits.push(cometOrbitLine);
- cometGroup.userData.orbitLine = cometOrbitLine;
-
  cometGroup.visible = true; // Ensure comet is visible
  scene.add(cometGroup);
  this.objects.push(cometGroup);
@@ -7350,6 +7478,7 @@ export class SolarSystemModule {
  
  if (DEBUG.enabled) console.log(` ${cometData.name} created at distance ${cometData.distance}, visualRadius=${visualRadius.toFixed(2)}`);
  });
+ this.updateCometOrbitLines();
  }
 
 createHyperrealisticHubble(satData) {
@@ -8414,10 +8543,9 @@ createHyperrealisticHubble(satData) {
  marker.name = 'Center Marker';
  iss.add(marker);
  
- // Enable shadows for all meshes
+ // ISS receives planetary shadows but does not cast a significant eclipse.
  iss.traverse((child) => {
  if (child instanceof THREE.Mesh) {
- child.castShadow = true;
  child.receiveShadow = true;
  }
  });
@@ -8562,6 +8690,11 @@ createHyperrealisticHubble(satData) {
  }
  }
  
+            if (!satellite.isGroup) {
+                const group = new THREE.Group();
+                group.add(satellite);
+                satellite = group;
+            }
             satellite.userData = {
                 name: satData.name,
                 type: 'satellite',
@@ -8580,6 +8713,7 @@ createHyperrealisticHubble(satData) {
                 inclination: (index * 30) * Math.PI / 180 // Different orbital inclinations
             };
             this._mergeStaticGroupMeshes(satellite);
+            this._addSpacecraftLOD(satellite);
             scene.add(satellite);
  this.objects.push(satellite);
  this.satellites.push(satellite);
@@ -8649,6 +8783,59 @@ createHyperrealisticHubble(satData) {
  if (c.isGroup && c.children.length === 0) {
  rootGroup.remove(c);
  }
+ }
+ }
+
+ _addSpacecraftLOD(craft) {
+ const bounds = new THREE.Box3().setFromObject(craft);
+ const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+ const radius = Math.max(sphere.radius, craft.userData.actualSize || 0.001);
+ const detail = new THREE.Group();
+ while (craft.children.length) detail.add(craft.children[0]);
+ const marker = new THREE.Mesh(
+ this.getGeometry('sphere', 1, 8, 8),
+ new THREE.MeshBasicMaterial({ color: 0xffffff })
+ );
+ marker.scale.setScalar(radius);
+ marker.position.copy(sphere.center);
+ marker.visible = false;
+ craft.add(detail, marker);
+ craft.userData.lod = { detail, marker, radius };
+ this._lodCraft.push(craft);
+ }
+
+ _updateSpacecraftLOD(camera) {
+ if (!camera) return;
+ const pixelFactor = window.innerHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2));
+ for (const craft of this._lodCraft) {
+ const lod = craft.userData.lod;
+ if (!lod) continue;
+ craft.getWorldPosition(this._lodPosition);
+ const distance = this._lodPosition.distanceTo(this._cameraWorldPosition);
+ const detailed = distance <= lod.radius * pixelFactor / 2;
+ lod.detail.visible = detailed;
+ lod.marker.visible = !detailed;
+ }
+ }
+
+ _updateFocusedShadows() {
+ if (!CONFIG.QUALITY.shadows || !this.sun?.userData.sunLight) return;
+ if (this._shadowFocus === this.focusedObject && this._shadowScale === this.realisticScale) return;
+ this._shadowFocus = this.focusedObject;
+ this._shadowScale = this.realisticScale;
+ const focused = this.focusedObject;
+ const system = focused?.userData?.type === 'moon' ? focused.parent : focused;
+ const active = system?.userData?.moons?.length ? system : null;
+ for (const planet of Object.values(this.planets)) {
+ planet.castShadow = planet === active;
+ for (const moon of planet.userData.moons || []) moon.castShadow = planet === active;
+ }
+ const light = this.sun.userData.sunLight;
+ light.castShadow = !!active;
+ if (active) {
+ const furthestMoon = Math.max(0, ...active.userData.moons.map(moon => moon.userData.distance + moon.userData.radius));
+ light.shadow.camera.far = Math.max(100, active.userData.distance * (1 + active.userData.orbitalEccentricity) + furthestMoon + active.userData.radius * 2);
+ light.shadow.camera.updateProjectionMatrix();
  }
  }
 
@@ -9009,6 +9196,7 @@ createHyperrealisticHubble(satData) {
  
  if (DEBUG.enabled) console.log(` ${craft.name} created`);
  this._mergeStaticGroupMeshes(spacecraftGroup);
+ this._addSpacecraftLOD(spacecraftGroup);
  
  // Position spacecraft
  if (craft.orbitPlanet) {
@@ -9242,6 +9430,8 @@ createHyperrealisticHubble(satData) {
  // Update camera tracking AFTER all object positions have been updated this frame
  this.updateCameraTracking(camera, controls);
  if (camera) camera.getWorldPosition(this._cameraWorldPosition);
+ this._updateFocusedShadows();
+ this._updateSpacecraftLOD(camera);
 
  // Approximate rotation using representative belt orbital periods.
  if (this.asteroidBelt) {
@@ -9263,20 +9453,16 @@ createHyperrealisticHubble(satData) {
  if (!isNaN(rotationIncrement) && isFinite(rotationIncrement)) {
  this.sun.rotation.y += rotationIncrement;
  }
- 
- // Animate solar flares (optimized - update every 2 frames)
- if (this.sun.userData.flares && (this._sunFlareFrame || 0) % 2 === 0) {
- const time = now * 0.001;
+ if (this.sun.userData.flares && this._sunFlareFrame % 2 === 0) {
  const sizes = this.sun.userData.flares.geometry.attributes.size.array;
- const len = sizes.length;
- 
- // Pre-calculate random values (less Math.random() calls)
- for (let i = 0; i < len; i++) {
- sizes[i] = 1 + Math.sin(time + i * 0.5) * 1.5 + (i % 3) * 0.2;
+ const time = now * 0.001;
+ for (let i = 0; i < sizes.length; i++) {
+ sizes[i] = Math.max(0.1, 1 + Math.sin(time + i * 0.5) * 1.5 + (i % 3) * 0.2);
  }
  this.sun.userData.flares.geometry.attributes.size.needsUpdate = true;
  }
- this._sunFlareFrame += 1;
+ this._sunFlareFrame++;
+ 
  }
 
  // Keep starfield and Milky Way band centred on the camera so their sphere
@@ -9404,7 +9590,7 @@ createHyperrealisticHubble(satData) {
  const curveFactor = 0.3;
  const vr = userData.visualRadius || 2.0; // Scale tail proportional to visible coma size
  const dustTailLen = vr * 8; // Dust tail: 8× coma radius
- const dustParticleCount = userData.dustParticles || dustSizes.length;
+ const dustParticleCount = userData.dustParticles || dustPositions.length / 3;
  // Flowing animation: offset parametric position so particles appear to stream outward
  const dustFlow = (now * 0.00025) % 1.0;
  for (let i = 0; i < dustParticleCount; i++) {
@@ -9428,9 +9614,8 @@ createHyperrealisticHubble(satData) {
  dustPositions[i * 3] = dirX * normFactor * length + spread;
  dustPositions[i * 3 + 1] = dirY * normFactor * length + spreadPerpendicular;
  dustPositions[i * 3 + 2] = dirZ * normFactor * length + spread;
- 
- // Vary size based on original index (not flowing t) so near particles stay large
  dustSizes[i] = vr * 0.10 * (1 - tBase * 0.7) * (0.9 + (i % 5) * 0.05);
+ 
  }
  userData.dustTail.geometry.attributes.position.needsUpdate = true;
  userData.dustTail.geometry.attributes.size.needsUpdate = true;
@@ -9640,12 +9825,8 @@ createHyperrealisticHubble(satData) {
  //Restore opacities that were faded to 0
  if (this.milkyWay) this.milkyWay.material.opacity = 0.65;
  if (this.starfield) this.starfield.material.uniforms.opacityFade.value = 1;
- if (this.constellations) this.constellations.forEach(c => {
- c.traverse(child => {
- if (child.material) {
- child.material.opacity = child.material.userData?.originalOpacity ?? 1;
- }
- });
+ if (this._constellationMaterials) this._constellationMaterials.forEach(material => {
+ material.opacity = material.userData?.originalOpacity ?? 1;
  });
  if (this.nebulae) this.nebulae.forEach(n => {
  n.traverse(child => { if (child.material) child.material.opacity = 0.95; });
@@ -9683,14 +9864,10 @@ createHyperrealisticHubble(satData) {
  this.starfield.material.uniforms.opacityFade.value = solarFadeOut;
  }
  // Constellation lines and stars
- if (this.constellations) {
- this.constellations.forEach(constellation => {
- constellation.traverse(child => {
- if (child.material) {
- const baseOpacity = child.material.userData?.originalOpacity ?? 1;
- child.material.opacity = baseOpacity * solarFadeOut;
- }
- });
+ if (this._constellationMaterials) {
+ this._constellationMaterials.forEach(material => {
+ const baseOpacity = material.userData?.originalOpacity ?? 1;
+ material.opacity = baseOpacity * solarFadeOut;
  });
  }
  // Nebulae: fade out as the galaxy fades in (opposite of galaxyT).
@@ -9778,111 +9955,46 @@ createHyperrealisticHubble(satData) {
  }
 
  cleanup(scene) {
- // Dispose materials and geometries for all objects (including group children)
- this.objects.forEach(obj => {
- obj.traverse(child => {
- if (child.geometry) child.geometry.dispose();
- if (child.material) {
- if (Array.isArray(child.material)) {
- child.material.forEach(mat => mat.dispose());
- } else {
- child.material.dispose();
- }
- }
+ this._resourceGeneration++;
+ this._focusTransitionToken++;
+ const roots = new Set([
+ ...this.objects, ...this.orbits, ...this.cometOrbits, ...this.galaxies,
+ ...this.exoplanetOrbits.map(orbit => orbit.mesh),
+ this.starfield, this.milkyWay, this.milkyWayDisc, this.heliopause, this._polarisPointerLine
+ ].filter(Boolean));
+ const geometries = new Set(this.geometryCache.values());
+ const materials = new Set();
+ const textures = new Set();
+ const visited = new Set();
+ roots.forEach(root => root.traverse(child => {
+ if (visited.has(child)) return;
+ visited.add(child);
+ if (child.isInstancedMesh) child.dispose();
+ if (child.geometry) geometries.add(child.geometry);
+ const childMaterials = Array.isArray(child.material) ? child.material : [child.material];
+ childMaterials.forEach(material => {
+ if (material) materials.add(material);
  });
- scene.remove(obj);
+ }));
+ materials.forEach(material => {
+ Object.values(material).forEach(value => {
+ if (value?.isTexture) textures.add(value);
  });
- 
- // Clean up starfield
- if (this.starfield) {
- if (this.starfield.geometry) this.starfield.geometry.dispose();
- if (this.starfield.material) this.starfield.material.dispose();
- scene.remove(this.starfield);
- }
-
- // Clean up Milky Way
- if (this.milkyWay) {
- if (this.milkyWay.geometry) this.milkyWay.geometry.dispose();
- if (this.milkyWay.material) this.milkyWay.material.dispose();
- scene.remove(this.milkyWay);
- }
-
- // Clean up orbital paths
- this.orbits.forEach(orbit => {
- if (orbit.geometry) orbit.geometry.dispose();
- if (orbit.material) orbit.material.dispose();
- scene.remove(orbit);
+ if (material.uniforms) Object.values(material.uniforms).forEach(uniform => {
+ if (uniform.value?.isTexture) textures.add(uniform.value);
  });
-
- // Clean up comet orbit lines (separate from planet orbits)
- if (this.cometOrbits) {
- this.cometOrbits.forEach(orbit => {
- if (orbit.geometry) orbit.geometry.dispose();
- if (orbit.material) orbit.material.dispose();
- scene.remove(orbit);
  });
+ textures.forEach(texture => texture.dispose());
+ geometries.forEach(geometry => geometry.dispose());
+ materials.forEach(material => material.dispose());
+ roots.forEach(root => root.removeFromParent());
+ const sunLight = this.sun?.userData.sunLight;
+ if (sunLight) {
+ sunLight.shadow.dispose();
+ scene.remove(sunLight);
  }
-
- // Remove sun light
- const sunLight = scene.getObjectByName('sunLight');
- if (sunLight) scene.remove(sunLight);
-
- // Clean up heliopause
- if (this.heliopause) {
- this.heliopause.traverse(child => {
- if (child.geometry) child.geometry.dispose();
- if (child.material) child.material.dispose();
- });
- scene.remove(this.heliopause);
- this.heliopause = null;
- }
-
- // Clean up Milky Way galaxy disc
- if (this.milkyWayDisc) {
- this.milkyWayDisc.traverse(child => {
- if (child === this.milkyWayDisc) return;
- if (child.geometry) child.geometry.dispose();
- if (child.material) {
- if (Array.isArray(child.material)) {
- child.material.forEach(mat => {
- if (mat.map) mat.map.dispose();
- mat.dispose();
- });
- } else {
- if (child.material.map) child.material.map.dispose();
- child.material.dispose();
- }
- }
- });
- if (this.milkyWayDisc.geometry) this.milkyWayDisc.geometry.dispose();
- if (this.milkyWayDisc.material) {
- if (this.milkyWayDisc.material.map) this.milkyWayDisc.material.map.dispose();
- this.milkyWayDisc.material.dispose();
- }
- scene.remove(this.milkyWayDisc);
- this.milkyWayDisc = null;
- }
-
- // Clean up galaxies (including procedural background galaxies)
- if (this.galaxies) {
- this.galaxies.forEach(galaxy => {
- galaxy.traverse(child => {
- if (child.geometry) child.geometry.dispose();
- if (child.material) {
- if (child.material.map) child.material.map.dispose();
- if (Array.isArray(child.material)) {
- child.material.forEach(mat => mat.dispose());
- } else {
- child.material.dispose();
- }
- }
- });
- scene.remove(galaxy);
- });
- }
-
- // Dispose cached geometries and shared material caches when fully cleaning up
- this.geometryCache.forEach(geo => geo.dispose());
+ const ambientLight = this.sun?.userData.ambientLight;
+ if (ambientLight) scene.remove(ambientLight);
  this.geometryCache.clear();
  MaterialFactory.clearCaches();
 
@@ -9898,15 +10010,31 @@ createHyperrealisticHubble(satData) {
  this.oortCloud = null;
  this.orbits = [];
  this.cometOrbits = [];
+ this.exoplanetOrbits = [];
  this.comets = [];
  this.satellites = [];
  this.spacecraft = [];
+ this._lodCraft = [];
  this.constellations = [];
+ this._constellationMaterials = [];
+ this._polarisStar = null;
  this.nebulae = [];
  this.galaxies = [];
  this.nearbyStars = [];
  this.exoplanets = [];
  this.focusedComet = null;
+ this.focusedObject = null;
+ this.focusedConstellation = null;
+ this._cameraFollowObject = null;
+ this._activeControls = null;
+ this._planetArray = null;
+ this._planetArrayDirty = true;
+ this._shadowFocus = undefined;
+ this.milkyWayDisc = null;
+ this.heliopause = null;
+ this._polarisPointerLine = null;
+ this.pickableObjects = [];
+ this.labels = [];
  }
 
  getSelectableObjects() {
@@ -9953,6 +10081,7 @@ createHyperrealisticHubble(satData) {
  
  toggleConstellations(visible) {
  this.constellationsVisible = visible;
+ if (this._polarisStar) this._polarisStar.traverse(child => child.layers.disable(0));
  if (visible) {
  // Clear any highlight focus when toggling on, to restore all constellations
  this.focusedConstellation = null;
@@ -10090,13 +10219,15 @@ createHyperrealisticHubble(satData) {
  
  updateOrbitalPaths() {
  // Remove existing orbital paths
+ const oldMaterials = new Set();
  this.orbits.forEach(orbit => {
  if (orbit.parent) {
  orbit.parent.remove(orbit);
  }
  if (orbit.geometry) orbit.geometry.dispose();
- if (orbit.material) orbit.material.dispose();
+ if (orbit.material) oldMaterials.add(orbit.material);
  });
+ oldMaterials.forEach(material => material.dispose());
  this.orbits = [];
 
  // Helper: generate orbit trace points.
@@ -10123,9 +10254,11 @@ createHyperrealisticHubble(satData) {
  return pts;
  };
 
- // Recreate orbital paths for all planets and dwarf planets
+ // Planet and dwarf paths share a parent and visibility mode, so batch each class.
+ const orbitPositions = [[], []];
+ let orbitParent = null;
  Object.entries(this.planets).forEach(([planetName, planet]) => {
- if (!planet?.userData) return;
+ if (!planet?.userData || !(planet.userData.distance > 0) || !planet.parent) return;
  const isDwarf = planet.userData.type === 'DwarfPlanet';
  const elem = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetName];
  const e = elem?.eccentricity || 0;
@@ -10137,24 +10270,31 @@ createHyperrealisticHubble(satData) {
  const segments = Math.min(1024, Math.max(128, Math.round(2 * Math.PI * distance / 20)));
  const points = makeOrbitPoints(distance, e, inc, w, segments);
  
- const geometry = new THREE.BufferGeometry().setFromPoints(points);
- const material = new THREE.LineBasicMaterial({
- color: isDwarf ? 0x9966CC : 0x4488CC,
- transparent: true,
- opacity: 0.5,
- depthWrite: false
+ const positions = orbitPositions[isDwarf ? 1 : 0];
+ for (let i = 1; i < points.length; i++) {
+ positions.push(points[i - 1].x, points[i - 1].y, points[i - 1].z,
+ points[i].x, points[i].y, points[i].z);
+ }
+ orbitParent = planet.parent;
  });
- 
- const orbit = new THREE.Line(geometry, material);
- orbit.visible = this.orbitsVisible;
+ orbitPositions.forEach((positions, index) => {
+ if (!positions.length || !orbitParent) return;
+ const geometry = new THREE.BufferGeometry();
+ geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+ const material = new THREE.LineBasicMaterial({
+ color: index ? 0x9966CC : 0x4488CC, transparent: true, opacity: 0.5, depthWrite: false
+ });
+ const orbit = new THREE.LineSegments(geometry, material);
  orbit.renderOrder = 1;
- orbit.userData = { type: 'orbit', planet: planetName, isDwarf: isDwarf };
- 
- planet.parent.add(orbit);
+ orbit.userData = { type: 'orbit', isDwarf: index === 1 };
+ orbitParent.add(orbit);
  this.orbits.push(orbit);
  });
  
  // Recreate moon orbital paths
+ const moonOrbitMaterial = new THREE.LineBasicMaterial({
+ color: 0xAADDFF, transparent: true, opacity: 0.5, depthWrite: false
+ });
  Object.values(this.planets).forEach(planet => {
  if (planet.userData.moons && planet.userData.moons.length > 0) {
  if (DEBUG.enabled) console.log(`[Orbits] Recreating ${planet.userData.moons.length} moon orbit(s) for ${planet.userData.name}`);
@@ -10166,14 +10306,7 @@ createHyperrealisticHubble(satData) {
  
  const points = makeOrbitPoints(moonDistance, e, inc, w, 128);
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
- const material = new THREE.LineBasicMaterial({
- color: 0xAADDFF, // Brighter cyan for better visibility
- transparent: true,
- opacity: 0.5,
- depthWrite: false
- });
- 
- const orbitLine = new THREE.Line(geometry, material);
+ const orbitLine = new THREE.Line(geometry, moonOrbitMaterial);
  // We do NOT need orbitLine.rotation.x = Math.PI / 2 because makeOrbitPoints generates Vector3s mapped to the correct planes directly!
  orbitLine.visible = this.orbitsVisible;
  orbitLine.renderOrder = 1;
@@ -10212,8 +10345,8 @@ createHyperrealisticHubble(satData) {
  const angle = Math.atan2(positions[i * 3 + 2], positions[i * 3]);
  const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
  
- // Normalize from current scale to 0-1 range
- const normalizedDist = Math.max(0, Math.min(1, (currentDist - oldParams.base) / oldParams.spread));
+ // Preserve particles outside the nominal range during scale round trips.
+ const normalizedDist = (currentDist - oldParams.base) / oldParams.spread;
  
  // Apply to new scale
  const newDistance = newParams.base + (normalizedDist * newParams.spread);
@@ -10223,6 +10356,8 @@ createHyperrealisticHubble(satData) {
  }
  
  particleSystem.geometry.attributes.position.needsUpdate = true;
+ particleSystem.geometry.computeBoundingSphere();
+ particleSystem.userData.rebuildPickIndex?.();
  }
  });
  }
@@ -10247,8 +10382,7 @@ createHyperrealisticHubble(satData) {
  const angle = Math.atan2(positions[i * 3 + 2], positions[i * 3]);
  const currentDist = Math.sqrt(positions[i * 3] * positions[i * 3] + positions[i * 3 + 2] * positions[i * 3 + 2]);
  
- // Normalize from current scale to 0-1 range
- const normalizedDist = Math.max(0, Math.min(1, (currentDist - oldParams.base) / oldParams.spread));
+ const normalizedDist = (currentDist - oldParams.base) / oldParams.spread;
  
  // Apply to new scale
  const newDistance = newParams.base + (normalizedDist * newParams.spread);
@@ -10258,6 +10392,8 @@ createHyperrealisticHubble(satData) {
  }
  
  particleSystem.geometry.attributes.position.needsUpdate = true;
+ particleSystem.geometry.computeBoundingSphere();
+ particleSystem.userData.rebuildPickIndex?.();
  }
  });
  }
@@ -10292,7 +10428,7 @@ createHyperrealisticHubble(satData) {
  const phi = Math.acos(y / currentRadius);
  
  // Normalize radius from current scale to 0-1 range
- const normalizedRadius = Math.max(0, Math.min(1, (currentRadius - oldParams.inner) / (oldParams.outer - oldParams.inner)));
+ const normalizedRadius = (currentRadius - oldParams.inner) / (oldParams.outer - oldParams.inner);
  
  // Apply to new scale
  const newRadius = newParams.inner + (normalizedRadius * (newParams.outer - newParams.inner));
@@ -10304,6 +10440,8 @@ createHyperrealisticHubble(satData) {
  }
  
  particleSystem.geometry.attributes.position.needsUpdate = true;
+ particleSystem.geometry.computeBoundingSphere();
+ particleSystem.userData.rebuildPickIndex?.();
  }
  });
  }
@@ -10412,45 +10550,39 @@ createHyperrealisticHubble(satData) {
  if (!this.comets || this.comets.length === 0) return;
 
  const orbitSegments = 256;
+ const positions = [];
  this.comets.forEach(comet => {
- const userData = comet?.userData;
- let orbitLine = userData?.orbitLine;
-
- // Recreate orbit line if reference was lost
- if (userData && !orbitLine) {
- const geo = new THREE.BufferGeometry();
- const mat = new THREE.LineBasicMaterial({
- color: 0xCC9955,
- transparent: true,
- opacity: 0.6,
- depthWrite: false
- });
- orbitLine = new THREE.Line(geo, mat);
- orbitLine.renderOrder = 1;
- orbitLine.frustumCulled = false;
- orbitLine.userData = { type: 'orbit', comet: userData.name };
- comet.parent?.add(orbitLine);
- this.cometOrbits.push(orbitLine);
- userData.orbitLine = orbitLine;
- if (DEBUG.enabled) console.warn(`[Comets] Recreated missing orbit line for ${userData.name}`);
- }
- if (!userData || !orbitLine) return;
-
+ const userData = comet.userData;
  const a = userData.distance;
  const e = userData.eccentricity || 0;
  const inclRadRebuild = (userData.inclination || 0) * Math.PI / 180;
- const points = [];
+ let previous = null;
  for (let j = 0; j <= orbitSegments; j++) {
  const f = (j / orbitSegments) * Math.PI * 2;
  const r = a * (1 - e * e) / (1 + e * Math.cos(f));
- points.push(new THREE.Vector3(r * Math.cos(f), r * Math.sin(f) * Math.sin(inclRadRebuild), r * Math.sin(f) * Math.cos(inclRadRebuild)));
+ const point = [r * Math.cos(f), r * Math.sin(f) * Math.sin(inclRadRebuild), r * Math.sin(f) * Math.cos(inclRadRebuild)];
+ if (previous) positions.push(...previous, ...point);
+ previous = point;
  }
-
- orbitLine.geometry.setFromPoints(points);
- orbitLine.geometry.computeBoundingSphere();
- orbitLine.frustumCulled = false;
- orbitLine.visible = this.cometOrbitsVisible;
  });
+ let orbitLine = this.cometOrbits[0];
+ if (!orbitLine) {
+ const material = new THREE.LineBasicMaterial({
+ color: 0xCC9955, transparent: true, opacity: 0.6, depthWrite: false
+ });
+ orbitLine = new THREE.LineSegments(new THREE.BufferGeometry(), material);
+ orbitLine.renderOrder = 1;
+ orbitLine.frustumCulled = false;
+ orbitLine.userData = { type: 'orbit' };
+ this.comets[0].parent.add(orbitLine);
+ this.cometOrbits.push(orbitLine);
+ }
+ orbitLine.geometry.dispose();
+ orbitLine.geometry = new THREE.BufferGeometry();
+ orbitLine.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+ orbitLine.geometry.computeBoundingSphere();
+ orbitLine.visible = this.cometOrbitsVisible;
+ this.comets.forEach(comet => { comet.userData.orbitLine = orbitLine; });
  }
  
  updateDeepSpaceObjects() {
@@ -10569,6 +10701,11 @@ createHyperrealisticHubble(satData) {
  distanceText = `${t('orbitsParent')} ${translatedParent}`;
  } else if (typeof userData.distanceAU === 'number') {
  distanceText = `${userData.distanceAU.toFixed(2)} AU ${t('fromSun')}`;
+ } else if (userData.type === 'comet' && userData.orbitalPeriod > 0) {
+ // Kepler's third law estimates the physical semimajor axis, independent of
+ // the deliberately compressed and eccentricity-clamped rendered orbit.
+ const axisAU = Math.pow(userData.orbitalPeriod / 365.25, 2 / 3);
+ distanceText = `${axisAU.toFixed(2)} AU ${t('estimatedSemiMajorAxis')}`;
  } else if (typeof userData.semiMajorAxisAU === 'number') {
  distanceText = `${userData.semiMajorAxisAU.toFixed(2)} AU ${t('averageOrbitalDistance')}`;
  } else if (typeof userData.distance === 'number') {
@@ -10593,7 +10730,7 @@ createHyperrealisticHubble(satData) {
  name: translatedName,
  type: translatedType,
  distance: distanceText,
- size: userData.realSize || (userData.type === 'constellation' ? t('constellationSize') : t('sizeUnavailable')),
+ size: localizedSize(userData),
  description: description,
  funFact: ''
  };
@@ -11458,8 +11595,6 @@ let actualRadius;
  ctx.fillText(labelText, 256, 32);
  
  const texture = new THREE.CanvasTexture(canvas);
- // GPU copy is taken — shrink the canvas backing to 1×1 to free the pixel buffer (150+ labels × 128KB each)
- canvas.width = 1; canvas.height = 1;
  const material = new THREE.SpriteMaterial({
  map: texture,
  transparent: true,

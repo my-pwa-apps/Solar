@@ -3,6 +3,7 @@
 // ===========================
 import { DEBUG, APP_VERSION, MAX_SIMULATION_SPEED } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
+import { panelManager } from './PanelManager.js';
 
 export class UIManager {
  constructor() {
@@ -102,6 +103,9 @@ export class UIManager {
  if (this.elements.infoPanel) {
  this.elements.infoPanel.classList.remove('hidden');
  this.elements.infoPanel.setAttribute('aria-hidden', 'false');
+ if (panelManager.manuallyDraggedPanels.has(this.elements.infoPanel.id)) {
+ panelManager.resetPanelPosition(this.elements.infoPanel);
+ }
  }
  }
 

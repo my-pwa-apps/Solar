@@ -46,6 +46,7 @@ export class SceneManager {
  this.renderer = null;
  this.controls = null;
  this.raycaster = new THREE.Raycaster();
+ this.raycaster.layers.enable(1);
  this.lights = {};
  this.resizeTimeout = null;
  this.labelsVisible = false; // Initialize labels as hidden
@@ -323,14 +324,11 @@ export class SceneManager {
  }
  }
 
- /** Enable or disable bloom at runtime.
- * Sets strength to 0 (off) or restores saved strength (on) —
- * avoids the EffectComposer buffer-swap issue that occurs when a
- * pass is fully disabled mid-chain. */
+ /** Enable or disable bloom at runtime. */
  toggleBloom(enabled) {
  this.bloomEnabled = enabled;
  if (this.bloomPass) {
- this.bloomPass.strength = enabled ? (this._bloomStrength || 0.55) : 0;
+ this.bloomPass.enabled = enabled;
  }
  if (DEBUG.enabled) console.log(`[PostFX] Bloom ${enabled ? 'ON' : 'OFF'}`);
  }
@@ -3072,6 +3070,7 @@ this.camera.near = 10.0;
  });
 
  objectsToRemove.forEach(object => {
+ if (object.isInstancedMesh) object.dispose();
  if (object.geometry) object.geometry.dispose();
  if (object.material) {
  const materials = Array.isArray(object.material) ? object.material : [object.material];
@@ -3118,7 +3117,7 @@ this.camera.near = 10.0;
  this._adaptivePixelRatio = pr;
  this.renderer.setPixelRatio(pr);
  this.renderer.setSize(window.innerWidth, window.innerHeight, false);
- if (this.composer) this.composer.setSize(window.innerWidth, window.innerHeight);
+ if (this.composer) this.composer.setPixelRatio(pr);
  if (DEBUG.PERFORMANCE) console.log(`[Perf] Adaptive DPR applied -> ${pr.toFixed(2)}`);
  }
  // Run callback FIRST so updateCameraTracking() can set controls.target

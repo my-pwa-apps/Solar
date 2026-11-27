@@ -369,7 +369,13 @@
 }
 
 #speed-control.collapsed {
-    min-width: 50px;
+    min-width: 130px;
+}
+
+.simulation-date {
+    padding: 0 8px 6px;
+    text-align: center;
+    font-size: 11px;
 }
 
 #speed-control .panel-header {
@@ -1303,8 +1309,8 @@ select {
     }
     
     #speed-control.collapsed {
-        min-width: 45px;
-        max-width: 55px;
+        min-width: 90px;
+        max-width: 110px;
     }
     
     #speed-control input[type="range"] {

@@ -10,10 +10,19 @@ export class PanelManager {
     constructor() {
         this.manuallyDraggedPanels = new Set();
         this.resizeTimeout = null;
+        this.layout = this.getLayout();
         this.constraints = {
             edgePadding: 10,
             minTop: 64 // Below header (#speed-control starts at top: 70-72px)
         };
+    }
+
+    getLayout() {
+        return window.innerWidth <= 768 ? 'mobile' : 'desktop';
+    }
+
+    positionKey(panelId) {
+        return `panel-position-${panelId}-${this.layout}`;
     }
 
     /**
@@ -62,7 +71,8 @@ export class PanelManager {
 
         // Restore saved position from localStorage
         const panelId = panelElement.id;
-        const savedPosition = safeGetItem(`panel-position-${panelId}`);
+        const savedPosition = safeGetItem(this.positionKey(panelId))
+            || (this.layout === 'desktop' ? safeGetItem(`panel-position-${panelId}`) : null);
         
         // Try to restore saved position for ALL panels (including info-panel)
         if (savedPosition) {
@@ -96,6 +106,9 @@ export class PanelManager {
             e.preventDefault();
             isDragging = true;
             panelElement.style.transition = 'none';
+            const rect = panelElement.getBoundingClientRect();
+            currentX = rect.left;
+            currentY = rect.top;
 
             if (e.type === 'touchstart') {
                 initialX = e.touches[0].clientX - currentX;
@@ -181,11 +194,12 @@ export class PanelManager {
                 panelElement.style.top = y + 'px';
                 panelElement.style.right = 'auto';
                 panelElement.style.bottom = 'auto';
+                this.manuallyDraggedPanels.add(panelId);
                 callback(x, y);
             } else {
                 // Invalid saved position - clear and use CSS default
                 if (DEBUG && DEBUG.enabled) console.warn(`Invalid saved position for ${panelId} (x: ${x}, y: ${y}). Resetting.`);
-                safeRemoveItem(`panel-position-${panelId}`);
+                safeRemoveItem(this.positionKey(panelId));
                 const position = this.applyCSSDefaults(panelElement);
                 callback(position.x, position.y);
             }
@@ -241,7 +255,7 @@ export class PanelManager {
      */
     savePosition(panelId, x, y) {
         try {
-            safeSetItem(`panel-position-${panelId}`, JSON.stringify({ x, y }));
+            safeSetItem(this.positionKey(panelId), JSON.stringify({ x, y }));
         } catch (e) {
             if (DEBUG && DEBUG.enabled) console.warn(`Failed to save position for ${panelId}:`, e);
         }
@@ -257,6 +271,7 @@ export class PanelManager {
         // but still apply constraints to keep them within the viewport
         if (this.manuallyDraggedPanels.has(panelId)) {
             const rect = panelElement.getBoundingClientRect();
+            if (rect.width === 0 && rect.height === 0) return;
             const constrained = this.applyConstraints(panelElement, rect.left, rect.top);
             if (constrained.x !== rect.left || constrained.y !== rect.top) {
                 panelElement.style.left = constrained.x + 'px';
@@ -285,14 +300,21 @@ export class PanelManager {
     handleResize() {
         clearTimeout(this.resizeTimeout);
         this.resizeTimeout = setTimeout(() => {
+            const layout = this.getLayout();
+            const layoutChanged = layout !== this.layout;
+            this.layout = layout;
             const infoPanelElement = document.getElementById('info-panel');
             const speedControlElement = document.getElementById('speed-control');
-            
-            if (infoPanelElement) {
-                this.resetPanelPosition(infoPanelElement);
-            }
-            if (speedControlElement) {
-                this.resetPanelPosition(speedControlElement);
+            for (const panel of [infoPanelElement, speedControlElement]) {
+                if (!panel) continue;
+                if (layoutChanged) {
+                    this.manuallyDraggedPanels.delete(panel.id);
+                    this.resetPanelPosition(panel);
+                    const saved = safeGetItem(this.positionKey(panel.id));
+                    if (saved) this.restoreSavedPosition(panel, saved, () => {});
+                } else {
+                    this.resetPanelPosition(panel);
+                }
             }
         }, 150);
     }

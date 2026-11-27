@@ -3,7 +3,7 @@
 // Main Application Entry Point
 // ===========================
 import * as THREE from 'three';
-import './i18n.js?v=2.10.320';
+import './i18n.js?v=2.10.323';
 
 // Import all modules
 import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';
@@ -46,6 +46,17 @@ const UI_ELEMENTS = {
 // Utility: Julian Date → JavaScript Date
 function jdToDate(jd) {
  return new Date((jd - 2440587.5) * 86400000);
+}
+
+function shiftUTCMonth(date, months) {
+ const day = date.getUTCDate();
+ date.setUTCDate(1);
+ date.setUTCMonth(date.getUTCMonth() + months);
+ const endOfMonth = new Date(date.getTime());
+ endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1, 0);
+ const lastDay = endOfMonth.getUTCDate();
+ date.setUTCDate(Math.min(day, lastDay));
+ return date;
 }
 
 // Form controls that own their keystrokes — app shortcuts must stay out of the way.
@@ -299,6 +310,7 @@ class App {
 
  window.addEventListener('app-language-changed', () => {
  this.syncLocalizedControlStates();
+ this.updateSimulationDate(true);
  if (this.solarSystemModule?.refreshLocalizedAssets) {
  this.solarSystemModule.refreshLocalizedAssets();
  }
@@ -355,11 +367,39 @@ class App {
  const effectiveSpeed = this.isTimeReversed ? -this.timeSpeed : this.timeSpeed;
  this.solarSystemModule.update(deltaTime, effectiveSpeed,
  this.sceneManager.camera, this.sceneManager.controls);
+ this.updateSimulationDate();
  }
 
  // Update FPS counter (driven by main render loop, not a separate rAF)
  this.updateFPSCounter();
  });
+ }
+
+ updateSimulationDate(force = false) {
+ const output = document.getElementById('simulation-date');
+ if (!output || !this.solarSystemModule) return;
+ const day = Math.floor(this.solarSystemModule.simulatedJD + 0.5);
+ if (!force && day === this._displayedSimulationDay) return;
+ const date = jdToDate(this.solarSystemModule.simulatedJD);
+ if (!Number.isFinite(date.getTime())) {
+ if (!this._dateRangeErrorLogged) console.error('Simulated date is outside the supported display range.');
+ this._dateRangeErrorLogged = true;
+ this._displayedSimulationDay = null;
+ output.textContent = t('dateUnavailable');
+ output.removeAttribute('datetime');
+ return;
+ }
+ this._dateRangeErrorLogged = false;
+ this._displayedSimulationDay = day;
+ const language = document.documentElement.lang;
+ if (this._dateFormatterLanguage !== language) {
+ this._dateFormatterLanguage = language;
+ this._dateFormatter = new Intl.DateTimeFormat(language, {
+ year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC'
+ });
+ }
+ output.textContent = this._dateFormatter.format(date);
+ output.setAttribute('datetime', date.toISOString().split('T')[0]);
  }
 
  /**
@@ -974,7 +1014,18 @@ class App {
  
  let intersects;
  if (recursiveFirst) {
- intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, true);
+ const candidates = [];
+ const visited = new Set();
+ const visit = object => {
+ if (!object.visible || visited.has(object)) return;
+ visited.add(object);
+ candidates.push(object);
+ for (const child of object.children) visit(child);
+ };
+ for (const object of this.solarSystemModule.objects) {
+ if (this._isVisibleInHierarchy(object)) visit(object);
+ }
+ intersects = this.sceneManager.raycaster.intersectObjects(candidates, false);
  } else {
  // Try non-recursive first for better performance
  intersects = this.sceneManager.raycaster.intersectObjects(this.solarSystemModule.objects, false);
@@ -1176,6 +1227,18 @@ class App {
  return false;
  }
 
+ _focusShortcutObject(object) {
+ const info = this.solarSystemModule.getObjectInfo(object);
+ this.uiManager.updateInfoPanel(info, object);
+ this.solarSystemModule.focusOnObject(object, this.sceneManager.camera, this.sceneManager.controls);
+ if (this.sceneManager.renderer.xr.isPresenting) {
+ this.sceneManager.teleportVRToObject(object);
+ this.sceneManager.vrLastObjectInfo = info;
+ this.sceneManager._showVRInfoOverlay();
+ this.sceneManager.requestVRMenuRefresh();
+ }
+ }
+
  setupKeyboardShortcuts() {
  document.addEventListener('keydown', (e) => {
  if (this._shouldIgnoreShortcut(e)) return;
@@ -1189,6 +1252,7 @@ class App {
  if (this.solarSystemModule) {
  this.isTimeReversed = false;
  this.solarSystemModule.seekToDate(new Date());
+ this.updateSimulationDate(true);
  audioManager.playSpeedTick();
  }
  break;
@@ -1248,8 +1312,9 @@ class App {
  const ssmBack = this.solarSystemModule;
  if (ssmBack) {
  const d = jdToDate(ssmBack.simulatedJD);
- d.setUTCMonth(d.getUTCMonth() - 1);
+ shiftUTCMonth(d, -1);
  ssmBack.seekToDate(d);
+ this.updateSimulationDate(true);
  audioManager.playSpeedTick();
  }
  break;
@@ -1259,8 +1324,9 @@ class App {
  const ssmFwd = this.solarSystemModule;
  if (ssmFwd) {
  const d = jdToDate(ssmFwd.simulatedJD);
- d.setUTCMonth(d.getUTCMonth() + 1);
+ shiftUTCMonth(d, 1);
  ssmFwd.seekToDate(d);
+ this.updateSimulationDate(true);
  audioManager.playSpeedTick();
  }
  break;
@@ -1289,7 +1355,7 @@ class App {
  const iss = this.solarSystemModule.satellites.find(s => 
  s.userData.name && s.userData.name.includes('ISS'));
  if (iss) {
- this.solarSystemModule.focusOnObject(iss, this.sceneManager.camera, this.sceneManager.controls);
+ this._focusShortcutObject(iss);
  }
  }
  break;
@@ -1300,7 +1366,7 @@ class App {
  s.userData.name && s.userData.name.includes('Voyager'));
  if (voyagers.length > 0) {
  this._voyagerIndex = (this._voyagerIndex + 1) % voyagers.length;
- this.solarSystemModule.focusOnObject(voyagers[this._voyagerIndex], this.sceneManager.camera, this.sceneManager.controls);
+ this._focusShortcutObject(voyagers[this._voyagerIndex]);
  }
  }
  break;
@@ -1310,7 +1376,7 @@ class App {
  const probes = this.solarSystemModule.spacecraft.filter(s => s.userData.type === 'probe');
  if (probes.length > 0) {
  this._probeIndex = (this._probeIndex + 1) % probes.length;
- this.solarSystemModule.focusOnObject(probes[this._probeIndex], this.sceneManager.camera, this.sceneManager.controls);
+ this._focusShortcutObject(probes[this._probeIndex]);
  }
  }
  break;
@@ -1498,6 +1564,15 @@ class App {
  opt.textContent = text;
  dropdown.appendChild(opt);
  });
+
+ searchInput.addEventListener('keydown', (e) => {
+ if (e.key === 'Escape' && searchInput.value) {
+ e.preventDefault();
+ e.stopPropagation();
+ searchInput.value = '';
+ restoreDropdown();
+ }
+ });
  });
  
  // Clear search when dropdown is used
@@ -1513,7 +1588,7 @@ class App {
  
  setupMobileGestureHints() {
  // Only show on touch devices
- const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+ const isTouchDevice = navigator.maxTouchPoints > 0;
  const hasSeenHints = safeGetItem('space_voyage_gesture_hints_seen');
  
  if (!isTouchDevice || hasSeenHints) return;
@@ -1522,7 +1597,7 @@ class App {
  if (!hints) return;
  
  // Show hints after a delay
- setTimeout(() => {
+ const showTimer = setTimeout(() => {
  hints.classList.remove('hidden');
  
  // Auto-hide after 5 seconds
@@ -1534,6 +1609,7 @@ class App {
 
  // Hide immediately on any touch
  document.addEventListener('touchstart', () => {
+ clearTimeout(showTimer);
  hints.classList.add('hidden');
  safeSetItem('space_voyage_gesture_hints_seen', 'true');
  }, { once: true, passive: true });

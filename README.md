@@ -44,6 +44,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - Educational scale mode with a compact solar corona that keeps Mercury clear of the glow
 - Object info reports known mean orbital distances in AU, independent of the visualization scale
 - Major moons, Haumea's triaxial shape and ring, and Quaoar's two rings are represented
+- On shadow-capable devices, eclipse shadows are rendered for the focused planet–moon system rather than the whole overview; shadows are disabled on mobile and low-power devices.
 
 ### Progressive Web App
 - ✅ **Works 100% offline** with intelligent caching
@@ -173,6 +174,8 @@ an interrupted update.
   - `R` - Reset view
   - `Space` - Pause/Play
   - `+/-` - Adjust time speed
+  - `[` / `]` - Move the simulation date back / forward one month
+  - `N` - Return to the current date
 
 ### VR Mode
 - **Left Stick:** Move forward/back/strafe
@@ -253,6 +256,13 @@ Solar/
 ### Time Control
 - Continuous speed control from paused to one simulated year per minute
 - Pause/play functionality
+- The speed panel shows the simulated UTC date, including when paused or collapsed.
+- Comet information shows an approximate orbital semimajor axis, not a current
+  distance: the visual orbits are compressed and do not represent physical distances.
+- Moon diameters and nebula extents are approximate; nebulae and Solar System
+  belts have diffuse boundaries. See [NASA's moon data](https://www.nasa.gov/wp-content/uploads/2009/12/solar_system_moons_lithograph_h.pdf),
+  [NASA's Eagle Nebula data](https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-16/),
+  and [ESA's small-body overview](https://www.esa.int/media/small-objects-in-the-solar-system).
 - Perfect for observing:
   - Planetary rotations
   - Orbital mechanics

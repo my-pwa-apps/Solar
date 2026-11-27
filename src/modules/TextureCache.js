@@ -185,18 +185,11 @@ export const TEXTURE_CACHE = new TextureCache();
 // Warm up cache with essential textures (run in background)
 // This preloads from IndexedDB into memory so synchronous lookups work
 export async function warmupTextureCache() {
- // Build keys dynamically based on actual texture size config
- // On mobile CONFIG.QUALITY.textureSize=1024, on desktop 4096
  const textureSize = CONFIG.QUALITY?.textureSize || 4096;
- const moonSize = Math.min(textureSize, 2048);
 
  const essentialTextures = [
  `earth_texture_${textureSize}`,
- `earth_bump_${textureSize}`,
- `earth_normal_${textureSize}`,
- `earth_specular_${textureSize}`,
- `moon_texture_${moonSize}`,
- `mars_texture_${moonSize}`
+ `earth_bump_${Math.min(textureSize, 1024)}`
  ];
  
  if (DEBUG && DEBUG.PERFORMANCE) console.log('Warming up texture cache from IndexedDB...');
@@ -208,21 +201,15 @@ export async function warmupTextureCache() {
  cached++;
  if (DEBUG && DEBUG.PERFORMANCE) console.log(`  Loaded ${key} into memory`);
  
- // For bump/normal/specular maps, also create and cache Canvas objects
- // This allows synchronous access in createEarthBumpMap/Normal/Specular
- if (key.includes('bump') || key.includes('normal') || key.includes('specular')) {
+ // The bump generator needs its cached canvas synchronously.
+ if (key.startsWith('earth_bump_')) {
  const canvasKey = `${key}_canvas`;
  
  // Create canvas from data URL (async)
  const img = new Image();
- img.src = dataURL;
  await new Promise((resolve) => {
  img.onload = () => {
  const canvas = document.createElement('canvas');
- // Size from the decoded image, not from the key. Keys carry the configured
- // texture size (1024 on mobile, 4096 on desktop); the old `key.includes('4096')`
- // test silently produced a 2048 canvas for every non-desktop key, leaving
- // three quarters of every mobile bump/normal/specular map transparent.
  canvas.width = img.naturalWidth || img.width;
  canvas.height = img.naturalHeight || img.height;
  const ctx = canvas.getContext('2d');
@@ -233,7 +220,11 @@ export async function warmupTextureCache() {
  if (DEBUG && DEBUG.PERFORMANCE) console.log(`    Canvas cached: ${canvasKey}`);
  resolve();
  };
- img.onerror = () => resolve(); // Skip if error
+ img.onerror = () => {
+ console.warn(`[Cache] Could not decode ${key}; it will be regenerated.`);
+ resolve();
+ };
+ img.src = dataURL;
  });
  }
  }

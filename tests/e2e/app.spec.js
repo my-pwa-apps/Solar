@@ -74,6 +74,650 @@ async function openModalFromButton(page, buttonSelector, modalSelector) {
   }
 }
 
+test('preserves labels, belt distributions and rendering optimizations', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(async () => {
+    const THREE = await import('three');
+    const app = window.app;
+    const sceneManager = app.sceneManager;
+    const solar = app.solarSystemModule;
+    const renderer = sceneManager.renderer;
+    renderer.setAnimationLoop(null);
+
+    const label = solar.labels[0];
+    const canvas = label.material.map.image;
+    const canvasPixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+    let opaquePixels = 0;
+    for (let i = 3; i < canvasPixels.length; i += 4) {
+      if (canvasPixels[i] > 0) opaquePixels++;
+    }
+
+    const target = new THREE.WebGLRenderTarget(128, 32);
+    const labelScene = new THREE.Scene();
+    const sprite = new THREE.Sprite(label.material);
+    sprite.scale.set(2, 2, 1);
+    labelScene.add(sprite);
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+    camera.position.z = 2;
+    const oldTarget = renderer.getRenderTarget();
+    const oldColor = renderer.getClearColor(new THREE.Color()).clone();
+    const oldAlpha = renderer.getClearAlpha();
+    renderer.setClearColor(0, 0);
+    renderer.setRenderTarget(target);
+    renderer.clear();
+    renderer.render(labelScene, camera);
+    const pixels = new Uint8Array(128 * 32 * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, 128, 32, pixels);
+    renderer.setRenderTarget(oldTarget);
+    renderer.setClearColor(oldColor, oldAlpha);
+    target.dispose();
+    let renderedPixels = 0;
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i] > 0) renderedPixels++;
+    }
+
+    const makeCloud = (points) => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+      const group = new THREE.Group();
+      group.add(new THREE.Points(geometry, new THREE.PointsMaterial()));
+      return group;
+    };
+    const mock = {
+      asteroidBelt: makeCloud([120, 0, 0, 155, 1, 0]),
+      kuiperBelt: makeCloud([1990, 0, 0, 2790, 2, 0]),
+      oortCloud: makeCloud([3000, 0, 0, 9000, 0, 0]),
+      realisticScale: true
+    };
+    const clouds = [mock.asteroidBelt, mock.kuiperBelt, mock.oortCloud].map(group => group.children[0]);
+    const original = clouds.map(cloud => Array.from(cloud.geometry.attributes.position.array));
+    solar.updateBelts.call(mock);
+    const scaled = clouds.map(cloud => ({
+      positions: Array.from(cloud.geometry.attributes.position.array),
+      bound: cloud.geometry.boundingSphere.radius
+    }));
+    mock.realisticScale = false;
+    solar.updateBelts.call(mock);
+    const restored = clouds.map(cloud => Array.from(cloud.geometry.attributes.position.array));
+    clouds.forEach(cloud => {
+      cloud.geometry.dispose();
+      cloud.material.dispose();
+    });
+
+    const jetInstances = solar.comets.map(comet => {
+      const jets = comet.children.find(child => child.isInstancedMesh);
+      return jets?.count;
+    });
+    const comet = solar.comets[0];
+    const jets = comet.children.find(child => child.isInstancedMesh);
+    comet.updateWorldMatrix(true, true);
+    const instanceMatrix = new THREE.Matrix4();
+    jets.getMatrixAt(0, instanceMatrix);
+    const jetCenter = new THREE.Vector3().setFromMatrixPosition(instanceMatrix).applyMatrix4(jets.matrixWorld);
+    const raycaster = new THREE.Raycaster(jetCenter.clone().add(new THREE.Vector3(0, 0, 1)), new THREE.Vector3(0, 0, -1));
+    const jetHit = raycaster.intersectObject(jets).some(hit => Number.isInteger(hit.instanceId));
+    const galaxies = solar.galaxies.filter(galaxy => galaxy.userData.type === 'backgroundGalaxy');
+    const galaxiesCulled = galaxies.length > 0 && galaxies.every(galaxy => galaxy.frustumCulled);
+    const bumpDimensions = ['earth', 'mars', 'mercury']
+      .map(name => solar.planets[name].material.bumpMap.image.width);
+    const dwarfSegments = solar.planets.pluto.geometry.parameters.widthSegments;
+    const planetSegments = solar.planets.earth.geometry.parameters.widthSegments;
+    const materials = new Set();
+    solar.constellations.forEach(constellation => constellation.traverse(child => {
+      if (child.material) materials.add(child.material);
+    }));
+    const materialCacheComplete = materials.size === solar._constellationMaterials.length
+      && solar._constellationMaterials.every(material => materials.has(material));
+    const fadeCamera = new THREE.PerspectiveCamera();
+    fadeCamera.position.set(18000, 0, 0);
+    solar.update(0.016, 0, fadeCamera, sceneManager.controls);
+    const faded = solar._constellationMaterials.every(material =>
+      Math.abs(material.opacity - (material.userData.originalOpacity ?? 1) * 0.5) < 1e-6);
+    fadeCamera.position.set(100, 0, 0);
+    solar.update(0.016, 0, fadeCamera, sceneManager.controls);
+    const fadeRestored = solar._constellationMaterials.every(material =>
+      material.opacity === (material.userData.originalOpacity ?? 1));
+    const { TEXTURE_CACHE, warmupTextureCache } = await import('/src/modules/TextureCache.js');
+    const originalGet = TEXTURE_CACHE.get;
+    const cacheKey = 'earth_bump_1024_canvas';
+    const previousCanvas = TEXTURE_CACHE.cache.get(cacheKey);
+    const mockCanvas = document.createElement('canvas');
+    mockCanvas.width = 16;
+    mockCanvas.height = 8;
+    const mockURL = mockCanvas.toDataURL();
+    const warmedKeys = [];
+    TEXTURE_CACHE.get = async key => {
+      warmedKeys.push(key);
+      return key === 'earth_bump_1024' ? mockURL : null;
+    };
+    try {
+      await warmupTextureCache();
+    } finally {
+      TEXTURE_CACHE.get = originalGet;
+    }
+    const warmedCanvas = TEXTURE_CACHE.cache.get(cacheKey);
+    const warmupSize = [warmedCanvas.width, warmedCanvas.height];
+    if (previousCanvas) TEXTURE_CACHE.cache.set(cacheKey, previousCanvas);
+    else TEXTURE_CACHE.cache.delete(cacheKey);
+
+    let postProcessing = null;
+    if (sceneManager.composer) {
+      const composer = sceneManager.composer;
+      sceneManager._pendingDprChange = 0.6;
+      const setAnimationLoop = renderer.setAnimationLoop;
+      let renderFrame;
+      renderer.setAnimationLoop = callback => { renderFrame = callback; };
+      sceneManager.animate(() => {});
+      renderer.setAnimationLoop = setAnimationLoop;
+      renderFrame();
+      const adaptiveRatio = composer._pixelRatio;
+      const ratio = 0.6;
+      sceneManager.onResize();
+      const resizedWidth = composer.renderTarget1.width;
+      renderer.setSize(160, 90, false);
+      composer.setSize(160, 90);
+      sceneManager.bloomPass.enabled = true;
+      sceneManager.bloomPass.strength = 0;
+      composer.render();
+      const capture = () => {
+        const image = document.createElement('canvas');
+        image.width = renderer.domElement.width;
+        image.height = renderer.domElement.height;
+        const context = image.getContext('2d');
+        context.drawImage(renderer.domElement, 0, 0);
+        return context.getImageData(0, 0, image.width, image.height).data;
+      };
+      const strengthZero = capture();
+      sceneManager.toggleBloom(false);
+      renderer.info.autoReset = false;
+      renderer.info.reset();
+      composer.render();
+      const disabledCalls = renderer.info.render.calls;
+      const disabled = capture();
+      let totalDifference = 0;
+      for (let i = 0; i < disabled.length; i++) totalDifference += Math.abs(disabled[i] - strengthZero[i]);
+      sceneManager.bloomPass.strength = sceneManager._bloomStrength;
+      sceneManager.toggleBloom(true);
+      renderer.info.reset();
+      composer.render();
+      const enabledCalls = renderer.info.render.calls;
+      renderer.info.autoReset = true;
+      postProcessing = {
+        adaptiveRatio,
+        ratio: composer._pixelRatio,
+        resizedWidth,
+        expectedWidth: Math.floor(window.innerWidth * ratio),
+        averageDifference: totalDifference / disabled.length,
+        reenabled: sceneManager.bloomPass.enabled,
+        savedCalls: enabledCalls - disabledCalls
+      };
+    }
+    let disposedJets = 0;
+    solar.comets.forEach(item => {
+      item.children.find(child => child.isInstancedMesh)
+        .addEventListener('dispose', () => { disposedJets++; });
+    });
+    solar.cleanup(sceneManager.scene);
+    return {
+      labelWidth: canvas.width, labelHeight: canvas.height, opaquePixels, renderedPixels,
+      original, scaled, restored, jetInstances, jetHit, galaxiesCulled, bumpDimensions,
+      dwarfSegments, planetSegments, materialCacheComplete, faded, fadeRestored,
+      warmedKeys, warmupSize, postProcessing, disposedJets
+    };
+  });
+
+  expect(result.labelWidth).toBe(512);
+  expect(result.labelHeight).toBe(64);
+  expect(result.opaquePixels).toBeGreaterThan(100);
+  expect(result.renderedPixels).toBeGreaterThan(100);
+  expect(result.scaled[0].positions[0]).toBeCloseTo(320);
+  expect(result.scaled[1].positions[3]).toBeGreaterThan(8250);
+  expect(result.scaled[2].bound).toBeGreaterThan(19000);
+  for (let cloud = 0; cloud < result.original.length; cloud++) {
+    for (let i = 0; i < result.original[cloud].length; i++) {
+      expect(result.restored[cloud][i]).toBeCloseTo(result.original[cloud][i], 2);
+    }
+  }
+  expect(result.jetInstances).toEqual([5, 5, 5, 5, 5, 5]);
+  expect(result.jetHit).toBe(true);
+  expect(result.disposedJets).toBe(6);
+  expect(result.galaxiesCulled).toBe(true);
+  expect(result.bumpDimensions.every(width => width <= 1024)).toBe(true);
+  expect(result.dwarfSegments).toBeLessThanOrEqual(64);
+  expect(result.planetSegments).toBeGreaterThanOrEqual(result.dwarfSegments);
+  expect(result.materialCacheComplete && result.faded && result.fadeRestored).toBe(true);
+  expect(result.warmedKeys).toContain('earth_bump_1024');
+  expect(result.warmedKeys).toHaveLength(2);
+  expect(result.warmupSize).toEqual([16, 8]);
+  if (result.postProcessing) {
+    expect(result.postProcessing.adaptiveRatio).toBe(0.6);
+    expect(result.postProcessing.ratio).toBe(0.6);
+    expect(result.postProcessing.resizedWidth).toBe(result.postProcessing.expectedWidth);
+    expect(result.postProcessing.averageDifference).toBeLessThan(1);
+    expect(result.postProcessing.reenabled).toBe(true);
+    expect(result.postProcessing.savedCalls).toBeGreaterThanOrEqual(10);
+  }
+});
+
+test('batches graphics while preserving picking, filters and resource ownership', async ({ page }) => {
+  await openApp(page);
+  const result = await page.evaluate(async () => {
+    const THREE = await import('three');
+    const app = window.app;
+    const solar = app.solarSystemModule;
+    const manager = app.sceneManager;
+    const renderer = manager.renderer;
+    renderer.setAnimationLoop(null);
+
+    solar.toggleConstellations(true);
+    const big = solar.constellations.find(group => group.userData.name === 'bigDipper');
+    const little = solar.constellations.find(group => group.userData.name === 'littleDipper');
+    const star = big.children.find(child => child.userData.name === 'Dubhe');
+    const batches = big.children.filter(child => child.isInstancedMesh);
+    const matrix = new THREE.Matrix4();
+    batches[0].getMatrixAt(0, matrix);
+    const instancePosition = new THREE.Vector3().setFromMatrixPosition(matrix);
+    manager.scene.updateMatrixWorld(true);
+    const starPosition = star.getWorldPosition(new THREE.Vector3());
+    const starRay = new THREE.Raycaster(starPosition.clone().add(new THREE.Vector3(0, 0, 100)), new THREE.Vector3(0, 0, -1));
+    starRay.layers.enable(1);
+    const starPicked = starRay.intersectObject(big, true).some(hit => hit.object === star);
+    const oldCameraPosition = manager.camera.position.clone();
+    const oldCameraQuaternion = manager.camera.quaternion.clone();
+    manager.camera.position.copy(starPosition).add(new THREE.Vector3(0, 0, 100));
+    manager.camera.lookAt(starPosition);
+    manager.camera.updateMatrixWorld(true);
+    const rect = renderer.domElement.getBoundingClientRect();
+    const namedStar = app._raycastNamedObject({
+      clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2
+    }, true);
+    const namedStarPicked = namedStar?.userData?.name === star.userData.name
+      && namedStar.userData.isConstellationStar;
+    manager.camera.position.copy(oldCameraPosition);
+    manager.camera.quaternion.copy(oldCameraQuaternion);
+    manager.camera.updateMatrixWorld(true);
+    solar.highlightConstellation(big);
+    const polaris = little.children.find(child => child.userData.name === 'Polaris');
+    const polarisVisible = little.visible && polaris.visible && polaris.layers.isEnabled(0)
+      && little.children.filter(child => child.isInstancedMesh).every(child => !child.visible)
+      && solar._polarisPointerLine.visible;
+    solar.resetConstellationHighlight();
+    const polarisReset = !polaris.layers.isEnabled(0) && little.children
+      .filter(child => child.isInstancedMesh).every(child => child.visible);
+    const isolatedScene = new THREE.Scene();
+    isolatedScene.add(big);
+    const starCamera = new THREE.PerspectiveCamera(120, 1, 1, 50000);
+    starCamera.lookAt(starPosition);
+    renderer.info.autoReset = false;
+    starCamera.layers.set(1);
+    renderer.info.reset();
+    renderer.render(isolatedScene, starCamera);
+    const originalStarCalls = renderer.info.render.calls;
+    starCamera.layers.set(0);
+    renderer.info.reset();
+    renderer.render(isolatedScene, starCamera);
+    const batchedStarCalls = renderer.info.render.calls;
+    renderer.info.autoReset = true;
+    manager.scene.add(big);
+
+    const comparePointPicking = () => {
+      manager.scene.updateMatrixWorld(true);
+      let comparisons = 0;
+      let equal = true;
+      for (const group of [solar.asteroidBelt, solar.kuiperBelt, solar.oortCloud]) {
+        for (const cloud of group.children) {
+          const positions = cloud.geometry.attributes.position;
+          for (const index of [0, Math.floor(positions.count / 2), positions.count - 1]) {
+            const point = new THREE.Vector3().fromBufferAttribute(positions, index).applyMatrix4(cloud.matrixWorld);
+            const ray = new THREE.Raycaster(point.clone().add(new THREE.Vector3(5, 8, 7)),
+              new THREE.Vector3(-5, -8, -7).normalize());
+            ray.params.Points.threshold = 0.25;
+            const indexed = [];
+            const original = [];
+            cloud.raycast(ray, indexed);
+            THREE.Points.prototype.raycast.call(cloud, ray, original);
+            const summarize = hits => hits.map(hit => [hit.index, hit.distance]).sort((a, b) => a[0] - b[0]);
+            const a = summarize(indexed);
+            const b = summarize(original);
+            equal &&= a.length === b.length && a.every((hit, i) =>
+              hit[0] === b[i][0] && Math.abs(hit[1] - b[i][1]) < 1e-6);
+            comparisons++;
+          }
+        }
+      }
+      return { equal, comparisons };
+    };
+    const pickingBefore = comparePointPicking();
+    const benchmarkCloud = solar.oortCloud.children[1];
+    const benchmarkRay = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(1, 0, 0));
+    const measurePicking = method => {
+      const start = performance.now();
+      for (let i = 0; i < 100; i++) method.call(benchmarkCloud, benchmarkRay, []);
+      return performance.now() - start;
+    };
+    const indexedMs = measurePicking(benchmarkCloud.raycast);
+    const linearMs = measurePicking(THREE.Points.prototype.raycast);
+    solar.realisticScale = true;
+    solar.updateScale();
+    const pickingAfter = comparePointPicking();
+    const planetBatches = solar.orbits.filter(orbit => orbit.userData.type === 'orbit');
+    const orbitCounts = {
+      planets: planetBatches.filter(orbit => !orbit.userData.isDwarf).length,
+      dwarfs: planetBatches.filter(orbit => orbit.userData.isDwarf).length,
+      comets: solar.cometOrbits.length
+    };
+    const cometVertices = solar.cometOrbits[0].geometry.attributes.position;
+    const cometPerihelion = solar.comets[0].userData.distance * (1 - solar.comets[0].userData.eccentricity);
+    const orbitGeometryValid = cometVertices.count === solar.comets.length * 256 * 2
+      && Math.abs(cometVertices.getX(0) - cometPerihelion) < 0.01
+      && Math.abs(cometVertices.getY(0)) < 1e-6
+      && Math.abs(cometVertices.getZ(0)) < 1e-6;
+    const filters = {};
+    for (const mode of ['planets', 'dwarfs', 'moons', 'comets', 'none']) {
+      solar.setOrbitMode(mode);
+      filters[mode] = [
+        planetBatches.find(orbit => !orbit.userData.isDwarf).visible,
+        planetBatches.find(orbit => orbit.userData.isDwarf).visible,
+        solar.orbits.find(orbit => orbit.userData.type === 'moonOrbit').visible,
+        solar.cometOrbits[0].visible
+      ];
+    }
+
+    const cloud = solar.asteroidBelt.children[0];
+    const pointsGeometry = new THREE.BufferGeometry();
+    pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute([-0.5, 0, 0, 0.5, 0, 0], 3));
+    pointsGeometry.setAttribute('color', new THREE.Float32BufferAttribute([1, 1, 1, 1, 1, 1], 3));
+    pointsGeometry.setAttribute('particleSize', new THREE.Float32BufferAttribute([2, 8], 1));
+    const pointScene = new THREE.Scene();
+    pointScene.add(new THREE.Points(pointsGeometry, cloud.material));
+    const pointCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 20);
+    pointCamera.position.z = 10;
+    const target = new THREE.WebGLRenderTarget(64, 64);
+    const oldTarget = renderer.getRenderTarget();
+    const oldColor = renderer.getClearColor(new THREE.Color()).clone();
+    const oldAlpha = renderer.getClearAlpha();
+    renderer.setClearColor(0, 0);
+    renderer.setRenderTarget(target);
+    renderer.clear();
+    renderer.render(pointScene, pointCamera);
+    const pixels = new Uint8Array(64 * 64 * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, 64, 64, pixels);
+    renderer.setRenderTarget(oldTarget);
+    renderer.setClearColor(oldColor, oldAlpha);
+    target.dispose();
+    pointsGeometry.dispose();
+    let leftPixels = 0;
+    let rightPixels = 0;
+    for (let y = 0; y < 64; y++) {
+      for (let x = 0; x < 64; x++) {
+        if (pixels[(y * 64 + x) * 4 + 3] > 0) {
+          if (x < 32) leftPixels++;
+          else rightPixels++;
+        }
+      }
+    }
+
+    const craft = solar.spacecraft[0];
+    craft.updateWorldMatrix(true, true);
+    const craftPosition = craft.getWorldPosition(new THREE.Vector3());
+    solar._cameraWorldPosition.copy(craftPosition).add(new THREE.Vector3(100000, 0, 0));
+    solar._updateSpacecraftLOD(manager.camera);
+    const farLOD = craft.userData.lod.marker.visible && !craft.userData.lod.detail.visible;
+    const markerPosition = craft.userData.lod.marker.getWorldPosition(new THREE.Vector3());
+    const markerRay = new THREE.Raycaster(markerPosition.clone().add(new THREE.Vector3(0, 0, craft.userData.lod.radius * 3)), new THREE.Vector3(0, 0, -1));
+    const markerPickable = markerRay.intersectObject(craft.userData.lod.marker).length > 0;
+    solar._cameraWorldPosition.copy(craftPosition);
+    solar._updateSpacecraftLOD(manager.camera);
+    const nearLOD = craft.userData.lod.detail.visible && !craft.userData.lod.marker.visible;
+
+    const light = solar.sun.userData.sunLight;
+    const shadowsSupported = renderer.shadowMap.enabled;
+    solar.focusedObject = solar.planets.earth;
+    solar._updateFocusedShadows();
+    const earthShadows = light.castShadow && solar.planets.earth.castShadow && solar.moons.moon.castShadow
+      && !solar.planets.mars.castShadow;
+    let shadowDifference = 0;
+    if (shadowsSupported) {
+      const shadowScene = new THREE.Scene();
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      const occluder = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      plane.receiveShadow = true;
+      occluder.castShadow = true;
+      occluder.position.z = 3;
+      const shadowCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 30);
+      shadowCamera.position.set(3, 0, 10);
+      shadowCamera.lookAt(0, 0, 0);
+      const oldLightPosition = light.position.clone();
+      const oldFar = light.shadow.camera.far;
+      light.position.set(0, 0, 10);
+      light.shadow.camera.far = 30;
+      light.shadow.camera.updateProjectionMatrix();
+      shadowScene.add(light, plane, occluder, new THREE.AmbientLight(0xffffff, 0.05));
+      const shadowTarget = new THREE.WebGLRenderTarget(96, 96);
+      renderer.setRenderTarget(shadowTarget);
+      renderer.render(shadowScene, shadowCamera);
+      const withShadow = new Uint8Array(96 * 96 * 4);
+      renderer.readRenderTargetPixels(shadowTarget, 0, 0, 96, 96, withShadow);
+      light.castShadow = false;
+      renderer.render(shadowScene, shadowCamera);
+      const withoutShadow = new Uint8Array(96 * 96 * 4);
+      renderer.readRenderTargetPixels(shadowTarget, 0, 0, 96, 96, withoutShadow);
+      for (let i = 0; i < withShadow.length; i += 4) {
+        if (withoutShadow[i] > withShadow[i] + 5) shadowDifference++;
+      }
+      renderer.setRenderTarget(null);
+      shadowTarget.dispose();
+      plane.geometry.dispose();
+      plane.material.dispose();
+      occluder.geometry.dispose();
+      occluder.material.dispose();
+      light.position.copy(oldLightPosition);
+      light.shadow.camera.far = oldFar;
+      light.shadow.camera.updateProjectionMatrix();
+      light.castShadow = true;
+      manager.scene.add(light);
+    }
+    solar.focusedObject = solar.moons.moon;
+    solar._updateFocusedShadows();
+    const moonShadows = light.castShadow && solar.planets.earth.castShadow && solar.moons.moon.castShadow;
+    solar.focusedObject = solar.planets.venus;
+    solar._updateFocusedShadows();
+    const moonlessShadows = light.castShadow;
+
+    const placeholder = new THREE.Texture();
+    placeholder.userData.planetPlaceholder = true;
+    let placeholderDisposals = 0;
+    placeholder.addEventListener('dispose', () => { placeholderDisposals++; });
+    const replacement = new THREE.Texture();
+    const fallbackMoon = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshBasicMaterial({ map: placeholder }));
+    solar.moons.testfallback = fallbackMoon;
+    solar._applyProceduralPlanetTexture('testFallback', replacement);
+    const moonFallbackApplied = fallbackMoon.material.map === replacement;
+    solar.objects.push(fallbackMoon);
+
+    let labelDisposals = 0;
+    let cometTextureDisposals = 0;
+    let orbitDisposals = 0;
+    solar.labels[0].material.map.addEventListener('dispose', () => { labelDisposals++; });
+    solar.comets[0].children.find(child => child.isSprite).material.map
+      .addEventListener('dispose', () => { cometTextureDisposals++; });
+    solar.exoplanetOrbits[0].mesh.geometry.addEventListener('dispose', () => { orbitDisposals++; });
+    const solarAmbient = solar.sun.userData.ambientLight;
+    solar.cleanup(manager.scene);
+    const cleanupReleased = solar.focusedObject === null && solar._planetArray === null
+      && !manager.scene.children.includes(solarAmbient);
+    return {
+      batchCount: batches.length, instanceMatches: instancePosition.distanceTo(star.position) < 0.002,
+      starPicked, namedStarPicked, namedStarName: namedStar?.userData?.name, polarisVisible, polarisReset, originalStarCalls, batchedStarCalls,
+      pickingBefore, pickingAfter, orbitCounts, orbitGeometryValid, filters, indexedMs, linearMs,
+      leftPixels, rightPixels, farLOD, markerPickable, nearLOD, shadowsSupported, earthShadows,
+      moonShadows, moonlessShadows, shadowDifference, labelDisposals, cometTextureDisposals, orbitDisposals,
+      placeholderDisposals, moonFallbackApplied, cleanupReleased
+    };
+  });
+  expect(result.batchCount).toBe(2);
+  expect(result.instanceMatches).toBe(true);
+  expect(result.starPicked).toBe(true);
+  expect(result.namedStarPicked, `selected ${result.namedStarName}`).toBe(true);
+  expect(result.polarisVisible).toBe(true);
+  expect(result.polarisReset).toBe(true);
+  expect(result.batchedStarCalls).toBeLessThan(result.originalStarCalls);
+  console.log(`Constellation calls: ${result.originalStarCalls} → ${result.batchedStarCalls}; point picking (100 rays): ${result.linearMs.toFixed(1)} ms → ${result.indexedMs.toFixed(1)} ms`);
+  expect(result.pickingBefore).toEqual({ equal: true, comparisons: 30 });
+  expect(result.pickingAfter).toEqual({ equal: true, comparisons: 30 });
+  expect(result.orbitCounts).toEqual({ planets: 1, dwarfs: 1, comets: 1 });
+  expect(result.orbitGeometryValid).toBe(true);
+  expect(result.filters).toEqual({
+    planets: [true, false, false, false],
+    dwarfs: [false, true, false, false],
+    moons: [false, false, true, false],
+    comets: [false, false, false, true],
+    none: [false, false, false, false]
+  });
+  expect(result.leftPixels).toBeGreaterThan(0);
+  expect(result.rightPixels).toBeGreaterThan(result.leftPixels * 3);
+  expect(result.farLOD).toBe(true);
+  expect(result.markerPickable).toBe(true);
+  expect(result.nearLOD).toBe(true);
+  if (result.shadowsSupported) expect(result.earthShadows && result.moonShadows).toBe(true);
+  if (result.shadowsSupported) expect(result.shadowDifference).toBeGreaterThan(0);
+  expect(result.moonlessShadows).toBe(false);
+  expect(result.placeholderDisposals).toBe(1);
+  expect(result.moonFallbackApplied).toBe(true);
+  expect(result.cleanupReleased).toBe(true);
+  expect([result.labelDisposals, result.cometTextureDisposals, result.orbitDisposals]).toEqual([1, 1, 1]);
+});
+
+test('keeps time, spacecraft navigation, search and physical information consistent', async ({ page }) => {
+  await openApp(page);
+  await page.waitForFunction(() => window.app.solarSystemModule.satellites.some(s => s.userData.name?.includes('ISS'))
+    && window.app.solarSystemModule.spacecraft.some(s => s.userData.type === 'probe'), { timeout: 60_000 });
+  await page.evaluate(() => window.app.sceneManager.renderer.setAnimationLoop(null));
+  await page.locator('#object-dropdown').selectOption('earth');
+  await page.evaluate(() => document.activeElement.blur());
+
+  for (const [key, expected] of [['i', /ISS/], ['v', /Voyager/], ['p', /.+/]]) {
+    await page.keyboard.press(key);
+    await expect(page.locator('#object-name')).toHaveText(expected);
+    expect(await page.evaluate(() => window.app.uiManager.infoObject === window.app.solarSystemModule.focusedObject)).toBe(true);
+  }
+  await page.evaluate(() => window.app.uiManager.closeInfoPanel());
+  await page.keyboard.press('i');
+  await expect(page.locator('#info-panel')).not.toHaveClass(/hidden/);
+  await expect(page.locator('#object-name')).toContainText('ISS');
+
+  await page.locator('#nav-search').fill('no-such-object-123');
+  await expect(page.locator('#object-dropdown option')).toHaveCount(1);
+  await page.locator('#nav-search').press('Escape');
+  await expect(page.locator('#nav-search')).toHaveValue('');
+  await expect.poll(() => page.locator('#object-dropdown option[value]').count()).toBeGreaterThan(70);
+
+  await page.evaluate(() => {
+    document.activeElement.blur();
+    window.app.solarSystemModule.seekToDate(new Date('2020-01-15T12:00:00Z'));
+    window.app.updateSimulationDate(true);
+  });
+  await page.keyboard.press('Space');
+  await expect(page.locator('#simulation-date')).toHaveAttribute('datetime', '2020-01-15');
+  await page.keyboard.press(']');
+  await expect(page.locator('#simulation-date')).toHaveAttribute('datetime', '2020-02-15');
+  await page.keyboard.press('[');
+  await expect(page.locator('#simulation-date')).toHaveAttribute('datetime', '2020-01-15');
+  await page.evaluate(() => {
+    window.app.solarSystemModule.seekToDate(new Date('2020-01-31T12:00:00Z'));
+    window.app.updateSimulationDate(true);
+  });
+  await page.keyboard.press(']');
+  await expect(page.locator('#simulation-date')).toHaveAttribute('datetime', '2020-02-29');
+  await page.keyboard.press('n');
+  await expect(page.locator('#simulation-date')).toHaveAttribute('datetime', new Date().toISOString().slice(0, 10));
+  await page.locator('#speed-toggle').click();
+  await expect(page.locator('#simulation-date')).toBeVisible();
+
+  const astronomy = await page.evaluate(async () => {
+    const ssm = window.app.solarSystemModule;
+    const moonSizes = Object.values(ssm.moons).map(moon => ssm.getObjectInfo(moon).size);
+    const nebulaSizes = ssm.nebulae.map(nebula => ssm.getObjectInfo(nebula).size);
+    const regions = [ssm.asteroidBelt, ssm.kuiperBelt, ssm.oortCloud].map(object => ssm.getObjectInfo(object).size);
+    const cometDistances = ssm.comets.map(comet => ssm.getObjectInfo(comet).distance);
+    const translations = [];
+    for (const lang of ['en', 'nl', 'fr', 'de', 'es', 'pt']) {
+      await window.setLanguage(lang);
+      translations.push({
+        date: document.querySelector('.simulation-date').textContent,
+        moon: ssm.getObjectInfo(ssm.moons.phobos).size,
+        comet: ssm.getObjectInfo(ssm.comets[0]).distance,
+        size: ssm.getObjectInfo(ssm.planets.earth).size,
+        nebula: ssm.getObjectInfo(ssm.nebulae[0]).size
+      });
+    }
+    return { moonSizes, nebulaSizes, regions, cometDistances, translations };
+  });
+  expect(astronomy.moonSizes).toHaveLength(19);
+  expect(astronomy.nebulaSizes).toHaveLength(7);
+  for (const size of [...astronomy.moonSizes, ...astronomy.nebulaSizes, ...astronomy.regions]) {
+    expect(size).not.toContain('unavailable');
+  }
+  for (const distance of astronomy.cometDistances) {
+    expect(distance).toContain('AU');
+    expect(distance).toContain('not current distance');
+  }
+  expect(astronomy.cometDistances[0]).toMatch(/^17\.8\d AU/);
+  for (const localized of astronomy.translations.slice(1)) {
+    expect(localized.date).not.toContain('Simulated date');
+    expect(localized.moon).not.toContain('mean diameter');
+    expect(localized.comet).not.toContain('estimated orbital');
+    expect(localized.nebula).not.toContain('light-years');
+  }
+  expect(astronomy.translations[2].size).toContain('de diamètre');
+
+  if (await page.evaluate(() => navigator.maxTouchPoints === 0)) {
+    await page.evaluate(() => {
+      localStorage.removeItem('space_voyage_gesture_hints_seen');
+      window.app.setupMobileGestureHints();
+    });
+    await page.waitForTimeout(2200);
+    await expect(page.locator('#gesture-hints')).toHaveClass(/hidden/);
+  }
+});
+
+test('keeps dragged panel positions separate across desktop and mobile', async ({ page }) => {
+  test.setTimeout(360_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openApp(page);
+  await page.evaluate(() => window.app.sceneManager.renderer.setAnimationLoop(null));
+  await page.locator('#object-dropdown').selectOption('earth');
+  const title = await page.locator('#object-name').boundingBox();
+  await page.mouse.move(title.x + 30, title.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(70, 125);
+  await page.mouse.up();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('panel-position-info-panel-desktop')));
+  expect(saved.y).toBeLessThan(160);
+  await page.evaluate(position => localStorage.setItem('panel-position-info-panel', JSON.stringify(position)), saved);
+  await page.evaluate(() => window.app.uiManager.closeInfoPanel());
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('panel-position-info-panel-desktop')))).toEqual(saved);
+  await page.locator('#object-dropdown').selectOption('earth');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(300);
+  const boxes = await page.evaluate(() => {
+    const info = document.querySelector('#info-panel').getBoundingClientRect();
+    const speed = document.querySelector('#speed-control').getBoundingClientRect();
+    return { overlap: info.left < speed.right && info.right > speed.left && info.top < speed.bottom && info.bottom > speed.top };
+  });
+  expect(boxes.overlap).toBe(false);
+  await page.reload();
+  await page.waitForFunction(() => window.app?._experienceStarted && window.app?.solarSystemModule?.labels?.length > 0, { timeout: 60_000 });
+  await page.evaluate(() => window.app.sceneManager.renderer.setAnimationLoop(null));
+  await page.locator('#object-dropdown').selectOption('earth');
+  expect(await page.evaluate(() => document.querySelector('#info-panel').getBoundingClientRect().top)).toBeGreaterThan(160);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect.poll(() => page.locator('#info-panel').evaluate(element => parseFloat(element.style.top))).toBeCloseTo(saved.y, 0);
+});
+
 test('boots the full 3D app without critical browser errors', async ({ page }) => {
   const diagnostics = collectDiagnostics(page);
   await openApp(page);
@@ -615,7 +1259,7 @@ test('keeps core navigation and controls working', async ({ page }) => {
     }));
     let spacecraftMeshCount = 0;
     [...ssm.satellites, ...ssm.spacecraft].forEach(s => s.traverse(o => {
-      if (o.isMesh) spacecraftMeshCount++;
+      if (o.isMesh && o !== s.userData.lod?.marker) spacecraftMeshCount++;
     }));
     return {
       constellationCount: ssm.constellations.length,
