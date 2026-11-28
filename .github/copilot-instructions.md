@@ -3,40 +3,31 @@
 
 ## Project Overview
 
-**Space Voyage** is an educational Progressive Web App providing an immersive 3D Solar System experience with VR/AR support. Built with vanilla ES6 modules and Three.js, it features 100+ celestial objects, scientifically accurate orbits, and complete offline functionality.
+**Space Voyage** is an educational Progressive Web App providing an immersive 3D Solar System experience with VR/AR support. It uses vanilla ES6 modules and self-hosted Three.js. Its orbits are approximations, not a precision ephemeris; offline availability depends on successful caching.
 
-**Key Stats:** ~20,600 LOC | 10+ Web APIs | PWA Score 100/100 | Zero build tools required
+No bundler or application build step is required.
 
 ## Architecture Principles
 
 ### 1. Pure ES6 Modules (No Build Step)
 - **No bundlers:** Direct ES6 module imports, runs natively in browsers
-- **ImportMap:** Three.js v0.183.0 loaded via CDN importmap in `index.html`
-- **Module structure:** Each module is an exported singleton class
+- **ImportMap:** `index.html` maps Three.js to the self-hosted files under `vendor/three@0.186.1/`
+- **Module structure:** Managers may export a singleton or a class instantiated by `App`; follow the module's existing pattern.
 - Cache busting via URL version params on static imports
 
 ### 2. Module Hierarchy
 - `main.js` → Entry point; creates `App` class; sets `window.app = this` for cross-module access
-- `SceneManager.js` (~2,344 lines) → Three.js scene/camera/renderer/OrbitControls/WebXR; all VR logic
-- `SolarSystemModule.js` (~9,600 lines) → All celestial objects, orbits, textures
+- `SceneManager.js` → Three.js scene/camera/renderer/OrbitControls/WebXR; VR logic
+- `SolarSystemModule.js` → Celestial objects, orbits, textures
 - `UIManager.js` → UI controls, info panels, loading screens
 - `TextureCache.js` → IndexedDB + memory cache for textures
 - `utils.js` → `DEBUG`, `CONFIG`, `IS_MOBILE`, `IS_LOW_POWER`, `MaterialFactory`, `GeometryFactory`, `CoordinateUtils`, `ConstellationFactory`
 - `AudioManager.js`, `PanelManager.js`, `PWAManager.js`, `ServiceWorkerManager.js`, `LanguageManager.js`
 
-All modules follow the same singleton pattern:
-```javascript
-class MyModule {
-  constructor() { /* init */ }
-  init()        { /* public setup */ }
-}
-export const myModule = new MyModule();
-```
-
-### 3. Service Worker Caching (current: v2.10.1)
-- **Strategy:** Cache-first for static assets, network-first for HTML
-- **Always bump `CACHE_VERSION` in `sw.js`** whenever ANY cached file is modified (modules, CSS, textures, icons)
-- Add new files to `STATIC_CACHE_FILES` array in `sw.js`
+### 3. Service Worker Caching
+- The precache distinguishes required `CORE_CACHE_FILES` from best-effort `ASSET_CACHE_FILES` in `sw.js`.
+- After changing cached files, run `npm run version:bump` to update the authoritative `package.json` version and all version stamps; verify with `npm run version:check`.
+- Add new runtime modules and required assets to the appropriate precache array in `sw.js`.
 - Verify with hard refresh → DevTools → Application → Service Workers
 
 ### 4. Texture Strategy (3-tier fallback)
@@ -121,10 +112,10 @@ HTTPS is required for Service Workers, PWA install prompts, and WebXR. The site 
 ### File Change Impact Matrix
 | Change Type | Required Action |
 |---|---|
-| Any `.js` / `.css` module | Bump `CACHE_VERSION` in `sw.js` |
-| New texture file | Add path to `STATIC_CACHE_FILES` in `sw.js` |
-| New JS module | Import in `index.html`, add to SW cache |
-| i18n text changes | Update all 6 `manifest.*.json` files |
+| Any cached `.js` / `.css` module | Run `npm run version:bump` |
+| New texture file | Add path to `ASSET_CACHE_FILES` in `sw.js` |
+| New JS module | Import from its consumer and add to `CORE_CACHE_FILES` in `sw.js` |
+| i18n text changes | Update all six locale modules; update manifests when their text changes |
 | New icons | Update `browserconfig.xml` + all manifests |
 
 ## Code Conventions
@@ -155,7 +146,7 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 ```
 
 ### i18n Pattern
-- Translations: `src/i18n.js` (6 languages: en, nl, fr, de, es, pt)
+- Loader and DOM translation: `src/i18n.js`; translation tables: `src/locales/` (en, nl, fr, de, es, pt)
 - HTML: `data-i18n="keyName"` attributes
 - JS: `const t = window.t || ((key) => key);`
 - Escape apostrophes in single-quoted strings: `l\'envers`, `n\'a`, `qu\'il`
@@ -165,15 +156,15 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 2. Create `createXTextureReal(size)` using `loadTextureWithFallback`
 3. Add procedural fallback to `TextureGeneratorUtils` in `utils.js`
 4. Add to navigation dropdown in `index.html`
-5. Bump SW cache version in `sw.js`
+5. Run `npm run version:bump`
 
 ## Encoding Rules
 - **All files: UTF-8 without BOM**
 - PowerShell write: `[System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))`
-- Watch for garbled patterns in `src/i18n.js`: `Ã©`→`é`, `Ã¼`→`ü`, `cÅ"ur`→`cœur`, `â»×¹â´`→`⁻¹⁴`
+- Check locale files for garbled characters after editing.
 
 ## Pre-Coding Checklist
-1. Touching a cached file? → bump `CACHE_VERSION` in `sw.js`
+1. Touching a cached file? → run `npm run version:bump`
 2. VR movement/teleport? → use `dolly`, never `camera.position`
 3. In the animate hot path? → use pre-allocated scratch vectors, no `.clone()`
 4. New texture? → self-hosted + procedural fallback, never CDN
@@ -182,5 +173,5 @@ Math.min(deltaTime, CONFIG.PERFORMANCE.maxDeltaTime) // Prevent spiral of death
 
 ---
 
-**Last Updated:** March 3, 2026 | **SW Version:** 2.10.33 | **Three.js:** v0.183.0
+The authoritative app version is `package.json`; the import map pins Three.js.
 ```

@@ -47,28 +47,38 @@ test.describe('accessibility affordances', () => {
     const timeFlyTo = (target) =>
       target.evaluate(async () => {
         const ssm = window.app.solarSystemModule;
+        const camera = window.app.sceneManager.camera;
+        const before = camera.position.clone();
         const start = performance.now();
-        ssm.focusOnObject(ssm.planets.mars, window.app.sceneManager.camera, window.app.sceneManager.controls);
+        ssm.focusOnObject(ssm.planets.mars, camera, window.app.sceneManager.controls);
+        const activeAfterCall = ssm._focusTransitionActive;
         while (ssm._focusTransitionActive && performance.now() - start < 5000) {
           await new Promise((resolve) => requestAnimationFrame(resolve));
         }
-        return performance.now() - start;
+        return {
+          elapsed: performance.now() - start,
+          activeAfterCall,
+          cameraMoved: camera.position.distanceTo(before) > 0.1,
+          activeAtEnd: ssm._focusTransitionActive
+        };
       });
 
     const motionContext = await browser.newContext();
     const motionPage = await motionContext.newPage();
     await openApp(motionPage);
-    const fullMotionMs = await timeFlyTo(motionPage);
+    const fullMotion = await timeFlyTo(motionPage);
     await motionContext.close();
 
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await openApp(page);
-    const reducedMotionMs = await timeFlyTo(page);
+    const reducedMotion = await timeFlyTo(page);
 
-    // Guards against the assertion becoming vacuous if focusOnObject ever gains
-    // an unconditional fast path.
-    expect(fullMotionMs, 'default motion should animate the camera').toBeGreaterThan(500);
-    expect(reducedMotionMs, 'reduced motion should cut straight to the target').toBeLessThan(200);
+    expect(fullMotion.activeAfterCall, 'default motion should schedule its camera transition').toBe(true);
+    expect(fullMotion.activeAtEnd).toBe(false);
+    expect(fullMotion.cameraMoved).toBe(true);
+    expect(reducedMotion.activeAfterCall, 'reduced motion should finish before returning').toBe(false);
+    expect(reducedMotion.activeAtEnd).toBe(false);
+    expect(reducedMotion.cameraMoved).toBe(true);
   });
 });
 

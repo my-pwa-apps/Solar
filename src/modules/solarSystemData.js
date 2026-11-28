@@ -133,14 +133,16 @@ export const SCIENTIFIC_MOON_ORBITAL_PERIODS = {
  };
 
 export const SCIENTIFIC_ORBITAL_ELEMENTS = {
- mercury: { eccentricity: 0.20563, inclinationDeg: 7.00, periapsisDeg: 29.1 },
- venus: { eccentricity: 0.00677, inclinationDeg: 3.39, periapsisDeg: 54.9 },
- earth: { eccentricity: 0.01671, inclinationDeg: 0.00, periapsisDeg: 102.9 },
- mars: { eccentricity: 0.09339, inclinationDeg: 1.85, periapsisDeg: 286.5 },
- jupiter: { eccentricity: 0.04839, inclinationDeg: 1.30, periapsisDeg: 273.9 },
- saturn: { eccentricity: 0.05415, inclinationDeg: 2.49, periapsisDeg: 339.4 },
- uranus: { eccentricity: 0.04717, inclinationDeg: 0.77, periapsisDeg: 96.7 },
- neptune: { eccentricity: 0.00859, inclinationDeg: 1.77, periapsisDeg: 273.2 },
+ // Planetary J2000 elements and secular rates from JPL's Approximate Positions
+ // of the Planets, Table 1 (1800–2050). periapsisDeg is argument of perihelion.
+ mercury: { eccentricity: 0.20563593, eccentricityRatePerCentury: 0.00001906, inclinationDeg: 7.00497902, inclinationRateDegPerCentury: -0.00594749, periapsisDeg: 29.12703035, periapsisRateDegPerCentury: 0.28581770, ascendingNodeDeg: 48.33076593, ascendingNodeRateDegPerCentury: -0.12534081 },
+ venus: { eccentricity: 0.00677672, eccentricityRatePerCentury: -0.00004107, inclinationDeg: 3.39467605, inclinationRateDegPerCentury: -0.00078890, periapsisDeg: 54.92262463, periapsisRateDegPerCentury: 0.28037747, ascendingNodeDeg: 76.67984255, ascendingNodeRateDegPerCentury: -0.27769418 },
+ earth: { eccentricity: 0.01671123, eccentricityRatePerCentury: -0.00004392, inclinationDeg: -0.00001531, inclinationRateDegPerCentury: -0.01294668, periapsisDeg: 102.93768193, periapsisRateDegPerCentury: 0.32327364, ascendingNodeDeg: 0, ascendingNodeRateDegPerCentury: 0 },
+ mars: { eccentricity: 0.09339410, eccentricityRatePerCentury: 0.00007882, inclinationDeg: 1.84969142, inclinationRateDegPerCentury: -0.00813131, periapsisDeg: -73.50316850, periapsisRateDegPerCentury: 0.73698431, ascendingNodeDeg: 49.55953891, ascendingNodeRateDegPerCentury: -0.29257343 },
+ jupiter: { eccentricity: 0.04838624, eccentricityRatePerCentury: -0.00013253, inclinationDeg: 1.30439695, inclinationRateDegPerCentury: -0.00183714, periapsisDeg: -85.74542926, periapsisRateDegPerCentury: 0.00783562, ascendingNodeDeg: 100.47390909, ascendingNodeRateDegPerCentury: 0.20469106 },
+ saturn: { eccentricity: 0.05386179, eccentricityRatePerCentury: -0.00050991, inclinationDeg: 2.48599187, inclinationRateDegPerCentury: 0.00193609, periapsisDeg: -21.06354617, periapsisRateDegPerCentury: -0.13029422, ascendingNodeDeg: 113.66242448, ascendingNodeRateDegPerCentury: -0.28867794 },
+ uranus: { eccentricity: 0.04725744, eccentricityRatePerCentury: -0.00004397, inclinationDeg: 0.77263783, inclinationRateDegPerCentury: -0.00242939, periapsisDeg: 96.93735127, periapsisRateDegPerCentury: 0.36564692, ascendingNodeDeg: 74.01692503, ascendingNodeRateDegPerCentury: 0.04240589 },
+ neptune: { eccentricity: 0.00859048, eccentricityRatePerCentury: 0.00005105, inclinationDeg: 1.77004347, inclinationRateDegPerCentury: 0.00035372, periapsisDeg: -86.81946347, periapsisRateDegPerCentury: -0.31732800, ascendingNodeDeg: 131.78422574, ascendingNodeRateDegPerCentury: -0.00508664 },
  pluto: { eccentricity: 0.24881, inclinationDeg: 17.16, periapsisDeg: 113.8 },
  ceres: { eccentricity: 0.07582, inclinationDeg: 10.59, periapsisDeg: 73.6 },
  haumea: { eccentricity: 0.18874, inclinationDeg: 28.19, periapsisDeg: 240.6 },
@@ -173,20 +175,23 @@ export const SCIENTIFIC_MOON_ORBITAL_ELEMENTS = {
  titania: { eccentricity: 0.00110, inclinationDeg: 0.08, periapsisDeg: 0.0 },
  oberon: { eccentricity: 0.00140, inclinationDeg: 0.07, periapsisDeg: 0.0 },
  miranda: { eccentricity: 0.00130, inclinationDeg: 4.34, periapsisDeg: 0.0 },
- triton: { eccentricity: 0.00002, inclinationDeg: 156.90, periapsisDeg: 0.0 },
+ // Moon inclinations are parent-equatorial; node 0 is an arbitrary orientation
+ // because no epoch node/phase model is supplied for this educational catalog.
+ triton: { eccentricity: 0.00002, inclinationDeg: 156.90, periapsisDeg: 0.0, ascendingNodeDeg: 0 },
  charon: { eccentricity: 0.00020, inclinationDeg: 0.00, periapsisDeg: 0.0 }
  };
 
-// J2000.0 mean elements: mean anomaly (degrees) and mean motion (degrees/day).
+// J2000.0 mean anomaly (degrees) and mean motion (degrees/day), derived from
+// JPL Table 1's mean longitude and longitude-of-perihelion values/rates.
 export const PLANET_ELEMENTS_J2000 = {
- mercury: { M0: 174.7943, n: 4.09233445 },
- venus: { M0: 50.4161, n: 1.60213034 },
- earth: { M0: 357.5291, n: 0.98560028 },
- mars: { M0: 19.3451, n: 0.52402068 },
- jupiter: { M0: 19.5976, n: 0.08308530 },
- saturn: { M0: 317.6459, n: 0.03344428 },
- uranus: { M0: 141.6220, n: 0.01172584 },
- neptune: { M0: 257.6634, n: 0.00598103 },
+ mercury: { M0: 174.79252722, n: 4.09233439110 },
+ venus: { M0: 50.37663232, n: 1.60213039573 },
+ earth: { M0: 357.52688973, n: 0.98560025123 },
+ mars: { M0: 19.39019754, n: 0.52402076041 },
+ jupiter: { M0: 19.66796068, n: 0.08308100208 },
+ saturn: { M0: 317.35536592, n: 0.03348152209 },
+ uranus: { M0: 142.28382821, n: 0.01172002670 },
+ neptune: { M0: 259.91520804, n: 0.00598992109 },
  pluto: { M0: 14.8740, n: 0.003975 },
  ceres: { M0: 95.9891, n: 0.21408 },
  haumea: { M0: 198.0, n: 0.00347 },

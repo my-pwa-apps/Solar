@@ -123,5 +123,21 @@ test.describe('keyboard shortcut scoping', () => {
 
     await page.keyboard.press('Escape');
     await expect(infoPanel).toHaveClass(/hidden/, { timeout: 5_000 });
+
+    await page.evaluate(() => {
+      window.app.uiManager.showSettings();
+      window.app.uiManager.showHelp('Help');
+    });
+    expect(await page.locator('#help-close-btn').evaluate(button => {
+      const rect = button.getBoundingClientRect();
+      return button.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+    })).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(helpModal).toHaveClass(/hidden/);
+    await expect(page.locator('#settings-modal')).not.toHaveClass(/hidden/);
+
+    await page.locator('#language-selector').focus();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#settings-modal')).toHaveClass(/hidden/);
   });
 });

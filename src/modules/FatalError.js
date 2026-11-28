@@ -12,6 +12,7 @@
  * contain arbitrary strings from a thrown value — can never be parsed as markup.
  */
 import { APP_VERSION } from './utils.js';
+import { clearPWAOwnedStorage } from './PWAStorage.js';
 
 const OVERLAY_ID = 'fatal-error';
 
@@ -21,36 +22,6 @@ const t = (key, fallback) => {
 };
 
 let shown = false;
-
-async function clearAllStorage() {
-    const jobs = [];
-
-    if ('serviceWorker' in navigator) {
-        jobs.push(
-            navigator.serviceWorker
-                .getRegistrations()
-                .then((registrations) => Promise.all(registrations.map((r) => r.unregister())))
-        );
-    }
-
-    if ('caches' in window) {
-        jobs.push(caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))));
-    }
-
-    if (window.indexedDB?.databases) {
-        jobs.push(
-            indexedDB
-                .databases()
-                .then((dbs) =>
-                    Promise.all(dbs.map((db) => db.name && indexedDB.deleteDatabase(db.name)))
-                )
-        );
-    }
-
-    // A failure to clear one store must not block the reload — the user is
-    // already in a broken state and a reload is the only way forward.
-    await Promise.allSettled(jobs);
-}
 
 function button(label, onClick, variant) {
     const el = document.createElement('button');
@@ -93,17 +64,31 @@ export function showFatalError(message, cause) {
 
     const actions = document.createElement('div');
     actions.className = 'fatal-error-actions';
+    const clearStatus = document.createElement('p');
+    clearStatus.setAttribute('role', 'status');
+    clearStatus.hidden = true;
+    const clearButton = button(
+        t('errorClearCache', 'Clear cache and reload'),
+        async (event) => {
+            event.currentTarget.disabled = true;
+            clearStatus.hidden = false;
+            clearStatus.textContent = t('errorClearingData', 'Clearing Space Voyage data…');
+            const failures = await clearPWAOwnedStorage();
+            if (failures.length) {
+                clearStatus.textContent = `${t('errorClearFailed', 'Some app data could not be cleared. Use Reload to continue.')} ${failures
+                    .map((failure) => `${failure.store} (${failure.message})`)
+                    .join('; ')}`;
+                clearButton.disabled = false;
+                return;
+            }
+            window.location.reload();
+        },
+        'btn-secondary'
+    );
     actions.append(
         button(t('errorReload', 'Reload'), () => window.location.reload(), 'btn-primary'),
-        button(
-            t('errorClearCache', 'Clear cache and reload'),
-            async (event) => {
-                event.currentTarget.disabled = true;
-                await clearAllStorage();
-                window.location.reload();
-            },
-            'btn-secondary'
-        )
+        clearButton,
+        clearStatus
     );
 
     const details = document.createElement('details');

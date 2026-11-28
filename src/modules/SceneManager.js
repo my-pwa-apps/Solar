@@ -16,23 +16,37 @@ import { safeSetItem } from './storage.js';
 // If any are truthy on a MeshBasicMaterial, Three.js refreshUniformsCommon crashes.
 const BASIC_MAT_BANNED_PROPS = ['emissive','emissiveMap','normalMap','bumpMap','displacementMap'];
 
-// Module-level constant: VR menu page tabs — defined once, never reallocated on each drawVRMenu() call.
-const _VR_TABS = [
- { id: 'controls', label: '\u2699\uFE0F  Controls' },
- { id: 'navigate', label: '\uD83E\uDDED  Navigate' },
- { id: 'info',     label: '\u2139\uFE0F  Info' }
-];
-
-const VR_RADIAL_ITEMS = [
- { id: 'sun',     label: '\u2600\uFE0F Sun',      color: '#FFD700' },
- { id: 'mercury', label: '\u263F Mercury',        color: '#A8A8A8' },
- { id: 'venus',   label: '\u2640 Venus',          color: '#E8C87A' },
- { id: 'earth',   label: '\uD83C\uDF0D Earth',    color: '#4FC3F7' },
- { id: 'mars',    label: '\u2642 Mars',           color: '#EF5350' },
- { id: 'jupiter', label: '\u2643 Jupiter',        color: '#FFA726' },
- { id: 'saturn',  label: '\u2644 Saturn',         color: '#FFCC80' },
- { id: 'neptune', label: '\u2646 Neptune',        color: '#5C6BC0' },
-];
+const VR_TARGET_KEYS = {
+ sun:'sun', mercury:'mercury', venus:'venus', earth:'earth', mars:'mars',
+ jupiter:'jupiter', saturn:'saturn', uranus:'uranus', neptune:'neptune',
+ moon:'moon', phobos:'phobos', deimos:'deimos', io:'io', europa:'europa',
+ ganymede:'ganymede', callisto:'callisto', titan:'titan', enceladus:'enceladus',
+ rhea:'rhea', titania:'titania', miranda:'miranda', triton:'triton', charon:'charon',
+ pluto:'pluto', ceres:'ceres', haumea:'haumea', makemake:'makemake', eris:'eris',
+ orcus:'orcus', quaoar:'quaoar', gonggong:'gonggong', sedna:'sedna',
+ halley:'halley', 'hale-bopp':'haleBopp', hyakutake:'hyakutake', lovejoy:'lovejoy',
+ encke:'encke', 'swift-tuttle':'swiftTuttle', iss:'iss', hubble:'hubble',
+ jwst:'jwst', 'voyager-1':'voyager1', 'voyager-2':'voyager2',
+ 'new-horizons':'newHorizons', juno:'juno', cassini:'cassini',
+ 'pioneer-10':'pioneer10', 'pioneer-11':'pioneer11', 'gps-navstar':'gpsNavstar',
+ 'orion-nebula':'orionNebula', 'crab-nebula':'crabNebula', 'ring-nebula':'ringNebula',
+ 'andromeda-galaxy':'andromedaGalaxy', 'whirlpool-galaxy':'whirlpoolGalaxy',
+ 'sombrero-galaxy':'sombreroGalaxy', 'alpha-centauri':'alphaCentauri',
+ 'proxima-centauri':'proximaCentauri',
+ 'constellation-orion':'orion', 'constellation-orions-belt':'orionsBelt',
+ 'constellation-ursa-major':'ursaMajor', 'constellation-big-dipper':'bigDipper',
+ 'constellation-little-dipper':'littleDipper', 'constellation-southern-cross':'southernCross',
+ 'constellation-cassiopeia':'cassiopeia', 'constellation-cygnus':'cygnus',
+ 'constellation-lyra':'lyra', 'constellation-andromeda':'andromeda',
+ 'constellation-perseus':'perseus', 'constellation-canis-major':'canisMajor',
+ 'constellation-aquila':'aquila', 'constellation-pegasus':'pegasus',
+ 'constellation-aries':'aries', 'constellation-taurus':'taurus',
+ 'constellation-gemini':'gemini', 'constellation-cancer':'cancer',
+ 'constellation-leo':'leo', 'constellation-virgo':'virgo',
+ 'constellation-libra':'libra', 'constellation-scorpius':'scorpius',
+ 'constellation-sagittarius':'sagittarius', 'constellation-capricornus':'capricornus',
+ 'constellation-aquarius':'aquarius', 'constellation-pisces':'pisces'
+};
 
 export class SceneManager {
  constructor() {
@@ -98,6 +112,8 @@ export class SceneManager {
  this._vrRadialHot = -1; // Currently highlighted sector index (-1 = none)
  this._vrRadialPressFrames = 0; // How many frames left thumbstick has been held
  this._vrRadialVisible = false;
+ this._vrRadialPressElapsed = 0; // Time-based hold duration
+ this._vrMovementLastTime = null;
 
  // Post-processing composer (desktop only)
  this.composer = null;
@@ -121,6 +137,7 @@ export class SceneManager {
  // VR menu dirty flag (replaces the old setTimeout debounce
  // to avoid closure/timer allocations on every rapid input event)
  this._vrMenuDirty = false;
+ this._vrMenuLang = null;
 
  this.init();
  }
@@ -584,6 +601,15 @@ export class SceneManager {
  // Re-init button-state map for however many input sources exist.
  // Done here (not per-frame) so the hot loop needs no guard.
  this.previousButtonStates = [];
+ this._vrSnapCooldown = [false, false];
+ this._vrTriggerPressed = { left: false, right: false };
+ this._vrRadialPressElapsed = 0;
+ this._vrRadialPressFrames = 0;
+ this._vrMovementLastTime = performance.now();
+ this.grabRotateState.active = false;
+ this.grabRotateState.controllerIndex = -1;
+ this.vrPanelDrag.active = false;
+ this.vrPanelDrag.controllerIndex = -1;
 
  // Clear per-session error-suppression flags so a new session
  // produces fresh diagnostics in the console.
@@ -628,6 +654,11 @@ export class SceneManager {
  // Reset grab/drag state to prevent stale flags in next session
  if (this.grabRotateState) this.grabRotateState.active = false;
  if (this.vrPanelDrag) this.vrPanelDrag.active = false;
+ this._vrSnapCooldown = [false, false];
+ this._vrTriggerPressed = { left: false, right: false };
+ this._vrRadialPressElapsed = 0;
+ this._vrRadialPressFrames = 0;
+ this._vrMovementLastTime = null;
  });
  } catch (error) {
  if (DEBUG && DEBUG.enabled) console.warn('WebXR not supported:', error);
@@ -795,6 +826,19 @@ this.camera.near = 10.0;
  this._vrMenuDirty = true;
  }
 
+ _tVR(key, fallback) {
+  if (typeof window.t === 'function') {
+   const translated = window.t(key);
+   if (translated && translated !== key) return translated;
+  }
+  return fallback;
+ }
+
+  _vrTargetLabel(id, fallback) {
+  const key = VR_TARGET_KEYS[id];
+  return key ? this._tVR(key, fallback) : fallback;
+  }
+
  getVRMenuState() {
  const app = window.app || {};
  const module = app.solarSystemModule;
@@ -822,102 +866,102 @@ this.camera.near = 10.0;
 
  getVRNavCatalog() {
  return [
- { id: 'solar', label: '☀️ Solar', items: [
- { id: 'sun', label: '☀️ Sun' },
- { id: 'mercury', label: '☿ Mercury' },
- { id: 'venus', label: '♀ Venus' },
- { id: 'earth', label: '🌍 Earth' },
- { id: 'mars', label: '♂ Mars' },
- { id: 'jupiter', label: '♃ Jupiter' },
- { id: 'saturn', label: '♄ Saturn' },
- { id: 'uranus', label: '♅ Uranus' },
- { id: 'neptune', label: '♆ Neptune' }
+ { id: 'solar', label: `☀️ ${this._tVR('vrSolar', 'Solar')}`, items: [
+ { id: 'sun', label: `☀️ ${this._vrTargetLabel('sun','Sun')}` },
+ { id: 'mercury', label: `☿ ${this._vrTargetLabel('mercury','Mercury')}` },
+ { id: 'venus', label: `♀ ${this._vrTargetLabel('venus','Venus')}` },
+ { id: 'earth', label: `🌍 ${this._vrTargetLabel('earth','Earth')}` },
+ { id: 'mars', label: `♂ ${this._vrTargetLabel('mars','Mars')}` },
+ { id: 'jupiter', label: `♃ ${this._vrTargetLabel('jupiter','Jupiter')}` },
+ { id: 'saturn', label: `♄ ${this._vrTargetLabel('saturn','Saturn')}` },
+ { id: 'uranus', label: `♅ ${this._vrTargetLabel('uranus','Uranus')}` },
+ { id: 'neptune', label: `♆ ${this._vrTargetLabel('neptune','Neptune')}` }
  ]},
- { id: 'moons', label: '🌙 Moons', items: [
- { id: 'moon', label: '🌙 Moon' },
- { id: 'phobos', label: 'Phobos' },
- { id: 'deimos', label: 'Deimos' },
- { id: 'io', label: 'Io' },
- { id: 'europa', label: 'Europa' },
- { id: 'ganymede', label: 'Ganymede' },
- { id: 'callisto', label: 'Callisto' },
- { id: 'titan', label: 'Titan' },
- { id: 'enceladus', label: 'Enceladus' },
- { id: 'rhea', label: 'Rhea' },
- { id: 'titania', label: 'Titania' },
- { id: 'miranda', label: 'Miranda' },
- { id: 'triton', label: 'Triton' },
- { id: 'charon', label: 'Charon' }
+ { id: 'moons', label: `🌙 ${this._tVR('vrMoons', 'Moons')}`, items: [
+ { id: 'moon', label: `🌙 ${this._vrTargetLabel('moon','Moon')}` },
+ { id: 'phobos', label: this._vrTargetLabel('phobos','Phobos') },
+ { id: 'deimos', label: this._vrTargetLabel('deimos','Deimos') },
+ { id: 'io', label: this._vrTargetLabel('io','Io') },
+ { id: 'europa', label: this._vrTargetLabel('europa','Europa') },
+ { id: 'ganymede', label: this._vrTargetLabel('ganymede','Ganymede') },
+ { id: 'callisto', label: this._vrTargetLabel('callisto','Callisto') },
+ { id: 'titan', label: this._vrTargetLabel('titan','Titan') },
+ { id: 'enceladus', label: this._vrTargetLabel('enceladus','Enceladus') },
+ { id: 'rhea', label: this._vrTargetLabel('rhea','Rhea') },
+ { id: 'titania', label: this._vrTargetLabel('titania','Titania') },
+ { id: 'miranda', label: this._vrTargetLabel('miranda','Miranda') },
+ { id: 'triton', label: this._vrTargetLabel('triton','Triton') },
+ { id: 'charon', label: this._vrTargetLabel('charon','Charon') }
  ]},
- { id: 'dwarf', label: '🔭 Dwarf', items: [
- { id: 'pluto', label: 'Pluto' },
- { id: 'ceres', label: 'Ceres' },
- { id: 'haumea', label: 'Haumea' },
- { id: 'makemake', label: 'Makemake' },
- { id: 'eris', label: 'Eris' },
- { id: 'orcus', label: 'Orcus' },
- { id: 'quaoar', label: 'Quaoar' },
- { id: 'gonggong', label: 'Gonggong' },
- { id: 'sedna', label: 'Sedna' }
+ { id: 'dwarf', label: `🔭 ${this._tVR('vrDwarf', 'Dwarf')}`, items: [
+ { id: 'pluto', label: this._vrTargetLabel('pluto','Pluto') },
+ { id: 'ceres', label: this._vrTargetLabel('ceres','Ceres') },
+ { id: 'haumea', label: this._vrTargetLabel('haumea','Haumea') },
+ { id: 'makemake', label: this._vrTargetLabel('makemake','Makemake') },
+ { id: 'eris', label: this._vrTargetLabel('eris','Eris') },
+ { id: 'orcus', label: this._vrTargetLabel('orcus','Orcus') },
+ { id: 'quaoar', label: this._vrTargetLabel('quaoar','Quaoar') },
+ { id: 'gonggong', label: this._vrTargetLabel('gonggong','Gonggong') },
+ { id: 'sedna', label: this._vrTargetLabel('sedna','Sedna') }
  ]},
- { id: 'comets', label: '☄️ Comets', items: [
- { id: 'halley', label: "Halley's" },
- { id: 'hale-bopp', label: 'Hale-Bopp' },
- { id: 'hyakutake', label: 'Hyakutake' },
- { id: 'lovejoy', label: 'Lovejoy' },
- { id: 'encke', label: 'Encke' },
- { id: 'swift-tuttle', label: 'Swift-Tuttle' }
+ { id: 'comets', label: `☄️ ${this._tVR('vrComets', 'Comets')}`, items: [
+ { id: 'halley', label: this._vrTargetLabel('halley',"Halley's") },
+ { id: 'hale-bopp', label: this._vrTargetLabel('hale-bopp','Hale-Bopp') },
+ { id: 'hyakutake', label: this._vrTargetLabel('hyakutake','Hyakutake') },
+ { id: 'lovejoy', label: this._vrTargetLabel('lovejoy','Lovejoy') },
+ { id: 'encke', label: this._vrTargetLabel('encke','Encke') },
+ { id: 'swift-tuttle', label: this._vrTargetLabel('swift-tuttle','Swift-Tuttle') }
  ]},
- { id: 'craft', label: '🛰️ Craft', items: [
- { id: 'iss', label: 'ISS' },
- { id: 'hubble', label: 'Hubble' },
- { id: 'jwst', label: 'JWST' },
- { id: 'voyager-1', label: 'Voyager 1' },
- { id: 'voyager-2', label: 'Voyager 2' },
- { id: 'new-horizons', label: 'New Horizons' },
- { id: 'juno', label: 'Juno' },
- { id: 'cassini', label: 'Cassini' },
- { id: 'pioneer-10', label: 'Pioneer 10' },
- { id: 'pioneer-11', label: 'Pioneer 11' },
- { id: 'gps-navstar', label: 'GPS Navstar' }
+ { id: 'craft', label: `🛰️ ${this._tVR('vrCraft', 'Craft')}`, items: [
+ { id: 'iss', label: this._vrTargetLabel('iss','ISS') },
+ { id: 'hubble', label: this._vrTargetLabel('hubble','Hubble') },
+ { id: 'jwst', label: this._vrTargetLabel('jwst','JWST') },
+ { id: 'voyager-1', label: this._vrTargetLabel('voyager-1','Voyager 1') },
+ { id: 'voyager-2', label: this._vrTargetLabel('voyager-2','Voyager 2') },
+ { id: 'new-horizons', label: this._vrTargetLabel('new-horizons','New Horizons') },
+ { id: 'juno', label: this._vrTargetLabel('juno','Juno') },
+ { id: 'cassini', label: this._vrTargetLabel('cassini','Cassini') },
+ { id: 'pioneer-10', label: this._vrTargetLabel('pioneer-10','Pioneer 10') },
+ { id: 'pioneer-11', label: this._vrTargetLabel('pioneer-11','Pioneer 11') },
+ { id: 'gps-navstar', label: this._vrTargetLabel('gps-navstar','GPS Navstar') }
  ]},
- { id: 'deepsky', label: '🌌 Deep Sky', items: [
- { id: 'orion-nebula', label: 'Orion Nebula' },
- { id: 'crab-nebula', label: 'Crab Nebula' },
- { id: 'ring-nebula', label: 'Ring Nebula' },
- { id: 'andromeda-galaxy', label: 'Andromeda' },
- { id: 'whirlpool-galaxy', label: 'Whirlpool' },
- { id: 'sombrero-galaxy', label: 'Sombrero' },
- { id: 'alpha-centauri', label: 'Alpha Cen.' },
- { id: 'proxima-centauri', label: 'Proxima Cen.' }
+ { id: 'deepsky', label: `🌌 ${this._tVR('vrDeepSky', 'Deep Sky')}`, items: [
+ { id: 'orion-nebula', label: this._vrTargetLabel('orion-nebula','Orion Nebula') },
+ { id: 'crab-nebula', label: this._vrTargetLabel('crab-nebula','Crab Nebula') },
+ { id: 'ring-nebula', label: this._vrTargetLabel('ring-nebula','Ring Nebula') },
+ { id: 'andromeda-galaxy', label: this._vrTargetLabel('andromeda-galaxy','Andromeda') },
+ { id: 'whirlpool-galaxy', label: this._vrTargetLabel('whirlpool-galaxy','Whirlpool') },
+ { id: 'sombrero-galaxy', label: this._vrTargetLabel('sombrero-galaxy','Sombrero') },
+ { id: 'alpha-centauri', label: this._vrTargetLabel('alpha-centauri','Alpha Cen.') },
+ { id: 'proxima-centauri', label: this._vrTargetLabel('proxima-centauri','Proxima Cen.') }
  ]},
- { id: 'constellations', label: '✨ Stars', items: [
- { id: 'constellation-orion', label: 'Orion' },
- { id: 'constellation-orions-belt', label: 'Orion\'s Belt' },
- { id: 'constellation-ursa-major', label: 'Ursa Major' },
- { id: 'constellation-big-dipper', label: 'Big Dipper' },
- { id: 'constellation-little-dipper', label: 'Little Dipper' },
- { id: 'constellation-southern-cross', label: 'Southern Cross' },
- { id: 'constellation-cassiopeia', label: 'Cassiopeia' },
- { id: 'constellation-cygnus', label: 'Cygnus' },
- { id: 'constellation-lyra', label: 'Lyra' },
- { id: 'constellation-andromeda', label: 'Andromeda' },
- { id: 'constellation-perseus', label: 'Perseus' },
- { id: 'constellation-canis-major', label: 'Canis Major' },
- { id: 'constellation-aquila', label: 'Aquila' },
- { id: 'constellation-pegasus', label: 'Pegasus' },
- { id: 'constellation-aries', label: 'Aries' },
- { id: 'constellation-taurus', label: 'Taurus' },
- { id: 'constellation-gemini', label: 'Gemini' },
- { id: 'constellation-cancer', label: 'Cancer' },
- { id: 'constellation-leo', label: 'Leo' },
- { id: 'constellation-virgo', label: 'Virgo' },
- { id: 'constellation-libra', label: 'Libra' },
- { id: 'constellation-scorpius', label: 'Scorpius' },
- { id: 'constellation-sagittarius', label: 'Sagittarius' },
- { id: 'constellation-capricornus', label: 'Capricornus' },
- { id: 'constellation-aquarius', label: 'Aquarius' },
- { id: 'constellation-pisces', label: 'Pisces' }
+ { id: 'constellations', label: `✨ ${this._tVR('vrStars', 'Stars')}`, items: [
+ { id: 'constellation-orion', label: this._vrTargetLabel('constellation-orion','Orion') },
+ { id: 'constellation-orions-belt', label: this._vrTargetLabel('constellation-orions-belt',"Orion's Belt") },
+ { id: 'constellation-ursa-major', label: this._vrTargetLabel('constellation-ursa-major','Ursa Major') },
+ { id: 'constellation-big-dipper', label: this._vrTargetLabel('constellation-big-dipper','Big Dipper') },
+ { id: 'constellation-little-dipper', label: this._vrTargetLabel('constellation-little-dipper','Little Dipper') },
+ { id: 'constellation-southern-cross', label: this._vrTargetLabel('constellation-southern-cross','Southern Cross') },
+ { id: 'constellation-cassiopeia', label: this._vrTargetLabel('constellation-cassiopeia','Cassiopeia') },
+ { id: 'constellation-cygnus', label: this._vrTargetLabel('constellation-cygnus','Cygnus') },
+ { id: 'constellation-lyra', label: this._vrTargetLabel('constellation-lyra','Lyra') },
+ { id: 'constellation-andromeda', label: this._vrTargetLabel('constellation-andromeda','Andromeda') },
+ { id: 'constellation-perseus', label: this._vrTargetLabel('constellation-perseus','Perseus') },
+ { id: 'constellation-canis-major', label: this._vrTargetLabel('constellation-canis-major','Canis Major') },
+ { id: 'constellation-aquila', label: this._vrTargetLabel('constellation-aquila','Aquila') },
+ { id: 'constellation-pegasus', label: this._vrTargetLabel('constellation-pegasus','Pegasus') },
+ { id: 'constellation-aries', label: this._vrTargetLabel('constellation-aries','Aries') },
+ { id: 'constellation-taurus', label: this._vrTargetLabel('constellation-taurus','Taurus') },
+ { id: 'constellation-gemini', label: this._vrTargetLabel('constellation-gemini','Gemini') },
+ { id: 'constellation-cancer', label: this._vrTargetLabel('constellation-cancer','Cancer') },
+ { id: 'constellation-leo', label: this._vrTargetLabel('constellation-leo','Leo') },
+ { id: 'constellation-virgo', label: this._vrTargetLabel('constellation-virgo','Virgo') },
+ { id: 'constellation-libra', label: this._vrTargetLabel('constellation-libra','Libra') },
+ { id: 'constellation-scorpius', label: this._vrTargetLabel('constellation-scorpius','Scorpius') },
+ { id: 'constellation-sagittarius', label: this._vrTargetLabel('constellation-sagittarius','Sagittarius') },
+ { id: 'constellation-capricornus', label: this._vrTargetLabel('constellation-capricornus','Capricornus') },
+ { id: 'constellation-aquarius', label: this._vrTargetLabel('constellation-aquarius','Aquarius') },
+ { id: 'constellation-pisces', label: this._vrTargetLabel('constellation-pisces','Pisces') }
  ]}
  ];
  }
@@ -955,16 +999,18 @@ this.camera.near = 10.0;
  const currentPalette = pagePalette[state.currentPage] || pagePalette.controls;
  const pageMeta = {
  controls: {
- title: 'Flight Controls',
- subtitle: 'Time flow, overlays, utilities, and comfort settings.'
+ title: this._tVR('vrFlightControls', 'Flight Controls'),
+ subtitle: this._tVR('vrFlightControlsSubtitle', 'Time flow, overlays, utilities, and comfort settings.')
  },
  navigate: {
- title: 'Navigation Grid',
- subtitle: 'Jump directly to planets, moons, spacecraft, and deep-sky targets.'
+ title: this._tVR('vrNavigationGrid', 'Navigation Grid'),
+ subtitle: this._tVR('vrNavigationSubtitle', 'Jump directly to planets, moons, spacecraft, and deep-sky targets.')
  },
  info: {
- title: 'Object Intel',
- subtitle: info ? 'Live telemetry for the currently selected target.' : 'Select an object to inspect it here.'
+ title: this._tVR('vrObjectIntel', 'Object Intel'),
+ subtitle: info
+  ? this._tVR('vrLiveTelemetry', 'Live telemetry for the currently selected target.')
+  : this._tVR('vrSelectObject', 'Select an object to inspect it here.')
  }
  };
 
@@ -1227,31 +1273,36 @@ this.camera.near = 10.0;
  ctx.font = 'bold 14px Arial';
  ctx.textAlign = 'left';
  ctx.textBaseline = 'top';
- ctx.fillText('SPACE VOYAGE / VR', PAD + 30, PAD + 26);
+ ctx.fillText(this._tVR('vrBrand', 'SPACE VOYAGE / VR'), PAD + 30, PAD + 26);
  ctx.fillStyle = '#F4F7FB';
  ctx.font = 'bold 36px Arial';
- ctx.fillText('Command Deck', PAD + 30, PAD + 52);
+ ctx.fillText(this._tVR('vrCommandDeck', 'Command Deck'), PAD + 30, PAD + 52);
  ctx.fillStyle = 'rgba(157,183,212,0.76)';
  ctx.font = '18px Arial';
- ctx.fillText('Fast control surfaces built for hand-held VR use.', PAD + 30, PAD + 98, RAIL_W - 54);
+ ctx.fillText(this._tVR('vrCommandSubtitle', 'Fast control surfaces built for hand-held VR use.'), PAD + 30, PAD + 98, RAIL_W - 54);
  ctx.restore();
 
  const railChipW = Math.floor((RAIL_W - 84) / 2);
- chip(state.starshipMode ? 'WARP ON' : 'WARP READY', PAD + 30, PAD + 136, railChipW, '#22D3EE', {
+ chip(state.starshipMode ? this._tVR('vrWarpOn','WARP ON') : this._tVR('vrWarpReady','WARP READY'), PAD + 30, PAD + 136, railChipW, '#22D3EE', {
  text: state.starshipMode ? '#CFFAFE' : '#9AD4E5'
  });
- chip(state.lasersVisible ? 'LASERS ON' : 'LASERS OFF', PAD + 30 + railChipW + 12, PAD + 136, railChipW, '#A78BFA', {
+ chip(state.lasersVisible ? this._tVR('vrLasersOn','LASERS ON') : this._tVR('vrLasersOff','LASERS OFF'), PAD + 30 + railChipW + 12, PAD + 136, railChipW, '#A78BFA', {
  text: state.lasersVisible ? '#E9DDFF' : '#BCAFE4'
  });
 
  let tabY = PAD + 192;
- _VR_TABS.forEach((tab) => {
+ const vrTabs = [
+  { id: 'controls', label: `⚙️  ${this._tVR('controls', 'Controls')}` },
+  { id: 'navigate', label: `🧭  ${this._tVR('quickNavigation', 'Navigate')}` },
+  { id: 'info', label: `ℹ️  ${this._tVR('vrInfo', 'Info')}` }
+ ];
+ vrTabs.forEach((tab) => {
  const active = state.currentPage === tab.id;
  tile(tab.label, `page:${tab.id}`, PAD + 24, tabY, RAIL_W - 48, 74, {
  active,
  accent: pagePalette[tab.id]?.accent || currentPalette.accent,
  font: active ? 'bold 24px Arial' : 'bold 22px Arial',
- meta: active ? 'ACTIVE PAGE' : ''
+ meta: active ? this._tVR('vrActivePage','ACTIVE PAGE') : ''
  });
  tabY += 88;
  });
@@ -1263,22 +1314,22 @@ this.camera.near = 10.0;
  border: 'rgba(109,142,184,0.12)',
  highlight: 'rgba(255,255,255,0.06)'
  });
- sectionTitle('QUICK GESTURES', PAD + 38, H - PAD - 222, RAIL_W - 76, currentPalette.accent);
+ sectionTitle(this._tVR('vrQuickGestures', 'QUICK GESTURES'), PAD + 38, H - PAD - 222, RAIL_W - 76, currentPalette.accent);
  ctx.save();
  ctx.fillStyle = 'rgba(164,189,217,0.82)';
  ctx.font = '17px Arial';
  ctx.textAlign = 'left';
  ctx.textBaseline = 'top';
- ctx.fillText('X  open / close menu', PAD + 40, H - PAD - 180);
- ctx.fillText('Right grip  drag panel', PAD + 40, H - PAD - 152);
- ctx.fillText('Left stick hold  radial quick-jump', PAD + 40, H - PAD - 124);
+ ctx.fillText(this._tVR('vrGestureMenu', 'X  open / close menu'), PAD + 40, H - PAD - 180);
+ ctx.fillText(this._tVR('vrGestureDrag', 'Right grip  drag panel'), PAD + 40, H - PAD - 152);
+ ctx.fillText(this._tVR('vrGestureRadial', 'Left stick hold  radial quick-jump'), PAD + 40, H - PAD - 124);
  ctx.restore();
 
- tile('Close Menu', 'hide', PAD + 24, H - PAD - 94, RAIL_W - 48, 44, {
+ tile(this._tVR('vrCloseMenu', 'Close Menu'), 'hide', PAD + 24, H - PAD - 94, RAIL_W - 48, 44, {
  accent: '#94A3B8',
  font: 'bold 18px Arial'
  });
- tile('Exit VR', 'exitvr', PAD + 24, H - PAD - 44, RAIL_W - 48, 44, {
+ tile(this._tVR('vrExitVr', 'Exit VR'), 'exitvr', PAD + 24, H - PAD - 44, RAIL_W - 48, 44, {
  danger: true,
  font: 'bold 18px Arial'
  });
@@ -1298,7 +1349,7 @@ this.camera.near = 10.0;
  ctx.font = 'bold 14px Arial';
  ctx.textAlign = 'left';
  ctx.textBaseline = 'top';
- ctx.fillText('ACTIVE WORKSPACE', MAIN_X + 30, MAIN_Y + 24);
+ ctx.fillText(this._tVR('vrActiveWorkspace','ACTIVE WORKSPACE'), MAIN_X + 30, MAIN_Y + 24);
  ctx.fillStyle = '#F4F7FB';
  ctx.font = 'bold 40px Arial';
  ctx.fillText(pageHeader.title, MAIN_X + 30, MAIN_Y + 46, MAIN_W - 320);
@@ -1307,7 +1358,7 @@ this.camera.near = 10.0;
  ctx.fillText(pageHeader.subtitle, MAIN_X + 30, MAIN_Y + 92, MAIN_W - 360);
  ctx.restore();
 
- const statusText = state.statusMessage || '✨ Ready';
+ const statusText = state.statusMessage || `✨ ${this._tVR('vrReady','Ready')}`;
  const statusColor = statusText.includes('⚠') ? '#F59E0B' : statusText.includes('✔') ? '#34D399' : currentPalette.accent;
  statusPill(statusText, MAIN_X + MAIN_W - 344, MAIN_Y + 24, 314, statusColor);
  chip('v' + (window.APP_VERSION || ''), MAIN_X + MAIN_W - 144, MAIN_Y + 74, 114, '#94A3B8', {
@@ -1333,14 +1384,18 @@ this.camera.near = 10.0;
  border: 'rgba(245,158,11,0.28)',
  highlight: 'rgba(245,158,11,0.62)'
  });
- sectionTitle('TIME FLOW', BODY_X + 22, rowTop + 18, fullW - 44, '#F59E0B', 'Pick a simulation pace instantly.');
+ sectionTitle(this._tVR('vrTimeFlow', 'TIME FLOW'), BODY_X + 22, rowTop + 18, fullW - 44, '#F59E0B', this._tVR('vrTimeFlowSubtitle', 'Pick a simulation pace instantly.'));
  const timeTileY = rowTop + 78;
  const timeTileW = Math.floor((fullW - 22 * 2 - 12 * 3) / 4);
+ const educational = !state.scientificMode;
+ const liveMeta = educational ? this._tVR('educationalMotion', 'Illustrative motion') : '1×';
+ const fastMeta = educational ? '5×' : '10×';
+ const maxMeta = educational ? '10×' : `${MAX_SIMULATION_SPEED.toLocaleString()}×`;
  const timeActions = [
- { label: '⏸ Pause', action: 'speed0', active: state.timeSpeed === 0, meta: '0×' },
- { label: '▶ Live', action: 'speed1', active: state.timeSpeed === 1, meta: '1×' },
- { label: '⏩ Fast', action: 'speed10', active: Math.abs(state.timeSpeed - 10) < 1e-6, meta: '10×' },
- { label: '⏩⏩ Max', action: 'speed100', active: state.timeSpeed >= MAX_SIMULATION_SPEED, meta: '525,960×' }
+ { label: `⏸ ${this._tVR('paused', 'Pause')}`, action: 'speed0', active: state.timeSpeed === 0, meta: '0×' },
+ { label: educational ? `▶ ${this._tVR('vrIllustrative', 'Illustrative')}` : `▶ ${this._tVR('vrLive', 'Live')}`, action: 'speed1', active: Math.abs(state.timeSpeed - 1) < 1e-6, meta: liveMeta },
+ { label: `⏩ ${this._tVR('vrFast', 'Fast')}`, action: 'speed10', active: educational ? Math.abs(state.timeSpeed - 5) < 1e-6 : Math.abs(state.timeSpeed - 10) < 1e-6, meta: fastMeta },
+ { label: `⏩⏩ ${this._tVR('vrMax', 'Max')}`, action: 'speed100', active: educational ? Math.abs(state.timeSpeed - 10) < 1e-6 : state.timeSpeed >= MAX_SIMULATION_SPEED, meta: maxMeta }
  ];
  timeActions.forEach((item, idx) => {
  tile(item.label, item.action, BODY_X + 22 + idx * (timeTileW + 12), timeTileY, timeTileW, 88, {
@@ -1350,6 +1405,15 @@ this.camera.near = 10.0;
  font: 'bold 23px Arial'
  });
  });
+ if (state.scientificMode) {
+ ctx.save();
+ ctx.fillStyle = 'rgba(245,158,11,0.88)';
+ ctx.font = '15px Arial';
+ ctx.textAlign = 'left';
+ ctx.textBaseline = 'top';
+ ctx.fillText(this._tVR('scientificMoonPhasesApproximate', 'Moon positions are illustrative, not date-accurate.'), BODY_X + 22, rowTop + 172, fullW - 44);
+ ctx.restore();
+ }
 
  panel(BODY_X, midY, halfW, midH, {
  radius: 24,
@@ -1358,15 +1422,15 @@ this.camera.near = 10.0;
  border: 'rgba(59,130,246,0.26)',
  highlight: 'rgba(59,130,246,0.56)'
  });
- sectionTitle('VISUAL LAYERS', BODY_X + 22, midY + 18, halfW - 44, '#60A5FA', 'World overlays and scale modes.');
+ sectionTitle(this._tVR('vrVisualLayers','VISUAL LAYERS'), BODY_X + 22, midY + 18, halfW - 44, '#60A5FA', this._tVR('vrVisualLayersSubtitle','World overlays and scale modes.'));
  const visualGridY = midY + 74;
  const visualTileW = Math.floor((halfW - 22 * 2 - 12) / 2);
  const visualTileH = 56;
  const visualItems = [
- { label: '🛰 Orbits', action: 'orbits', active: state.orbitsVisible },
- { label: '🏷 Labels', action: 'labels', active: state.labelsVisible },
- { label: '⭐ Stars', action: 'constellations', active: state.constellationsVisible },
- { label: '📏 Scale', action: 'scale', active: state.realisticScale }
+ { label: `🛰 ${this._tVR('toggleOrbits','Orbits')}`, action: 'orbits', active: state.orbitsVisible },
+ { label: `🏷 ${this._tVR('toggleLabels','Labels')}`, action: 'labels', active: state.labelsVisible },
+ { label: `⭐ ${this._tVR('toggleConstellations','Stars')}`, action: 'constellations', active: state.constellationsVisible },
+ { label: `📏 ${this._tVR('toggleScale','Scale')}`, action: 'scale', active: state.realisticScale }
  ];
  visualItems.forEach((item, idx) => {
  const col = idx % 2;
@@ -1385,14 +1449,14 @@ this.camera.near = 10.0;
  border: 'rgba(168,85,247,0.26)',
  highlight: 'rgba(168,85,247,0.56)'
  });
- sectionTitle('SHIP TOOLS', BODY_X + halfW + halfGap + 22, midY + 18, halfW - 44, '#C084FC', 'Reset, discover, sound, and laser pointer controls.');
+ sectionTitle(this._tVR('vrShipTools','SHIP TOOLS'), BODY_X + halfW + halfGap + 22, midY + 18, halfW - 44, '#C084FC', this._tVR('vrShipToolsSubtitle','Reset, discover, sound, and laser pointer controls.'));
  const toolX = BODY_X + halfW + halfGap + 22;
  const toolTileW = Math.floor((halfW - 22 * 2 - 12) / 2);
  const toolItems = [
- { label: '🔄 Reset', action: 'reset', active: false },
- { label: '🎲 Discover', action: 'discover', active: false },
- { label: state.audioEnabled ? '🔊 Sound' : '🔇 Sound', action: 'sound', active: state.audioEnabled },
- { label: '🎯 Lasers', action: 'togglelasers', active: state.lasersVisible }
+ { label: `🔄 ${this._tVR('resetView','Reset')}`, action: 'reset', active: false },
+ { label: `🎲 ${this._tVR('randomDiscovery','Discover')}`, action: 'discover', active: false },
+ { label: state.audioEnabled ? `🔊 ${this._tVR('vrSound','Sound')}` : `🔇 ${this._tVR('vrSound','Sound')}`, action: 'sound', active: state.audioEnabled },
+ { label: `🎯 ${this._tVR('vrLasers','Lasers')}`, action: 'togglelasers', active: state.lasersVisible }
  ];
  toolItems.forEach((item, idx) => {
  const col = idx % 2;
@@ -1411,7 +1475,7 @@ this.camera.near = 10.0;
  border: 'rgba(16,185,129,0.30)',
  highlight: 'rgba(16,185,129,0.56)'
  });
- sectionTitle('LOCOMOTION', BODY_X + 22, locoY + 18, fullW - 44, '#10B981', 'Warp is pressure-based: hold both triggers only while you want speed.');
+ sectionTitle(this._tVR('vrLocomotion','LOCOMOTION'), BODY_X + 22, locoY + 18, fullW - 44, '#10B981', this._tVR('vrLocomotionSubtitle','Warp is pressure-based: hold both triggers only while you want speed.'));
  const warpBoxX = BODY_X + 22;
  const warpBoxY = locoY + 68;
  const warpBoxW = fullW - 44;
@@ -1448,12 +1512,15 @@ this.camera.near = 10.0;
  ctx.font = 'bold 28px Arial';
  ctx.textAlign = 'center';
  ctx.textBaseline = 'middle';
- ctx.fillText(state.starshipMode ? '🚀 Warp drive engaged' : '🚀 Warp drive standby', warpBoxX + warpBoxW / 2, warpBoxY + 28, warpBoxW - 32);
+ ctx.fillText(state.starshipMode ? `🚀 ${this._tVR('vrWarpEngaged','Warp drive engaged')}` : `🚀 ${this._tVR('vrWarpStandby','Warp drive standby')}`, warpBoxX + warpBoxW / 2, warpBoxY + 28, warpBoxW - 32);
  ctx.fillStyle = state.starshipMode ? 'rgba(173,244,255,0.92)' : 'rgba(146,201,203,0.78)';
  ctx.font = '19px Arial';
- ctx.fillText(state.starshipMode ? 'Release either trigger to drop back to normal speed.' : 'Press and hold both triggers together to accelerate to 20×.', warpBoxX + warpBoxW / 2, warpBoxY + warpBoxH - 26, warpBoxW - 48);
+ ctx.fillText(state.starshipMode ? this._tVR('vrWarpRelease','Release either trigger to drop back to normal speed.') : this._tVR('vrWarpHold','Press and hold both triggers together to accelerate to 20×.'), warpBoxX + warpBoxW / 2, warpBoxY + warpBoxH - 26, warpBoxW - 48);
  ctx.restore();
- tile(`🔄 Snap Turn  ${state.snapTurn ? 'ON (30°)' : 'OFF (smooth)'}`, 'snapTurn', warpBoxX + 18, warpBoxY + warpBoxH / 2 - 18, warpBoxW - 36, 52, {
+ const snapLabel = state.snapTurn
+  ? this._tVR('vrSnapOn','ON (30°)')
+  : this._tVR('vrSnapOff','OFF (smooth)');
+ tile(`🔄 ${this._tVR('vrSnapTurn','Snap Turn')}  ${snapLabel}`, 'snapTurn', warpBoxX + 18, warpBoxY + warpBoxH / 2 - 18, warpBoxW - 36, 52, {
  active: state.snapTurn,
  accent: '#10B981',
  font: 'bold 21px Arial'
@@ -1478,7 +1545,7 @@ this.camera.near = 10.0;
  border: 'rgba(56,189,248,0.28)',
  highlight: 'rgba(56,189,248,0.58)'
  });
- sectionTitle('DESTINATION CLASS', BODY_X + 22, BODY_Y + 16, BODY_W - 44, '#38BDF8', 'Choose a group, then tap a destination card.');
+ sectionTitle(this._tVR('vrDestinationClass','DESTINATION CLASS'), BODY_X + 22, BODY_Y + 16, BODY_W - 44, '#38BDF8', this._tVR('vrDestinationSubtitle','Choose a group, then tap a destination card.'));
  catalog.forEach((cat, idx) => {
  const active = state.currentCategory === cat.id;
  tile(cat.label, `cat:${cat.id}`, BODY_X + idx * (catW + catGap), BODY_Y + 58, catW, 44, {
@@ -1504,7 +1571,7 @@ this.camera.near = 10.0;
  border: 'rgba(86,160,210,0.18)',
  highlight: 'rgba(255,255,255,0.06)'
  });
- sectionTitle('TARGET GRID', BODY_X + 22, gridY + 16, BODY_W - 44, '#7DD3FC', `${items.length} destinations in ${curCat.label}.`);
+ sectionTitle(this._tVR('vrTargetGrid','TARGET GRID'), BODY_X + 22, gridY + 16, BODY_W - 44, '#7DD3FC', `${items.length} ${this._tVR('vrDestinationsIn','destinations in')} ${curCat.label}.`);
  page.forEach((item, idx) => {
  const col = idx % cols;
  const row = Math.floor(idx / cols);
@@ -1512,23 +1579,23 @@ this.camera.near = 10.0;
  align: 'left',
  accent: '#38BDF8',
  font: 'bold 20px Arial',
- meta: 'Jump now'
+ meta: this._tVR('vrJumpNow','Jump now')
  });
  });
 
  const navBtnW = 182;
- if (offset > 0) tile('◀ Previous', 'scroll:prev', BODY_X, footerY, navBtnW, 56, {
+ if (offset > 0) tile(`◀ ${this._tVR('vrPrevious','Previous')}`, 'scroll:prev', BODY_X, footerY, navBtnW, 56, {
  accent: '#60A5FA',
  font: 'bold 20px Arial'
  });
  chip(`${currentPage} / ${pageCount}`, BODY_X + Math.floor((BODY_W - 180) / 2), footerY + 11, 180, '#7DD3FC', {
  font: 'bold 18px Arial'
  });
- if (offset + perPage < items.length) tile('Next ▶', 'scroll:next', BODY_X + BODY_W - navBtnW, footerY, navBtnW, 56, {
+ if (offset + perPage < items.length) tile(`${this._tVR('vrNext','Next')} ▶`, 'scroll:next', BODY_X + BODY_W - navBtnW, footerY, navBtnW, 56, {
  accent: '#60A5FA',
  font: 'bold 20px Arial'
  });
- tile('🛰 Reset to solar-system overview', 'reset', BODY_X, BODY_BOTTOM - 8, BODY_W, 52, {
+ tile(`🛰 ${this._tVR('vrResetOverview','Reset to solar-system overview')}`, 'reset', BODY_X, BODY_BOTTOM - 8, BODY_W, 52, {
  accent: '#38BDF8',
  font: 'bold 22px Arial'
  });
@@ -1560,10 +1627,10 @@ this.camera.near = 10.0;
  ctx.font = 'bold 16px Arial';
  ctx.textAlign = 'left';
  ctx.textBaseline = 'top';
- ctx.fillText('SELECTED OBJECT', BODY_X + 28, BODY_Y + 22);
+ ctx.fillText(this._tVR('vrSelectedObject','SELECTED OBJECT'), BODY_X + 28, BODY_Y + 22);
  ctx.fillStyle = '#FFFFFF';
  ctx.font = 'bold 46px Arial';
- ctx.fillText(info.name || 'Unknown Object', BODY_X + 28, BODY_Y + 48, BODY_W - 280);
+ ctx.fillText(info.name || this._tVR('vrUnknownObject','Unknown Object'), BODY_X + 28, BODY_Y + 48, BODY_W - 280);
  ctx.restore();
  chip(`${ts.icon}  ${(info.type || 'Celestial Object').toUpperCase()}`, BODY_X + 28, BODY_Y + 110, 280, ts.accent, {
  top: ts.badge,
@@ -1574,9 +1641,9 @@ this.camera.near = 10.0;
  });
 
  const stats = [
- { label: 'Distance', value: info.distance != null ? (info.distance.toFixed ? info.distance.toFixed(2) + ' AU' : info.distance + ' AU') : '—' },
- { label: 'Diameter', value: info.size != null ? (info.size.toFixed ? Math.round(info.size).toLocaleString() + ' km' : info.size + ' km') : '—' },
- { label: 'Period', value: info.orbitalPeriod != null ? (info.orbitalPeriod < 5 ? info.orbitalPeriod.toFixed(2) + ' yrs' : Math.round(info.orbitalPeriod) + ' yrs') : (info.rotationPeriod != null ? info.rotationPeriod.toFixed(1) + ' hrs rot' : '—') }
+ { label: this._tVR('distance','Distance'), value: info.distance != null ? (info.distance.toFixed ? info.distance.toFixed(2) + ' AU' : info.distance + ' AU') : '—' },
+ { label: this._tVR('vrDiameter','Diameter'), value: info.size != null ? (info.size.toFixed ? Math.round(info.size).toLocaleString() + ' km' : info.size + ' km') : '—' },
+ { label: this._tVR('vrPeriod','Period'), value: info.orbitalPeriod != null ? (info.orbitalPeriod < 5 ? info.orbitalPeriod.toFixed(2) + ' yrs' : Math.round(info.orbitalPeriod) + ' yrs') : (info.rotationPeriod != null ? info.rotationPeriod.toFixed(1) + ' hrs rot' : '—') }
  ];
  const statW = 188;
  stats.forEach((stat, idx) => {
@@ -1608,8 +1675,8 @@ this.camera.near = 10.0;
  border: 'rgba(103,152,171,0.18)',
  highlight: 'rgba(255,255,255,0.07)'
  });
- sectionTitle('FIELD NOTES', BODY_X + 22, descY + 16, BODY_W - 44, ts.accent, 'A concise description of the selected target.');
- wrapText(info.description || 'No description available.', BODY_X + 24, descY + 62, BODY_W - 48, 28, Math.max(4, Math.floor((descH - 78) / 28)), 'rgba(169,205,222,0.86)', '21px Arial');
+ sectionTitle(this._tVR('vrFieldNotes','FIELD NOTES'), BODY_X + 22, descY + 16, BODY_W - 44, ts.accent, this._tVR('vrFieldNotesSubtitle','A concise description of the selected target.'));
+ wrapText(info.description || this._tVR('vrNoDescription','No description available.'), BODY_X + 24, descY + 62, BODY_W - 48, 28, Math.max(4, Math.floor((descH - 78) / 28)), 'rgba(169,205,222,0.86)', '21px Arial');
  }
  else {
  panel(BODY_X, BODY_Y, BODY_W, BODY_BOTTOM - BODY_Y, {
@@ -1634,10 +1701,10 @@ this.camera.near = 10.0;
  ctx.fillText('◎', cx, cy - 54);
  ctx.fillStyle = '#F4F7FB';
  ctx.font = 'bold 34px Arial';
- ctx.fillText('Point at an object to inspect it', cx, cy + 10, BODY_W - 80);
+ ctx.fillText(this._tVR('vrPointInspect','Point at an object to inspect it'), cx, cy + 10, BODY_W - 80);
  ctx.fillStyle = 'rgba(160,206,192,0.82)';
  ctx.font = '22px Arial';
- ctx.fillText('Trigger selects the target and opens this page with stats and notes.', cx, cy + 56, BODY_W - 120);
+ ctx.fillText(this._tVR('vrTriggerInspect','Trigger selects the target and opens this page with stats and notes.'), cx, cy + 56, BODY_W - 120);
  ctx.restore();
  }
  }
@@ -1679,7 +1746,7 @@ this.camera.near = 10.0;
  }
 
  if (!target) {
- this.updateVRStatus('⚠️ Target not available: ' + targetId);
+ this.updateVRStatus(`⚠️ ${this._tVR('vrTargetUnavailable','Target not available')}: ${targetId}`);
  return false;
  }
 
@@ -1702,8 +1769,8 @@ this.camera.near = 10.0;
  }
 
  window.app?.uiManager?.setQuickNavValue?.(targetId);
- const name = target.userData?.name || 'Object';
- this.updateVRStatus('✔ → ' + name);
+ const name = target.userData?.id ? this._vrTargetLabel(target.userData.id, target.userData.name || this._tVR('vrObject','Object')) : (target.userData?.name || this._tVR('vrObject','Object'));
+ this.updateVRStatus(`✔ → ${name}`);
  this.requestVRMenuRefresh();
  return true;
  }
@@ -1717,7 +1784,7 @@ this.camera.near = 10.0;
  }
  const target = app.findObjectByNavigationValue(value);
  if (!target) {
- this.updateVRStatus('⚠️ Not found: ' + value);
+ this.updateVRStatus(`⚠️ ${this._tVR('vrNotFound','Not found')}: ${value}`);
  return;
  }
  const module = app.solarSystemModule;
@@ -1739,8 +1806,10 @@ this.camera.near = 10.0;
  app.uiManager?.updateInfoPanel(info, target);
  }
  if (this.vrNavState) this.vrNavState.currentPage = 'info';
- const name = target.userData?.name || value;
- this.updateVRStatus('✔ → ' + name);
+ const name = target.userData?.id
+  ? this._vrTargetLabel(target.userData.id, target.userData.name || value)
+  : (target.userData?.name || value);
+ this.updateVRStatus(`✔ → ${name}`);
  this.requestVRMenuRefresh();
  }
 
@@ -1865,7 +1934,7 @@ this.camera.near = 10.0;
  app.uiManager?.updateInfoPanel(infoForPanel, hitObject);
  }
  this._showVRInfoOverlay();
- this.updateVRStatus('\uD83D\uDD0D Inspecting: ' + objName);
+ this.updateVRStatus(`🔍 ${this._tVR('vrInspecting','Inspecting')}: ${objName}`);
  this.requestVRMenuRefresh();
  this.triggerVRHaptic(index, 0.8, 100); // Stronger pulse for close zoom
  } else {
@@ -1878,7 +1947,7 @@ this.camera.near = 10.0;
  app.uiManager?.updateInfoPanel(infoForPanel, hitObject);
  }
  this._showVRInfoOverlay();
- this.updateVRStatus('\u2714\uFE0F ' + objName);
+ this.updateVRStatus(`✔️ ${objName}`);
  this.requestVRMenuRefresh();
  this.triggerVRHaptic(index, 0.6, 80); // Medium pulse for selection
  }
@@ -1903,7 +1972,7 @@ this.camera.near = 10.0;
  this._vrPanelDragOffset.subVectors(this.vrUIPanel.position, controller.position);
  this.triggerVRHaptic(index, 0.4, 50);
  if (DEBUG.VR) console.log('[VR] Panel drag START');
- this.updateVRStatus('✋ Move panel — release grip to drop');
+ this.updateVRStatus(`✋ ${this._tVR('vrMovePanel','Move panel — release grip to drop')}`);
  return; // Don’t start grab-to-rotate while dragging panel
  }
 
@@ -1914,13 +1983,13 @@ this.camera.near = 10.0;
  this.grabRotateState.controllerIndex = index;
  
  // Store starting position and rotation
- controller.getWorldPosition(this.grabRotateState.startPosition);
+ this.grabRotateState.startPosition.copy(controller.position);
  this.grabRotateState.startDollyRotation.copy(this.dolly.rotation);
  this.grabRotateState.lastPosition.copy(this.grabRotateState.startPosition);
  
  this.triggerVRHaptic(index, 0.5, 80); // Confirm grab start
  if (DEBUG.VR) console.log('🤚 [VR] Grab-to-rotate STARTED (LEFT GRIP)');
- this.updateVRStatus('🤚 Grab & Move to Rotate View');
+ this.updateVRStatus(`🤚 ${this._tVR('vrGrabRotate','Grab & Move to Rotate View')}`);
  }
  }
  
@@ -1932,7 +2001,7 @@ this.camera.near = 10.0;
  this._billboardVRPanel(); // face user wherever it landed
  this.triggerVRHaptic(index, 0.2, 30);
  if (DEBUG.VR) console.log('[VR] Panel drag END');
- this.updateVRStatus('✨ Ready for interaction');
+ this.updateVRStatus(`✨ ${this._tVR('vrReadyInteraction','Ready for interaction')}`);
  return;
  }
  // End grab-to-rotate (left grip)
@@ -1941,7 +2010,7 @@ this.camera.near = 10.0;
  this.grabRotateState.controllerIndex = -1;
  
  if (DEBUG.VR) console.log('✋ [VR] Grab-to-rotate ENDED');
- this.updateVRStatus('✨ Ready for interaction');
+ this.updateVRStatus(`✨ ${this._tVR('vrReadyInteraction','Ready for interaction')}`);
  }
  }
  
@@ -2080,7 +2149,16 @@ this.camera.near = 10.0;
  // ═══════════════════════════════════════════════════════════
 
  _vrRadialItems() {
-   return VR_RADIAL_ITEMS;
+   return [
+     { id:'sun', label:`☀️ ${this._vrTargetLabel('sun','Sun')}`, color:'#FFD700' },
+     { id:'mercury', label:`☿ ${this._vrTargetLabel('mercury','Mercury')}`, color:'#A8A8A8' },
+     { id:'venus', label:`♀ ${this._vrTargetLabel('venus','Venus')}`, color:'#E8C87A' },
+     { id:'earth', label:`🌍 ${this._vrTargetLabel('earth','Earth')}`, color:'#4FC3F7' },
+     { id:'mars', label:`♂ ${this._vrTargetLabel('mars','Mars')}`, color:'#EF5350' },
+     { id:'jupiter', label:`♃ ${this._vrTargetLabel('jupiter','Jupiter')}`, color:'#FFA726' },
+     { id:'saturn', label:`♄ ${this._vrTargetLabel('saturn','Saturn')}`, color:'#FFCC80' },
+     { id:'neptune', label:`♆ ${this._vrTargetLabel('neptune','Neptune')}`, color:'#5C6BC0' }
+   ];
   }
 
   _ensureVRRadialPanel() {
@@ -2146,7 +2224,7 @@ this.camera.near = 10.0;
     ctx.fillStyle = hotItem ? hotItem.color : 'rgba(100,160,200,0.6)';
     ctx.font = hotItem ? 'bold 18px Arial' : '15px Arial';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(hotItem ? 'Release \u2192 go' : 'Tilt to choose', CX, CY);
+    ctx.fillText(hotItem ? this._tVR('vrReleaseGo','Release \u2192 go') : this._tVR('vrTiltChoose','Tilt to choose'), CX, CY);
     if (this._vrRadialPanel?.material?.map) this._vrRadialPanel.material.map.needsUpdate = true;
   }
 
@@ -2155,7 +2233,7 @@ this.camera.near = 10.0;
     this._vrRadialHot = -1; this._vrRadialVisible = true;
     this._drawVRRadialWheel();
     if (this._vrRadialPanel) this._vrRadialPanel.visible = true;
-    this.triggerVRHaptic(0, 0.25, 60);
+    this.triggerVRHaptic('left', 0.25, 60);
   }
 
   _hideVRRadialWheel() {
@@ -2168,7 +2246,7 @@ this.camera.near = 10.0;
     this._hideVRRadialWheel();
     if (hot >= 0) {
       const item = this._vrRadialItems()[hot];
-      this.triggerVRHaptic(0, 0.5, 80); this.triggerVRHaptic(1, 0.3, 60);
+      this.triggerVRHaptic('left', 0.5, 80); this.triggerVRHaptic('right', 0.3, 60);
       this.navigateVRTarget(item.id);
     }
   }
@@ -2384,48 +2462,56 @@ this.camera.near = 10.0;
  case 'speed0':
  if (app.uiManager?.setSpeed) app.uiManager.setSpeed(0);
  else app.timeSpeed = 0;
- this.updateVRStatus('⏸ Paused');
+ this.updateVRStatus(`⏸ ${this._tVR('paused', 'Paused')}`);
  scheduleRefresh(); break;
 
  case 'speed1':
  if (app.uiManager?.setSpeed) app.uiManager.setSpeed(1);
  else app.timeSpeed = 1;
- this.updateVRStatus('▶ Real Time (1×)');
+ if (app.solarSystemModule?.scientificMode) this.updateVRStatus(`▶ ${this._tVR('vrRealTime', 'Real Time')} (1×)`);
+ else this.updateVRStatus(`▶ ${this._tVR('educationalMotion', 'Illustrative motion')} (1×)`);
  scheduleRefresh(); break;
 
  case 'speed10':
- if (app.uiManager?.setSpeed) app.uiManager.setSpeed(10);
- else app.timeSpeed = 10;
- this.updateVRStatus('⏩ Fast (10×)');
+ const requestedFast = app.solarSystemModule?.scientificMode ? 10 : 5;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(requestedFast);
+ else app.timeSpeed = requestedFast;
+ this.updateVRStatus(app.solarSystemModule?.scientificMode
+  ? `⏩ ${this._tVR('vrFast', 'Fast')} (10×)`
+  : `⏩ ${this._tVR('vrFast', 'Fast')} (${Number(app.timeSpeed.toPrecision(10))}×, ${this._tVR('vrIllustrative', 'illustrative')})`);
  scheduleRefresh(); break;
 
  case 'speed100':
- if (app.uiManager?.setSpeed) app.uiManager.setSpeed(MAX_SIMULATION_SPEED);
- else app.timeSpeed = MAX_SIMULATION_SPEED;
- this.updateVRStatus('⏩⏩ Max Speed (525,960×)');
+ const requestedMax = app.solarSystemModule?.scientificMode ? MAX_SIMULATION_SPEED : 10;
+ if (app.uiManager?.setSpeed) app.uiManager.setSpeed(requestedMax);
+ else app.timeSpeed = requestedMax;
+ const appliedMax = Number(app.timeSpeed.toPrecision(10));
+ this.updateVRStatus(app.solarSystemModule?.scientificMode
+  ? `⏩⏩ ${this._tVR('vrMaxSpeed', 'Max Speed')} (${appliedMax}×)`
+  : `⏩⏩ ${this._tVR('vrMaxSpeed', 'Max Speed')} (${appliedMax}×, ${this._tVR('vrIllustrative', 'illustrative')})`);
  scheduleRefresh(); break;
 
  case 'orbits':
  document.getElementById('toggle-orbits')?.click();
- this.updateVRStatus('🪐 Orbits toggled');
+ this.updateVRStatus(`🪐 ${this._tVR('vrOrbitsToggled','Orbits toggled')}`);
  scheduleRefresh(120); break;
 
  case 'labels':
  document.getElementById('toggle-details')?.click();
- this.updateVRStatus('🏷️ Labels toggled');
+ this.updateVRStatus(`🏷️ ${this._tVR('vrLabelsToggled','Labels toggled')}`);
  scheduleRefresh(120); break;
 
  case 'constellations':
  document.getElementById('toggle-constellations')?.click();
- this.updateVRStatus('⭐ Stars/Constellations toggled');
+ this.updateVRStatus(`⭐ ${this._tVR('vrStarsToggled','Stars/Constellations toggled')}`);
  scheduleRefresh(120); break;
 
  case 'scale':
  document.getElementById('toggle-scale')?.click();
  if (window.app?.solarSystemModule?.scientificMode) {
- this.updateVRStatus('🧪 Scientific mode enabled');
+ this.updateVRStatus(`🧪 ${this._tVR('vrScientificMode','Scientific mode enabled')}`);
  } else {
- this.updateVRStatus('📚 Educational mode enabled');
+ this.updateVRStatus(`📚 ${this._tVR('vrEducationalMode','Educational mode enabled')}`);
  }
  scheduleRefresh(120); break;
 
@@ -2437,9 +2523,9 @@ this.camera.near = 10.0;
  const soundToggle = document.getElementById('sound-toggle');
  if (soundToggle) soundToggle.checked = am.enabled;
  app.syncLocalizedControlStates?.();
- this.updateVRStatus(am.enabled ? '🔊 Sound ON' : '🔇 Sound OFF');
+ this.updateVRStatus(am.enabled ? `🔊 ${this._tVR('vrSoundOn','Sound ON')}` : `🔇 ${this._tVR('vrSoundOff','Sound OFF')}`);
  } else {
- this.updateVRStatus('⚠️ Audio not available');
+ this.updateVRStatus(`⚠️ ${this._tVR('vrAudioUnavailable','Audio not available')}`);
  }
  scheduleRefresh(); break;
  }
@@ -2454,23 +2540,23 @@ this.camera.near = 10.0;
 
  case 'togglelasers':
  this._setLasersVisible(!this.lasersVisible);
- this.updateVRStatus('🎯 Lasers ' + (this.lasersVisible ? 'ON' : 'OFF'));
+ this.updateVRStatus(`🎯 ${this._tVR('vrLasers','Lasers')} ${this.lasersVisible ? this._tVR('vrOn','ON') : this._tVR('vrOff','OFF')}`);
  scheduleRefresh(); break;
 
  case 'starship':
  this.vrStarshipMode = !this.vrStarshipMode;
  if (this.vrStarshipMode) {
- this.updateVRStatus('🚀 STARSHIP MODE ENGAGED • 20× speed');
- this.triggerVRHaptic(0, 0.9, 220);
- this.triggerVRHaptic(1, 0.9, 220);
+ this.updateVRStatus(`🚀 ${this._tVR('vrStarshipEngaged','STARSHIP MODE ENGAGED')} • 20× ${this._tVR('vrSpeed','speed')}`);
+ this.triggerVRHaptic('left', 0.9, 220);
+ this.triggerVRHaptic('right', 0.9, 220);
  } else {
- this.updateVRStatus('🛸 Starship mode OFF • normal speed');
+ this.updateVRStatus(`🛸 ${this._tVR('vrStarshipOff','Starship mode OFF')} • ${this._tVR('vrNormalSpeed','normal speed')}`);
  }
  scheduleRefresh(); break;
 
  case 'snapTurn':
  this.vrSnapTurn = !this.vrSnapTurn;
- this.updateVRStatus('🔄 Snap turn ' + (this.vrSnapTurn ? 'ON (30°)' : 'OFF (smooth)'));
+ this.updateVRStatus(`🔄 ${this._tVR('vrSnapTurn','Snap turn')} ${this.vrSnapTurn ? this._tVR('vrSnapOn','ON (30°)') : this._tVR('vrSnapOff','OFF (smooth)')}`);
  scheduleRefresh(); break;
 
  case 'reset':
@@ -2485,7 +2571,7 @@ this.camera.near = 10.0;
  }
  if (app.solarSystemModule) app.solarSystemModule.resetCameraTracking();
  this.vrLastObjectInfo = null;
- this.updateVRStatus('🔄 View reset');
+ this.updateVRStatus(`🔄 ${this._tVR('vrViewReset','View reset')}`);
  scheduleRefresh(); break;
 
  case 'earth':
@@ -2493,7 +2579,7 @@ this.camera.near = 10.0;
 
  case 'hide':
  if (this.vrUIPanel) this.vrUIPanel.visible = false;
- this.updateVRStatus('🚪 Menu closed'); break;
+ this.updateVRStatus(`🚪 ${this._tVR('vrMenuClosed','Menu closed')}`); break;
 
  case 'exitvr':
  if (this.renderer.xr.isPresenting) {
@@ -2521,7 +2607,7 @@ this.camera.near = 10.0;
  }
 
  updateVRStatus(message) {
- this.vrStatusMessage = message || 'Ready';
+ this.vrStatusMessage = message || this._tVR('vrReady','Ready');
  this.requestVRMenuRefresh();
  }
 
@@ -2549,16 +2635,18 @@ this.camera.near = 10.0;
  try {
  const session = this.renderer?.xr?.getSession();
  if (!session) return;
- let srcIndex = 0;
+ const handedness = typeof controllerIndex === 'string'
+ ? controllerIndex
+ : this.controllers?.[controllerIndex]?.userData?.handedness || null;
+ if (handedness !== 'left' && handedness !== 'right') return;
  for (const inputSource of session.inputSources) {
- if (srcIndex === controllerIndex) {
+ if (!handedness || inputSource.handedness === handedness) {
  const actuators = inputSource.gamepad?.hapticActuators;
  if (actuators && actuators.length > 0) {
  actuators[0].pulse(intensity, durationMs);
  }
  break;
  }
- srcIndex++;
  }
  } catch {
  // Haptics are optional; swallow errors silently
@@ -2681,6 +2769,10 @@ this.camera.near = 10.0;
  
  const inputSources = session.inputSources;
  this._vrWarpTravel.set(0, 0, 0);
+ const now = performance.now();
+ if (this._vrMovementLastTime === null) this._vrMovementLastTime = now;
+ const deltaSeconds = Math.min(Math.max((now - this._vrMovementLastTime) / 1000, 0), 0.1);
+ this._vrMovementLastTime = now;
  
  // Use this.camera.getWorldDirection() — in VR mode Three.js updates this camera's
  // world pose from the HMD each frame, so it reliably reflects where the user looks.
@@ -2713,8 +2805,15 @@ this.camera.near = 10.0;
  const inputSource = inputSources[i];
  const gamepad = inputSource.gamepad;
  const handedness = inputSource.handedness;
+ let controllerIndex = handedness === 'left' ? 0 : handedness === 'right' ? 1 : i;
+ for (let ci = 0; ci < (this.controllers?.length || 0); ci++) {
+  if (this.controllers[ci]?.userData?.handedness === handedness) {
+   controllerIndex = ci;
+   break;
+  }
+ }
  // Lazily expand the array if more sources appear after session start
- if (!this.previousButtonStates[i]) this.previousButtonStates[i] = {};
+ if (!this.previousButtonStates[controllerIndex]) this.previousButtonStates[controllerIndex] = {};
 
  if (!gamepad) continue;
  
@@ -2729,7 +2828,7 @@ this.camera.near = 10.0;
  const menuBtn = gamepad.buttons[4];
  if (menuBtn.pressed) {
  // Check if this is a new press (not held from previous frame)
- const prevState = this.previousButtonStates[i][4] || false;
+ const prevState = this.previousButtonStates[controllerIndex][4] || false;
  if (!prevState) {
  // NEW PRESS - Toggle VR menu
  if (!this.vrUIPanel) {
@@ -2750,14 +2849,14 @@ this.camera.near = 10.0;
  this._setLasersVisible(true);
 
  if (DEBUG.VR) console.log('📋 [VR] Menu TOGGLED (X button)');
- this.updateVRStatus('📋 VR Menu Active');
+ this.updateVRStatus(`📋 ${this._tVR('vrMenuActive','VR Menu Active')}`);
  this.requestVRMenuRefresh();
  }
  }
  }
- this.previousButtonStates[i][4] = true;
+ this.previousButtonStates[controllerIndex][4] = true;
  } else {
- this.previousButtonStates[i][4] = false;
+ this.previousButtonStates[controllerIndex][4] = false;
  }
  }
  
@@ -2768,10 +2867,11 @@ this.camera.near = 10.0;
  // ============================================
  const thumbstickButton = gamepad.buttons[3];
  if (thumbstickButton && thumbstickButton.pressed) {
- const prevState = this.previousButtonStates[i][3] || false;
+ const prevState = this.previousButtonStates[controllerIndex][3] || false;
  if (handedness === 'left') {
  this._vrRadialPressFrames = (this._vrRadialPressFrames || 0) + 1;
- if (this._vrRadialPressFrames === 8) {
+ this._vrRadialPressElapsed = (this._vrRadialPressElapsed || 0) + deltaSeconds;
+ if (this._vrRadialPressElapsed >= 0.35) {
  // Held long enough — show radial wheel
  this._showVRRadialWheel();
  }
@@ -2781,28 +2881,29 @@ this.camera.near = 10.0;
  const speed = app.timeSpeed === 0 ? 1 : 0;
  if (app.uiManager?.setSpeed) app.uiManager.setSpeed(speed);
  else app.timeSpeed = speed;
- this.updateVRStatus(speed ? '\u25B6 Playing' : '\u23F8 Paused');
+ this.updateVRStatus(speed ? `▶ ${this._tVR('vrPlaying','Playing')}` : `⏸ ${this._tVR('paused','Paused')}`);
  this.requestVRMenuRefresh();
  }
- this.previousButtonStates[i][3] = true;
+ this.previousButtonStates[controllerIndex][3] = true;
  } else {
  if (handedness === 'left') {
- const wasHeld = (this._vrRadialPressFrames || 0) >= 8;
+ const wasHeld = (this._vrRadialPressElapsed || 0) >= 0.35;
  if (wasHeld && this._vrRadialVisible) {
  // Released while wheel was showing — navigate to highlighted sector
  this._confirmVRRadialSelection();
- } else if ((this._vrRadialPressFrames || 0) > 0 && (this._vrRadialPressFrames || 0) < 8) {
+ } else if ((this._vrRadialPressFrames || 0) > 0 && this._vrRadialPressElapsed < 0.35) {
  // Short tap — pause toggle
  const app = window.app || this;
  const speed = app.timeSpeed === 0 ? 1 : 0;
  if (app.uiManager?.setSpeed) app.uiManager.setSpeed(speed);
  else app.timeSpeed = speed;
- this.updateVRStatus(speed ? '\u25B6 Playing' : '\u23F8 Paused');
+ this.updateVRStatus(speed ? `▶ ${this._tVR('vrPlaying','Playing')}` : `⏸ ${this._tVR('paused','Paused')}`);
  this.requestVRMenuRefresh();
  }
  this._vrRadialPressFrames = 0;
+ this._vrRadialPressElapsed = 0;
  }
- this.previousButtonStates[i][3] = false;
+ this.previousButtonStates[controllerIndex][3] = false;
  }
  
  // Check trigger (button 0 = trigger); track both-trigger for warp
@@ -2833,7 +2934,7 @@ this.camera.near = 10.0;
  // ============================================
  if (handedness === 'left') {
  const starshipMult = this.vrStarshipMode ? 20.0 : 1.0;
- const baseSpeed = 0.40 * sprintMultiplier * starshipMult;
+ const baseSpeed = 28.8 * sprintMultiplier * starshipMult;
 
  // While radial wheel is open: use stick to select sector (no movement)
  if (this._vrRadialVisible) {
@@ -2844,16 +2945,16 @@ this.camera.near = 10.0;
  if (newHot !== this._vrRadialHot) {
  this._vrRadialHot = newHot;
  this._drawVRRadialWheel(); // Redraw highlight
- if (newHot >= 0) this.triggerVRHaptic(0, 0.08, 20); // Light tick
+ if (newHot >= 0)  this.triggerVRHaptic(controllerIndex, 0.08, 20); // Light tick
  }
  } else if (!this.grabRotateState.active &&
  (Math.abs(stickX) > deadzone || Math.abs(stickY) > deadzone)) {
  // Forward/back: negate stickY (forward stick = negative Y on Quest)
- this._vrMoveScratch.copy(cameraForward).multiplyScalar(-stickY * baseSpeed);
+ this._vrMoveScratch.copy(cameraForward).multiplyScalar(-stickY * baseSpeed * deltaSeconds);
  this.dolly.position.add(this._vrMoveScratch);
  this._vrWarpTravel.add(this._vrMoveScratch);
  // Strafe: right = +X
- this._vrMoveScratch.copy(cameraRight).multiplyScalar(stickX * baseSpeed);
+ this._vrMoveScratch.copy(cameraRight).multiplyScalar(stickX * baseSpeed * deltaSeconds);
  this.dolly.position.add(this._vrMoveScratch);
  this._vrWarpTravel.add(this._vrMoveScratch);
  }
@@ -2863,12 +2964,12 @@ this.camera.near = 10.0;
  // Y button: Toggle between UP/DOWN based on thumbstick Y
  if (Math.abs(stickY) > deadzone) {
  // Use thumbstick Y to control up/down when Y is held
- this._vrMoveScratch.set(0, -stickY * baseSpeed * 0.8, 0);
+ this._vrMoveScratch.set(0, -stickY * baseSpeed * 0.8 * deltaSeconds, 0);
  this.dolly.position.add(this._vrMoveScratch);
  this._vrWarpTravel.add(this._vrMoveScratch);
  } else {
  // Default: Y button moves UP
- this._vrMoveScratch.set(0, baseSpeed * 0.8, 0);
+ this._vrMoveScratch.set(0, baseSpeed * 0.8 * deltaSeconds, 0);
  this.dolly.position.add(this._vrMoveScratch);
  this._vrWarpTravel.add(this._vrMoveScratch);
  }
@@ -2880,7 +2981,7 @@ this.camera.near = 10.0;
  // ============================================
  if (handedness === 'right') {
  const starshipMult = this.vrStarshipMode ? 20.0 : 1.0;
- const vertSpeed = 0.25 * sprintMultiplier * starshipMult;
+ const vertSpeed = 18.0 * sprintMultiplier * starshipMult;
  
  // TURN LEFT/RIGHT (only if NOT grab-rotating)
  // vrSnapTurn (default on): 30° discrete snaps to prevent VR sickness.
@@ -2888,24 +2989,24 @@ this.camera.near = 10.0;
  if (!this.grabRotateState.active && Math.abs(stickX) > deadzone) {
  if (this.vrSnapTurn) {
  const SNAP_ANGLE = Math.PI / 6; // 30°
- if (!this._vrSnapCooldown[i] && Math.abs(stickX) > 0.7) {
+ if (!this._vrSnapCooldown[controllerIndex] && Math.abs(stickX) > 0.7) {
  this._vrTurnQuat.setFromAxisAngle(this._vrUpVector, -Math.sign(stickX) * SNAP_ANGLE);
  this.dolly.quaternion.premultiply(this._vrTurnQuat);
- this._vrSnapCooldown[i] = true;
- this.triggerVRHaptic(i, 0.1, 30);
+  this._vrSnapCooldown[controllerIndex] = true;
+  this.triggerVRHaptic(controllerIndex, 0.1, 30);
  }
- if (Math.abs(stickX) < 0.3) this._vrSnapCooldown[i] = false; // reset when stick released
  } else {
- const turnSpeed = 0.03;
- this._vrTurnQuat.setFromAxisAngle(this._vrUpVector, -stickX * turnSpeed);
+  const turnSpeed = 2.0; // radians/sec
+  this._vrTurnQuat.setFromAxisAngle(this._vrUpVector, -stickX * turnSpeed * deltaSeconds);
  this.dolly.quaternion.premultiply(this._vrTurnQuat);
  }
  }
+ if (Math.abs(stickX) < 0.25) this._vrSnapCooldown[controllerIndex] = false;
  
  // VERTICAL MOVEMENT (Up/Down in world space)
  if (Math.abs(stickY) > deadzone) {
  // Negative Y = up, Positive Y = down (inverted for intuitive)
- this._vrMoveScratch.set(0, -stickY * vertSpeed, 0);
+ this._vrMoveScratch.set(0, -stickY * vertSpeed * deltaSeconds, 0);
  this.dolly.position.add(this._vrMoveScratch);
  this._vrWarpTravel.add(this._vrMoveScratch);
  }
@@ -2913,7 +3014,7 @@ this.camera.near = 10.0;
  // UP/DOWN with B button (A button is now menu toggle)
  if (gamepad.buttons[5] && gamepad.buttons[5].pressed) {
  // B button: Move UP
- this._vrMoveScratch.set(0, 0.2 * sprintMultiplier, 0);
+ this._vrMoveScratch.set(0, 14.4 * sprintMultiplier * starshipMult * deltaSeconds, 0);
  this.dolly.position.add(this._vrMoveScratch);
  this._vrWarpTravel.add(this._vrMoveScratch);
  }
@@ -2926,9 +3027,10 @@ this.camera.near = 10.0;
  if (this.grabRotateState.active) {
  const controller = this.controllers[this.grabRotateState.controllerIndex];
  if (controller) {
- // Reuse pre-allocated vectors — no heap allocation on the hot path
+ // Controller is a dolly child: use dolly-local position so dolly rotation
+ // cannot feed back into the measured displacement.
  const currentPosition = this._vrTempPosition;
- controller.getWorldPosition(currentPosition);
+ currentPosition.copy(controller.position);
  
  // Calculate movement delta using pre-allocated vector
  const delta = this._vrGrabDelta.subVectors(
@@ -3005,13 +3107,13 @@ this.camera.near = 10.0;
  this.vrStarshipMode = bothTriggersHeld;
  if (bothTriggersHeld && !wasWarp) {
  // Just engaged — haptic + effect
- this.updateVRStatus('🚀 WARP DRIVE ENGAGED • 20× speed');
- this.triggerVRHaptic(0, 0.6, 120);
- this.triggerVRHaptic(1, 0.6, 120);
+ this.updateVRStatus(`🚀 ${this._tVR('vrWarpDriveEngaged','WARP DRIVE ENGAGED')} • 20× ${this._tVR('vrSpeed','speed')}`);
+ this.triggerVRHaptic('left', 0.6, 120);
+ this.triggerVRHaptic('right', 0.6, 120);
  this.requestVRMenuRefresh();
  } else if (!bothTriggersHeld && wasWarp) {
  // Just disengaged
- this.updateVRStatus('🛸 Warp disengaged');
+ this.updateVRStatus(`🛸 ${this._tVR('vrWarpDisengaged','Warp disengaged')}`);
  this._deactivateVRWarpEffect();
  this.requestVRMenuRefresh();
  }
@@ -3181,6 +3283,11 @@ this.camera.near = 10.0;
  }
 
  // ── 2c. VR menu redraw (dirty-flag driven, at most once per frame) ───
+ const vrMenuLang = document.documentElement.lang || 'en';
+ if (this._vrMenuLang !== vrMenuLang) {
+ this._vrMenuLang = vrMenuLang;
+ this._vrMenuDirty = true;
+ }
  if (this._vrMenuDirty && this.vrUIContext) {
  this._vrMenuDirty = false;
  this.drawVRMenu();

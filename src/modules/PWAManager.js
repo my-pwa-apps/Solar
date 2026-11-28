@@ -4,6 +4,7 @@
  */
 import { DEBUG } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
+import { focusTrap } from './FocusTrap.js';
 
 export class PWAManager {
     constructor() {
@@ -116,13 +117,10 @@ export class PWAManager {
 
         if (isVisible) {
             requestAnimationFrame(() => {
-                const acceptButton = document.getElementById('install-accept');
-                const dismissButton = document.getElementById('install-dismiss');
-                const target = acceptButton && acceptButton.style.display !== 'none'
-                    ? acceptButton
-                    : dismissButton;
-                target?.focus();
+                if (!promptElement.classList.contains('hidden')) focusTrap.open(promptElement);
             });
+        } else {
+            focusTrap.close(promptElement);
         }
 
         return promptElement;
@@ -266,7 +264,14 @@ export class PWAManager {
             const dismiss = document.getElementById('install-dismiss');
             const accept = document.getElementById('install-accept');
             if (accept) accept.style.display = 'none';
-            if (dismiss) dismiss.textContent = 'Got it';
+            if (dismiss) {
+                dismiss.textContent = 'Got it';
+                dismiss.addEventListener('click', () => {
+                    this.setInstallPromptVisibility(false);
+                    safeSetItem('installPromptDismissed', 'true');
+                    this.installPromptShown = false;
+                }, { once: true });
+            }
         }
     }
 

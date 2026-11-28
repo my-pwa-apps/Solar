@@ -7,7 +7,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TEXTURE_CACHE } from './TextureCache.js';
 import { CONFIG, DEBUG, IS_MOBILE, prefersReducedMotion, TextureGeneratorUtils, MaterialFactory, CoordinateUtils, ConstellationFactory, GeometryFactory } from './utils.js';
 import { SEMI_MAJOR_AXIS_AU, ASTRONOMICAL_DATA, SCIENTIFIC_ORBITAL_PERIODS, SCIENTIFIC_MOON_ORBITAL_PERIODS, SCIENTIFIC_ORBITAL_ELEMENTS, SCIENTIFIC_MOON_ORBITAL_ELEMENTS, PLANET_ELEMENTS_J2000 } from './solarSystemData.js';
-import { toJulianDate as convertToJulianDate, sunRightAscension, solveKepler, meanToTrueAnomaly } from './ephemeris.js';
+import { toJulianDate as convertToJulianDate, sunRightAscension, solveKepler, meanToTrueAnomaly, keplerianPosition } from './ephemeris.js';
 
 // i18n.js initializes before app startup and exposes translations through window.t
 // Late-binding: always delegate to window.t at call time (not captured at import time)
@@ -166,6 +166,9 @@ export class SolarSystemModule {
  this.spacecraft = [];
  this.jwst = null;
  this._moonParentInverse = new THREE.Quaternion();
+ this._moonEquatorialFrame = new THREE.Quaternion();
+ this._moonEquatorialTilt = new THREE.Quaternion();
+ this._moonTiltAxis = new THREE.Vector3(0, 0, 1);
  this.constellations = [];
  this._focusScratch = {
  directionFromOrigin: new THREE.Vector3(),
@@ -241,6 +244,7 @@ export class SolarSystemModule {
  this._focusTransitionToken = 0;
  this._focusTransitionActive = false;
  this._focusTransitionCancelRequested = false;
+ this._educationalOrbitalSnapshot = null;
  this._cameraWorldPosition = new THREE.Vector3();
  this._galaxyFadeActive = false;
  this._shadowFocus = undefined;
@@ -794,7 +798,7 @@ export class SolarSystemModule {
             radius: 0.212,
             color: 0xFFCCCC,
             distance: 5,
-            speed: -1.024, // -10242x Neptune's speed (negative for retrograde orbit)
+            speed: -1.024, // Educational mode uses signed speed; scientific mode uses i > 90°.
             description: t('descTriton')
         }); // Pluto: 2,377 km / 12,742 km = 0.187
  this.planets.pluto = this.createPlanet(scene, {
@@ -3049,11 +3053,12 @@ export class SolarSystemModule {
  rotationPhase: Math.random() * Math.PI * 2 // starting rotation angle
  };
 
- const orbitalElements = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetKey] || { eccentricity: 0, inclinationDeg: 0, periapsisDeg: 0 };
+ const orbitalElements = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetKey] || { eccentricity: 0, inclinationDeg: 0, periapsisDeg: 0, ascendingNodeDeg: 0 };
  planet.userData.orbitalEccentricity = orbitalElements.eccentricity || 0;
  planet.userData.orbitalInclination = (orbitalElements.inclinationDeg || 0) * Math.PI / 180;
  planet.userData.orbitalPeriapsis = (orbitalElements.periapsisDeg || 0) * Math.PI / 180;
- // Pre-cached trig — inclination and sqrt(1±e) are constant per body
+ planet.userData.orbitalAscendingNode = (orbitalElements.ascendingNodeDeg || 0) * Math.PI / 180;
+ // Pre-cached square roots for low-allocation Kepler updates.
  planet.userData._sinOrbInc = Math.sin(planet.userData.orbitalInclination);
  planet.userData._cosOrbInc = Math.cos(planet.userData.orbitalInclination);
  const _pe = planet.userData.orbitalEccentricity;
@@ -3464,10 +3469,11 @@ export class SolarSystemModule {
 
  moon.userData.parentPlanet = planet.userData?.id || planet.userData?.name || null;
  const moonKey = (config.id || config.name).toLowerCase();
- const moonElements = this.SCIENTIFIC_MOON_ORBITAL_ELEMENTS[moonKey] || { eccentricity: 0, inclinationDeg: 0, periapsisDeg: 0 };
+ const moonElements = this.SCIENTIFIC_MOON_ORBITAL_ELEMENTS[moonKey] || { eccentricity: 0, inclinationDeg: 0, periapsisDeg: 0, ascendingNodeDeg: 0 };
  moon.userData.orbitalEccentricity = moonElements.eccentricity || 0;
  moon.userData.orbitalInclination = (moonElements.inclinationDeg || 0) * Math.PI / 180;
  moon.userData.orbitalPeriapsis = (moonElements.periapsisDeg || 0) * Math.PI / 180;
+ moon.userData.orbitalAscendingNode = (moonElements.ascendingNodeDeg || 0) * Math.PI / 180;
  // Pre-cached trig — constant for each moon
  moon.userData._sinOrbInc = Math.sin(moon.userData.orbitalInclination);
  moon.userData._cosOrbInc = Math.cos(moon.userData.orbitalInclination);
@@ -3501,21 +3507,108 @@ export class SolarSystemModule {
  }
  }
 
+ _planetOrbitalElementsAtDays(planetKey, daysSinceJ2000, out = {}) {
+ const base = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetKey];
+ if (!base) return null;
+ const centuries = daysSinceJ2000 / 36525;
+ const degreesToRadians = Math.PI / 180;
+ out.eccentricity = base.eccentricity + (base.eccentricityRatePerCentury || 0) * centuries;
+ out.inclination = (base.inclinationDeg + (base.inclinationRateDegPerCentury || 0) * centuries) * degreesToRadians;
+ out.argumentOfPeriapsis = (base.periapsisDeg + (base.periapsisRateDegPerCentury || 0) * centuries) * degreesToRadians;
+ out.ascendingNode = ((base.ascendingNodeDeg || 0) + (base.ascendingNodeRateDegPerCentury || 0) * centuries) * degreesToRadians;
+ return out;
+ }
+
+ _setPlanetPosition(planet, daysSinceJ2000 = this.simulatedJD - 2451545) {
+ const data = planet.userData;
+ if (!this.scientificMode) {
+  planet.position.set(data.distance * Math.cos(data.angle), 0, data.distance * Math.sin(data.angle));
+  return;
+ }
+ const key = (data.id || data.name || '').toLowerCase();
+ const orbital = this._planetOrbitalElementsAtDays(key, daysSinceJ2000, data._orbitalState || (data._orbitalState = {}));
+ if (!orbital) return;
+ data.orbitalEccentricity = orbital.eccentricity;
+ data.orbitalInclination = orbital.inclination;
+ data.orbitalPeriapsis = orbital.argumentOfPeriapsis;
+ data.orbitalAscendingNode = orbital.ascendingNode;
+ keplerianPosition(
+  data.distance, orbital.eccentricity, data.angle, orbital.inclination,
+  orbital.ascendingNode, orbital.argumentOfPeriapsis, planet.position
+ );
+ }
+
+ _setCometPosition(comet) {
+ const data = comet.userData;
+ keplerianPosition(
+  data.distance, data.eccentricity || 0, data.angle,
+  (data.inclination || 0) * Math.PI / 180, 0, 0, comet.position
+ );
+ }
+
+ captureEducationalOrbitalState() {
+ const bodies = new Set([
+  ...Object.values(this.planets || {}),
+  ...Object.values(this.moons || {}),
+  ...(this.comets || [])
+ ]);
+ const phases = [];
+ for (const body of bodies) {
+  const data = body?.userData;
+  if (!data || (!Number.isFinite(data.angle) && !Number.isFinite(data.meanAnomaly))) continue;
+  phases.push({
+   body,
+   angle: data.angle,
+   meanAnomaly: data.meanAnomaly
+  });
+ }
+ return { jd: this.simulatedJD, phases };
+ }
+
+ restoreEducationalOrbitalState(snapshot) {
+ if (!snapshot?.phases || this.scientificMode) return false;
+ for (const { body, angle, meanAnomaly } of snapshot.phases) {
+  const data = body?.userData;
+  if (!data) continue;
+  if (Number.isFinite(angle)) data.angle = angle;
+  if (Number.isFinite(meanAnomaly)) data.meanAnomaly = meanAnomaly;
+  if (data.type === 'planet' || data.type === 'DwarfPlanet') {
+   this._setPlanetPosition(body);
+  } else if (data.type === 'moon') {
+   this._updateMoonPosition(body);
+  } else if (data.isComet) {
+   this._setCometPosition(body);
+  } else if (data.type === 'exoplanet') {
+   this.updateExoplanetPosition(body);
+  }
+ }
+ return true;
+ }
+
  _updateMoonPosition(moon) {
  const data = moon.userData;
  const e = this.scientificMode ? data.orbitalEccentricity || 0 : 0;
  const inclination = this.scientificMode ? data.orbitalInclination || 0 : 0;
- const theta = data.angle + (this.scientificMode ? data.orbitalPeriapsis || 0 : 0);
- const radius = data.distance * (1 - e * e) / (1 + e * Math.cos(data.angle));
- const z = radius * Math.sin(theta);
- moon.position.set(radius * Math.cos(theta), z * Math.sin(inclination), z * Math.cos(inclination));
- // Moon coordinates and orbit traces are inertial, not attached to the spinning surface.
+ const parent = moon.parent;
+ const parentData = parent?.userData || {};
+ const argumentOfPeriapsis = this.scientificMode ? data.orbitalPeriapsis || 0 : 0;
+ const ascendingNode = this.scientificMode ? data.orbitalAscendingNode || 0 : 0;
+ keplerianPosition(
+  data.distance, e, data.angle, inclination, ascendingNode,
+  argumentOfPeriapsis, moon.position
+ );
+
+ // Moon elements are parent-equatorial. Map that frame through the parent's
+ // axial tilt, but cancel its daily spin so the orbital plane stays inertial.
  this._moonParentInverse.copy(moon.parent.quaternion).invert();
- moon.position.applyQuaternion(this._moonParentInverse);
- if (data.orbitLine) data.orbitLine.quaternion.copy(this._moonParentInverse);
+ const tilt = this.scientificMode ? (parentData.axialTilt || 0) * Math.PI / 180 : 0;
+ this._moonEquatorialTilt.setFromAxisAngle(this._moonTiltAxis, tilt);
+ this._moonEquatorialFrame.copy(this._moonParentInverse).multiply(this._moonEquatorialTilt);
+ moon.position.applyQuaternion(this._moonEquatorialFrame);
+ if (data.orbitLine) data.orbitLine.quaternion.copy(this._moonEquatorialFrame);
  if (data.tidallyLocked) {
- moon.rotation.set(-inclination, Math.PI / 2 - theta, 0, 'XYZ');
- moon.quaternion.premultiply(this._moonParentInverse);
+ moon.rotation.set(-inclination, Math.PI / 2 - data.angle - argumentOfPeriapsis, 0, 'XYZ');
+ moon.quaternion.premultiply(this._moonEquatorialFrame);
  }
  }
 
@@ -3596,8 +3689,19 @@ export class SolarSystemModule {
  * Also seeds simulatedHours so planet self-rotations are consistent.
  * @param {Date} date
  */
- initPositionsToDate(date) {
- const jd = this.toJulianDate(date);
+ initPositionsToDate(date, options = {}) {
+ this._initPositionsToJulianDate(this.toJulianDate(date), options);
+ }
+
+ seekToJulianDate(jd, options = {}) {
+ if (!Number.isFinite(jd)) {
+  if (DEBUG.enabled) console.warn('[TimeMachine] seekToJulianDate: ignored invalid Julian Date', jd);
+  return;
+ }
+ this._initPositionsToJulianDate(jd, options);
+ }
+
+ _initPositionsToJulianDate(jd, { rebuildOrbits = true } = {}) {
  const daysSinceJ2000 = jd - 2451545.0;
  const TWO_PI = Math.PI * 2;
  const normalizeAngle = (angle) => ((angle % TWO_PI) + TWO_PI) % TWO_PI;
@@ -3613,7 +3717,8 @@ export class SolarSystemModule {
  // Mean anomaly at target date
  const M_deg = ((el.M0 + el.n * daysSinceJ2000) % 360 + 360) % 360;
  const M_rad = M_deg * Math.PI / 180;
- const e = planet.userData.orbitalEccentricity || 0;
+ const orbital = this._planetOrbitalElementsAtDays(key, daysSinceJ2000);
+ const e = orbital?.eccentricity ?? planet.userData.orbitalEccentricity ?? 0;
 
  // True anomaly (= userData.angle the update loop uses as orbital phase)
  planet.userData.meanAnomaly = M_rad;
@@ -3621,21 +3726,7 @@ export class SolarSystemModule {
 
  // Also update planet.position immediately so focusOnObject / getWorldPosition
  // returns the correct epoch position without waiting for the next update() frame.
- if (this.scientificMode) {
- const i = planet.userData.orbitalInclination || 0;
- const w = planet.userData.orbitalPeriapsis || 0;
- const a = planet.userData.distance;
- const nu = planet.userData.angle;
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
- const theta = nu + w;
- planet.position.x = r * Math.cos(theta);
- planet.position.y = r * Math.sin(theta) * Math.sin(i);
- planet.position.z = r * Math.sin(theta) * Math.cos(i);
- } else {
- planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
- planet.position.y = 0;
- planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
- }
+ this._setPlanetPosition(planet, daysSinceJ2000);
  });
 
  // Set Earth's self-rotation immediately so the correct face is visible
@@ -3648,7 +3739,8 @@ export class SolarSystemModule {
  earthPlanet.rotation.y = orbAngle + Math.PI + sunRA - gmst;
  }
 
- // Date-seed moon orbital phases (deterministic by JD, not random startup state)
+ // This common epoch seed is deterministic for reproducible visualization,
+ // not an observed reference phase; historical lunar accuracy remains unsupported.
  Object.values(this.moons).forEach((moon) => {
  if (!moon?.userData) return;
 
@@ -3656,7 +3748,7 @@ export class SolarSystemModule {
  const orbitalPeriodDays = this.SCIENTIFIC_MOON_ORBITAL_PERIODS[moonKey] || this.ASTRONOMICAL_DATA[moonKey]?.orbitalPeriod;
  if (!orbitalPeriodDays || orbitalPeriodDays <= 0) return;
 
- const direction = moon.userData.speed < 0 ? -1 : 1;
+ const direction = this.scientificMode ? 1 : (moon.userData.speed < 0 ? -1 : 1);
  const meanAnomaly = normalizeAngle(direction * (daysSinceJ2000 / orbitalPeriodDays) * TWO_PI);
  moon.userData.meanAnomaly = meanAnomaly;
  moon.userData.angle = this._meanToTrueAnomaly(meanAnomaly, moon.userData.orbitalEccentricity || 0);
@@ -3680,12 +3772,7 @@ export class SolarSystemModule {
  const e = userData.eccentricity || 0;
  userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(meanAnomaly, e) : meanAnomaly;
 
- const a = userData.distance;
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(userData.angle))) : a;
- const inclRad = (userData.inclination || 0) * Math.PI / 180;
- comet.position.x = r * Math.cos(userData.angle);
- comet.position.y = r * Math.sin(userData.angle) * Math.sin(inclRad);
- comet.position.z = r * Math.sin(userData.angle) * Math.cos(inclRad);
+ this._setCometPosition(comet);
  });
  }
 
@@ -3699,8 +3786,9 @@ export class SolarSystemModule {
 
  // Update trajectory-based spacecraft positions (Voyagers, Pioneers, New Horizons)
  this._initSpacecraftToDate(jd);
+ if (this.scientificMode && rebuildOrbits) this.updateOrbitalPaths();
 
- if (DEBUG.enabled) console.log(`[TimeMachine] Seeked to ${date.toUTCString().slice(0, 16)} (JD ${jd.toFixed(1)})`);
+ if (DEBUG.enabled) console.log(`[TimeMachine] Seeked to ${new Date((jd - 2440587.5) * 86400000).toUTCString().slice(0, 16)} (JD ${jd.toFixed(1)})`);
  }
 
  /**
@@ -3708,13 +3796,13 @@ export class SolarSystemModule {
  * Silently ignores invalid date inputs to prevent orbital solver corruption.
  * @param {Date|string} input
  */
- seekToDate(input) {
+ seekToDate(input, options = {}) {
  const date = input instanceof Date ? input : new Date(input);
  if (isNaN(date.getTime())) {
  if (DEBUG.enabled) console.warn('[TimeMachine] seekToDate: ignored invalid date input', input);
  return;
  }
- this.initPositionsToDate(date);
+ this.initPositionsToDate(date, options);
  }
 
  createAsteroidBelt(scene) {
@@ -9223,8 +9311,15 @@ createHyperrealisticHubble(satData) {
  
  // Solar orbit (affected by orbital pause)
  planet.userData.meanAnomaly = (planet.userData.meanAnomaly || 0) + angleIncrement;
- const e = planet.userData.orbitalEccentricity || 0;
- planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e, planet.userData._keplerSqrtPlus, planet.userData._keplerSqrtMinus) : planet.userData.meanAnomaly;
+ const orbital = this.scientificMode
+  ? this._planetOrbitalElementsAtDays(
+   planet.userData.id || planet.userData.name,
+   this.simulatedJD - 2451545,
+   planet.userData._orbitalState || (planet.userData._orbitalState = {})
+  )
+  : null;
+ const e = orbital?.eccentricity ?? planet.userData.orbitalEccentricity ?? 0;
+ planet.userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(planet.userData.meanAnomaly, e) : planet.userData.meanAnomaly;
  
  // Safety check for angle
  if (isNaN(planet.userData.angle) || !isFinite(planet.userData.angle)) {
@@ -9232,26 +9327,7 @@ createHyperrealisticHubble(satData) {
  planet.userData.angle = 0;
  }
  
- if (this.scientificMode) {
- const e = planet.userData.orbitalEccentricity || 0;
- const w = planet.userData.orbitalPeriapsis || 0;
- const a = planet.userData.distance;
- // angle = true anomaly ν; use ν for correct Keplerian r, then rotate by periapsis ω
- const nu = planet.userData.angle;
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(nu))) : a;
- const theta = nu + w;
- const cosTheta = Math.cos(theta);
- const sinTheta = Math.sin(theta);
- const xOrb = r * cosTheta;
- const zOrb = r * sinTheta;
- planet.position.x = xOrb;
- planet.position.y = zOrb * planet.userData._sinOrbInc;
- planet.position.z = zOrb * planet.userData._cosOrbInc;
- } else {
- planet.position.x = planet.userData.distance * Math.cos(planet.userData.angle);
- planet.position.y = 0;
- planet.position.z = planet.userData.distance * Math.sin(planet.userData.angle);
- }
+ this._setPlanetPosition(planet);
  
  // REALISTIC PLANET ROTATION based on real astronomical data
  if (planet.userData.realRotationPeriod && rotationSpeed !== 0) {
@@ -9292,7 +9368,8 @@ createHyperrealisticHubble(satData) {
  planet.userData.moons.forEach(moon => {
  if (moon.userData) {
  // Calculate moon angle increment
- const moonAngleIncrement = this._motionRate(moon.userData.speed, 'moon') * moonSpeed * deltaTime;
+ const moonRate = this.scientificMode ? Math.abs(moon.userData.speed) : moon.userData.speed;
+ const moonAngleIncrement = this._motionRate(moonRate, 'moon') * moonSpeed * deltaTime;
  
  // Moons orbit their planet
  moon.userData.meanAnomaly = (moon.userData.meanAnomaly || 0) + moonAngleIncrement;
@@ -9414,20 +9491,13 @@ createHyperrealisticHubble(satData) {
  const M = userData.meanAnomaly || 0;
  userData.angle = (e > 1e-6) ? this._meanToTrueAnomaly(M, e, userData._keplerSqrtPlus, userData._keplerSqrtMinus) : M;
  
- const a = userData.distance;
  const angle = userData.angle;
  
  // Pre-calculate trig values (avoid redundant calculations)
  const cosAngle = Math.cos(angle);
  const sinAngle = Math.sin(angle);
  
- // Simplified elliptical orbit
- const r = a * (1 - e * e) / (1 + e * cosAngle);
- 
- // Use cached inclination trig (computed once at comet creation)
- comet.position.x = r * cosAngle;
- comet.position.z = r * sinAngle * userData._cosIncl;
- comet.position.y = r * sinAngle * userData._sinIncl;
+ this._setCometPosition(comet);
 
  if (userData.orbitLine) {
  userData.orbitLine.visible = this.cometOrbitsVisible;
@@ -10135,17 +10205,15 @@ createHyperrealisticHubble(satData) {
  // Helper: generate orbit trace points.
  // In scientific mode, traces the actual Keplerian ellipse (Sun at focus) or the tilted ellipse.
  // In educational mode, generates a simple circle of radius `distance` on the XZ plane.
- const makeOrbitPoints = (distance, e, inc, w, segments) => {
+ const makeOrbitPoints = (distance, e, inc, w, segments, node = 0) => {
  const pts = [];
  if (this.scientificMode) {
  const a = distance;
+ const p = {};
  for (let j = 0; j <= segments; j++) {
  const f = (j / segments) * Math.PI * 2; // true anomaly
- const r = (e > 0) ? (a * (1 - e * e) / (1 + e * Math.cos(f))) : a;
- const theta = f + w; // argument of periapsis rotates the ellipse
- const xOrb = r * Math.cos(theta);
- const zOrb = r * Math.sin(theta);
- pts.push(new THREE.Vector3(xOrb, zOrb * Math.sin(inc), zOrb * Math.cos(inc)));
+ keplerianPosition(a, e, f, inc, node, w, p);
+ pts.push(new THREE.Vector3(p.x, p.y, p.z));
  }
  } else {
  for (let j = 0; j <= segments; j++) {
@@ -10162,15 +10230,16 @@ createHyperrealisticHubble(satData) {
  Object.entries(this.planets).forEach(([planetName, planet]) => {
  if (!planet?.userData || !(planet.userData.distance > 0) || !planet.parent) return;
  const isDwarf = planet.userData.type === 'DwarfPlanet';
- const elem = this.SCIENTIFIC_ORBITAL_ELEMENTS[planetName];
+ const elem = this._planetOrbitalElementsAtDays(planetName, this.simulatedJD - 2451545);
  const e = elem?.eccentricity || 0;
- const inc = (elem?.inclinationDeg || 0) * Math.PI / 180;
- const w = (elem?.periapsisDeg || 0) * Math.PI / 180;
+ const inc = elem?.inclination || 0;
+ const w = elem?.argumentOfPeriapsis || 0;
+ const node = elem?.ascendingNode || 0;
  const distance = planet.userData.distance;
  // Scale segment count so arc-chord deviation stays below ~0.1× planet radius
  // (20 units per segment arc gives ~0.025 units deviation at Pluto's scale)
  const segments = Math.min(1024, Math.max(128, Math.round(2 * Math.PI * distance / 20)));
- const points = makeOrbitPoints(distance, e, inc, w, segments);
+ const points = makeOrbitPoints(distance, e, inc, w, segments, node);
  
  const positions = orbitPositions[isDwarf ? 1 : 0];
  for (let i = 1; i < points.length; i++) {
@@ -10205,8 +10274,9 @@ createHyperrealisticHubble(satData) {
  const e = this.scientificMode ? (moon.userData.orbitalEccentricity || 0) : 0;
  const inc = this.scientificMode ? (moon.userData.orbitalInclination || 0) : 0;
  const w = this.scientificMode ? (moon.userData.orbitalPeriapsis || 0) : 0;
+ const node = this.scientificMode ? (moon.userData.orbitalAscendingNode || 0) : 0;
  
- const points = makeOrbitPoints(moonDistance, e, inc, w, 128);
+ const points = makeOrbitPoints(moonDistance, e, inc, w, 128, node);
  const geometry = new THREE.BufferGeometry().setFromPoints(points);
  const orbitLine = new THREE.Line(geometry, moonOrbitMaterial);
  // We do NOT need orbitLine.rotation.x = Math.PI / 2 because makeOrbitPoints generates Vector3s mapped to the correct planes directly!
@@ -10214,7 +10284,10 @@ createHyperrealisticHubble(satData) {
  orbitLine.renderOrder = 1;
  orbitLine.userData = { type: 'moonOrbit', moon: moon.userData.name, planet: planet.userData.name };
  planet.add(orbitLine);
- orbitLine.quaternion.copy(planet.quaternion).invert();
+ this._moonParentInverse.copy(planet.quaternion).invert();
+ const tilt = this.scientificMode ? (planet.userData.axialTilt || 0) * Math.PI / 180 : 0;
+ this._moonEquatorialTilt.setFromAxisAngle(this._moonTiltAxis, tilt);
+ orbitLine.quaternion.copy(this._moonParentInverse).multiply(this._moonEquatorialTilt);
  moon.userData.orbitLine = orbitLine;
  this.orbits.push(orbitLine);
  });
@@ -11197,11 +11270,8 @@ let actualRadius;
  solarAnchorCameraPos.copy(anchorDirection).multiplyScalar(1200);
  }
 
- // A swooping fly-to across the Solar System is exactly the kind of large-field
- // optical flow that triggers vestibular discomfort, so cut straight to the target
- // when the user has asked the OS for reduced motion. 1ms rather than 0 keeps the
- // progress calculation (elapsed / duration) away from 0/0 = NaN on the first frame.
- const duration = prefersReducedMotion() ? 1 : (isFastOrbiter ? 1000 : 1500); // Faster transition for fast orbiters
+ // Avoid a frame-scheduled fly-to entirely when reduced motion is requested.
+ const duration = prefersReducedMotion() ? 0 : (isFastOrbiter ? 1000 : 1500);
  const startTime = performance.now();
 
  const finalizeFocusTransition = () => {
@@ -11252,7 +11322,7 @@ let actualRadius;
  }
 
  const elapsed = performance.now() - startTime;
- const progress = Math.min(elapsed / duration, 1);
+ const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
  const eased = 1 - Math.pow(1 - progress, 3); // Cubic ease-out
  
  // Update target position differently based on object type

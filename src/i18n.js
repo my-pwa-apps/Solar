@@ -1,8 +1,9 @@
 // Internationalization (i18n) - Multi-language support
 // Space Voyage - lazy-loaded language bundles
 
-import './modules/LanguageManager.js';
+import { languageManager } from './modules/LanguageManager.js';
 import { APP_VERSION } from './modules/utils.js';
+import { safeSetItem } from './modules/storage.js';
 
 const supportedLanguages = ['en', 'nl', 'fr', 'de', 'es', 'pt'];
 const localeLoaders = {
@@ -17,8 +18,8 @@ const localeCache = new Map();
 let currentLanguage = supportedLanguages.includes(document.documentElement.lang)
     ? document.documentElement.lang
     : 'en';
-let englishTranslations;
 let currentTranslations;
+let languageRequest = 0;
 
 async function loadLocale(language) {
     if (localeCache.has(language)) return localeCache.get(language);
@@ -32,7 +33,7 @@ async function loadLocale(language) {
     return localeModule.default;
 }
 
-englishTranslations = await loadLocale('en');
+const englishTranslations = await loadLocale('en');
 if (currentLanguage === 'en') {
     currentTranslations = englishTranslations;
 } else {
@@ -43,6 +44,8 @@ if (currentLanguage === 'en') {
         currentLanguage = 'en';
         document.documentElement.lang = currentLanguage;
         currentTranslations = englishTranslations;
+        languageManager.setManifest(currentLanguage);
+        safeSetItem('appLanguage', currentLanguage);
     }
 }
 
@@ -58,8 +61,6 @@ function t(key) {
 
 // Apply translations to the page
 function applyTranslations() {
-    const lang = getCurrentLanguage();
-
     // Update all elements with data-i18n attribute
     document.querySelectorAll('[data-i18n]').forEach(element => {
         const key = element.getAttribute('data-i18n');
@@ -126,22 +127,26 @@ async function setLanguage(lang) {
         lang = 'en';
     }
 
+    const request = ++languageRequest;
     let nextTranslations;
     try {
         nextTranslations = await loadLocale(lang);
     } catch (error) {
         console.error(`[i18n] Failed to load "${lang}" translations; keeping "${currentLanguage}".`, error);
+        if (request === languageRequest) {
+            const selector = document.getElementById('language-selector');
+            if (selector) selector.value = currentLanguage;
+        }
         return false;
     }
 
+    if (request !== languageRequest) return false;
     currentLanguage = lang;
     currentTranslations = nextTranslations;
     document.documentElement.lang = lang;
-    try {
-        localStorage.setItem('appLanguage', lang);
-    } catch {
-        // Ignore storage failures such as Safari private mode.
-    }
+    const selector = document.getElementById('language-selector');
+    if (selector) selector.value = lang;
+    safeSetItem('appLanguage', lang);
 
     const manifestFiles = {
         'en': './manifest.json',

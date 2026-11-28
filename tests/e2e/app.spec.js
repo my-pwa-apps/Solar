@@ -1191,6 +1191,7 @@ test('keeps moon positions, tidal locking and orbit traces independent of planet
   await openApp(page);
   const result = await page.evaluate(async () => {
     const THREE = await import('three');
+    const { keplerianPosition } = await import('./src/modules/ephemeris.js');
     const app = window.app;
     const solar = app.solarSystemModule;
     app.sceneManager.renderer.setAnimationLoop(null);
@@ -1207,9 +1208,14 @@ test('keeps moon positions, tidal locking and orbit traces independent of planet
         const ud = body.userData;
         const e = mode === 'scientific' ? ud.orbitalEccentricity : 0;
         const inc = mode === 'scientific' ? ud.orbitalInclination : 0;
-        const theta = ud.angle + (mode === 'scientific' ? ud.orbitalPeriapsis : 0);
-        const r = ud.distance * (1 - e * e) / (1 + e * Math.cos(ud.angle));
-        return new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta) * Math.sin(inc), r * Math.sin(theta) * Math.cos(inc));
+        const p = keplerianPosition(
+          ud.distance, e, ud.angle, inc,
+          mode === 'scientific' ? ud.orbitalAscendingNode : 0,
+          mode === 'scientific' ? ud.orbitalPeriapsis : 0
+        );
+        const tilt = mode === 'scientific' ? body.parent.userData.axialTilt * Math.PI / 180 : 0;
+        const parentEquatorialTilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), tilt);
+        return new THREE.Vector3(p.x, p.y, p.z).applyQuaternion(parentEquatorialTilt);
       };
       const relativePosition = body => body.position.clone().applyQuaternion(body.parent.quaternion);
       seekError = Math.max(seekError, relativePosition(moon).distanceTo(expectedPosition(moon)));
@@ -1224,7 +1230,9 @@ test('keeps moon positions, tidal locking and orbit traces independent of planet
           const facing = new THREE.Vector3(0, 0, -1).applyQuaternion(worldRotation);
           lockingError = Math.max(lockingError, facing.distanceTo(actual.clone().normalize().negate()));
           const orbitRotation = body.parent.quaternion.clone().multiply(body.userData.orbitLine.quaternion);
-          orbitError = Math.max(orbitError, orbitRotation.angleTo(new THREE.Quaternion()));
+          const tilt = mode === 'scientific' ? body.parent.userData.axialTilt * Math.PI / 180 : 0;
+          const expectedOrbitRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), tilt);
+          orbitError = Math.max(orbitError, orbitRotation.angleTo(expectedOrbitRotation));
         }
         const relative = relativePosition(moon);
         const azimuth = Math.atan2(relative.z, relative.x);

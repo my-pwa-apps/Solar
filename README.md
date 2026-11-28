@@ -37,7 +37,7 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 
 ### Educational Features
 - Detailed information panels for each object
-- Scientifically accurate orbital mechanics
+- Approximate orbital mechanics for exploration, not precision ephemerides
 - Realistic day/night cycles
 - Educational speed slider: 1× is illustrative motion (Earth year ~120 seconds, Moon orbit ~20 seconds, Earth spin ~30 seconds). Period differences are compressed so other bodies also visibly move; the slider runs from paused to 10×. Dates are hidden because this mode is not an ephemeris.
 - Scientific speed slider: 1× is real time, with real orbital-period ratios and a maximum of one simulated year per minute. Switching to Scientific restores date-based orbital phases; switching modes selects 1× unless paused.
@@ -49,14 +49,13 @@ An immersive, educational Progressive Web App for exploring our Solar System in 
 - On shadow-capable devices, eclipse shadows are rendered for the focused planet–moon system rather than the whole overview; shadows are disabled on mobile and low-power devices.
 
 ### Progressive Web App
-- ✅ **Works 100% offline** with intelligent caching
+- ✅ **Offline support** after a successful install and cache population; optional textures and icons are cached on a best-effort basis
 - ✅ **Installable** on desktop and mobile devices
 - ✅ **Native app experience** with standalone mode
 - ✅ **Smart install prompt** with beautiful UI
 - ✅ **Offline indicator** shows connection status
 - ✅ **Update notifications** when new versions available
 - ✅ **Fast loading** with cache-first strategy
-- ✅ **Auto-updates** with background sync
 - ✅ **App shortcuts** to Earth, Mars, and VR mode
 - ✅ **Security headers** and best practices
 
@@ -119,21 +118,27 @@ npm run version:check   # fail if anything is out of sync (runs before npm test)
 
 The app bootstrap initializes translations before loading the app entry, including
 when an older service worker serves a cached version of the entry point.
+Installed workers from before the cache-first shell policy can still serve a new
+HTML shell with old modules until the user activates the update. A missing cache
+entry or activating an update across multiple open tabs can also mix versions;
+update and reload all tabs, and test upgrades from an existing installation.
 
 The suite verifies version/cache consistency, service-worker cached file references, app boot, WebGL canvas creation, navigation dropdown behavior, core controls, keyboard shortcut scoping, modals, manifest loading, and service worker registration.
 
-### Invariants the static regression suite enforces
+### Invariants the static and offline checks enforce
 
-`tests/static-regression.spec.js` fails the build — rather than shipping a subtly
+The regression suite fails the build — rather than shipping a subtly
 broken offline experience — when any of these drift:
 
 - **Version stamps** in `package.json`, `sw.js`, `src/modules/utils.js`,
   `src/main.js`, `src/bootstrap/startApp.js` and `index.html` disagree.
 - **Precache manifest** entries in `sw.js` point at files that do not exist, or
   contain duplicates.
-- **Three.js module graph:** every `three/addons/*` module imported anywhere in
-  `src/` must appear in `CDN_CACHE_FILES`, and nothing may appear there that is
-  not imported. `index.html` and `sw.js` must agree on exactly one pinned version.
+- **Three.js module graph:** imported addons and their dependencies must be
+  self-hosted and precached; `index.html` and `sw.js` must agree on the pinned version.
+- **Runtime import closure:** `tests/pwa-findings.spec.js` parses the application
+  entry graph, including literal dynamic imports and transitive dependencies,
+  and checks that required modules are precached.
 - **Manifest parity:** all six `manifest*.json` files must declare the same
   top-level fields, so an installed app behaves identically in every language.
   `share_target` is explicitly rejected until a `./share` route actually exists.
@@ -151,8 +156,8 @@ link and the `aria-hidden` state of decorative icons.
 A throw during boot renders the recovery dialog in `src/modules/FatalError.js`
 instead of leaving the user on the loading spinner. It shows the app version,
 user agent and stack under "technical details", and offers Reload plus
-Clear-cache-and-reload (which unregisters the service worker and deletes all
-caches and IndexedDB databases) — the usual fix for a half-written cache after
+Clear-cache-and-reload (which removes app-owned service worker registration,
+caches and texture database) — a possible fix for a half-written cache after
 an interrupted update.
 
 ### Option 3: Install as PWA
@@ -211,7 +216,7 @@ Test your PWA at [PWABuilder.com](https://www.pwabuilder.com/) with your deploye
 
 ## Technology Stack
 
-- **3D Graphics:** Three.js v0.183.0
+- **3D Graphics:** Three.js v0.186.1, self-hosted
 - **VR/AR:** WebXR Device API
 - **Offline Support:** Service Workers
 - **UI Framework:** Custom CSS with Fluent Design
@@ -258,7 +263,12 @@ Solar/
 ### Time Control
 - Continuous speed control from paused to one simulated year per minute
 - Pause/play functionality
-- The speed panel shows the simulated UTC date, including when paused or collapsed.
+- The scientific speed panel shows the simulated UTC date, including when paused or collapsed.
+- Planet and moon positions are simplified models. In particular, moon phases are not
+  independently validated historical ephemerides; use an authoritative ephemeris for
+  observations or precision work.
+- The planetary elements use JPL's approximate 1800–2050 model; Pluto and other
+  dwarf-planet positions remain approximate and have not been independently validated.
 - Comet information shows an approximate orbital semimajor axis, not a current
   distance: the visual orbits are compressed and do not represent physical distances.
 - Moon diameters and nebula extents are approximate; nebulae and Solar System
@@ -273,7 +283,8 @@ Solar/
 
 ### Scale Modes
 - **Educational Mode:** Compressed distances for easy navigation
-- **Realistic Mode:** True astronomical distances (vast!)
+- **Scientific Mode:** Relative distances based on astronomical values, with
+  visualization-specific sizes and other approximations.
 
 ### Object Information
 Click any object to view:
@@ -322,7 +333,8 @@ This project is licensed under the MIT License.
 
 ## Support
 
-- 📖 Documentation: See markdown files in root directory
+- 📖 Documentation: See markdown files in root directory; dated engineering and
+  scientific reviews are historical snapshots, not a statement of current behavior.
 - 🐛 Issues: Use GitHub Issues
 - 💬 Community: PWABuilder Discord
 

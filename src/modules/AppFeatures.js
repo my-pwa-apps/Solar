@@ -52,7 +52,7 @@ export function setupOnboarding(uiManager) {
     const closeOnboarding = () => {
         overlay.classList.add('hidden');
         if (uiManager && typeof uiManager._releaseFocusTrap === 'function') {
-            uiManager._releaseFocusTrap();
+            uiManager._releaseFocusTrap(overlay);
         }
         safeSetItem('space_voyage_onboarding_complete', 'true');
     };

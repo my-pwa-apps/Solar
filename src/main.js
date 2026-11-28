@@ -3,7 +3,7 @@
 // Main Application Entry Point
 // ===========================
 import * as THREE from 'three';
-import './i18n.js?v=2.10.326';
+import './i18n.js?v=2.10.327';
 
 // Import all modules
 import { DEBUG, CONFIG, IS_MOBILE, APP_VERSION } from './modules/utils.js';
@@ -15,6 +15,7 @@ import { audioManager } from './modules/AudioManager.js';
 import { safeGetItem, safeSetItem, safeRemoveItem } from './modules/storage.js';
 import { setupOnboarding } from './modules/AppFeatures.js';
 import { showFatalError } from './modules/FatalError.js';
+import { focusTrap } from './modules/FocusTrap.js';
 
 // Make audio manager globally accessible
 window.audioManager = audioManager;
@@ -541,6 +542,12 @@ class App {
  const realisticScale = normalizedMode === 'scientific';
  const scientificMode = normalizedMode === 'scientific';
  const enteringScientific = scientificMode && !this.solarSystemModule.scientificMode;
+ const leavingScientific = !scientificMode && this.solarSystemModule.scientificMode;
+ const scenePauseMode = this.sceneManager?.pauseMode;
+ const isPaused = this.timeSpeed === 0 || scenePauseMode === 'all' || scenePauseMode === 'orbital';
+ if (enteringScientific) {
+  this._educationalOrbitalSnapshot = this.solarSystemModule.captureEducationalOrbitalState?.() || null;
+ }
 
  this.solarSystemModule.realisticScale = realisticScale;
  if (typeof this.solarSystemModule.setScientificMode === 'function') {
@@ -553,7 +560,13 @@ class App {
 
  this.solarSystemModule.updateScale();
  if (enteringScientific) {
- this.solarSystemModule.seekToDate(jdToDate(this.solarSystemModule.simulatedJD));
+ this.solarSystemModule.seekToJulianDate(this.solarSystemModule.simulatedJD, { rebuildOrbits: false });
+ } else if (leavingScientific) {
+  const snapshot = this._educationalOrbitalSnapshot;
+  const dateStayedPaused = snapshot && isPaused
+   && Math.abs(this.solarSystemModule.simulatedJD - snapshot.jd) <= 1 / 86400;
+  if (dateStayedPaused) this.solarSystemModule.restoreEducationalOrbitalState?.(snapshot);
+  this._educationalOrbitalSnapshot = null;
  }
  this.uiManager.setSpeedMode(normalizedMode);
  this.updateSimulationDate(true);
@@ -1227,6 +1240,12 @@ class App {
   */
  _closeTopmostOverlay() {
  const ui = this.uiManager;
+ const top = focusTrap.topContainer;
+ if (top) {
+ if (top === ui?.elements?.settingsModal) { ui.closeSettingsModal(); return true; }
+ if (top === ui?.elements?.helpModal) { ui.closeHelpModal(); return true; }
+ return false;
+ }
  const isOpen = (el) => el && !el.classList.contains('hidden');
  if (isOpen(ui?.elements?.settingsModal)) { ui.closeSettingsModal(); return true; }
  if (isOpen(ui?.elements?.helpModal)) { ui.closeHelpModal(); return true; }
@@ -1248,6 +1267,10 @@ class App {
 
  setupKeyboardShortcuts() {
  document.addEventListener('keydown', (e) => {
+ if (e.key === 'Escape' && focusTrap.topContainer && !e.ctrlKey && !e.metaKey && !e.altKey) {
+ if (this._closeTopmostOverlay()) e.preventDefault();
+ return;
+ }
  if (this._shouldIgnoreShortcut(e)) return;
  
  switch(e.key.toLowerCase()) {

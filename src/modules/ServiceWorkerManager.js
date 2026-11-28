@@ -14,10 +14,9 @@ export class ServiceWorkerManager {
     /**
      * Reload exactly once.
      *
-     * Activating a waiting worker fires BOTH `controllerchange` and the worker's
-     * own SW_SKIP_WAITING_COMPLETE broadcast. Each used to call reload()
-     * independently, so clicking "Update" reloaded the page twice — the second
-     * reload landing mid-boot of the first.
+     * Several controller changes during one page lifetime should not trigger
+     * duplicate reloads. Only controllerchange proves this page is controlled
+     * by the new worker; a skipWaiting acknowledgement can arrive earlier.
      */
     _reloadOnce() {
         if (this._reloadTriggered) return;
@@ -76,20 +75,25 @@ export class ServiceWorkerManager {
         if (!this.registration) return;
         // register() resolves to the same registration object for a given scope,
         // so a retry would otherwise stack a second 'updatefound' handler.
-        if (this._updateListenerTarget === this.registration) return;
-        this._updateListenerTarget = this.registration;
+        if (this._updateListenerTarget !== this.registration) {
+            this._updateListenerTarget = this.registration;
+            this.registration.addEventListener('updatefound', () => {
+                const newWorker = this.registration.installing;
+                if (!newWorker) return;
+                if (DEBUG && DEBUG.enabled) console.log('Service Worker update found');
 
-        this.registration.addEventListener('updatefound', () => {
-            const newWorker = this.registration.installing;
-            if (DEBUG && DEBUG.enabled) console.log('Service Worker update found');
-            
-            newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // Show update notification
-                    this.showUpdateNotification();
-                }
+                const onStateChange = () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        this.showUpdateNotification();
+                    }
+                };
+                newWorker.addEventListener('statechange', onStateChange);
+                onStateChange();
             });
-        });
+        }
+        // The worker may have finished installing before register() or before
+        // this page attached its updatefound listener.
+        if (this.registration.waiting) this.showUpdateNotification();
     }
 
     /**
@@ -118,8 +122,14 @@ export class ServiceWorkerManager {
                     if (DEBUG && DEBUG.enabled) console.log('[SW] Activated version', msg.version);
                     break;
                 case 'SW_SKIP_WAITING_COMPLETE':
-                    if (DEBUG && DEBUG.enabled) console.log('[SW] Skip waiting complete; reloading');
-                    this._reloadOnce();
+                    if (DEBUG && DEBUG.enabled) console.log('[SW] Skip waiting requested; awaiting controller change');
+                    break;
+                case 'SW_CACHE_WRITE_FAILED':
+                    // Report storage degradation even when debug logging is disabled.
+                    console.warn('[SW] Cache write failed; online response was still served:', msg);
+                    break;
+                case 'SW_CACHE_READ_FAILED':
+                    console.warn('[SW] Cache read failed; falling back to network:', msg);
                     break;
             }
         });
@@ -137,22 +147,31 @@ export class ServiceWorkerManager {
         this._updateNotificationShown = true;
         
         notification.classList.remove('hidden');
-        
-        // Update button - request the waiting worker to activate
-        document.getElementById('update-reload')?.addEventListener('click', () => {
+        notification.setAttribute('aria-hidden', 'false');
+
+        const reloadButton = document.getElementById('update-reload');
+        const dismissButton = document.getElementById('update-dismiss');
+        const cleanup = () => {
+            reloadButton?.removeEventListener('click', onReload);
+            dismissButton?.removeEventListener('click', onDismiss);
+        };
+        const onReload = () => {
+            cleanup();
             const waiting = this.registration?.waiting;
             if (waiting) {
                 waiting.postMessage({ type: 'SKIP_WAITING' });
             } else {
                 window.location.reload();
             }
-        }, { once: true });
-        
-        // Dismiss button
-        document.getElementById('update-dismiss')?.addEventListener('click', () => {
+        };
+        const onDismiss = () => {
+            cleanup();
             notification.classList.add('hidden');
+            notification.setAttribute('aria-hidden', 'true');
             this._updateNotificationShown = false; // Allow showing again for future updates
-        }, { once: true });
+        };
+        reloadButton?.addEventListener('click', onReload);
+        dismissButton?.addEventListener('click', onDismiss);
     }
 }
 

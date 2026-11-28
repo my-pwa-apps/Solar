@@ -1,10 +1,11 @@
 // Space Voyage - Service Worker
-// Version 2.10.326
+// Version 2.10.327
 
-const CACHE_VERSION = '2.10.326';
+const CACHE_VERSION = '2.10.327';
 const CACHE_NAME = `space-voyage-v${CACHE_VERSION}`;
 const RUNTIME_CACHE = `space-voyage-runtime-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `space-voyage-images-v${CACHE_VERSION}`;
+const APP_CACHE_NAME_PATTERN = /^space-voyage-(?:v|runtime-v|images-v)\d+(?:\.\d+)*$/;
 
 // Cache size limits (in number of items)
 const CACHE_LIMITS = {
@@ -20,7 +21,9 @@ const CORE_CACHE_FILES = [
   './src/main.js',
   './src/modules/storage.js',
   './src/modules/AppFeatures.js',
+  './src/modules/FocusTrap.js',
   './src/modules/FatalError.js',
+  './src/modules/PWAStorage.js',
   './src/i18n.js',
   './src/locales/en.js',
   './src/locales/nl.js',
@@ -174,7 +177,12 @@ self.addEventListener('install', (event) => {
 
         // Media is best-effort: addAll() is atomic, so a single 404 would
         // otherwise discard every successfully fetched asset.
-        await Promise.allSettled(ASSET_CACHE_FILES.map((url) => cache.add(url)));
+        const assetResults = await Promise.allSettled(ASSET_CACHE_FILES.map((url) => cache.add(url)));
+        assetResults.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.warn('[SW] Optional asset could not be cached:', ASSET_CACHE_FILES[index], result.reason);
+          }
+        });
         
         // Notify clients that a new SW is installed and waiting
         broadcastMessage({ type: 'SW_INSTALLED', version: CACHE_VERSION });
@@ -201,13 +209,12 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // Clean up old caches
       const cacheNames = await caches.keys();
       const validCaches = [CACHE_NAME, RUNTIME_CACHE, IMAGE_CACHE];
       
       await Promise.all(
         cacheNames
-          .filter(name => !validCaches.includes(name))
+          .filter(name => APP_CACHE_NAME_PATTERN.test(name) && !validCaches.includes(name))
           .map(name => caches.delete(name))
       );
       
@@ -246,21 +253,23 @@ function getCacheKey(request, url) {
 function getCacheStrategy(request, url) {
   // Images - cache first with size limit
   if (url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i)) {
-    return { cache: IMAGE_CACHE, strategy: 'cache-first', limit: CACHE_LIMITS.images };
+    return { cache: IMAGE_CACHE, limit: CACHE_LIMITS.images };
   }
   
   // Static assets - cache first
   if (url.pathname.match(/\.(css|js|woff2?|ttf|eot)$/i)) {
-    return { cache: CACHE_NAME, strategy: 'cache-first' };
+    return { cache: CACHE_NAME };
   }
   
-  // HTML - network first (for updates)
+  // A fully cached shell stays on this worker's release until it activates an
+  // update. Workers deployed before this policy (including 2.10.326) still use
+  // network-first HTML and can mix releases until they are replaced.
   if (isNavigationRequest(request) || url.pathname.match(/\.html?$/i) || url.pathname === '/' || url.pathname.endsWith('/')) {
-    return { cache: CACHE_NAME, strategy: 'network-first' };
+    return { cache: CACHE_NAME };
   }
   
   // Everything else - runtime cache
-  return { cache: RUNTIME_CACHE, strategy: 'cache-first', limit: CACHE_LIMITS.runtime };
+  return { cache: RUNTIME_CACHE, limit: CACHE_LIMITS.runtime };
 }
 
 // Fetch event - intelligent caching strategies
@@ -286,57 +295,37 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       try {
-        const { cache, strategy, limit } = getCacheStrategy(request, url);
+        const { cache, limit } = getCacheStrategy(request, url);
         const cacheKey = getCacheKey(request, url);
-        
-        if (strategy === 'network-first') {
-          // Try network first, fallback to cache
-          try {
-            const networkResponse = await fetch(request);
-            if (networkResponse && networkResponse.status === 200) {
-              const cacheStorage = await caches.open(cache);
-              await cacheStorage.put(cacheKey, networkResponse.clone());
-            }
-            return networkResponse;
-          } catch (error) {
-            const cachedResponse = await caches.match(cacheKey);
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            throw error;
-          }
-        } else {
-          // Cache first strategy (default)
-          // ignoreSearch: true allows versioned URLs (e.g. ?v=2.10.6) to match
-          // plain paths stored in the SW install cache, ensuring offline reliability
-          const cachedResponse = await caches.match(cacheKey);
-          if (cachedResponse) {
-            // Precached assets are immutable for the lifetime of this CACHE_VERSION.
-            // Revalidating them would re-download the whole app shell plus every
-            // texture on every single page load.
-            const isImmutable = url.origin === location.origin && PRECACHED_PATHS.has(url.pathname);
-            if (!isImmutable) {
-              event.waitUntil(updateCache(request, cache, cacheKey));
-            }
-            return cachedResponse;
-          }
-          
-          // If not in cache, fetch from network
-          const networkResponse = await fetch(request);
-          
-          // Cache successful responses
-          if (networkResponse && networkResponse.status === 200) {
-            const cacheStorage = await caches.open(cache);
-            await cacheStorage.put(cacheKey, networkResponse.clone());
-            
-            // Enforce cache limits if specified
-            if (limit) {
-              event.waitUntil(trimCache(cache, limit));
-            }
-          }
-          
-          return networkResponse;
+        // Cache first for the installed shell and its precached modules. Cache
+        // misses still use the network, and forced activation can briefly affect
+        // an already-running tab before its controllerchange reload completes.
+        let cachedResponse = await findCachedResponse(cache, cacheKey);
+        if (!cachedResponse && cache !== CACHE_NAME) {
+          // Precached media lives in the app-shell cache; runtime image responses
+          // live in IMAGE_CACHE. Never search origin-wide caches for a matching
+          // path because Cache Storage is shared by every app on the origin.
+          cachedResponse = await findCachedResponse(CACHE_NAME, cacheKey);
         }
+        if (cachedResponse) {
+          // Precached assets are immutable for the lifetime of this CACHE_VERSION.
+          // Revalidating them would re-download the whole app shell plus every
+          // texture on every single page load.
+          const isImmutable = url.origin === location.origin && PRECACHED_PATHS.has(url.pathname);
+          if (!isImmutable) {
+            event.waitUntil(updateCache(request, cache, cacheKey));
+          }
+          return cachedResponse;
+        }
+
+        // A storage read/open failure is not a network failure. Still try the
+        // network and return its response even if persistence is unavailable.
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.status === 200) {
+          await storeResponse(cache, cacheKey, networkResponse);
+          if (limit) event.waitUntil(trimCache(cache, limit));
+        }
+        return networkResponse;
       } catch {
         // Expected whenever the user is offline and the asset was never cached;
         // only surfaced for navigations, which fall through to the offline page.
@@ -422,11 +411,45 @@ async function updateCache(request, cacheName = CACHE_NAME, cacheKey = request) 
   try {
     const response = await fetch(request);
     if (response && response.status === 200) {
-      const cache = await caches.open(cacheName);
-      await cache.put(cacheKey, response);
+      await storeResponse(cacheName, cacheKey, response);
     }
   } catch {
     // Silently fail - we're already serving from cache
+  }
+}
+
+async function findCachedResponse(cacheName, cacheKey) {
+  try {
+    const cache = await caches.open(cacheName);
+    return await cache.match(cacheKey);
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    const requestUrl = cacheKey instanceof Request ? cacheKey.url : String(cacheKey);
+    console.warn('[SW] Cache read failed; trying network:', requestUrl, error);
+    broadcastMessage({
+      type: 'SW_CACHE_READ_FAILED',
+      cache: cacheName,
+      url: requestUrl,
+      message
+    });
+    return null;
+  }
+}
+
+async function storeResponse(cacheName, cacheKey, response) {
+  try {
+    const cache = await caches.open(cacheName);
+    await cache.put(cacheKey, response.clone());
+  } catch (error) {
+    const message = error && error.message ? error.message : String(error);
+    const requestUrl = cacheKey instanceof Request ? cacheKey.url : String(cacheKey);
+    console.warn('[SW] Cache write failed; serving network response:', requestUrl, error);
+    broadcastMessage({
+      type: 'SW_CACHE_WRITE_FAILED',
+      cache: cacheName,
+      url: requestUrl,
+      message
+    });
   }
 }
 
@@ -465,11 +488,11 @@ self.addEventListener('message', (event) => {
 
 // Broadcast helper to send messages to all window clients
 function broadcastMessage(message) {
-  self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
-    for (const client of clients) {
-      client.postMessage(message);
-    }
-  });
+  self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+    .then(clients => {
+      for (const client of clients) client.postMessage(message);
+    })
+    .catch(error => console.warn('[SW] Client notification failed:', error));
 }
 
 

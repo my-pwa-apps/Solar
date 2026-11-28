@@ -4,6 +4,7 @@
 import { DEBUG, APP_VERSION, MAX_SIMULATION_SPEED } from './utils.js';
 import { safeGetItem, safeSetItem } from './storage.js';
 import { panelManager } from './PanelManager.js';
+import { focusTrap } from './FocusTrap.js';
 
 export class UIManager {
  constructor() {
@@ -178,7 +179,7 @@ export class UIManager {
  if (this.elements.helpModal) {
  this.elements.helpModal.classList.add('hidden');
  this.elements.helpModal.setAttribute('aria-hidden', 'true');
- this._releaseFocusTrap();
+ this._releaseFocusTrap(this.elements.helpModal);
  }
  }
 
@@ -186,7 +187,7 @@ export class UIManager {
  if (this.elements.settingsModal) {
  this.elements.settingsModal.classList.add('hidden');
  this.elements.settingsModal.setAttribute('aria-hidden', 'true');
- this._releaseFocusTrap();
+ this._releaseFocusTrap(this.elements.settingsModal);
  }
  }
 
@@ -195,36 +196,11 @@ export class UIManager {
  * Stores the previously focused element and restores it on release.
  */
  _trapFocus(container) {
- this._releaseFocusTrap();
- this._focusTrapPrev = document.activeElement;
- this._focusTrapContainer = container;
- const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
- if (focusable.length) focusable[0].focus();
- this._focusTrapHandler = (e) => {
- if (e.key !== 'Tab') return;
- const focusableEls = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
- if (!focusableEls.length) return;
- const first = focusableEls[0];
- const last = focusableEls[focusableEls.length - 1];
- if (e.shiftKey) {
- if (document.activeElement === first) { e.preventDefault(); last.focus(); }
- } else {
- if (document.activeElement === last) { e.preventDefault(); first.focus(); }
- }
- };
- document.addEventListener('keydown', this._focusTrapHandler);
+ focusTrap.open(container);
  }
 
- _releaseFocusTrap() {
- if (this._focusTrapHandler) {
- document.removeEventListener('keydown', this._focusTrapHandler);
- this._focusTrapHandler = null;
- }
- if (this._focusTrapPrev && typeof this._focusTrapPrev.focus === 'function') {
- this._focusTrapPrev.focus();
- this._focusTrapPrev = null;
- }
- this._focusTrapContainer = null;
+ _releaseFocusTrap(container) {
+ focusTrap.close(container);
  }
  
  setupSolarSystemUI() {
@@ -366,7 +342,12 @@ export class UIManager {
  label.textContent = window.t(key);
  }
  const timingLabel = document.getElementById('speed-timing-label');
- if (timingLabel) timingLabel.hidden = mode === 'scientific';
+ if (timingLabel) {
+ const key = mode === 'scientific' ? 'scientificMoonPhasesApproximate' : 'educationalMotion';
+ timingLabel.dataset.i18n = key;
+ timingLabel.textContent = window.t(key);
+ timingLabel.hidden = false;
+ }
  this.setSpeed(window.app.timeSpeed === 0 ? 0 : 1);
  }
 
